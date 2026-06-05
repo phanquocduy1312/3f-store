@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --font-geist-sans: "Geist", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+::selection {
+  background: #f2c94c;
+  color: #10854f;
+}
+
+.swiper-pagination-bullet {
+  background: #10854f !important;
+}
+
+.custom-swiper-white-pagination .swiper-pagination-bullet {
+  background: #ffffff !important;
+  opacity: 0.6;
+}
+
+.custom-swiper-white-pagination .swiper-pagination-bullet-active {
+  background: #ffffff !important;
+  opacity: 1;
+}
+
+.canvas-mask {
+  /* Disable radial/background mask used for decorative canvases —
+     removed to avoid dotted/colored overlay on product lists. */
+  background: none !important;
+}
