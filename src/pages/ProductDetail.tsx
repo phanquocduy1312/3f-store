@@ -295,19 +295,19 @@ export function ProductDetail() {
                   <>
                     <button 
                       onClick={() => handleAddToCart(false)}
-                      className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-[#F2F8EE] px-6 text-[15px] font-black text-[#10854F] shadow-sm transition hover:bg-[#E4EDDB]"
+                      className="flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] bg-[#F2F8EE] px-6 text-[17px] font-black text-[#10854F] py-4 shadow-lg transition hover:bg-[#E4EDDB] hover:shadow-xl"
                     >
-                      <ShoppingCart size={20} strokeWidth={2.5}/> Thêm vào giỏ 
+                      <ShoppingCart size={22} strokeWidth={2.5}/> Thêm vào giỏ 
                     </button>
                     <button 
                       onClick={() => handleAddToCart(true)}
-                      className="flex h-[52px] flex-1 items-center justify-center rounded-[16px] bg-[#10854F] px-6 text-[15px] font-black text-white shadow-md shadow-[#10854F]/20 transition hover:bg-[#0D7344]"
+                      className="flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] bg-[#10854F] px-6 text-[17px] font-black text-white shadow-lg py-4 shadow-[#10854F]/30 transition hover:bg-[#0D7344] hover:shadow-xl"
                     >
                       Mua ngay
                     </button>
                   </>
                 ) : (
-                  <button className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-[#10854F] px-6 text-[15px] font-black text-white shadow-md shadow-[#10854F]/20 transition hover:bg-[#0D7344]">
+                  <button className="flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] bg-[#10854F] px-6 text-[17px] font-black text-white shadow-lg shadow-[#10854F]/30 transition hover:bg-[#0D7344] hover:shadow-xl">
                     <BellRing size={20} strokeWidth={2.5}/> Thông báo khi có hàng
                   </button>
                 )}
