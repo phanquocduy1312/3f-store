@@ -142,7 +142,7 @@ export function CategorySection() {
         </div>
 
         <div className="relative mt-16">
-          <div className="relative z-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="relative z-10 grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
             {categories.map((category) => {
               const config = cardConfig[category.title as keyof typeof cardConfig] || cardConfig["Thức ăn cho chó"];
               const IconComponent = config.Icon;
@@ -153,7 +153,7 @@ export function CategorySection() {
                   key={category.title}
                   whileHover={{ y: -8 }}
                   transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  className="group relative flex flex-col rounded-[2rem] border border-white/60 bg-white/70 p-6 text-center shadow-glass-sm backdrop-blur-md transition-all duration-300 hover:bg-white hover:shadow-glass"
+                  className="group relative flex flex-col h-full rounded-[2rem] border border-white/60 bg-white/70 p-6 text-center shadow-glass-sm backdrop-blur-md transition-all duration-300 hover:bg-white hover:shadow-glass"
                 >
                   {/* Accent glow on hover */}
                   <div className={`absolute inset-0 rounded-[2rem] opacity-0 transition-opacity duration-300 group-hover:opacity-10 bg-gradient-to-b ${config.gradient}`} />
@@ -170,20 +170,20 @@ export function CategorySection() {
                     {config.description}
                   </p>
 
-                  <div className="relative mb-6 flex h-[130px] items-center justify-center">
+                  <div className="mt-auto relative mb-6 flex h-[100px] sm:h-[130px] items-center justify-center">
                     <div className="absolute inset-0 bg-gradient-to-t from-white/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-b-[2rem]" />
                     <Image
                       src={category.image}
                       alt={category.title}
-                      width={140}
-                      height={130}
-                      className="h-full w-auto object-contain transition-transform duration-500 group-hover:scale-110"
+                      width={110}
+                      height={110}
+                      className="h-20 w-20 sm:h-28 sm:w-28 object-contain transition-transform duration-500 group-hover:scale-110"
                     />
                   </div>
 
                   <Link
                     to={`/products?category=${category.title === "On Sale" ? "Tất cả sản phẩm" : category.title}`}
-                    className="mt-auto mx-auto inline-flex items-center gap-2 rounded-full border border-forest/10 bg-forest/5 px-6 py-2.5 text-sm font-bold text-forest transition-all duration-300 group-hover:bg-forest group-hover:text-white"
+                    className="mx-auto inline-flex items-center gap-2 rounded-full border border-forest/10 bg-forest/5 px-6 py-2.5 text-sm font-bold text-forest transition-all duration-300 group-hover:bg-forest group-hover:text-white"
                     aria-label={`Khám phá ${category.title}`}
                   >
                     Khám phá

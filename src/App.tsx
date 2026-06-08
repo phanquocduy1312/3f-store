@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -13,6 +13,10 @@ const Register = lazy(() => import("./pages/Register").then(m => ({ default: m.R
 export function App() {
   const location = useLocation();
   const showFooter = !["/login", "/register"].includes(location.pathname);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [location.pathname]);
 
   return (
     <main className="min-h-screen bg-white">

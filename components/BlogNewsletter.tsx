@@ -105,8 +105,8 @@ export function BlogNewsletter() {
             {/* Bottom Section: Newsletter Form Banner */}
             <div className="relative flex flex-col overflow-hidden rounded-[2rem] border border-[#DEEDCD] bg-[linear-gradient(135deg,#F0F7E6_0%,#E6F2D5_100%)] p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between lg:p-10 shadow-[0_14px_40px_rgba(41,76,38,0.06)]">
               
-              {/* Dog and cat image (Center/Right on Desktop, Top Right on Mobile) */}
-              <div className="pointer-events-none absolute -right-6 top-0 z-0 h-[150px] w-[180px] sm:-right-8 sm:top-2 sm:h-[180px] sm:w-[220px] lg:left-[55%] lg:top-auto lg:bottom-[-20px] lg:h-[260px] lg:w-[300px] lg:-translate-x-1/2">
+              {/* Dog and cat image (Desktop Only to prevent text overlap) */}
+              <div className="pointer-events-none absolute hidden lg:block lg:left-[55%] lg:top-auto lg:bottom-[-20px] lg:h-[260px] lg:w-[300px] lg:-translate-x-1/2">
                 <Image
                   src="/assets/images/dogandcat.webp"
                   alt="Dog and Cat"
@@ -116,7 +116,7 @@ export function BlogNewsletter() {
               </div>
 
               {/* Left Content */}
-              <div className="relative z-10 flex w-[65%] flex-col lg:w-5/12">
+              <div className="relative z-10 flex w-full flex-col lg:w-5/12">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[16px] bg-[#D1E6B8] text-[#2F7A24] shadow-sm">
                   <Gift size={28} />
                 </div>

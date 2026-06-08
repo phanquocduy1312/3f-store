@@ -41,14 +41,14 @@ export function BigDealsSection() {
             <div>
               <div className="relative mx-auto w-full max-w-[1200px] rounded-[36px]">
                 <div className="relative overflow-visible rounded-[36px]">
-                  <Image src="/assets/images/sale.webp" alt="Sale frame" width={1200} height={600} className="w-full h-auto object-contain" />
-                  <div className="absolute inset-x-6 top-24 bottom-6 flex items-center justify-center">
+                  <Image src="/assets/images/sale.webp" alt="Sale frame" width={1200} height={600} className="hidden lg:block w-full h-auto object-contain" />
+                  <div className="relative lg:absolute lg:inset-x-6 lg:top-24 lg:bottom-6 flex items-center justify-center w-full bg-gradient-to-br from-[#10854F] to-[#0A5D35] lg:from-transparent lg:to-transparent rounded-[2.5rem] lg:rounded-none py-10 px-4 sm:px-8 lg:p-0 border border-white/10 lg:border-none shadow-lg lg:shadow-none">
                     <div className="relative w-full max-w-6xl">
                       {/* navigation buttons */}
-                      <button className="frame-prev absolute left-0 top-1/2 z-20 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-white shadow-md" aria-label="prev">
+                      <button className="frame-prev absolute left-0 top-1/2 z-20 -translate-y-1/2 hidden lg:grid h-10 w-10 place-items-center rounded-full bg-white shadow-md" aria-label="prev">
                         <ChevronLeft size={18} />
                       </button>
-                      <button className="frame-next absolute right-0 top-1/2 z-20 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-white shadow-md" aria-label="next">
+                      <button className="frame-next absolute right-0 top-1/2 z-20 -translate-y-1/2 hidden lg:grid h-10 w-10 place-items-center rounded-full bg-white shadow-md" aria-label="next">
                         <ChevronRight size={18} />
                       </button>
 

@@ -8,18 +8,22 @@
 - [x] Thiết kế UI Card sản phẩm sinh động (gradient, hover animation).
 - [x] Trang Chi tiết Sản phẩm (PDP) - Xây dựng Layout chia 2 cột, gallery cuộn dính (sticky).
 
-## Phase 2: Shopping Features (Đang phát triển)
-- [ ] Thêm tính năng Thêm vào giỏ hàng (Add to Cart).
-- [ ] Xây dựng giao diện Drawer/Modal Giỏ hàng.
-- [ ] Quản lý Global State cho Giỏ hàng (Zustand hoặc Context API).
-- [ ] Trang Thanh toán (Checkout Page).
+## Phase 2: Shopping Features (Hoàn thành)
+- [x] Thêm tính năng Thêm vào giỏ hàng (Add to Cart).
+- [x] Xây dựng giao diện Drawer/Modal Giỏ hàng.
+- [x] Quản lý Global State cho Giỏ hàng.
+- [x] Trang Thanh toán (Checkout Page) tích hợp VietQR và Form giao hàng.
 
-## Phase 3: Backend Integration (Sắp tới)
+## Phase 3: Mobile Responsive & Performance (Hoàn thành)
+- [x] Tối ưu hiệu năng tải trang dưới 1 giây (WebP, Code Splitting, Suspense).
+- [x] Nâng cấp toàn bộ responsive di động (hamburger drawer menu, grid 2 cột cho danh mục, sửa lỗi tràn layout BigDeals, drawer bộ lọc trên mobile).
+
+## Phase 4: Backend Integration (Sắp tới)
 - [ ] Xây dựng Backend API (Node.js/Python).
 - [ ] Thiết lập Database (PostgreSQL/MongoDB).
 - [ ] Thay thế dữ liệu Mock bằng dữ liệu thật qua API Fetching.
 - [ ] Tích hợp thanh toán online (SePay / Stripe).
 
-## Phase 4: User Authentication & Profile
-- [ ] Đăng ký/Đăng nhập (Email, Google Auth).
+## Phase 5: User Authentication & Profile (Hoàn thành một phần)
+- [x] Thiết kế giao diện Đăng ký/Đăng nhập (Email, Google Auth) kiểu Split-Screen.
 - [ ] Trang quản lý tài khoản người dùng (Lịch sử đơn hàng, địa chỉ...).

@@ -136,14 +136,14 @@ export function PetFoodSection() {
           {/* Cat Food Section */}
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Banner card - Clean layout */}
-            <div className="relative flex lg:w-1/3 flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#F6FBF4] to-[#DCECD7] border border-[#E5F0E2] p-8 shadow-glass-sm group">
+            <div className="relative flex lg:w-1/3 flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#F6FBF4] to-[#DCECD7] border border-[#E5F0E2] p-8 shadow-glass-sm group min-h-[280px] lg:min-h-0">
               <div className="relative z-20">
                 <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-xs font-bold text-forest backdrop-blur-md">
                   <PawPrint size={14} className="fill-current" />
                   Dành cho Mèo
                 </div>
                 <h3 className="text-2xl font-black text-ink mb-2">Dinh dưỡng cân bằng <br/>cho mèo cưng</h3>
-                <p className="text-sm text-ink/70 mb-6 max-w-[80%]">Hỗ trợ sức khỏe toàn diện, giúp mèo cưng luôn năng động.</p>
+                <p className="text-sm text-ink/70 mb-6 max-w-[60%] sm:max-w-[80%]">Hỗ trợ sức khỏe toàn diện, giúp mèo cưng luôn năng động.</p>
                 
                 <Link to="/products?category=Thức ăn cho mèo" className="inline-flex items-center gap-2 rounded-full bg-forest px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-transform hover:scale-105">
                   Xem tất cả
@@ -151,7 +151,7 @@ export function PetFoodSection() {
                 </Link>
               </div>
 
-              <div className="absolute -bottom-10 -right-10 z-10 w-[70%]">
+              <div className="absolute -bottom-10 -right-10 z-10 w-[45%] sm:w-[50%] lg:w-[70%]">
                 <Image
                   src="/assets/images/cat.webp"
                   alt="Mèo cưng"
@@ -196,14 +196,14 @@ export function PetFoodSection() {
           {/* Dog Food Section */}
           <div className="flex flex-col lg:flex-row-reverse gap-6">
             {/* Banner card */}
-            <div className="relative flex lg:w-1/3 flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#FFF6F4] to-[#FDE3E0] border border-[#F8DFDB] p-8 shadow-glass-sm group">
+            <div className="relative flex lg:w-1/3 flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#FFF6F4] to-[#FDE3E0] border border-[#F8DFDB] p-8 shadow-glass-sm group min-h-[280px] lg:min-h-0">
               <div className="relative z-20">
                 <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-xs font-bold text-[#D97A73] backdrop-blur-md">
                   <PawPrint size={14} className="fill-current" />
                   Dành cho Chó
                 </div>
                 <h3 className="text-2xl font-black text-ink mb-2">Phát triển toàn diện <br/>cho cún cưng</h3>
-                <p className="text-sm text-ink/70 mb-6 max-w-[80%]">Thức ăn giàu protein và vitamin giúp cún cưng luôn khỏe mạnh.</p>
+                <p className="text-sm text-ink/70 mb-6 max-w-[60%] sm:max-w-[80%]">Thức ăn giàu protein và vitamin giúp cún cưng luôn khỏe mạnh.</p>
                 
                 <Link to="/products?category=Thức ăn cho chó" className="inline-flex items-center gap-2 rounded-full bg-[#E58F89] px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-transform hover:scale-105">
                   Xem tất cả
@@ -211,7 +211,7 @@ export function PetFoodSection() {
                 </Link>
               </div>
 
-              <div className="absolute -bottom-10 -right-10 z-10 w-[75%]">
+              <div className="absolute -bottom-10 -right-10 z-10 w-[50%] sm:w-[55%] lg:w-[75%]">
                 <Image
                   src="/assets/images/dog.webp"
                   alt="Cún cưng"

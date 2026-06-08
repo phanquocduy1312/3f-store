@@ -143,8 +143,11 @@ const NavItem = ({ item }: { item: MenuItem }) => {
   );
 };
 
+import { MobileNavigationDrawer } from "./mobile-navigation-drawer";
+
 export function Header() {
   const [cartCount, setCartCount] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setCartCount(getCartCount());
@@ -158,80 +161,97 @@ export function Header() {
   }, []);
 
   return (
-    <motion.header
-      initial={{ opacity: 0, y: -18 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className="sticky top-0 z-50 border-b border-forest/12 bg-cream/94 shadow-[0_10px_30px_rgba(34,52,39,0.08)] backdrop-blur-2xl"
-    >
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-8 px-4 sm:px-6 lg:px-8">
-        {/* Logo - Width 120px - more balanced */}
-        <a href="/" className="flex items-center" aria-label="3F Store - Trang chủ">
-          <Image 
-            src="/assets/logo/logo.webp" 
-            alt="3F Store logo" 
-            width={120} 
-            height={120} 
-            className="h-auto w-[120px] object-contain" 
-          />
-        </a>
+    <>
+      <motion.header
+        initial={{ opacity: 0, y: -18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        className="sticky top-0 z-50 border-b border-forest/12 bg-cream/94 shadow-[0_10px_30px_rgba(34,52,39,0.08)] backdrop-blur-2xl"
+      >
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-8 px-4 sm:px-6 lg:px-8">
+          {/* Logo - Width 120px - more balanced */}
+          <a href="/" className="flex items-center" aria-label="3F Store - Trang chủ">
+            <Image 
+              src="/assets/logo/logo.webp" 
+              alt="3F Store logo" 
+              width={120} 
+              height={120} 
+              className="h-auto w-[120px] object-contain" 
+            />
+          </a>
 
-        {/* Navigation */}
-        <nav className="relative hidden h-full items-center gap-8 text-[0.95rem] font-bold text-ink/88 lg:flex">
-          {navigationData.map((item) => (
-            <NavItem key={item.label} item={item} />
-          ))}
-        </nav>
+          {/* Navigation */}
+          <nav className="relative hidden h-full items-center gap-8 text-[0.95rem] font-bold text-ink/88 lg:flex">
+            {navigationData.map((item) => (
+              <NavItem key={item.label} item={item} />
+            ))}
+          </nav>
 
-        <div className="flex items-center gap-2">
-          {/* Icon buttons with labels */}
-          <button
-            className="flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 text-forest transition hover:bg-white/50"
-            aria-label="Tìm kiếm"
-          >
-            <Search size={22} strokeWidth={2.2} />
-            <span className="text-[0.7rem] font-bold">Tìm kiếm</span>
-          </button>
-          
-          <Link
-            to="/login"
-            className="flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 text-forest transition hover:bg-white/50"
-            aria-label="Tài khoản"
-          >
-            <User size={22} strokeWidth={2.2} />
-            <span className="text-[0.7rem] font-bold">Tài khoản</span>
-          </Link>
-          
-          <Link
-            to="/cart"
-            className="relative flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 text-forest transition hover:bg-white/50"
-            aria-label="Giỏ hàng"
-          >
-            <div className="relative">
-              <ShoppingCart size={22} strokeWidth={2.2} />
-              {cartCount > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#E11D48] text-[10px] font-black text-white ring-2 ring-white">
-                  {cartCount}
-                </span>
-              )}
-            </div>
-            <span className="text-[0.7rem] font-bold">Giỏ hàng</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            {/* Icon buttons with labels */}
+            <button
+              className="flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 text-forest transition hover:bg-white/50"
+              aria-label="Tìm kiếm"
+            >
+              <Search size={22} strokeWidth={2.2} />
+              <span className="text-[0.7rem] font-bold text-center w-full block">Tìm kiếm</span>
+            </button>
+            
+            <Link
+              to="/login"
+              className="flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 text-forest transition hover:bg-white/50"
+              aria-label="Tài khoản"
+            >
+              <User size={22} strokeWidth={2.2} />
+              <span className="text-[0.7rem] font-bold text-center w-full block">Tài khoản</span>
+            </Link>
+            
+            <Link
+              to="/cart"
+              className="relative flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 text-forest transition hover:bg-white/50"
+              aria-label="Giỏ hàng"
+            >
+              <div className="relative">
+                <ShoppingCart size={22} strokeWidth={2.2} />
+                {cartCount > 0 && (
+                  <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#E11D48] text-[10px] font-black text-white ring-2 ring-white">
+                    {cartCount}
+                  </span>
+                )}
+              </div>
+              <span className="text-[0.7rem] font-bold text-center w-full block">Giỏ hàng</span>
+            </Link>
 
-          {/* CTA Button - Desktop */}
-          <Link 
-            to="/login"
-            className="hidden h-12 items-center gap-2 rounded-full bg-forest px-6 text-[0.95rem] font-bold text-white shadow-soft transition hover:scale-105 hover:bg-forest/92 lg:flex"
-          >
-            Đăng nhập
-          </Link>
-          
-          {/* Mobile Menu */}
-          <button className="grid h-10 w-10 place-items-center rounded-full bg-white text-forest shadow-soft lg:hidden" aria-label="Mở menu">
-            <Menu size={20} />
-          </button>
+            {/* CTA Button - Desktop */}
+            <Link 
+              to="/login"
+              className="hidden h-12 items-center gap-2 rounded-full bg-forest px-6 text-[0.95rem] font-bold text-white shadow-soft transition hover:scale-105 hover:bg-forest/92 lg:flex"
+            >
+              Đăng nhập
+            </Link>
+            
+            {/* Mobile Menu */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="grid h-10 w-10 place-items-center rounded-full bg-white text-forest shadow-soft lg:hidden" 
+              aria-label="Mở menu"
+            >
+              <Menu size={20} />
+            </button>
+          </div>
         </div>
-      </div>
-    </motion.header>
+      </motion.header>
+
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <MobileNavigationDrawer
+            isOpen={isMobileMenuOpen}
+            onClose={() => setIsMobileMenuOpen(false)}
+            navigationData={navigationData}
+            cartCount={cartCount}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 }
