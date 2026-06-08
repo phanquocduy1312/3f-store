@@ -1,103 +1,133 @@
 "use client";
 
-import { lazy, Suspense, useEffect, type ComponentType, type ReactNode } from "react";
-import { ArrowRight, PawPrint, Play } from "lucide-react";
-import { motion } from "framer-motion";
-import gsap from "gsap";
-import { heroFeatures } from "@/data/store";
-import { fadeUp, staggerContainer } from "@/lib/animations";
+import { ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Image } from "@/components/Image";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
 
-function dynamic<TProps extends object>(
-  loader: () => Promise<ComponentType<TProps>>,
-  options: { loading?: () => ReactNode; ssr?: boolean } = {},
-) {
-  const LazyComponent = lazy(() => loader().then((Component) => ({ default: Component })));
-
-  return function DynamicComponent(props: TProps) {
-    const fallback = options.loading ? <options.loading /> : null;
-
-    return (
-      <Suspense fallback={fallback}>
-        <LazyComponent {...props} />
-      </Suspense>
-    );
-  };
-}
-
-// Lazy load với loading state
-const PetHeroCanvas = dynamic(
-  () => import("@/components/three/PetHeroCanvas").then(mod => mod.PetHeroCanvas),
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="h-[420px] w-full rounded-[2rem] sm:h-[520px] lg:h-[610px] flex items-center justify-center" style={{ background: '#CFE5D7' }}>
-        <div className="animate-pulse">
-          <div className="text-forest font-bold text-xl">🐕 🐱</div>
-          <div className="text-forest text-sm mt-2">Loading pets...</div>
-        </div>
-      </div>
-    )
-  }
-);
+const heroBanners = [
+  "/assets/images/banner-1.png",
+  "/assets/images/banner-2.png",
+  "/assets/images/banner-3.png",
+  "/assets/images/banner-4.png",
+];
 
 export function HeroSection() {
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        ".hero-reveal",
-        { autoAlpha: 0, y: 34 },
-        { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.12, ease: "power3.out" }
-      );
-      gsap.fromTo(".hero-canvas", { autoAlpha: 0, scale: 0.96 }, { autoAlpha: 1, scale: 1, duration: 1.1, delay: 0.25, ease: "power3.out" });
-    });
-
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <section className="relative overflow-hidden">
-      <div className="absolute left-1/2 top-16 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[#CFE5D7]/70 blur-3xl" />
-      <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[0.94fr_1.06fr] lg:px-8 lg:py-16">
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="relative z-10">
-          <div className="hero-reveal mb-6 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-sm font-bold text-[#B97024] shadow-soft">
-            <PawPrint size={16} />
-            Dành cho những người bạn nhỏ
-          </div>
-          <h1 className="hero-reveal max-w-3xl text-5xl font-black leading-[1.05] tracking-normal text-ink sm:text-6xl lg:text-7xl">
-            Chăm sóc thú cưng như người thân
-          </h1>
-          <p className="hero-reveal mt-6 max-w-xl text-lg leading-8 text-ink/85">
-            Thức ăn chất lượng • Phụ kiện xinh xắn • Sức khỏe toàn diện
-          </p>
-          <div className="hero-reveal mt-8 flex flex-col gap-3 sm:flex-row">
-            <button className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-forest px-7 font-bold text-white shadow-soft transition hover:scale-105 hover:shadow-lift">
-              Mua sắm ngay
-              <PawPrint size={18} />
-            </button>
-            <button className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl border border-forest/20 bg-white/55 px-7 font-bold text-forest transition hover:scale-105 hover:bg-white">
-              <Play size={18} fill="currentColor" />
-              Khám phá ngay
-            </button>
+    <section className="bg-[#f6f2ea] pt-4 pb-6">
+      <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-4 lg:grid-cols-3 lg:grid-rows-2 lg:h-[540px]">
+          {/* Main Slider - Spans 2 columns and 2 rows */}
+          <div className="relative overflow-hidden rounded-3xl bg-[#efe5d5] shadow-glass lg:col-span-2 lg:row-span-2 group">
+            <Swiper
+              modules={[Navigation, Pagination, Autoplay]}
+              slidesPerView={1}
+              loop
+              speed={800}
+              autoplay={{ delay: 5000, disableOnInteraction: false }}
+              navigation={{ prevEl: ".hero-prev", nextEl: ".hero-next" }}
+              pagination={{ clickable: true, el: ".hero-pagination" }}
+              className="h-full w-full"
+            >
+              {heroBanners.slice(0, 3).map((banner, index) => (
+                <SwiperSlide key={banner} className="h-full w-full">
+                  <Image
+                    src={banner}
+                    alt={`Banner trang chu ${index + 1}`}
+                    width={1600}
+                    height={900}
+                    priority={index === 0}
+                    className="h-full w-full object-cover transition-transform duration-[10000ms] hover:scale-105"
+                  />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+
+            {/* Custom Navigation */}
+            <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-between p-4">
+              <button
+                className="hero-prev pointer-events-auto grid h-12 w-12 -translate-x-4 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 place-items-center rounded-full border border-white/20 bg-black/15 text-white backdrop-blur-md hover:scale-105 hover:bg-black/30"
+                aria-label="Banner truoc"
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                className="hero-next pointer-events-auto grid h-12 w-12 translate-x-4 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 place-items-center rounded-full border border-white/20 bg-black/15 text-white backdrop-blur-md hover:scale-105 hover:bg-black/30"
+                aria-label="Banner tiep theo"
+              >
+                <ChevronRight size={24} />
+              </button>
+            </div>
+            
+            {/* Custom Pagination Container */}
+            <div className="hero-pagination absolute bottom-4 left-0 right-0 z-10 flex justify-center gap-2"></div>
           </div>
 
-          <div className="hero-reveal mt-10 grid gap-3 border-y border-forest/10 py-5 sm:grid-cols-3">
-            {heroFeatures.map((item) => (
-              <div key={item.title} className="flex items-center gap-3">
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-forest shadow-soft">
-                  <item.icon size={21} />
-                </span>
-                <span>
-                  <span className="block text-sm font-black text-ink">{item.title}</span>
-                  <span className="text-xs font-semibold text-ink/75">{item.description}</span>
-                </span>
+          {/* Top Right Banner */}
+          <div className="relative overflow-hidden rounded-3xl bg-white shadow-glass-sm group h-[250px] lg:h-auto">
+            <Image
+              src={heroBanners[3]}
+              alt="Promo banner 1"
+              width={800}
+              height={450}
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="absolute bottom-5 left-5 right-5 translate-y-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+              <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white backdrop-blur-md">
+                Khám phá ngay
+              </span>
+            </div>
+          </div>
+
+          {/* Bottom Right Banner - Custom Promotional Card */}
+          <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#10854F] to-[#0A5D35] p-7 shadow-[0_20px_40px_rgba(16,133,79,0.15)] text-white flex flex-col justify-between group min-h-[260px] lg:h-auto border border-white/10">
+            {/* Animated Glow Elements */}
+            <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-[#F2C94C]/20 blur-[40px] transition-transform duration-700 group-hover:scale-150 group-hover:bg-[#F2C94C]/30" />
+            <div className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-emerald-400/20 blur-[30px] transition-transform duration-700 group-hover:scale-150" />
+
+            {/* Image Section */}
+            <div className="absolute right-0 top-0 bottom-0 w-[65%] overflow-hidden pointer-events-none">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#10854F] via-[#10854F]/70 to-transparent z-10" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0A5D35] via-transparent to-transparent z-10 opacity-60" />
+              <Image 
+                src="/assets/images/promo_pet_3d.png" 
+                alt="Promo Pet" 
+                width={500} 
+                height={500} 
+                className="h-[120%] w-[120%] object-cover object-[80%_center] opacity-95 transition-transform duration-1000 ease-out group-hover:scale-105 group-hover:-translate-x-2 mix-blend-screen" 
+              />
+            </div>
+            
+            <div className="relative z-20 flex-1 flex flex-col justify-between h-full">
+              <div>
+                <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 backdrop-blur-md shadow-[0_4px_10px_rgba(0,0,0,0.1)]">
+                  <Star size={12} className="fill-[#F2C94C] text-[#F2C94C]" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#F2C94C]">
+                    Thành viên mới
+                  </span>
+                </div>
+                <h3 className="text-[28px] font-black leading-[1.1] mb-2 drop-shadow-md tracking-tight">
+                  Ưu đãi 15% <br/>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFF6D9] to-[#F2C94C]">cho đơn đầu</span>
+                </h3>
+                <p className="text-emerald-50 text-[13px] max-w-[180px] leading-relaxed drop-shadow-sm font-medium opacity-90">
+                  Đăng ký ngay để nhận ngập tràn ưu đãi từ 3F Store.
+                </p>
               </div>
-            ))}
+              
+              <button className="mt-6 inline-flex w-fit items-center gap-2 rounded-2xl bg-gradient-to-r from-[#F2C94C] to-[#E5B523] px-5 py-2.5 text-sm font-black text-[#3A2D00] shadow-[0_8px_20px_rgba(242,201,76,0.3)] transition-all duration-300 hover:scale-105 hover:shadow-[0_10px_25px_rgba(242,201,76,0.5)] active:scale-95">
+                Đăng ký ngay
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-black/10">
+                  <ChevronRight size={14} className="text-[#3A2D00]" strokeWidth={3} />
+                </span>
+              </button>
+            </div>
           </div>
-        </motion.div>
-
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" className="hero-canvas relative z-10">
-          <PetHeroCanvas />
-        </motion.div>
+        </div>
       </div>
     </section>
   );

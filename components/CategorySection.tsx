@@ -1,19 +1,20 @@
 "use client";
 
 import { Image } from "@/components/Image";
-import { 
-  Dog, 
-  Cat, 
-  Gem, 
-  Plus, 
-  Wrench, 
-  Percent, 
-  PawPrint, 
+import { Link } from "react-router-dom";
+import {
+  Cat,
   ChevronRight,
-  Truck,
-  ShieldCheck,
+  Dog,
+  Gem,
+  Headphones,
+  PawPrint,
+  Percent,
+  Plus,
   RotateCcw,
-  Headphones
+  ShieldCheck,
+  Truck,
+  Wrench,
 } from "lucide-react";
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
 
@@ -44,156 +45,155 @@ const categories = [
   },
 ];
 
-// Custom configurations for the 6 cards matching Image 2 exactly
 const cardConfig = {
   "Thức ăn cho chó": {
     Icon: Dog,
     description: "Dinh dưỡng chất lượng cho bé cún khỏe mạnh",
     iconBg: "bg-[#E58F89]",
-    gradient: "from-[#FFF5F4] to-[#FCDEDC]",
-    border: "border-[#FBE3E1]",
+    gradient: "from-[#FFF6F4] via-[#FFF3F1] to-[#FDE3E0]",
+    border: "border-[#F8DFDB]",
     btnTheme: "bg-[#E58F89]",
   },
   "Thức ăn cho mèo": {
     Icon: Cat,
-    description: "Công thức dinh dưỡng cho mèo cưng",
+    description: "Công thức dinh dưỡng cân bằng cho mèo cưng",
     iconBg: "bg-[#96C289]",
-    gradient: "from-[#F5FAF3] to-[#DCECD7]",
-    border: "border-[#E9F3E6]",
+    gradient: "from-[#F6FBF4] via-[#F0F8EC] to-[#DCECD7]",
+    border: "border-[#E5F0E2]",
     btnTheme: "bg-[#96C289]",
   },
   "Phụ kiện thú cưng": {
     Icon: Gem,
     description: "Vòng cổ, dây dắt, đồ chơi và nhiều hơn nữa",
     iconBg: "bg-[#F0C353]",
-    gradient: "from-[#FFFDF0] to-[#FBE9B9]",
-    border: "border-[#FDF3D5]",
+    gradient: "from-[#FFFDF3] via-[#FFF8DE] to-[#FBE9B9]",
+    border: "border-[#F8EFCF]",
     btnTheme: "bg-[#F0C353]",
   },
   "Chăm sóc sức khỏe": {
     Icon: Plus,
-    description: "Sản phẩm chăm sóc và bảo vệ thú cưng",
+    description: "Sản phẩm chăm sóc và bảo vệ thú cưng mỗi ngày",
     iconBg: "bg-[#6FA4D8]",
-    gradient: "from-[#F4F9FD] to-[#D8E8F6]",
-    border: "border-[#E9F2FA]",
+    gradient: "from-[#F5FAFE] via-[#EEF5FC] to-[#D8E8F6]",
+    border: "border-[#E3EDF8]",
     btnTheme: "bg-[#6FA4D8]",
   },
   "Vệ sinh thú cưng": {
     Icon: Wrench,
     description: "Tắm gội, vệ sinh thơm tho, sạch sẽ",
     iconBg: "bg-[#B393E2]",
-    gradient: "from-[#FAF4FF] to-[#EBDCF9]",
-    border: "border-[#F4E9FC]",
+    gradient: "from-[#FBF7FF] via-[#F5EEFC] to-[#EBDCF9]",
+    border: "border-[#EDE0FA]",
     btnTheme: "bg-[#B393E2]",
   },
   "On Sale": {
     Icon: Percent,
     description: "Ưu đãi hấp dẫn không thể bỏ lỡ",
     iconBg: "bg-[#EAA363]",
-    gradient: "from-[#FFF8F0] to-[#F7E6D4]",
-    border: "border-[#FDF0E1]",
+    gradient: "from-[#FFF9F2] via-[#FFF1E2] to-[#F7E6D4]",
+    border: "border-[#F7E7D7]",
     btnTheme: "bg-[#EAA363]",
   },
 };
 
-
+const trustItems = [
+  { icon: ShieldCheck, label: "Chính hãng rõ nguồn gốc" },
+  { icon: Truck, label: "Giao nhanh toàn quốc" },
+  { icon: Headphones, label: "Tư vấn tận tâm" },
+];
 
 export function CategorySection() {
   return (
-    <section className="relative overflow-hidden bg-[#FAF8F5]">
-      {/* Background Watermark Paw */}
-      <div className="absolute right-[4%] top-[10%] opacity-[0.03] text-forest pointer-events-none hidden lg:block">
+    <section className="relative overflow-hidden bg-cream/30">
+      <div className="pointer-events-none absolute right-[4%] top-[10%] hidden text-forest opacity-[0.02] lg:block">
         <PawPrint size={220} className="fill-current" />
       </div>
 
-      <MotionSection className="relative !pb-4 lg:!pb-8">
-        {/* Header Section */}
-        <div className="relative z-10 mb-12">
-          <MotionItem {...motionItemProps} className="max-w-2xl">
-            <div className="mb-4 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#10854F]">
-              <PawPrint size={14} className="fill-current" />
+      <MotionSection className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 !pb-10 pt-8 lg:pt-12">
+        <div className="relative z-10 mb-12 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+          <MotionItem {...motionItemProps} className="max-w-3xl">
+            <div className="mb-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-forest">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-forest/10">
+                <PawPrint size={12} className="fill-current" />
+              </span>
               Danh mục nổi bật
             </div>
-            <h2 className="mb-4 text-4xl font-black leading-[1.15] tracking-tight text-[#221A12] sm:text-5xl lg:text-[3.25rem]">
-              Khám phá thế giới<br />dành cho thú cưng
+            <h2 className="mb-4 text-4xl font-black leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-[3.25rem]">
+              Khám phá thế giới
+              <br />
+              dành cho thú cưng
             </h2>
-            <p className="text-[0.95rem] leading-relaxed text-[#221A12]/75">
-              Tất cả những gì thú cưng cần, từ dinh dưỡng, chăm sóc<br className="hidden md:block" /> đến phụ kiện & ưu đãi hấp dẫn.
+            <p className="max-w-[640px] text-base leading-relaxed text-ink/70">
+              Tất cả những gì thú cưng cần, từ dinh dưỡng, chăm sóc đến phụ kiện và ưu đãi được sắp xếp rõ ràng để bạn mua sắm nhanh hơn.
             </p>
+
+            <div className="mt-8 flex flex-wrap gap-4">
+              {trustItems.map((item) => (
+                <div
+                  key={item.label}
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-ink shadow-glass-sm transition-transform hover:-translate-y-1"
+                >
+                  <item.icon size={18} className="text-forest" />
+                  {item.label}
+                </div>
+              ))}
+            </div>
           </MotionItem>
         </div>
 
-        {/* Container for cards and background image */}
         <div className="relative mt-16">
-          {/* Dog and Cat Image - Popping from behind Card 4 & 5 */}
-          <div className="absolute right-[2%] -top-[205px] z-0 hidden xl:block pointer-events-none">
-            <MotionItem {...motionItemProps}>
-              <Image
-                src="/assets/images/dogandcat.webp"
-                alt="Chó và mèo dễ thương"
-                width={420}
-                height={320}
-                className="h-auto w-[420px] object-contain"
-                priority
-              />
-            </MotionItem>
-          </div>
+          <div className="relative z-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {categories.map((category) => {
+              const config = cardConfig[category.title as keyof typeof cardConfig] || cardConfig["Thức ăn cho chó"];
+              const IconComponent = config.Icon;
 
-          {/* Category Grid - Responsive: 1 on mobile, 2 on sm, 3 on lg, 6 on xl */}
-          <div className="relative z-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {categories.map((category) => {
-            const config = cardConfig[category.title as keyof typeof cardConfig] || cardConfig["Thức ăn cho chó"];
-            const IconComponent = config.Icon;
-            
-            return (
-              <MotionItem
-                {...motionItemProps}
-                key={category.title}
-                className={`group relative flex flex-col rounded-[2.25rem] border ${config.border} bg-gradient-to-b ${config.gradient} p-6 pb-7 text-center shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)]`}
-              >
-                {/* Centered Circle Icon - White icon inside colored bg */}
-                <div className={`mx-auto mb-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${config.iconBg} text-white shadow-sm transition duration-300 group-hover:scale-105`}>
-                  <IconComponent size={22} strokeWidth={2.5} />
-                </div>
-
-                {/* Card Title */}
-                <h3 className="mb-2 text-[1.1rem] font-black leading-tight text-[#221A12]">
-                  {category.title}
-                </h3>
-
-                {/* Card Description */}
-                <p className="mb-5 text-[0.8rem] leading-relaxed text-[#221A12]/75 min-h-[38px] flex items-center justify-center px-1">
-                  {config.description}
-                </p>
-
-                {/* Product Image */}
-                <div className="relative flex h-[140px] items-center justify-center mb-6">
-                  <Image
-                    src={category.image}
-                    alt={category.title}
-                    width={150}
-                    height={140}
-                    className="h-auto w-[150px] object-contain transition duration-300 group-hover:scale-110"
-                  />
-                </div>
-
-                {/* Pill CTA Button */}
-                <button 
-                  className="mt-auto mx-auto inline-flex items-center gap-2.5 rounded-full bg-white px-5 py-2.5 text-xs font-black text-[#221A12] shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition duration-300 hover:scale-105 hover:bg-gray-50 active:scale-95"
-                  aria-label={`Khám phá ${category.title}`}
+              return (
+                <MotionItem
+                  {...motionItemProps}
+                  key={category.title}
+                  whileHover={{ y: -8 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  className="group relative flex flex-col rounded-[2rem] border border-white/60 bg-white/70 p-6 text-center shadow-glass-sm backdrop-blur-md transition-all duration-300 hover:bg-white hover:shadow-glass"
                 >
-                  <span>Khám phá</span>
-                  <span className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full ${config.btnTheme} text-white`}>
-                    <ChevronRight size={10} strokeWidth={4} />
-                  </span>
-                </button>
-              </MotionItem>
-            );
-          })}
+                  {/* Accent glow on hover */}
+                  <div className={`absolute inset-0 rounded-[2rem] opacity-0 transition-opacity duration-300 group-hover:opacity-10 bg-gradient-to-b ${config.gradient}`} />
+
+                  <div
+                    className={`mx-auto mb-5 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${config.iconBg} text-white shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}
+                  >
+                    <IconComponent size={24} strokeWidth={2.5} />
+                  </div>
+
+                  <h3 className="mb-2 text-lg font-bold leading-tight text-ink">{category.title}</h3>
+
+                  <p className="mb-6 flex min-h-[40px] items-center justify-center px-1 text-sm leading-relaxed text-ink/60">
+                    {config.description}
+                  </p>
+
+                  <div className="relative mb-6 flex h-[130px] items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-t from-white/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-b-[2rem]" />
+                    <Image
+                      src={category.image}
+                      alt={category.title}
+                      width={140}
+                      height={130}
+                      className="h-full w-auto object-contain transition-transform duration-500 group-hover:scale-110"
+                    />
+                  </div>
+
+                  <Link
+                    to={`/products?category=${category.title === "On Sale" ? "Tất cả sản phẩm" : category.title}`}
+                    className="mt-auto mx-auto inline-flex items-center gap-2 rounded-full border border-forest/10 bg-forest/5 px-6 py-2.5 text-sm font-bold text-forest transition-all duration-300 group-hover:bg-forest group-hover:text-white"
+                    aria-label={`Khám phá ${category.title}`}
+                  >
+                    Khám phá
+                    <ChevronRight size={16} strokeWidth={2.5} className=" transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </MotionItem>
+              );
+            })}
+          </div>
         </div>
-      </div>
-
-
       </MotionSection>
     </section>
   );

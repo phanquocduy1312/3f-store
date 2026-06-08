@@ -1,27 +1,31 @@
-import { BlogNewsletter } from "@/components/BlogNewsletter";
-import { CategorySection } from "@/components/CategorySection";
-import { DealsSection } from "@/components/DealsSection";
-import { BigDealsSection } from "@/components/BigDealsSection";
-import { Footer } from "@/components/Footer";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { HeroSection } from "@/components/HeroSection";
-import { PetFoodSection } from "@/components/PetFoodSection";
-import { ProductSlider } from "@/components/ProductSlider";
-import { SaleSection } from "@/components/SaleSection";
-import { ReasonsSection } from "@/components/ReasonsSection";
+import { Footer } from "@/components/Footer";
+import { Home } from "./pages/Home";
+import { Products } from "./pages/Products";
+import { ProductDetail } from "./pages/ProductDetail";
+import { CartCheckout } from "./pages/CartCheckout";
+import { Login } from "./pages/Login";
+import { Register } from "./pages/Register";
 
 export function App() {
+  const location = useLocation();
+  const showFooter = !["/login", "/register"].includes(location.pathname);
+
   return (
-    <main className="min-h-screen overflow-hidden bg-white">
+    <main className="min-h-screen bg-white">
       <Header />
-      <HeroSection />
-      <CategorySection />
-      <PetFoodSection />
-      <SaleSection />
-      <ProductSlider />
-      <ReasonsSection />
-      <BlogNewsletter />
-      <Footer />
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/cart" element={<CartCheckout />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Routes>
+      
+      {showFooter && <Footer />}
     </main>
   );
 }

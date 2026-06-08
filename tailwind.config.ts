@@ -9,14 +9,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        forest: "#10854F",
+        forest: {
+          DEFAULT: "#10854F",
+          dark: "#0A5C35",
+          darker: "#05331D",
+        },
         cream: "#F8F4EC",
         honey: "#F2C94C",
-        ink: "#221A12"
+        ink: "#221A12",
+        sale: {
+          bg: "#082F19",
+          card: "#0C3D22",
+        }
       },
       boxShadow: {
-        soft: "0 24px 70px rgba(31, 77, 58, 0.12)",
-        lift: "0 28px 80px rgba(31, 77, 58, 0.18)"
+        soft: "0 24px 70px rgba(31, 77, 58, 0.08)",
+        lift: "0 28px 80px rgba(31, 77, 58, 0.12)",
+        glass: "0 8px 32px 0 rgba(31, 38, 135, 0.07)",
+        "glass-sm": "0 4px 16px 0 rgba(31, 38, 135, 0.05)",
       },
       borderRadius: {
         "4xl": "2rem",

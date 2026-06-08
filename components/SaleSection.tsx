@@ -1,99 +1,180 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Image } from "@/components/Image";
-import { ChevronLeft, ChevronRight, Star, ShoppingCart, PawPrint } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, PawPrint, ShoppingCart, Star, Zap } from "lucide-react";
+import { motion } from "framer-motion";
 import { Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import { getSaleProducts } from "@/data/store";
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
+import { getSaleProducts } from "@/data/store";
 import type { Product } from "@/types/store";
 
-function SaleProductCard({ product }: { product: Product }) {
-  const hasDiscount = !!product.oldPrice;
-  const discountPercent = hasDiscount
-    ? Math.round((1 - parseFloat(product.price.replace(/\D/g, '')) / parseFloat(product.oldPrice!.replace(/\D/g, ''))) * 100)
-    : 0;
+const categoryLabels = ["Thức ăn khô cho mèo", "Thức ăn khô cho chó", "Cát vệ sinh cho mèo", "Pate & snack"];
+
+const getPriceValue = (price: string) => Number(price.replace(/\D/g, "")) || 0;
+const formatMoney = (value: number) => `${value.toLocaleString("vi-VN")}đ`;
+
+function CountdownTimer() {
+  const [timeLeft, setTimeLeft] = useState(2 * 3600 + 15 * 60 + 40); // 02:15:40
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const hours = Math.floor(timeLeft / 3600).toString().padStart(2, "0");
+  const minutes = Math.floor((timeLeft % 3600) / 60).toString().padStart(2, "0");
+  const seconds = (timeLeft % 60).toString().padStart(2, "0");
 
   return (
-    <article className="group relative rounded-[2rem] bg-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-gray-100/80 transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] flex flex-col h-full text-left">
+    <div className="mt-4 flex min-w-0 items-center gap-1.5 rounded-full bg-[#F7F7F1] px-3 py-2">
+      <span className="grid h-5 w-5 place-items-center rounded-full border border-[#B9C5B2] text-[#5B6655]">
+        <span className="h-2 w-2 rounded-full bg-[#5B6655]" />
+      </span>
+      <span className="shrink-0 whitespace-nowrap text-[11px] font-medium text-[#5B6655]">Kết thúc</span>
+      <span className="ml-auto rounded-md bg-[#EEF8E8] px-2 py-0.5 text-xs font-black text-[#2F5D1E]">{hours}</span>
+      <span className="text-xs font-bold text-[#5B6655]">:</span>
+      <span className="rounded-md bg-[#EEF8E8] px-2 py-0.5 text-xs font-black text-[#2F5D1E]">{minutes}</span>
+      <span className="text-xs font-bold text-[#5B6655]">:</span>
+      <span className="rounded-md bg-[#EEF8E8] px-2 py-0.5 text-xs font-black text-[#2F5D1E]">{seconds}</span>
+    </div>
+  );
+}
 
+function SaleProductCard({ product, index }: { product: Product; index: number }) {
+  const oldValue = product.oldPrice ? getPriceValue(product.oldPrice) : 0;
+  const currentValue = getPriceValue(product.price);
+  const hasDiscount = !!product.oldPrice && oldValue > currentValue;
+  const discount = hasDiscount ? Math.round((1 - currentValue / oldValue) * 100) : [24, 18, 20, 22][index % 4];
+  const saving = hasDiscount ? oldValue - currentValue : 30000 + index * 7000;
+  const soldProgress = [65, 72, 58, 63][index % 4];
+  const soldText = product.sold > 0 ? `${product.sold}` : ["1.2k", "980", "1.6k", "760"][index % 4];
+  const category = categoryLabels[index % categoryLabels.length];
 
-      {/* Product Image Container (Light beige/grey background as in preview) */}
-      <div className="relative aspect-square w-full rounded-[1.5rem] bg-[#f7f6f2] flex items-center justify-center p-3 overflow-hidden">
-        <Image 
-          src={product.image} 
-          alt={product.name} 
-          width={260} 
-          height={260} 
-          className="h-full w-full object-contain transition duration-300 group-hover:scale-105" 
-        />
-      </div>
-
-      {/* Product Details */}
-      <div className="mt-4 flex-1 flex flex-col">
-        {/* SALE SỐC Badge */}
-        <div className="mb-2">
-          <span className="inline-block bg-[#fcd34d] text-[#4d5e46] text-[10px] font-black uppercase px-2 py-0.5 rounded-md">
-            SALE SỐC
-          </span>
+  return (
+    <motion.article
+      className="group flex h-full min-h-[575px] flex-col overflow-hidden rounded-[1.55rem] border border-[#E4EDDB] bg-white p-4 text-left shadow-[0_14px_38px_rgba(41,76,38,0.12)] transition-shadow duration-300 hover:shadow-[0_24px_56px_rgba(41,76,38,0.18)]"
+      whileHover={{ y: -7, scale: 1.006 }}
+      whileTap={{ scale: 0.99 }}
+      transition={{ type: "spring", stiffness: 300, damping: 24 }}
+    >
+      <div className="relative h-[232px] overflow-hidden rounded-[1.1rem] bg-[#F7F9F2]">
+        <div className="absolute left-0 top-0 z-20 rounded-br-[0.95rem] rounded-tl-[1.1rem] bg-[#EF4444] px-3 py-2 text-sm font-black leading-none text-white shadow-[0_10px_22px_rgba(239,68,68,0.28)]">
+          -{discount}%
         </div>
 
-        <h3 className="min-h-[40px] text-xs sm:text-sm font-black leading-tight text-[#2c3e2b] group-hover:text-[#4a5f47] transition duration-200 line-clamp-2">
-          {product.name}
-        </h3>
+        <div className="absolute right-0 top-0 z-20 rounded-bl-[0.95rem] rounded-tr-[1.1rem] bg-[#EF4444] px-3 py-2 text-sm font-black leading-none text-white shadow-[0_10px_22px_rgba(239,68,68,0.28)]">
+          <span className="whitespace-nowrap">FLASH SALE</span>
+        </div>
 
-        {/* Stars and Sold */}
-        <div className="mt-2 flex items-center gap-2 text-[#E49D22]">
-          <div className="flex items-center gap-0.5">
+        <Link to={`/product/${product.id || index}`} className="block w-full h-full">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_18%,rgba(255,255,255,0.82),transparent_34%)]" />
+          <Image
+            src={product.image}
+            alt={product.name}
+            width={280}
+            height={280}
+            className="h-full w-full object-contain p-2 transition duration-500 group-hover:scale-[1.055]"
+          />
+        </Link>
+      </div>
+
+      <div className="mt-3 flex flex-1 flex-col">
+        <span className="mb-3 w-fit max-w-full truncate rounded-full bg-[#EAF4E4] px-3 py-1 text-[11px] font-semibold text-[#3E6B34]">
+          {category}
+        </span>
+
+        <Link to={`/product/${product.id || index}`} className="block">
+          <h3
+            className="min-h-[40px] text-[13px] font-black leading-[20px] text-[#171A14] line-clamp-2 hover:text-[#2F8A11] transition-colors"
+            title={product.name}
+          >
+            {product.name}
+          </h3>
+        </Link>
+
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-0.5 text-[#F5A400]">
             {Array.from({ length: 5 }).map((_, starIndex) => (
-              <Star 
-                key={starIndex} 
-                size={11} 
+              <Star
+                key={starIndex}
+                size={14}
                 fill={starIndex < Math.round(product.rating) ? "currentColor" : "none"}
                 strokeWidth={2}
               />
             ))}
-            <span className="ml-1 text-[10px] font-bold text-[#221A12]/60">({product.reviews})</span>
-          </div>
-          <span className="text-[10px] text-[#221A12]/60">
-            Đã bán: <span className="font-bold text-[#221A12]">{product.sold}</span>
-          </span>
-        </div>
-
-        {/* Price Row */}
-        <div className="mt-3 flex items-center gap-1.5">
-          <span className="text-base font-black text-[#4d6144]">{product.price}</span>
-          {product.oldPrice && (
-            <span className="text-xs font-semibold text-[#221A12]/40 line-through">{product.oldPrice}</span>
-          )}
-          {hasDiscount && (
-            <span className="rounded bg-[#EF4444] px-1.5 py-0.5 text-[9px] font-black text-white">
-              -{discountPercent}%
+            <span className="ml-2 truncate text-xs font-semibold text-[#1E251B]/75">
+              {product.rating.toFixed(1)} ({product.reviews || 256})
             </span>
-          )}
+          </div>
+          <span className="shrink-0 whitespace-nowrap text-xs font-medium text-[#1E251B]/65">Đã bán {soldText}</span>
         </div>
 
-        {/* Buttons */}
-        <div className="mt-4 flex gap-2">
-          <button 
-            className="flex flex-1 items-center justify-center gap-1 rounded-full border border-[#4a5f47] bg-white h-9 px-1 text-[11px] font-black text-[#4a5f47] transition hover:bg-[#4a5f47] hover:text-white active:scale-95 whitespace-nowrap" 
-            aria-label="Thêm vào giỏ"
+        <div className="mt-4">
+          <div className="text-xs font-bold text-[#EF4444]">Giá flash sale</div>
+          <div className="mt-1 flex items-end justify-between gap-1.5">
+            <div className="min-w-0">
+              <div className="whitespace-nowrap text-[1.35rem] font-black leading-none text-[#EF3333] tracking-tight">{product.price}</div>
+              {product.oldPrice && (
+                <div className="mt-1 text-[13px] font-semibold text-[#1E251B]/55 line-through">{product.oldPrice}</div>
+              )}
+            </div>
+            <span className="shrink-0 rounded-lg border border-[#BBD9B3] bg-[#EEF8E8] px-2 py-1 text-[10px] font-black text-[#2F7A24] whitespace-nowrap">
+              Tiết kiệm {formatMoney(saving)}
+            </span>
+          </div>
+        </div>
+
+        <CountdownTimer />
+
+        <div className="mt-4">
+          <div className="mb-2 text-xs font-semibold text-[#4A5F47]">Đã bán {soldProgress}%</div>
+          <div className="relative h-2 overflow-visible rounded-full bg-[#DDE8D5]">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-[#218A12] to-[#73BC42]"
+              initial={{ width: 0 }}
+              whileInView={{ width: `${soldProgress}%` }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            />
+            <motion.span
+              className="absolute top-1/2 grid h-4 w-4 -translate-y-1/2 place-items-center rounded-full bg-white text-[#F2C94C] shadow-[0_3px_10px_rgba(242,201,76,0.4)]"
+              style={{ left: `calc(${soldProgress}% - 0.5rem)` }}
+              initial={{ scale: 0 }}
+              whileInView={{ scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ type: "spring", stiffness: 360, damping: 18, delay: 0.4 }}
+            >
+              ✦
+            </motion.span>
+          </div>
+        </div>
+
+        <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
+          <motion.button
+            whileTap={{ scale: 0.94 }}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#2F8A11] px-2.5 text-sm font-black text-white shadow-[0_10px_24px_rgba(47,138,17,0.28)] transition hover:bg-[#246B0D]"
           >
-            <ShoppingCart size={13} />
-            <span>Thêm vào giỏ</span>
-          </button>
-          <button 
-            className="flex flex-1 items-center justify-center rounded-full bg-[#4a5f47] h-9 text-[11px] font-black text-white transition hover:bg-[#3d4f3a] active:scale-95 whitespace-nowrap" 
-            aria-label="Mua ngay"
+            <ShoppingCart size={17} className="shrink-0" />
+            <span className="whitespace-nowrap">Thêm giỏ</span>
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.94 }}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#D5DEC9] bg-white px-2.5 text-sm font-bold text-[#263A2A] transition hover:border-[#9FBA92] hover:bg-[#F6FAF2]"
           >
-            Mua ngay
-          </button>
+            <Eye size={16} className="shrink-0" />
+            <span className="whitespace-nowrap">Xem nhanh</span>
+          </motion.button>
         </div>
       </div>
-    </article>
+    </motion.article>
   );
 }
 
@@ -101,89 +182,57 @@ export function SaleSection() {
   const saleProducts = getSaleProducts(12);
 
   return (
-    <section className="relative bg-white pt-8 sm:pt-12 pb-2 sm:pb-4">
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <MotionSection className="relative">
+    <section className="relative bg-white pt-10 pb-10 sm:pb-14">
+      <div className="mx-auto max-w-[1380px] px-4 sm:px-6 lg:px-8">
+        <MotionSection className="relative max-w-none overflow-hidden rounded-[2.5rem] border border-[#D8E7C9] bg-gradient-to-br from-[#F8FDEA] via-[#F1F8E7] to-[#F7FBEE] px-6 !py-8 shadow-[0_24px_70px_rgba(41,76,38,0.12)] sm:px-8 lg:!py-10 lg:px-10">
+          <div className="pointer-events-none absolute left-0 top-0 h-32 w-32 rounded-br-full bg-[#B9D993]/35 blur-sm" />
+          <div className="pointer-events-none absolute bottom-0 right-0 h-36 w-36 rounded-tl-full bg-[#B9D993]/35 blur-sm" />
 
-          <MotionItem {...motionItemProps} className="rounded-[2.5rem] bg-[#96c289] p-6 sm:p-8 md:p-10 overflow-hidden shadow-lg border border-[#80af72] transition duration-500 relative">
-            <div className="absolute right-6 top-6 opacity-[0.08] text-white pointer-events-none hidden md:block">
-              <PawPrint size={120} className="fill-current" />
-            </div>
-
-            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-5 relative z-10">
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#e8f3e5]">SẢN PHẨM</p>
-                  <h2 className="flex items-center gap-1.5 text-2xl font-black text-white sm:text-3xl">
-                    GIẢM GIÁ
-                    <PawPrint size={20} className="fill-white text-white" />
-                  </h2>
-                </div>
-                {/* Badge Ưu đãi hấp dẫn */}
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-[#f4f8f2] px-4 py-1.5 text-xs font-black text-[#4a5f47] shadow-sm">
-                  <Star size={12} className="fill-[#4a5f47] text-[#4a5f47]" />
-                  <span>ƯU ĐÃI HẤP DẪN - MUA NGAY KẺO LỠ</span>
-                </div>
-              </div>
-
-              {/* Navigation arrows */}
-              <div className="flex gap-2.5 self-end md:self-auto">
-                <button 
-                  className="sale-prev grid h-10 w-10 place-items-center rounded-full border border-white/30 bg-white/10 text-white shadow-sm transition hover:bg-white hover:text-[#96c289]" 
-                  aria-label="Trước"
-                >
-                  <ChevronLeft size={18} strokeWidth={2.5} />
-                </button>
-                <button 
-                  className="sale-next grid h-10 w-10 place-items-center rounded-full bg-white text-[#96c289] shadow-sm transition hover:bg-gray-100" 
-                  aria-label="Tiếp"
-                >
-                  <ChevronRight size={18} strokeWidth={2.5} />
-                </button>
-              </div>
-            </div>
-
-            <div className="mb-8 overflow-hidden rounded-2xl shadow-md border border-[#ffffff]/10">
-              <Image 
-                src="/assets/images/sale.png" 
-                alt="Chương trình ưu đãi cực khủng" 
-                width={1200} 
-                height={558} 
-                className="w-full h-auto block transition duration-700 hover:scale-[1.01]"
-              />
-            </div>
-
-            <div className="overflow-hidden">
-              <Swiper
-                modules={[Navigation, Pagination]}
-                navigation={{ prevEl: ".sale-prev", nextEl: ".sale-next" }}
-                pagination={{ clickable: true }}
-                spaceBetween={16}
-                slidesPerView={1}
-                breakpoints={{
-                  480: { slidesPerView: 1, spaceBetween: 16 },
-                  640: { slidesPerView: 2, spaceBetween: 16 },
-                  768: { slidesPerView: 2, spaceBetween: 16 },
-                  1024: { slidesPerView: 3, spaceBetween: 20 },
-                  1280: { slidesPerView: 4, spaceBetween: 20 }
-                }}
-                className="!pb-12 custom-swiper-white-pagination"
-              >
-                {saleProducts.map((product) => (
-                  <SwiperSlide key={`sale-prod-${product.id ?? product.name}`}>
-                    <SaleProductCard product={product} />
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-            </div>
-
-            <div className="mt-2 flex justify-center relative z-10">
-              <button className="rounded-full bg-white px-8 py-3 text-xs font-black text-[#96c289] transition hover:bg-gray-100 hover:shadow-lg active:scale-95 flex items-center gap-1.5">
-                <PawPrint size={14} className="fill-[#96c289]" />
-                Xem tất cả
-              </button>
-            </div>
+          <MotionItem {...motionItemProps} className="relative z-10 mb-7 overflow-hidden rounded-[2rem] border border-white/80 bg-white shadow-[0_18px_45px_rgba(41,76,38,0.14)]">
+            <Image
+              src="/assets/images/sale.png"
+              alt="3F Store sale"
+              width={1717}
+              height={916}
+              className="block aspect-[1717/916] w-full object-cover"
+              priority
+            />
           </MotionItem>
+
+          <div className="relative z-10">
+            <Swiper
+              modules={[Navigation, Pagination]}
+              navigation={{ prevEl: ".sale-prev", nextEl: ".sale-next" }}
+              pagination={{ clickable: true }}
+              spaceBetween={18}
+              slidesPerView={1}
+              breakpoints={{
+                640: { slidesPerView: 2, spaceBetween: 18 },
+                1024: { slidesPerView: 3, spaceBetween: 18 },
+                1280: { slidesPerView: 4, spaceBetween: 20 }
+              }}
+              className="!pb-16 custom-swiper-green-pagination"
+            >
+              {saleProducts.map((product, index) => (
+                <SwiperSlide key={`sale-prod-${product.id ?? product.name}`} className="!h-auto">
+                  <SaleProductCard product={product} index={index} />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+
+            <button
+              className="sale-prev absolute -left-2 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-[#D6E4C7] bg-white text-[#2F7A24] shadow-md transition hover:bg-[#F0F8E8] lg:grid"
+              aria-label="Trước"
+            >
+              <ChevronLeft size={19} strokeWidth={2.5} />
+            </button>
+            <button
+              className="sale-next absolute -right-2 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-[#D6E4C7] bg-white text-[#2F7A24] shadow-md transition hover:bg-[#F0F8E8] lg:grid"
+              aria-label="Tiếp"
+            >
+              <ChevronRight size={19} strokeWidth={2.5} />
+            </button>
+          </div>
 
         </MotionSection>
       </div>

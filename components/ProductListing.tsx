@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { ChevronDown, Grid, List, Star, PawPrint, Heart, ShoppingCart, AlignJustify } from "lucide-react";
 import { allProducts } from "@/data/store";
 import type { Product } from "@/types/store";
@@ -48,21 +49,55 @@ function getWeightCategory(kg: number | null): string {
   return "Trên 10kg";
 }
 
-const CATEGORY_LIST = [
-  "Tất cả sản phẩm",
-  "Thức ăn cho chó",
-  "Thức ăn cho mèo",
-  "Pate & Snack",
-  "Sữa & Dinh dưỡng",
-  "Vệ sinh cho thú cưng",
-  "Phụ kiện & Đồ chơi"
+const CATEGORY_TREE = [
+  { name: "Tất cả sản phẩm" },
+  { 
+    name: "Thức ăn cho chó",
+    subcategories: ["Thức ăn khô cho chó", "Thức ăn ướt cho chó"]
+  },
+  { 
+    name: "Thức ăn cho mèo",
+    subcategories: ["Thức ăn khô dành cho Mèo", "Thức ăn ướt cho Mèo"]
+  },
+  { name: "Pate & Snack" },
+  { name: "Sữa & Dinh dưỡng" },
+  { name: "Vệ sinh cho thú cưng" },
+  { name: "Phụ kiện & Đồ chơi" }
 ];
+
+const ALL_CATEGORIES = CATEGORY_TREE.flatMap(c => c.subcategories ? [c.name, ...c.subcategories] : [c.name]);
 
 const WEIGHT_LIST = ["Dưới 1kg", "1 - 5kg", "5 - 10kg", "Trên 10kg"];
 
+import { useSearchParams, useNavigate } from "react-router-dom";
+
 export function ProductListing() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryParam = searchParams.get("category");
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [activeCategory, setActiveCategory] = useState<string>("Tất cả sản phẩm");
+  const [activeCategory, setActiveCategory] = useState<string>(
+    categoryParam && ALL_CATEGORIES.includes(categoryParam) ? categoryParam : "Tất cả sản phẩm"
+  );
+  
+  const [expandedCats, setExpandedCats] = useState<string[]>(() => {
+    if (!categoryParam) return [];
+    const parent = CATEGORY_TREE.find(n => n.name === categoryParam || n.subcategories?.includes(categoryParam));
+    return parent ? [parent.name] : [];
+  });
+
+  useEffect(() => {
+    if (categoryParam && ALL_CATEGORIES.includes(categoryParam)) {
+      setActiveCategory(categoryParam);
+      const parent = CATEGORY_TREE.find(n => n.name === categoryParam || n.subcategories?.includes(categoryParam));
+      if (parent && !expandedCats.includes(parent.name)) {
+        setExpandedCats(prev => [...prev, parent.name]);
+      }
+    } else if (!categoryParam) {
+      setActiveCategory("Tất cả sản phẩm");
+    }
+  }, [categoryParam]);
+
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedWeights, setSelectedWeights] = useState<string[]>([]);
   const [maxPrice, setMaxPrice] = useState<number>(2000000);
@@ -90,29 +125,48 @@ export function ProductListing() {
       else if (rawCat.includes("pate") || rawCat.includes("snack") || rawName.includes("pate") || rawName.includes("snack")) cat = "Pate & Snack";
       else if (rawCat.includes("sữa") || rawName.includes("sữa")) cat = "Sữa & Dinh dưỡng";
 
+      let subCat = "";
+      if (cat === "Thức ăn cho chó") {
+        if (rawName.includes("khô") || rawName.includes("hạt") || rawCat.includes("khô") || rawCat.includes("hạt")) subCat = "Thức ăn khô cho chó";
+        else if (rawName.includes("ướt") || rawName.includes("lon") || rawName.includes("pate") || rawCat.includes("ướt")) subCat = "Thức ăn ướt cho chó";
+      } else if (cat === "Thức ăn cho mèo") {
+        if (rawName.includes("khô") || rawName.includes("hạt") || rawCat.includes("khô") || rawCat.includes("hạt")) subCat = "Thức ăn khô dành cho Mèo";
+        else if (rawName.includes("ướt") || rawName.includes("lon") || rawName.includes("pate") || rawCat.includes("ướt")) subCat = "Thức ăn ướt cho Mèo";
+      }
+
       return {
         ...p,
         priceVal,
         brand,
         weightKg,
         weightCat,
-        displayCategory: cat
+        displayCategory: cat,
+        displaySubCategory: subCat
       };
     });
   }, []);
 
-  // Compute dynamic counts based ONLY on category filter (so brands/weights show total available in that category)
+  // Compute dynamic counts
   const categoryProducts = useMemo(() => {
-    return enhancedProducts.filter(p => activeCategory === "Tất cả sản phẩm" || p.displayCategory === activeCategory);
+    return enhancedProducts.filter(p => {
+      if (activeCategory === "Tất cả sản phẩm") return true;
+      const parentNode = CATEGORY_TREE.find(n => n.name === activeCategory);
+      if (parentNode) { // activeCategory is a parent
+        return p.displayCategory === activeCategory;
+      }
+      // activeCategory is a subcategory
+      return p.displaySubCategory === activeCategory;
+    });
   }, [enhancedProducts, activeCategory]);
 
   const catCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    CATEGORY_LIST.forEach(c => counts[c] = 0);
-    counts["Tất cả sản phẩm"] = enhancedProducts.length; // Total count for "Tất cả sản phẩm"
+    ALL_CATEGORIES.forEach(c => counts[c] = 0);
+    counts["Tất cả sản phẩm"] = enhancedProducts.length;
     
     enhancedProducts.forEach(p => {
       if (counts[p.displayCategory] !== undefined) counts[p.displayCategory]++;
+      if (p.displaySubCategory && counts[p.displaySubCategory] !== undefined) counts[p.displaySubCategory]++;
     });
     return counts;
   }, [enhancedProducts]);
@@ -198,20 +252,83 @@ export function ProductListing() {
                 DANH MỤC
               </h3>
               <ul className="space-y-1">
-                {CATEGORY_LIST.map((cat, idx) => {
-                  const isActive = activeCategory === cat;
+                {CATEGORY_TREE.map((node, idx) => {
+                  const isParentActive = activeCategory === node.name || node.subcategories?.includes(activeCategory);
+                  const isExpanded = expandedCats.includes(node.name);
+                  const hasSub = !!node.subcategories?.length;
+                  
                   return (
-                    <li key={idx}>
+                    <li key={idx} className="flex flex-col">
                       <button 
-                        onClick={() => { setActiveCategory(cat); setCurrentPage(1); setSelectedBrands([]); setSelectedWeights([]); }}
+                        onClick={() => { 
+                          if (hasSub) {
+                            if (isParentActive && isExpanded) {
+                              // If it's already active and expanded, just collapse it
+                              setExpandedCats(prev => prev.filter(c => c !== node.name));
+                              return;
+                            } else if (!isExpanded) {
+                              // Expand it
+                              setExpandedCats(prev => [...prev, node.name]);
+                            }
+                          }
+                          
+                          setActiveCategory(node.name); 
+                          setCurrentPage(1); 
+                          setSelectedBrands([]); 
+                          setSelectedWeights([]); 
+                          if (node.name === "Tất cả sản phẩm") {
+                            searchParams.delete("category");
+                            setSearchParams(searchParams);
+                          } else {
+                            setSearchParams({ category: node.name });
+                          }
+                        }}
                         className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                        isActive 
+                        isParentActive 
                           ? "bg-[#EAF7EC] text-[#10854F]" 
                           : "text-[#221A12]/75 hover:bg-[#F9F9F9] hover:text-[#221A12]"
                       }`}>
-                        {cat}
-                        <span className={`text-xs ${isActive ? "text-[#10854F]" : "text-[#221A12]/40"}`}>{catCounts[cat] || 0}</span>
+                        <div className="flex items-center gap-2">
+                          {node.name}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs ${isParentActive ? "text-[#10854F]" : "text-[#221A12]/40"}`}>{catCounts[node.name] || 0}</span>
+                          {hasSub && (
+                            <ChevronDown size={14} className={`transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                          )}
+                        </div>
                       </button>
+                      
+                      {/* Subcategories */}
+                      {hasSub && isExpanded && (
+                        <ul className="mt-1 ml-3 space-y-1 border-l-2 border-[#F2EFE9] pl-2">
+                          {node.subcategories?.map((sub, subIdx) => {
+                            const isSubActive = activeCategory === sub;
+                            return (
+                              <li key={subIdx}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveCategory(sub);
+                                    setCurrentPage(1);
+                                    setSelectedBrands([]);
+                                    setSelectedWeights([]);
+                                    setSearchParams({ category: sub });
+                                  }}
+                                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                                    isSubActive
+                                      ? "text-[#10854F] bg-[#EAF7EC]/50"
+                                      : "text-[#221A12]/60 hover:text-[#221A12] hover:bg-[#F9F9F9]"
+                                  }`}
+                                >
+                                  {sub}
+                                  <span className={`text-[10px] ${isSubActive ? "text-[#10854F]" : "text-[#221A12]/30"}`}>{catCounts[sub] || 0}</span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
                     </li>
                   )
                 })}
@@ -363,7 +480,13 @@ export function ProductListing() {
                 const isNew = product.sold < 50 && product.rating > 4.5;
                 
                 return (
-                  <article key={product.id || idx} className="group relative flex flex-col justify-between overflow-hidden rounded-[24px] border border-[#EBEBEB] bg-white p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_12px_32px_rgba(16,133,79,0.08)]">
+                  <article key={product.id || idx} className="group relative flex flex-col justify-between overflow-hidden rounded-[24px] border border-[#EBEBEB] bg-white p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(16,133,79,0.15)] hover:border-[#10854F]/30">
+                    
+                    {/* Animated Gradient Glow Behind Card Content */}
+                    <div className="pointer-events-none absolute -inset-10 -z-10 bg-gradient-to-br from-[#10854F]/0 via-[#10854F]/5 to-[#F5B014]/5 opacity-0 transition-opacity duration-700 group-hover:opacity-100 blur-2xl" />
+
+                    {/* Sweeping Light Shimmer Effect */}
+                    <div className="pointer-events-none absolute inset-0 z-30 -translate-x-[150%] -skew-x-12 bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-0 transition-all duration-1000 ease-in-out group-hover:translate-x-[150%] group-hover:opacity-100" />
                     
                     {/* Top Badges */}
                     <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
@@ -388,48 +511,64 @@ export function ProductListing() {
 
                     <div>
                       {/* Image */}
-                      <div className="relative mb-4 aspect-square w-full overflow-hidden p-2">
+                      <Link to={`/product/${product.id || idx}`} className="block relative mb-4 aspect-square w-full overflow-hidden rounded-[16px] bg-[#F8F9FA] p-3 transition-colors duration-300 group-hover:bg-[#F0F2F5]">
                         <Image
                           src={product.image}
                           alt={product.name}
-                          className="object-contain transition duration-500 group-hover:scale-[1.08]"
+                          className="object-contain transition duration-500 group-hover:scale-[1.12] mix-blend-multiply"
                         />
-                      </div>
+                      </Link>
 
                       {/* Info */}
-                      <div className="space-y-1.5">
-                        <h3 className="text-[13px] font-extrabold leading-tight text-[#221A12] line-clamp-2 min-h-[36px]" title={product.name}>
-                          {product.name}
-                        </h3>
-                        <p className="text-[11px] font-bold text-[#221A12]/40">{product.weightKg ? `${product.weightKg}kg` : "Liên hệ"}</p>
-                        
-                        {/* Rating */}
-                        <div className="flex items-center gap-1.5">
-                          <div className="flex items-center gap-0.5 text-[#F5B014]">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star key={i} size={11} fill={i < Math.round(product.rating) ? "currentColor" : "none"} strokeWidth={2.5} />
-                            ))}
-                          </div>
-                          <span className="text-[11px] font-bold text-[#221A12]/40">({product.reviews || 88})</span>
+                      <div className="space-y-1.5 flex flex-col justify-between flex-1">
+                        <div>
+                          <p className="text-[10px] font-black uppercase text-[#10854F] tracking-wider mb-1">{product.brand?.toUpperCase() || "KHÁC"}</p>
+                          <Link to={`/product/${product.id || idx}`} className="block">
+                            <h3 className="text-[13px] font-extrabold leading-[18px] text-[#221A12] line-clamp-2 min-h-[36px] hover:text-[#10854F] transition-colors" title={product.name}>
+                              {product.name}
+                            </h3>
+                          </Link>
                         </div>
-
-                        {/* Price */}
-                        <div className="flex items-end gap-2 pt-1 pb-4">
-                          <span className="text-base font-black text-[#EF4444]">{product.price}</span>
-                          {product.oldPrice && (
-                            <span className="text-[11px] font-bold text-[#221A12]/30 line-through mb-0.5">
-                              {product.oldPrice}
+                        
+                        <div className="mt-2">
+                          {/* Rating and Sold */}
+                          <div className="flex items-center gap-1.5 mb-2.5">
+                            <div className="flex items-center gap-0.5 text-[#F5B014]">
+                              <Star size={12} fill="currentColor" strokeWidth={2.5} />
+                            </div>
+                            <span className="text-[11px] font-bold text-[#221A12]/60">
+                              {product.rating.toFixed(1)} <span className="mx-1.5 text-[#221A12]/20">•</span> Đã bán {product.sold > 0 ? product.sold : Math.floor(Math.random() * 90 + 10)}k+
                             </span>
-                          )}
+                          </div>
+
+                          {/* Price & Cart row */}
+                          <div className="flex items-end justify-between border-t border-[#F2EFE9] pt-3 mt-1">
+                            <div className="flex flex-col gap-0.5">
+                              {product.oldPrice && (
+                                <div className="text-[11px] font-bold text-[#221A12]/30 line-through">
+                                  {product.oldPrice}
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2">
+                                <span className="text-[1.1rem] font-black text-[#10854F]">{product.price}</span>
+                                {hasDiscount && (
+                                  <span className="rounded-[6px] bg-[#EF4444]/10 px-1.5 py-0.5 text-[9px] font-black text-[#EF4444]">
+                                    -{Math.round((1 - product.priceVal / extractPrice(product.oldPrice!)) * 100)}%
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <button 
+                              title="Thêm vào giỏ"
+                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAF7EC] text-[#10854F] shadow-sm transition-all hover:scale-105 hover:bg-[#10854F] hover:text-white active:scale-95"
+                            >
+                              <ShoppingCart size={16} strokeWidth={2.5} />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* Add to cart button */}
-                    <button className="flex w-full items-center justify-center gap-2 rounded-[14px] bg-[#EAF7EC] py-3 text-xs font-black text-[#10854F] transition-colors hover:bg-[#10854F] hover:text-white group-hover:bg-[#10854F] group-hover:text-white">
-                      <ShoppingCart size={15} strokeWidth={2.5} />
-                      Thêm vào giỏ
-                    </button>
                   </article>
                 );
               }) : (
