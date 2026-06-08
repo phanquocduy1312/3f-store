@@ -53,7 +53,7 @@ export function MobileNavigationDrawer({
         animate={{ x: 0 }}
         exit={{ x: "-100%" }}
         transition={{ type: "spring", damping: 25, stiffness: 220 }}
-        className="absolute bottom-0 left-0 top-0 flex w-[300px] flex-col bg-cream/98 p-6 shadow-2xl"
+        className="absolute bottom-0 left-0 top-0 flex w-[300px] flex-col bg-cream p-6 shadow-2xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-forest/10 pb-4">

@@ -123,7 +123,7 @@ export function VietQRModal({ isOpen, onClose, orderId, amount }: VietQRModalPro
             <h4 className="text-lg font-black text-ink">Thanh toán thành công!</h4>
             <p className="mt-2 text-xs text-gray-500 max-w-[280px]">Hệ thống đã nhận được khoản thanh toán của bạn cho đơn hàng <strong className="text-forest">{orderId}</strong>.</p>
             
-            <div className="mt-6 w-full rounded-2xl bg-cream/15 p-4 border border-forest/10 flex items-center gap-2 justify-center text-xs text-forest font-bold">
+            <div className="mt-6 w-full rounded-2xl bg-cream/[0.15] p-4 border border-forest/10 flex items-center gap-2 justify-center text-xs text-forest font-bold">
               <Sparkles size={16} /> Nhận ngay 150 điểm tích lũy thành viên!
             </div>
 

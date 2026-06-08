@@ -166,7 +166,7 @@ export function Header() {
         initial={{ opacity: 0, y: -18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="sticky top-0 z-50 border-b border-forest/12 bg-cream/94 shadow-[0_10px_30px_rgba(34,52,39,0.08)] backdrop-blur-2xl"
+        className="sticky top-0 z-50 border-b border-forest/12 bg-cream/[0.94] shadow-[0_10px_30px_rgba(34,52,39,0.08)] backdrop-blur-2xl"
       >
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-8 px-4 sm:px-6 lg:px-8">
           {/* Logo - Width 120px - more balanced */}
