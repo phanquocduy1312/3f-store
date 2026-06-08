@@ -56,61 +56,61 @@ export function DeliveryForm({
   return (
     <div className="space-y-6">
       {/* Customer Info */}
-      <div className="rounded-2xl border border-forest/10 bg-white p-5 shadow-sm">
-        <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black text-forest">
-          <User size={18} /> Thông tin khách hàng
+      <div className="rounded-2xl border border-forest/10 bg-white p-4 sm:p-5 shadow-sm">
+        <h3 className="mb-4 flex items-center gap-2 text-sm sm:text-[15px] font-black text-forest">
+          <User size={16} className="sm:w-[18px] sm:h-[18px]" /> Thông tin khách hàng
         </h3>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs font-bold text-ink/70">Họ và tên *</label>
+            <label className="mb-1 block text-[11px] sm:text-xs font-bold text-ink/70">Họ và tên *</label>
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Nguyễn Văn A"
-              className="w-full rounded-xl border border-forest/15 px-4 py-2.5 text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30"
+              className="w-full rounded-xl border border-forest/15 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30"
               required
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-bold text-ink/70">Số điện thoại *</label>
+            <label className="mb-1 block text-[11px] sm:text-xs font-bold text-ink/70">Số điện thoại *</label>
             <input
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="0901234567"
-              className="w-full rounded-xl border border-forest/15 px-4 py-2.5 text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30"
+              className="w-full rounded-xl border border-forest/15 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30"
               required
             />
           </div>
           <div className="md:col-span-2">
-            <label className="mb-1 block text-xs font-bold text-ink/70">Địa chỉ Email</label>
+            <label className="mb-1 block text-[11px] sm:text-xs font-bold text-ink/70">Địa chỉ Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="example@gmail.com"
-              className="w-full rounded-xl border border-forest/15 px-4 py-2.5 text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30"
+              className="w-full rounded-xl border border-forest/15 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30"
             />
           </div>
         </div>
       </div>
 
       {/* Address Form */}
-      <div className="rounded-2xl border border-forest/10 bg-white p-5 shadow-sm">
-        <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black text-forest">
-          <MapPin size={18} /> Địa chỉ nhận hàng
+      <div className="rounded-2xl border border-forest/10 bg-white p-4 sm:p-5 shadow-sm">
+        <h3 className="mb-4 flex items-center gap-2 text-sm sm:text-[15px] font-black text-forest">
+          <MapPin size={16} className="sm:w-[18px] sm:h-[18px]" /> Địa chỉ nhận hàng
         </h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs font-bold text-ink/70">Tỉnh / Thành phố *</label>
+            <label className="mb-1 block text-[11px] sm:text-xs font-bold text-ink/70">Tỉnh / Thành phố *</label>
             <select
               value={province}
               onChange={(e) => {
                 setProvince(e.target.value);
                 setDistrict(""); // reset district
               }}
-              className="w-full rounded-xl border border-forest/15 bg-white px-3 py-2.5 text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30"
+              className="w-full rounded-xl border border-forest/15 bg-white px-3 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30"
               required
             >
               <option value="">Chọn Tỉnh/Thành phố</option>
@@ -120,12 +120,12 @@ export function DeliveryForm({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-bold text-ink/70">Quận / Huyện *</label>
+            <label className="mb-1 block text-[11px] sm:text-xs font-bold text-ink/70">Quận / Huyện *</label>
             <select
               value={district}
               onChange={(e) => setDistrict(e.target.value)}
               disabled={!province}
-              className="w-full rounded-xl border border-forest/15 bg-white px-3 py-2.5 text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30 disabled:opacity-50"
+              className="w-full rounded-xl border border-forest/15 bg-white px-3 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30 disabled:opacity-50"
               required
             >
               <option value="">Chọn Quận/Huyện</option>
@@ -135,69 +135,69 @@ export function DeliveryForm({
             </select>
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs font-bold text-ink/70">Địa chỉ cụ thể *</label>
+            <label className="mb-1 block text-[11px] sm:text-xs font-bold text-ink/70">Địa chỉ cụ thể *</label>
             <input
               type="text"
               value={detailedAddress}
               onChange={(e) => setDetailedAddress(e.target.value)}
               placeholder="Số nhà, ngõ/đường, phường/xã..."
-              className="w-full rounded-xl border border-forest/15 px-4 py-2.5 text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30"
+              className="w-full rounded-xl border border-forest/15 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30"
               required
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs font-bold text-ink/70">Ghi chú đơn hàng</label>
+            <label className="mb-1 block text-[11px] sm:text-xs font-bold text-ink/70">Ghi chú đơn hàng</label>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Ghi chú về thời gian giao hàng, chỉ dẫn..."
               rows={2}
-              className="w-full rounded-xl border border-forest/15 px-4 py-2.5 text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30"
+              className="w-full rounded-xl border border-forest/15 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30"
             />
           </div>
         </div>
       </div>
 
       {/* Payment Options */}
-      <div className="rounded-2xl border border-forest/10 bg-white p-5 shadow-sm">
-        <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black text-forest">
-          <CreditCard size={18} /> Phương thức thanh toán
+      <div className="rounded-2xl border border-forest/10 bg-white p-4 sm:p-5 shadow-sm">
+        <h3 className="mb-4 flex items-center gap-2 text-sm sm:text-[15px] font-black text-forest">
+          <CreditCard size={16} className="sm:w-[18px] sm:h-[18px]" /> Phương thức thanh toán
         </h3>
-        <div className="space-y-3">
-          <label className={`flex cursor-pointer items-center justify-between rounded-xl border-2 p-3 transition ${paymentMethod === "cod" ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
-            <div className="flex items-center gap-3">
+        <div className="space-y-2.5 sm:space-y-3">
+          <label className={`flex cursor-pointer items-start sm:items-center justify-between rounded-xl border-2 p-2.5 sm:p-3 transition active:scale-[0.98] ${paymentMethod === "cod" ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
+            <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 mr-2">
               <input
                 type="radio"
                 name="payment"
                 value="cod"
                 checked={paymentMethod === "cod"}
                 onChange={() => setPaymentMethod("cod")}
-                className="accent-forest"
+                className="accent-forest mt-0.5 sm:mt-0 shrink-0"
               />
-              <div>
-                <div className="text-sm font-bold text-ink">Thanh toán khi nhận hàng (COD)</div>
-                <div className="text-[11px] text-gray-500">Nhận hàng rồi mới thanh toán tiền mặt</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs sm:text-sm font-bold text-ink">Thanh toán khi nhận hàng (COD)</div>
+                <div className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-2">Nhận hàng rồi mới thanh toán tiền mặt</div>
               </div>
             </div>
-            <Banknote className="text-forest/60" size={20} />
+            <Banknote className="text-forest/60 shrink-0" size={18} />
           </label>
 
-          <label className={`flex cursor-pointer items-center justify-between rounded-xl border-2 p-3 transition ${paymentMethod === "vietqr" ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
-            <div className="flex items-center gap-3">
+          <label className={`flex cursor-pointer items-start sm:items-center justify-between rounded-xl border-2 p-2.5 sm:p-3 transition active:scale-[0.98] ${paymentMethod === "vietqr" ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
+            <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 mr-2">
               <input
                 type="radio"
                 name="payment"
                 value="vietqr"
                 checked={paymentMethod === "vietqr"}
                 onChange={() => setPaymentMethod("vietqr")}
-                className="accent-forest"
+                className="accent-forest mt-0.5 sm:mt-0 shrink-0"
               />
-              <div>
-                <div className="text-sm font-bold text-ink">Chuyển khoản Ngân hàng (VietQR)</div>
-                <div className="text-[11px] text-gray-500">Tạo mã QR chuyển khoản quét nhanh bằng app ngân hàng</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs sm:text-sm font-bold text-ink">Chuyển khoản Ngân hàng (VietQR)</div>
+                <div className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-2">Tạo mã QR chuyển khoản quét nhanh bằng app ngân hàng</div>
               </div>
             </div>
-            <Landmark className="text-forest/60" size={20} />
+            <Landmark className="text-forest/60 shrink-0" size={18} />
           </label>
         </div>
       </div>

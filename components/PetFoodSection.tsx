@@ -53,62 +53,61 @@ function ProductCard({
   const discount = hasDiscount ? Math.round((1 - currentPriceValue / oldPriceValue) * 100) : 0;
 
   return (
-    <article className={`group flex h-full flex-col rounded-[1.5rem] border bg-white p-4 shadow-glass-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-glass ${hoverBorderClass}`}>
-      <Link to={`/product/${product.id || product.name}`} className={`relative flex h-[160px] w-full items-center justify-center rounded-2xl p-4 transition-colors ${imageBgClass}`}>
+    <article className={`group flex h-full flex-col rounded-[1.5rem] border bg-white overflow-hidden shadow-glass-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-glass ${hoverBorderClass}`}>
+      <Link to={`/product/${product.id || product.name}`} className={`relative flex h-[180px] w-full items-center justify-center transition-colors ${imageBgClass}`}>
         {hasDiscount && (
-          <span className="absolute left-3 top-3 rounded-full bg-[#132117] px-2.5 py-1 text-[10px] font-black text-white">
+          <span className="absolute left-2.5 top-2.5 rounded-full bg-[#132117] px-2.5 py-1 text-[11px] font-black text-white shadow-md z-10">
             -{discount}%
           </span>
         )}
         <Image
           src={product.image}
           alt={product.name}
-          width={140}
-          height={140}
+          width={200}
+          height={200}
           className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-110"
         />
       </Link>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${accentSoftClass} ${accentClass}`}>
-          {meta.typeLabel}
-        </span>
-        <span className="rounded-full bg-[#F6F7F5] px-2.5 py-1 text-[10px] font-bold text-ink/60">
-          {meta.ageLabel}
-        </span>
-      </div>
-
-      <Link to={`/product/${product.id || product.name}`}>
-        <h3 className={`mt-3 text-sm font-bold leading-snug text-ink line-clamp-2 min-h-[40px] transition-colors ${hoverTitleClass}`}>
-          {product.name}
-        </h3>
-      </Link>
-
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-1 text-honey">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <Star
-              key={index}
-              size={12}
-              fill={index < Math.round(product.rating) ? "currentColor" : "none"}
-              strokeWidth={2}
-            />
-          ))}
-          <span className="ml-1 text-xs font-semibold text-ink/50">({product.reviews})</span>
+      <div className="p-3 flex flex-col flex-1">
+        <div className="mt-0">
+          <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-bold ${accentSoftClass} ${accentClass}`}>
+            {meta.typeLabel}
+          </span>
         </div>
-        <span className="text-[11px] font-semibold text-ink/45">Đã bán {meta.soldLabel}</span>
-      </div>
 
-      <div className="mt-auto pt-4 flex items-end justify-between">
-        <div>
-          <span className={`text-base font-black ${accentClass}`}>{product.price}</span>
-          {product.oldPrice && (
-            <div className="text-[10px] font-semibold text-ink/40 line-through">{product.oldPrice}</div>
-          )}
+        <Link to={`/product/${product.id || product.name}`}>
+          <h3 className={`mt-2 text-sm font-bold leading-snug text-ink line-clamp-2 min-h-[40px] transition-colors ${hoverTitleClass}`}>
+            {product.name}
+          </h3>
+        </Link>
+
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1 text-honey">
+            <Star size={12} fill="currentColor" strokeWidth={2} />
+            <span className="text-xs font-bold text-ink/70">{product.rating}</span>
+          </div>
+          <span className="text-[11px] font-semibold text-ink/45">Đã bán {meta.soldLabel}</span>
         </div>
-        <button className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:text-white ${accentSoftClass} ${accentClass}`}>
-          <PawPrint size={14} />
-        </button>
+
+        <div className="mt-auto pt-3 flex items-end justify-between">
+          <div>
+            <div className="flex items-baseline gap-1.5">
+              <span className={`text-base font-black ${accentClass}`}>{product.price}</span>
+              {hasDiscount && (
+                <span className="text-[10px] font-black text-red-500 bg-red-50 px-1.5 py-0.5 rounded">
+                  -{discount}%
+                </span>
+              )}
+            </div>
+            {product.oldPrice && (
+              <div className="text-[10px] font-semibold text-ink/40 line-through mt-0.5">{product.oldPrice}</div>
+            )}
+          </div>
+          <button className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:text-white ${accentSoftClass} ${accentClass}`}>
+            <PawPrint size={14} />
+          </button>
+        </div>
       </div>
     </article>
   );
@@ -197,9 +196,9 @@ export function PetFoodSection() {
               </div>
             </div>
 
-            {/* Cat Products Grid - 8 products */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:gap-6">
-              {catProducts.slice(0, 8).map((product) => (
+            {/* Cat Products Grid - 12 products */}
+            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {catProducts.slice(0, 12).map((product) => (
                 <ProductCard
                   key={product.id || product.name}
                   product={product}
@@ -302,9 +301,9 @@ export function PetFoodSection() {
               </div>
             </div>
 
-            {/* Dog Products Grid - 8 products */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:gap-6">
-              {dogProducts.slice(0, 8).map((product) => (
+            {/* Dog Products Grid - 12 products */}
+            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {dogProducts.slice(0, 12).map((product) => (
                 <ProductCard
                   key={product.id || product.name}
                   product={product}

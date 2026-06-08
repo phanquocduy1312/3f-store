@@ -98,7 +98,6 @@ export function ProductCard({ product, isBestSeller, isFavorite, index = 0 }: Pr
           <div className="flex items-center gap-1">
             <Star size={12} fill="#F59E0B" className="text-amber-500" />
             <span className="font-bold text-ink/80">{product.rating}</span>
-            <span className="text-ink/40">({product.reviews})</span>
           </div>
           <span className="font-semibold text-ink/50">Đã bán {formatCompactSold(product.sold)}</span>
         </div>

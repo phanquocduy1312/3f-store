@@ -331,32 +331,18 @@ export function ProductListing() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 bg-[#F9F9F9] border border-[#EBEBEB] rounded-lg p-1">
-                  <button 
-                    onClick={() => setViewMode("grid")}
-                    className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-white shadow-sm text-[#10854F]" : "text-[#221A12]/40 hover:text-[#221A12]"}`}
-                  >
-                    <Grid size={18} strokeWidth={2.5} />
-                  </button>
-                  <button 
-                    onClick={() => setViewMode("list")}
-                    className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-white shadow-sm text-[#10854F]" : "text-[#221A12]/40 hover:text-[#221A12]"}`}
-                  >
-                    <List size={18} strokeWidth={2.5} />
-                  </button>
-                </div>
               </div>
             </div>
 
             {/* Product Grid */}
-            <div className={`grid gap-5 ${viewMode === "grid" ? "grid-cols-2 md:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
+            <div className={`grid gap-3 sm:gap-4 ${viewMode === "grid" ? "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
               {currentProducts.length > 0 ? currentProducts.map((product, idx) => {
                 const hasDiscount = !!product.oldPrice;
                 // Compute random "Mới" based on ID or index
                 const isNew = product.sold < 50 && product.rating > 4.5;
                 
                 return (
-                  <article key={product.id || idx} className="group relative flex flex-col justify-between overflow-hidden rounded-[24px] border border-[#EBEBEB] bg-white p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(16,133,79,0.15)] hover:border-[#10854F]/30">
+                  <article key={product.id || idx} className="group relative flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-[24px] border border-[#EBEBEB] bg-white p-3 sm:p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(16,133,79,0.15)] hover:border-[#10854F]/30">
                     
                     {/* Animated Gradient Glow Behind Card Content */}
                     <div className="pointer-events-none absolute -inset-10 -z-10 bg-gradient-to-br from-[#10854F]/0 via-[#10854F]/5 to-[#F5B014]/5 opacity-0 transition-opacity duration-700 group-hover:opacity-100 blur-2xl" />
@@ -365,29 +351,29 @@ export function ProductListing() {
                     <div className="pointer-events-none absolute inset-0 z-30 -translate-x-[150%] -skew-x-12 bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-0 transition-all duration-1000 ease-in-out group-hover:translate-x-[150%] group-hover:opacity-100" />
                     
                     {/* Top Badges */}
-                    <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
+                    <div className="absolute left-2 sm:left-3 top-2 sm:top-3 z-10 flex flex-col gap-1">
                       {hasDiscount && (
-                        <div className="flex items-center justify-center rounded-full bg-[#EF4444] px-2.5 py-1">
-                          <span className="text-[10px] font-black text-white">
+                        <div className="flex items-center justify-center rounded-full bg-[#EF4444] px-2 py-0.5 sm:px-2.5 sm:py-1">
+                          <span className="text-[9px] sm:text-[10px] font-black text-white">
                             -{Math.round((1 - product.priceVal / extractPrice(product.oldPrice!)) * 100)}%
                           </span>
                         </div>
                       )}
                       {isNew && (
-                        <div className="flex items-center justify-center rounded-full bg-[#10854F] px-2.5 py-1">
-                          <span className="text-[10px] font-black text-white">Mới</span>
+                        <div className="flex items-center justify-center rounded-full bg-[#10854F] px-2 py-0.5 sm:px-2.5 sm:py-1">
+                          <span className="text-[9px] sm:text-[10px] font-black text-white">Mới</span>
                         </div>
                       )}
                     </div>
 
                     {/* Heart Icon */}
-                    <button className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-white shadow-sm border border-[#F5F5F5] transition-colors hover:text-[#EF4444]">
-                      <Heart size={16} className="text-[#221A12]/30 transition-colors hover:fill-[#EF4444] hover:text-[#EF4444]" />
+                    <button className="absolute right-2 sm:right-3 top-2 sm:top-3 z-10 grid h-7 w-7 sm:h-8 sm:w-8 place-items-center rounded-full bg-white shadow-sm border border-[#F5F5F5] transition-colors hover:text-[#EF4444]">
+                      <Heart size={14} className="sm:w-4 sm:h-4 text-[#221A12]/30 transition-colors hover:fill-[#EF4444] hover:text-[#EF4444]" />
                     </button>
 
-                    <div>
+                    <div className="flex flex-col h-full">
                       {/* Image */}
-                      <Link to={`/product/${product.id || idx}`} className="block relative mb-4 aspect-square w-full overflow-hidden rounded-[16px] bg-[#F8F9FA] p-3 transition-colors duration-300 group-hover:bg-[#F0F2F5]">
+                      <Link to={`/product/${product.id || idx}`} className="block relative mb-3 sm:mb-4 aspect-square w-full overflow-hidden rounded-xl sm:rounded-[16px] bg-[#F8F9FA] p-2 sm:p-3 transition-colors duration-300 group-hover:bg-[#F0F2F5]">
                         <Image
                           src={product.image}
                           alt={product.name}
@@ -396,39 +382,39 @@ export function ProductListing() {
                       </Link>
 
                       {/* Info */}
-                      <div className="space-y-1.5 flex flex-col justify-between flex-1">
-                        <div>
-                          <p className="text-[10px] font-black uppercase text-[#10854F] tracking-wider mb-1">{product.brand?.toUpperCase() || "KHÁC"}</p>
+                      <div className="space-y-0.5 sm:space-y-1.5 flex flex-col justify-between flex-1 min-w-0 overflow-hidden">
+                        <div className="min-w-0">
+                          <p className="text-[9px] sm:text-[10px] font-black uppercase text-[#10854F] tracking-wider mb-0.5 sm:mb-1 truncate">{product.brand?.toUpperCase() || "KHÁC"}</p>
                           <Link to={`/product/${product.id || idx}`} className="block">
-                            <h3 className="text-[13px] font-extrabold leading-[18px] text-[#221A12] line-clamp-2 min-h-[36px] hover:text-[#10854F] transition-colors" title={product.name}>
+                            <h3 className="text-[11px] sm:text-[13px] font-extrabold leading-tight sm:leading-[18px] text-[#221A12] line-clamp-2 min-h-[29px] sm:min-h-[36px] hover:text-[#10854F] transition-colors break-words" title={product.name}>
                               {product.name}
                             </h3>
                           </Link>
                         </div>
                         
-                        <div className="mt-2">
+                        <div className="mt-1.5 sm:mt-2 min-w-0">
                           {/* Rating and Sold */}
-                          <div className="flex items-center gap-1.5 mb-2.5">
-                            <div className="flex items-center gap-0.5 text-[#F5B014]">
-                              <Star size={12} fill="currentColor" strokeWidth={2.5} />
+                          <div className="flex items-center gap-1 sm:gap-1.5 mb-2 sm:mb-2.5 min-w-0 overflow-hidden">
+                            <div className="flex items-center gap-0.5 text-[#F5B014] shrink-0">
+                              <Star size={11} fill="currentColor" strokeWidth={2.5} className="sm:w-3 sm:h-3" />
                             </div>
-                            <span className="text-[11px] font-bold text-[#221A12]/60">
-                              {product.rating.toFixed(1)} <span className="mx-1.5 text-[#221A12]/20">•</span> Đã bán {product.sold > 0 ? product.sold : Math.floor(Math.random() * 90 + 10)}k+
+                            <span className="text-[10px] sm:text-[11px] font-bold text-[#221A12]/60 truncate flex-1 min-w-0">
+                              {product.rating.toFixed(1)} <span className="mx-1 sm:mx-1.5 text-[#221A12]/20">•</span> Đã bán {product.sold > 0 ? Math.floor(product.sold/1000) || 1 : Math.floor(Math.random() * 90 + 10)}k+
                             </span>
                           </div>
 
                           {/* Price & Cart row */}
-                          <div className="flex items-end justify-between border-t border-[#F2EFE9] pt-3 mt-1">
-                            <div className="flex flex-col gap-0.5">
+                          <div className="flex items-end justify-between border-t border-[#F2EFE9] pt-2 sm:pt-3 mt-1 min-w-0 gap-2">
+                            <div className="flex flex-col gap-0 sm:gap-0.5 min-w-0 flex-1 overflow-hidden">
                               {product.oldPrice && (
-                                <div className="text-[11px] font-bold text-[#221A12]/30 line-through">
+                                <div className="text-[10px] sm:text-[11px] font-bold text-[#221A12]/30 line-through truncate">
                                   {product.oldPrice}
                                 </div>
                               )}
-                              <div className="flex items-center gap-2">
-                                <span className="text-[1.1rem] font-black text-[#10854F]">{product.price}</span>
+                              <div className="flex items-center gap-1 sm:gap-2 min-w-0 overflow-hidden">
+                                <span className="text-sm sm:text-[1.1rem] font-black text-[#10854F] truncate">{product.price}</span>
                                 {hasDiscount && (
-                                  <span className="rounded-[6px] bg-[#EF4444]/10 px-1.5 py-0.5 text-[9px] font-black text-[#EF4444]">
+                                  <span className="hidden sm:inline-block rounded-[6px] bg-[#EF4444]/10 px-1.5 py-0.5 text-[9px] font-black text-[#EF4444] shrink-0 whitespace-nowrap">
                                     -{Math.round((1 - product.priceVal / extractPrice(product.oldPrice!)) * 100)}%
                                   </span>
                                 )}
@@ -437,9 +423,9 @@ export function ProductListing() {
                             
                             <button 
                               title="Thêm vào giỏ"
-                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAF7EC] text-[#10854F] shadow-sm transition-all hover:scale-105 hover:bg-[#10854F] hover:text-white active:scale-95"
+                              className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-[#EAF7EC] text-[#10854F] shadow-sm transition-all hover:scale-105 hover:bg-[#10854F] hover:text-white active:scale-95"
                             >
-                              <ShoppingCart size={16} strokeWidth={2.5} />
+                              <ShoppingCart size={14} strokeWidth={2.5} className="sm:w-4 sm:h-4" />
                             </button>
                           </div>
                         </div>
