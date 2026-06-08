@@ -75,7 +75,7 @@ export function ProductCard({ product, isBestSeller, isFavorite, index = 0 }: Pr
       </Link>
 
       {/* Content Section */}
-      <div className="flex flex-1 flex-col p-4">
+      <div className="flex flex-1 flex-col p-2">
         {/* Category */}
         <div className="mb-2">
           <span className="inline-block rounded-md bg-forest/5 px-2 py-1 text-[10px] font-bold text-forest">
@@ -103,29 +103,29 @@ export function ProductCard({ product, isBestSeller, isFavorite, index = 0 }: Pr
         </div>
 
         {/* Price Section */}
-        <div className="mb-4 flex items-end gap-2">
-          <div className="text-2xl font-black text-forest">{product.price}</div>
+        <div className="mb-3 sm:mb-4 flex flex-wrap items-end gap-1.5 sm:gap-2">
+          <div className="text-lg sm:text-2xl font-black text-forest leading-none">{product.price}</div>
           {product.oldPrice && (
-            <div className="mb-0.5 text-sm font-semibold text-ink/40 line-through">{product.oldPrice}</div>
+            <div className="mb-0.5 text-[10px] sm:text-sm font-semibold text-ink/40 line-through">{product.oldPrice}</div>
           )}
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 sm:gap-2 mt-auto">
           <motion.button
             whileTap={{ scale: 0.95 }}
-            className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-forest bg-white font-bold text-forest transition-colors hover:bg-forest/5"
+            className="flex h-8 w-8 sm:h-10 sm:w-auto sm:flex-1 shrink-0 items-center justify-center gap-1.5 rounded-lg sm:rounded-xl border border-forest sm:border-2 bg-white font-bold text-forest transition-colors hover:bg-forest/5"
             aria-label={`Thêm ${product.name} vào giỏ hàng`}
           >
-            <ShoppingCart size={16} />
-            <span className="text-xs">Thêm</span>
+            <ShoppingCart size={14} className="sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline text-xs">Thêm</span>
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.95 }}
-            className="flex h-10 flex-1 items-center justify-center rounded-xl bg-forest font-bold text-white transition-colors hover:bg-forest-700"
+            className="flex h-8 sm:h-10 flex-1 items-center justify-center rounded-lg sm:rounded-xl bg-forest font-bold text-white transition-colors hover:bg-forest-700"
             aria-label={`Mua ngay ${product.name}`}
           >
-            <span className="text-xs">Mua ngay</span>
+            <span className="text-[10px] sm:text-xs">Mua ngay</span>
           </motion.button>
         </div>
       </div>

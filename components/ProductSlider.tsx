@@ -1,11 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, PawPrint, Bone, BadgePlus, Sparkles, ShieldCheck, HeartHandshake } from "lucide-react";
-import { Navigation, Pagination } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
+import { Link } from "react-router-dom";
 import { getFeaturedProducts } from "@/data/store";
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
 import { useMemo, useState } from "react";
@@ -51,7 +47,7 @@ export function ProductSlider() {
   const visibleProducts = filteredProducts.length > 0 ? filteredProducts : featuredProducts;
 
   return (
-    <section className="relative overflow-hidden bg-white py-16 sm:py-20">
+    <section className="relative overflow-hidden bg-white py-8 sm:py-20">
       <div className="pointer-events-none absolute left-[10%] top-10 h-48 w-48 rounded-full bg-emerald-100/40 blur-3xl" />
       <div className="pointer-events-none absolute right-[8%] bottom-8 h-52 w-52 rounded-full bg-honey/10 blur-3xl" />
 
@@ -77,38 +73,6 @@ export function ProductSlider() {
                 Tuyển chọn các sản phẩm được đánh giá cao, bán tốt và có trải nghiệm mua nhanh.
               </p>
             </div>
-
-            <div className="flex flex-col items-start gap-3 lg:items-end lg:gap-4">
-              <div className="grid w-full grid-cols-3 gap-2 sm:w-auto sm:gap-3">
-                <div className="rounded-xl border border-[#E7EFEA] bg-white px-3 py-2.5 text-center shadow-sm sm:rounded-2xl sm:px-4 sm:py-3">
-                  <div className="text-base font-black text-[#10854F] sm:text-lg">4.9/5</div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#221A12]/40 sm:text-[11px]">Đánh giá</div>
-                </div>
-                <div className="rounded-xl border border-[#E7EFEA] bg-white px-3 py-2.5 text-center shadow-sm sm:rounded-2xl sm:px-4 sm:py-3">
-                  <div className="text-base font-black text-[#10854F] sm:text-lg">12+</div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#221A12]/40 sm:text-[11px]">Mẫu hot</div>
-                </div>
-                <div className="rounded-xl border border-[#E7EFEA] bg-white px-3 py-2.5 text-center shadow-sm sm:rounded-2xl sm:px-4 sm:py-3">
-                  <div className="text-base font-black text-[#10854F] sm:text-lg">2h</div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#221A12]/40 sm:text-[11px]">Giao nhanh</div>
-                </div>
-              </div>
-
-              <div className="hidden gap-3 sm:flex">
-                <button
-                  className="product-prev grid h-12 w-12 place-items-center rounded-full border border-[#10854F]/18 bg-white text-[#10854F] shadow-sm transition hover:border-[#10854F] hover:bg-[#F2FAF5]"
-                  aria-label="Sản phẩm trước"
-                >
-                  <ChevronLeft size={19} strokeWidth={2.5} />
-                </button>
-                <button
-                  className="product-next grid h-12 w-12 place-items-center rounded-full bg-[#10854F] text-white shadow-[0_14px_24px_rgba(16,133,79,0.22)] transition hover:bg-[#0D7344]"
-                  aria-label="Sản phẩm tiếp theo"
-                >
-                  <ChevronRight size={19} strokeWidth={2.5} />
-                </button>
-              </div>
-            </div>
           </MotionItem>
 
           <MotionItem {...motionItemProps} className="relative z-10 mb-6 flex gap-2 overflow-x-auto pb-2 scrollbar-hide sm:mb-8 sm:gap-3">
@@ -133,37 +97,32 @@ export function ProductSlider() {
           </MotionItem>
 
           <MotionItem {...motionItemProps} className="relative z-10">
-            <Swiper
-              modules={[Navigation, Pagination]}
-              navigation={{ prevEl: ".product-prev", nextEl: ".product-next" }}
-              pagination={{ clickable: true }}
-              spaceBetween={14}
-              slidesPerView={1.2}
-              breakpoints={{
-                480: { slidesPerView: 1.5, spaceBetween: 14 },
-                640: { slidesPerView: 2, spaceBetween: 16 },
-                768: { slidesPerView: 2.5, spaceBetween: 16 },
-                1024: { slidesPerView: 3, spaceBetween: 18 },
-                1280: { slidesPerView: 4, spaceBetween: 20 }
-              }}
-              className="!pb-12 sm:!pb-14"
-            >
-              {visibleProducts.map((product, index) => {
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6 xl:gap-5">
+              {visibleProducts.slice(0, 6).map((product, index) => {
                 const isBestSeller = index === 0;
                 const isFavorite = index === 1;
 
                 return (
-                  <SwiperSlide key={product.id ?? product.name} className="!h-auto">
-                    <ProductCard
-                      product={product}
-                      isBestSeller={isBestSeller}
-                      isFavorite={isFavorite}
-                      index={index}
-                    />
-                  </SwiperSlide>
+                  <ProductCard
+                    key={product.id ?? product.name}
+                    product={product}
+                    isBestSeller={isBestSeller}
+                    isFavorite={isFavorite}
+                    index={index}
+                  />
                 );
               })}
-            </Swiper>
+            </div>
+            
+            <div className="mt-8 flex justify-center lg:mt-10">
+              <Link
+                to={`/products?category=${activeCategory === "all" ? "" : activeCategory}`}
+                className="group inline-flex items-center gap-2 rounded-full border-2 border-[#10854F] bg-white px-6 py-2.5 text-sm font-bold uppercase tracking-wider text-[#10854F] transition-all hover:bg-[#10854F] hover:text-white sm:px-8 sm:py-3"
+              >
+                Xem thêm
+                <ChevronRight size={18} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
           </MotionItem>
         </MotionSection>
       </div>

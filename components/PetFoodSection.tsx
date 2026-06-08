@@ -56,7 +56,7 @@ function ProductCard({
     <article className={`group flex h-full flex-col rounded-[1.5rem] border bg-white overflow-hidden shadow-glass-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-glass ${hoverBorderClass}`}>
       <Link to={`/product/${product.id || product.name}`} className={`relative flex h-[180px] w-full items-center justify-center transition-colors ${imageBgClass}`}>
         {hasDiscount && (
-          <span className="absolute left-2.5 top-2.5 rounded-full bg-[#132117] px-2.5 py-1 text-[11px] font-black text-white shadow-md z-10">
+          <span className="absolute left-2 top-2 rounded-full bg-[#132117] px-2 py-0.5 text-[10px] font-black text-white shadow-md z-10">
             -{discount}%
           </span>
         )}
@@ -69,7 +69,7 @@ function ProductCard({
         />
       </Link>
 
-      <div className="p-3 flex flex-col flex-1">
+      <div className="px-3 pb-3 pt-1 flex flex-col flex-1">
         <div className="mt-0">
           <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-bold ${accentSoftClass} ${accentClass}`}>
             {meta.typeLabel}
@@ -90,7 +90,7 @@ function ProductCard({
           <span className="text-[11px] font-semibold text-ink/45">Đã bán {meta.soldLabel}</span>
         </div>
 
-        <div className="mt-auto pt-3 flex items-end justify-between">
+        <div className="mt-auto pt-1 flex items-end justify-between">
           <div>
             <div className="flex items-baseline gap-1.5">
               <span className={`text-base font-black ${accentClass}`}>{product.price}</span>
