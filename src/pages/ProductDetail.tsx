@@ -22,11 +22,25 @@ export function ProductDetail() {
   
   const [activeTab, setActiveTab] = useState("description");
   const [quantity, setQuantity] = useState(1);
-  const [selectedVariant, setSelectedVariant] = useState("Mặc định");
+
+  // Real variants from product data
+  const productVariants = product.variants ?? [];
+  const [selectedVariantId, setSelectedVariantId] = useState(
+    productVariants.length > 0 ? productVariants[0].id : null
+  );
+  const selectedVariant = productVariants.find(v => v.id === selectedVariantId) ?? productVariants[0] ?? null;
+
   const [showToast, setShowToast] = useState(false);
   
   const tabsRef = useRef<HTMLDivElement>(null);
   const [isSticky, setIsSticky] = useState(false);
+  
+  // Active image: use selected variant image if available
+  const [activeImage, setActiveImage] = useState(selectedVariant?.image || product.image);
+
+  useEffect(() => {
+    if (selectedVariant?.image) setActiveImage(selectedVariant.image);
+  }, [selectedVariantId]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,21 +52,17 @@ export function ProductDetail() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Use dynamic data instead of hardcoded
-  const variants = [
-    { name: "Mặc định", price: product.price, oldPrice: (product as any).oldPrice || null, discount: null, inStock: true },
-  ];
-
   const handleAddToCart = (goToCart = false) => {
     if (!product) return;
-    const currentVariant = variants.find(v => v.name === selectedVariant) || variants[0];
+    const variantPrice = selectedVariant?.price ?? product.price;
+    const variantOldPrice = selectedVariant?.oldPrice ?? (product as any).oldPrice;
     addToCart({
-      id: product.id || String(product.name),
+      id: selectedVariant?.id ?? product.id,
       name: product.name,
-      image: product.image,
-      price: parsePriceString(currentVariant.price),
-      originalPrice: currentVariant.oldPrice ? parsePriceString(currentVariant.oldPrice) : undefined,
-      variant: selectedVariant
+      image: selectedVariant?.image ?? product.image,
+      price: parsePriceString(variantPrice),
+      originalPrice: variantOldPrice ? parsePriceString(variantOldPrice) : undefined,
+      variant: selectedVariant?.label ?? "Mặc định"
     }, quantity);
 
     if (goToCart) {
@@ -114,17 +124,21 @@ export function ProductDetail() {
               </div>
 
               <Image 
-                src={product.image} 
+                src={activeImage} 
                 alt={product.name}
                 className="h-full w-full object-contain p-8 mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
               />
             </div>
             
-            {/* Thumbnails */}
+            {/* Thumbnails - show variant images */}
             <div className="mt-4 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-              {[1, 2, 3, 4, 5].map((_, idx) => (
-                <div key={idx} className={`relative aspect-square w-20 shrink-0 cursor-pointer rounded-[16px] border-2 bg-white p-2 transition ${idx === 0 ? "border-[#10854F]" : "border-transparent hover:border-[#f1f1f1]"}`}>
-                  <Image src={product.image} alt="thumb" className="h-full w-full object-contain mix-blend-multiply" />
+              {(product.images && product.images.length > 0 ? product.images.slice(0, 6) : [product.image]).map((img, idx) => (
+                <div 
+                  key={idx} 
+                  onClick={() => setActiveImage(img)}
+                  className={`relative aspect-square w-20 shrink-0 cursor-pointer rounded-[16px] border-2 bg-white p-2 transition ${activeImage === img ? "border-[#10854F]" : "border-transparent hover:border-[#f1f1f1]"}`}
+                >
+                  <Image src={img} alt={`thumb-${idx}`} className="h-full w-full object-contain mix-blend-multiply" />
                 </div>
               ))}
             </div>
@@ -167,10 +181,14 @@ export function ProductDetail() {
             {/* Price Box */}
             <div className="mb-6 rounded-[20px] bg-[#F2F8EE] p-5">
               <div className="flex items-end gap-3">
-                <span className="text-[28px] font-black leading-none text-[#10854F]">{product.price}</span>
-                <span className="mb-1 text-base font-semibold text-[#9ca3af] line-through">
-                  {((product as any).oldPrice) || (parseInt(product.price.replace(/\D/g,'')) * 1.25).toLocaleString("vi-VN") + "đ"}
+                <span className="text-[28px] font-black leading-none text-[#10854F]">
+                  {selectedVariant?.price ?? product.price}
                 </span>
+                {(selectedVariant?.oldPrice ?? (product as any).oldPrice) && (
+                  <span className="mb-1 text-base font-semibold text-[#9ca3af] line-through">
+                    {selectedVariant?.oldPrice ?? (product as any).oldPrice}
+                  </span>
+                )}
                 <span className="mb-1 rounded-md bg-[#10854F] px-1.5 py-0.5 text-xs font-black text-white">Giá tốt</span>
               </div>
             </div>
@@ -201,36 +219,58 @@ export function ProductDetail() {
             </div>
 
             {/* Variants */}
-            <div className="mb-8">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-bold text-[#111827]">Chọn hương vị: <span className="text-[#10854F]">{selectedVariant}</span></h3>
-              </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {variants.map(v => {
-                  const isActive = selectedVariant === v.name;
-                  return (
-                    <button 
-                      key={v.name}
-                      onClick={() => v.inStock && setSelectedVariant(v.name)}
-                      disabled={!v.inStock}
-                      className={`relative flex flex-col items-center justify-center rounded-[16px] border-2 p-3 text-center transition ${
-                        !v.inStock ? "cursor-not-allowed border-[#f1f1f1] bg-[#f9fafb] opacity-50" : 
-                        isActive ? "border-[#10854F] bg-[#F2F8EE]" : "border-[#f1f1f1] bg-white hover:border-[#10854F]/30 hover:bg-[#fafafa]"
-                      }`}
-                    >
-                      {v.discount && (
-                        <div className="absolute -right-2 -top-2 rounded-full bg-[#10854F] px-1.5 py-0.5 text-[10px] font-black text-white shadow-sm">
-                          -{v.discount}%
+            {productVariants.length > 0 && (
+              <div className="mb-8">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="font-bold text-[#111827]">
+                    Phân loại: <span className="text-[#10854F]">{selectedVariant?.label ?? ""}</span>
+                  </h3>
+                  <span className="text-xs text-[#6b7280]">{productVariants.length} lựa chọn</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {productVariants.map(v => {
+                    const isActive = selectedVariantId === v.id;
+                    return (
+                      <button
+                        key={v.id}
+                        onClick={() => {
+                          setSelectedVariantId(v.id);
+                          if (v.image) setActiveImage(v.image);
+                        }}
+                        className={`flex items-center gap-2 rounded-[12px] border-2 px-3 py-2 text-left transition ${
+                          isActive
+                            ? "border-[#10854F] bg-[#F2F8EE]"
+                            : "border-[#e5e7eb] bg-white hover:border-[#10854F]/40 hover:bg-[#fafafa]"
+                        }`}
+                      >
+                        {v.image && (
+                          <img
+                            src={v.image}
+                            alt={v.label}
+                            className="h-8 w-8 rounded-lg object-contain bg-gray-50 shrink-0"
+                          />
+                        )}
+                        <div className="flex flex-col">
+                          <span className={`text-[12px] font-bold leading-tight ${
+                            isActive ? "text-[#0D7344]" : "text-[#374151]"
+                          }`}>
+                            {v.label}
+                          </span>
+                          <span className={`text-[11px] font-semibold ${
+                            isActive ? "text-[#10854F]" : "text-[#6b7280]"
+                          }`}>
+                            {v.price}
+                            {v.oldPrice && (
+                              <span className="ml-1 line-through text-[#d1d5db]">{v.oldPrice}</span>
+                            )}
+                          </span>
                         </div>
-                      )}
-                      <span className={`text-[13px] font-bold ${isActive ? "text-[#0D7344]" : "text-[#374151]"}`}>{v.name}</span>
-                      <span className={`text-[12px] font-semibold ${isActive ? "text-[#10854F]" : "text-[#6b7280]"}`}>{v.price}</span>
-                      {!v.inStock && <span className="mt-1 text-[10px] font-bold text-[#9ca3af]">Hết hàng</span>}
-                    </button>
-                  );
-                })}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Quantity & CTA */}
             <div className="mb-8">
@@ -251,7 +291,7 @@ export function ProductDetail() {
                   </button>
                 </div>
 
-                {variants.find(v => v.name === selectedVariant)?.inStock ? (
+                {true ? (
                   <>
                     <button 
                       onClick={() => handleAddToCart(false)}
