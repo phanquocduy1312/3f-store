@@ -1,21 +1,24 @@
 interface SocialLoginsProps {
   label?: string;
+  hideLabel?: boolean;
 }
 
-export function SocialLogins({ label = "Hoặc tiếp tục với" }: SocialLoginsProps) {
+export function SocialLogins({ label = "Hoặc tiếp tục với", hideLabel = false }: SocialLoginsProps) {
   const handleSocialLogin = (provider: string) => {
     alert(`Đăng nhập qua ${provider} (Mô phỏng chức năng)`);
   };
 
   return (
     <div className="space-y-4 mt-6">
-      <div className="relative flex py-2 items-center">
-        <div className="flex-grow border-t border-forest/10"></div>
-        <span className="flex-shrink mx-4 text-xs font-bold text-ink/40 uppercase tracking-wider">
-          {label}
-        </span>
-        <div className="flex-grow border-t border-forest/10"></div>
-      </div>
+      {!hideLabel && (
+        <div className="relative flex py-2 items-center">
+          <div className="flex-grow border-t border-forest/10"></div>
+          <span className="flex-shrink mx-4 text-xs font-bold text-ink/40 uppercase tracking-wider">
+            {label}
+          </span>
+          <div className="flex-grow border-t border-forest/10"></div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <button

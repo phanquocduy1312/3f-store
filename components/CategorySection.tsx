@@ -10,11 +10,11 @@ import {
   Headphones,
   PawPrint,
   Percent,
-  Plus,
   RotateCcw,
   ShieldCheck,
   Truck,
-  Wrench,
+  Heart,
+  Bath,
 } from "lucide-react";
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
 
@@ -71,7 +71,7 @@ const cardConfig = {
     btnTheme: "bg-[#F0C353]",
   },
   "Chăm sóc sức khỏe": {
-    Icon: Plus,
+    Icon: Heart,
     description: "Sản phẩm chăm sóc và bảo vệ thú cưng mỗi ngày",
     iconBg: "bg-[#6FA4D8]",
     gradient: "from-[#F5FAFE] via-[#EEF5FC] to-[#D8E8F6]",
@@ -79,7 +79,7 @@ const cardConfig = {
     btnTheme: "bg-[#6FA4D8]",
   },
   "Vệ sinh thú cưng": {
-    Icon: Wrench,
+    Icon: Bath,
     description: "Tắm gội, vệ sinh thơm tho, sạch sẽ",
     iconBg: "bg-[#B393E2]",
     gradient: "from-[#FBF7FF] via-[#F5EEFC] to-[#EBDCF9]",
@@ -158,37 +158,29 @@ export function CategorySection() {
                   {/* Accent glow on hover */}
                   <div className={`absolute inset-0 rounded-[2rem] opacity-0 transition-opacity duration-300 group-hover:opacity-10 bg-gradient-to-b ${config.gradient}`} />
 
-                  <div
-                    className={`mx-auto mb-5 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${config.iconBg} text-white shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}
-                  >
-                    <IconComponent size={24} strokeWidth={2.5} />
+                  {/* Large Central Circular Vector Icon Container */}
+                  <div className={`mx-auto mb-6 flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-full bg-gradient-to-br ${config.gradient} border ${config.border} shadow-[0_8px_24px_rgba(0,0,0,0.03)] transition-all duration-500 group-hover:scale-110 group-hover:shadow-[0_16px_32px_rgba(0,0,0,0.06)] relative z-10`}>
+                    <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${config.iconBg} text-white shadow-sm transition-all duration-500 group-hover:rotate-12`}>
+                      <IconComponent size={28} strokeWidth={2.2} />
+                    </div>
                   </div>
 
-                  <h3 className="mb-2 text-lg font-bold leading-tight text-ink">{category.title}</h3>
+                  <h3 className="mb-2 text-lg font-bold leading-tight text-ink relative z-10">{category.title}</h3>
 
-                  <p className="mb-6 flex min-h-[40px] items-center justify-center px-1 text-sm leading-relaxed text-ink/60">
+                  <p className="mb-6 flex min-h-[48px] items-center justify-center px-1 text-sm leading-relaxed text-ink/65 relative z-10">
                     {config.description}
                   </p>
 
-                  <div className="mt-auto relative mb-6 flex h-[100px] sm:h-[130px] items-center justify-center">
-                    <div className="absolute inset-0 bg-gradient-to-t from-white/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-b-[2rem]" />
-                    <Image
-                      src={category.image}
-                      alt={category.title}
-                      width={110}
-                      height={110}
-                      className="h-20 w-20 sm:h-28 sm:w-28 object-contain transition-transform duration-500 group-hover:scale-110"
-                    />
+                  <div className="mt-auto pt-2 relative z-10">
+                    <Link
+                      to={`/products?category=${category.title === "On Sale" ? "Tất cả sản phẩm" : category.title}`}
+                      className="mx-auto inline-flex items-center gap-2 rounded-full border border-forest/10 bg-forest/5 px-6 py-2.5 text-sm font-bold text-forest transition-all duration-300 group-hover:bg-forest group-hover:text-white"
+                      aria-label={`Khám phá ${category.title}`}
+                    >
+                      Khám phá
+                      <ChevronRight size={16} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
+                    </Link>
                   </div>
-
-                  <Link
-                    to={`/products?category=${category.title === "On Sale" ? "Tất cả sản phẩm" : category.title}`}
-                    className="mx-auto inline-flex items-center gap-2 rounded-full border border-forest/10 bg-forest/5 px-6 py-2.5 text-sm font-bold text-forest transition-all duration-300 group-hover:bg-forest group-hover:text-white"
-                    aria-label={`Khám phá ${category.title}`}
-                  >
-                    Khám phá
-                    <ChevronRight size={16} strokeWidth={2.5} className=" transition-transform group-hover:translate-x-1" />
-                  </Link>
                 </MotionItem>
               );
             })}

@@ -1,16 +1,13 @@
 import { useState, FormEvent, useEffect } from "react";
-import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 interface RegisterFormProps {
   onSuccess?: () => void;
 }
 
 export function RegisterForm({ onSuccess }: RegisterFormProps) {
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -45,7 +42,6 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!name.trim()) newErrors.name = "Vui lòng nhập Họ và tên";
     
     if (!email) {
       newErrors.email = "Vui lòng nhập Email";
@@ -53,20 +49,10 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       newErrors.email = "Email không đúng định dạng";
     }
 
-    if (!phone) {
-      newErrors.phone = "Vui lòng nhập Số điện thoại";
-    } else if (!/^(0[3|5|7|8|9])+([0-9]{8})$/.test(phone)) {
-      newErrors.phone = "Số điện thoại không đúng định dạng";
-    }
-
     if (!password) {
       newErrors.password = "Vui lòng nhập mật khẩu";
     } else if (password.length < 6) {
       newErrors.password = "Mật khẩu phải chứa ít nhất 6 ký tự";
-    }
-
-    if (password !== confirmPassword) {
-      newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
     }
 
     if (!agreeTerms) {
@@ -92,62 +78,22 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-xs font-bold text-ink/80 mb-1.5">Họ và tên</label>
+        <label className="block text-xs font-bold text-ink/80 mb-1.5">Email</label>
         <div className="relative">
           <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-ink/40">
-            <User size={16} />
+            <Mail size={16} />
           </span>
           <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-white/50 text-[0.9rem] outline-none transition duration-200 ${
-              errors.name ? "border-red-500 ring-2 ring-red-100" : "border-forest/20 focus:border-forest"
+              errors.email ? "border-red-500 ring-2 ring-red-100" : "border-forest/20 focus:border-forest"
             }`}
-            placeholder="Nguyễn Văn A"
+            placeholder="example@gmail.com"
           />
         </div>
-        {errors.name && <p className="text-red-500 text-[11px] font-semibold mt-1">{errors.name}</p>}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-bold text-ink/80 mb-1.5">Email</label>
-          <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-ink/40">
-              <Mail size={16} />
-            </span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-white/50 text-[0.9rem] outline-none transition duration-200 ${
-                errors.email ? "border-red-500 ring-2 ring-red-100" : "border-forest/20 focus:border-forest"
-              }`}
-              placeholder="example@gmail.com"
-            />
-          </div>
-          {errors.email && <p className="text-red-500 text-[11px] font-semibold mt-1">{errors.email}</p>}
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-ink/80 mb-1.5">Số điện thoại</label>
-          <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-ink/40">
-              <Phone size={16} />
-            </span>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-white/50 text-[0.9rem] outline-none transition duration-200 ${
-                errors.phone ? "border-red-500 ring-2 ring-red-100" : "border-forest/20 focus:border-forest"
-              }`}
-              placeholder="0912345678"
-            />
-          </div>
-          {errors.phone && <p className="text-red-500 text-[11px] font-semibold mt-1">{errors.phone}</p>}
-        </div>
+        {errors.email && <p className="text-red-500 text-[11px] font-semibold mt-1">{errors.email}</p>}
       </div>
 
       <div>
@@ -189,26 +135,6 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         {errors.password && <p className="text-red-500 text-[11px] font-semibold mt-1">{errors.password}</p>}
       </div>
 
-      <div>
-        <label className="block text-xs font-bold text-ink/80 mb-1.5">Xác nhận mật khẩu</label>
-        <div className="relative">
-          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-ink/40">
-            <Lock size={16} />
-          </span>
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-white/50 text-[0.9rem] outline-none transition duration-200 ${
-              errors.confirmPassword ? "border-red-500 ring-2 ring-red-100" : "border-forest/20 focus:border-forest"
-            }`}
-            placeholder="Nhập lại mật khẩu"
-          />
-        </div>
-        {errors.confirmPassword && (
-          <p className="text-red-500 text-[11px] font-semibold mt-1">{errors.confirmPassword}</p>
-        )}
-      </div>
 
       <div>
         <label className="flex items-start gap-2 cursor-pointer select-none">

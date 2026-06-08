@@ -1,45 +1,76 @@
+import { useState } from "react";
 import { LoginForm } from "@/components/Auth/LoginForm";
 import { SocialLogins } from "@/components/Auth/SocialLogins";
+import { PhoneAuthForm } from "@/components/Auth/PhoneAuthForm";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Phone } from "lucide-react";
 
 export function Login() {
+  const [authMode, setAuthMode] = useState<"email" | "phone">("email");
+
   return (
     <div className="min-h-[calc(100vh-80px)] bg-white flex flex-col lg:grid lg:grid-cols-12">
       {/* Left Column - Form Area (Form on the Left) */}
       <div className="flex-1 lg:col-span-7 xl:col-span-6 flex flex-col justify-center px-4 sm:px-12 lg:px-20 xl:px-24 py-12">
         <div className="w-full max-w-[440px] mx-auto space-y-8">
           
-          {/* Header */}
-          <div className="space-y-3">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-forest hover:text-forest-dark transition"
-            >
-              <ArrowLeft size={14} />
-              Quay lại trang chủ
-            </Link>
-            <h1 className="text-3xl font-black text-ink tracking-tight">Đăng nhập tài khoản</h1>
-            <p className="text-sm font-semibold text-ink/50">
-              Chào mừng bạn quay trở lại! Hãy đăng nhập để mua sắm.
-            </p>
-          </div>
+          {authMode === "email" ? (
+            <>
+              {/* Header */}
+              <div className="space-y-3">
+                <Link
+                  to="/"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-forest hover:text-forest-dark transition"
+                >
+                  <ArrowLeft size={14} />
+                  Quay lại trang chủ
+                </Link>
+                <h1 className="text-3xl font-black text-ink tracking-tight">Đăng nhập tài khoản</h1>
+                <p className="text-sm font-semibold text-ink/50">
+                  Chào mừng bạn quay trở lại! Hãy đăng nhập để mua sắm.
+                </p>
+                <button
+                  onClick={() => setAuthMode("phone")}
+                  className="inline-flex items-center gap-1.5 text-sm font-bold text-forest hover:text-forest-dark transition pt-1"
+                >
+                  <Phone size={14} />
+                  Đăng nhập bằng số điện thoại
+                </button>
+              </div>
 
-          {/* Form */}
-          <LoginForm onSuccess={() => (window.location.href = "/")} />
+              {/* Form */}
+              <LoginForm onSuccess={() => (window.location.href = "/")} />
 
-          {/* Social login shortcuts */}
-          <SocialLogins label="Hoặc đăng nhập bằng" />
+              {/* Social login shortcuts */}
+              <SocialLogins label="Hoặc đăng nhập bằng" />
 
-          {/* Footer Navigation Link */}
-          <div className="text-center pt-2">
-            <p className="text-sm font-semibold text-ink/60">
-              Bạn chưa có tài khoản?{" "}
-              <Link to="/register" className="font-bold text-forest hover:underline transition">
-                Đăng ký ngay
-              </Link>
-            </p>
-          </div>
+              {/* Footer Navigation Link */}
+              <div className="text-center pt-2">
+                <p className="text-sm font-semibold text-ink/60">
+                  Bạn chưa có tài khoản?{" "}
+                  <Link to="/register" className="font-bold text-forest hover:underline transition">
+                    Đăng ký ngay
+                  </Link>
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-0">
+                <Link
+                  to="/"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-forest hover:text-forest-dark transition"
+                >
+                  <ArrowLeft size={14} />
+                  Quay lại trang chủ
+                </Link>
+              </div>
+              <PhoneAuthForm 
+                onSwitchToEmail={() => setAuthMode("email")} 
+                onSuccess={() => (window.location.href = "/")} 
+              />
+            </>
+          )}
 
         </div>
       </div>

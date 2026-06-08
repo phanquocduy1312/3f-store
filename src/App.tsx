@@ -15,8 +15,18 @@ export function App() {
   const showFooter = !["/login", "/register"].includes(location.pathname);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "auto" });
-  }, [location.pathname]);
+    // Force scroll to top immediately
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [location.pathname, location.search]);
+
+  // Prevent browser from restoring scroll position
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
 
   return (
     <main className="min-h-screen bg-white">

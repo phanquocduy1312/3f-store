@@ -84,18 +84,76 @@ const vouchers = [
   }
 ];
 
+const VoucherCard = ({ voucher, copiedId, handleCopy }: any) => (
+  <div className="group relative flex h-[115px] sm:h-[140px] w-full overflow-hidden rounded-xl sm:rounded-[1.25rem] bg-white shadow-[0_4px_12px_rgba(0,0,0,0.04)] sm:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 sm:hover:-translate-y-2 hover:shadow-[0_16px_32px_rgba(16,133,79,0.12)]">
+    
+    {/* Left Side: Themed Colored Block */}
+    <div className={`relative flex w-[48px] sm:w-[110px] shrink-0 flex-col items-center justify-center bg-gradient-to-br ${voucher.color} text-white`}>
+      {/* Faint paw prints on left block */}
+      <div className="absolute inset-0 overflow-hidden opacity-20 hidden sm:block">
+        <PawPrint size={24} className="absolute -left-1 -top-1 rotate-12 sm:w-10 sm:h-10 sm:-left-2 sm:-top-2" />
+        <PawPrint size={18} className="absolute -bottom-2 -right-1 -rotate-12 sm:w-[30px] sm:h-[30px] sm:-bottom-3 sm:-right-2" />
+      </div>
+      
+      <div className="relative z-10 flex h-7 w-7 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-md shadow-sm">
+        <voucher.icon className="w-3.5 h-3.5 sm:w-6 sm:h-6" strokeWidth={2.5} />
+      </div>
+      <div className="relative z-10 mt-1.5 sm:mt-3 hidden sm:block text-center text-[10px] font-black uppercase tracking-widest text-white/90">
+        {voucher.label}
+      </div>
+    </div>
+
+    {/* Cutout details on the border between left and right */}
+    <div className="absolute left-[42px] sm:left-[104px] -top-2 sm:-top-3 z-10 h-4 w-4 sm:h-6 sm:w-6 rounded-full bg-[#F6F2EA] shadow-inner" />
+    <div className="absolute left-[42px] sm:left-[104px] -bottom-2 sm:-bottom-3 z-10 h-4 w-4 sm:h-6 sm:w-6 rounded-full bg-[#F6F2EA] shadow-inner" />
+    <div className="absolute left-[47px] sm:left-[109px] top-0 bottom-0 border-l-[2px] sm:border-l-[3px] border-dashed border-white/40" />
+
+    {/* Right Side: Details & Action */}
+    <div className="flex flex-1 flex-col justify-between p-2.5 pl-3 sm:p-4 sm:pl-6 relative">
+      {/* Watermark in right side */}
+      <voucher.icon className={`absolute right-1 top-1 sm:right-4 sm:top-4 opacity-[0.03] w-10 h-10 sm:w-20 sm:h-20 ${voucher.textDark}`} />
+      
+      <div>
+        <h3 className={`text-[12px] sm:text-[1.35rem] font-black leading-none tracking-tight ${voucher.textDark}`}>
+          {voucher.title}
+        </h3>
+        <p className="mt-1 sm:mt-1.5 text-[9px] sm:text-[13px] font-medium leading-[1.3] sm:leading-snug text-ink/70 line-clamp-2 pr-1 sm:pr-2">
+          {voucher.desc}
+        </p>
+      </div>
+
+      <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between mt-1 sm:mt-0 w-full">
+        <div className={`rounded-full px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-[8px] sm:text-[10px] font-bold ${voucher.bgLight} ${voucher.textDark} whitespace-nowrap`}>
+          {voucher.exp}
+        </div>
+        
+        <button
+          onClick={() => handleCopy(voucher.id, voucher.code)}
+          className={`relative z-20 flex w-full sm:w-auto h-5 sm:h-8 px-2 sm:px-4 items-center justify-center rounded-full text-[8px] sm:text-[11px] font-bold uppercase tracking-wider transition-all duration-300 hover:scale-105 active:scale-95 ${
+            copiedId === voucher.id 
+              ? "bg-emerald-500 text-white" 
+              : `bg-ink text-white hover:${voucher.bgLight} hover:${voucher.textDark}`
+          }`}
+          title="Save voucher"
+        >
+          {copiedId === voucher.id ? "SAVED" : "SAVE"}
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 export function VoucherSection() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const swiperRef = useRef<SwiperType | null>(null);
 
   const handleCopy = (id: string, code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    // For demo purposes: redirect to phone registration instead of copying
+    window.location.href = "/register?mode=phone";
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#F6F2EA] py-16 lg:py-24">
+    <section className="relative overflow-hidden bg-[#F6F2EA] py-0">
       {/* Pet-themed playful background elements */}
       <div className="pointer-events-none absolute left-0 top-0 h-full w-full opacity-40" 
         style={{ backgroundImage: "radial-gradient(#10854F 1.5px, transparent 1.5px)", backgroundSize: "32px 32px" }} 
@@ -109,21 +167,21 @@ export function VoucherSection() {
         <Bone size={250} />
       </div>
 
-      <MotionSection className="relative z-10 mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
-        <div className="mb-10 flex flex-col items-center justify-between gap-6 sm:flex-row sm:items-end">
+      <MotionSection className="relative z-10 mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 mt-0">
+        <div className="mb-4 flex flex-col items-center justify-between gap-3 sm:flex-row sm:items-end">
           <MotionItem {...motionItemProps} className="max-w-xl">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-forest/20 bg-white/60 px-4 py-1.5 text-xs font-black uppercase tracking-[0.2em] text-forest backdrop-blur-md">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-forest/20 bg-white/60 px-4 py-1.5 text-xs font-black uppercase tracking-[0.2em] text-forest backdrop-blur-md">
               <Ticket size={14} className="text-forest" />
               Đặc Quyền Hội Yêu Thú
             </div>
-            <h2 className="text-[2.5rem] font-black leading-tight text-ink sm:text-[3rem] tracking-tight">
+            <h2 className="text-3xl font-black leading-tight text-ink sm:text-4xl tracking-tight">
               Gôm Ngay Voucher
               <br />
               <span className="text-forest">Nuôi Boss Nhàn Tênh</span>
             </h2>
           </MotionItem>
 
-          <MotionItem {...motionItemProps} className="flex gap-3">
+          <MotionItem {...motionItemProps} className="hidden sm:flex gap-3">
             <button
               onClick={() => swiperRef.current?.slidePrev()}
               className="group flex h-14 w-14 items-center justify-center rounded-full bg-white text-ink shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all hover:bg-forest hover:text-white hover:shadow-[0_8px_20px_rgba(16,133,79,0.2)] active:scale-95"
@@ -139,83 +197,39 @@ export function VoucherSection() {
           </MotionItem>
         </div>
 
-        <MotionItem {...motionItemProps} className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
-          <Swiper
-            modules={[Navigation, Autoplay]}
-            spaceBetween={24}
-            slidesPerView={1.1}
-            breakpoints={{
-              640: { slidesPerView: 2.2 },
-              1024: { slidesPerView: 3.2 },
-              1280: { slidesPerView: 4 },
-            }}
-            onBeforeInit={(swiper) => {
-              swiperRef.current = swiper;
-            }}
-            autoplay={{ delay: 4000, disableOnInteraction: false }}
-            className="!pb-12 !pt-4"
-          >
+        <MotionItem {...motionItemProps} className="relative -mx-2 px-2 sm:mx-0 sm:px-0">
+          
+          {/* Mobile Static Grid */}
+          <div className="grid grid-cols-2 gap-2.5 sm:hidden pb-4 pt-1">
             {vouchers.map((voucher) => (
-              <SwiperSlide key={voucher.id} className="py-2">
-                <div className="group relative flex h-[140px] w-full overflow-hidden rounded-[1.25rem] bg-white shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_16px_32px_rgba(16,133,79,0.12)]">
-                  
-                  {/* Left Side: Themed Colored Block */}
-                  <div className={`relative flex w-[110px] shrink-0 flex-col items-center justify-center bg-gradient-to-br ${voucher.color} text-white`}>
-                    {/* Faint paw prints on left block */}
-                    <div className="absolute inset-0 overflow-hidden opacity-20">
-                      <PawPrint size={40} className="absolute -left-2 -top-2 rotate-12" />
-                      <PawPrint size={30} className="absolute -bottom-3 -right-2 -rotate-12" />
-                    </div>
-                    
-                    <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-md shadow-sm">
-                      <voucher.icon size={24} strokeWidth={2.5} />
-                    </div>
-                    <div className="relative z-10 mt-3 text-center text-[10px] font-black uppercase tracking-widest text-white/90">
-                      {voucher.label}
-                    </div>
-                  </div>
-
-                  {/* Cutout details on the border between left and right */}
-                  <div className="absolute left-[104px] -top-3 z-10 h-6 w-6 rounded-full bg-[#F6F2EA] shadow-inner" />
-                  <div className="absolute left-[104px] -bottom-3 z-10 h-6 w-6 rounded-full bg-[#F6F2EA] shadow-inner" />
-                  <div className="absolute left-[109px] top-0 bottom-0 border-l-[3px] border-dashed border-white/40" />
-
-                  {/* Right Side: Details & Action */}
-                  <div className="flex flex-1 flex-col justify-between p-4 pl-6 relative">
-                    {/* Watermark in right side */}
-                    <voucher.icon size={80} className={`absolute right-4 top-4 opacity-[0.03] ${voucher.textDark}`} />
-                    
-                    <div>
-                      <h3 className={`text-[1.35rem] font-black leading-none tracking-tight ${voucher.textDark}`}>
-                        {voucher.title}
-                      </h3>
-                      <p className="mt-1.5 text-[13px] font-medium leading-snug text-ink/70 line-clamp-2 pr-2">
-                        {voucher.desc}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${voucher.bgLight} ${voucher.textDark}`}>
-                        {voucher.exp}
-                      </div>
-                      
-                      <button
-                        onClick={() => handleCopy(voucher.id, voucher.code)}
-                        className={`flex h-8 w-8 items-center justify-center rounded-full transition-all duration-300 hover:scale-110 active:scale-95 ${
-                          copiedId === voucher.id 
-                            ? "bg-emerald-500 text-white" 
-                            : `bg-ink text-white hover:${voucher.bgLight} hover:${voucher.textDark}`
-                        }`}
-                        title="Lưu mã"
-                      >
-                        {copiedId === voucher.id ? <CheckCircle2 size={16} /> : <Copy size={14} />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </SwiperSlide>
+              <VoucherCard key={voucher.id} voucher={voucher} copiedId={copiedId} handleCopy={handleCopy} />
             ))}
-          </Swiper>
+          </div>
+
+          {/* Desktop Swiper Slider */}
+          <div className="hidden sm:block">
+            <Swiper
+              modules={[Navigation, Autoplay]}
+              spaceBetween={24}
+              slidesPerView={1.1}
+              breakpoints={{
+                640: { slidesPerView: 2.2 },
+                1024: { slidesPerView: 3.2 },
+                1280: { slidesPerView: 4 },
+              }}
+              onBeforeInit={(swiper) => {
+                swiperRef.current = swiper;
+              }}
+              autoplay={{ delay: 4000, disableOnInteraction: false }}
+              className="!pb-4 !pt-1"
+            >
+              {vouchers.map((voucher) => (
+                <SwiperSlide key={voucher.id} className="py-2">
+                  <VoucherCard voucher={voucher} copiedId={copiedId} handleCopy={handleCopy} />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
         </MotionItem>
       </MotionSection>
     </section>

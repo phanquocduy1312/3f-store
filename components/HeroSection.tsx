@@ -1,8 +1,9 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star, Bone, ShoppingBag, Heart } from "lucide-react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { Link } from "react-router-dom";
 import { Image } from "@/components/Image";
 import "swiper/css";
 import "swiper/css/navigation";
@@ -17,7 +18,7 @@ const heroBanners = [
 
 export function HeroSection() {
   return (
-    <section className="bg-[#f6f2ea] pt-4 pb-6">
+    <section className="bg-[#f6f2ea] pt-4 pb-0">
       <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-8">
         <div className="grid gap-4 lg:grid-cols-3 lg:grid-rows-2 lg:h-[540px]">
           {/* Main Slider - Spans 2 columns and 2 rows */}
@@ -66,20 +67,69 @@ export function HeroSection() {
             <div className="hero-pagination absolute bottom-4 left-0 right-0 z-10 flex justify-center gap-2"></div>
           </div>
 
-          {/* Top Right Banner */}
-          <div className="relative overflow-hidden rounded-3xl bg-white shadow-glass-sm group aspect-[16/9] lg:aspect-auto lg:h-auto">
+          {/* Top Right Banner - Layered Glassmorphic Info Card */}
+          <div className="hidden sm:block relative overflow-hidden rounded-3xl bg-[#F4EFE6] shadow-glass-sm group aspect-[16/9] lg:aspect-auto lg:h-auto border border-[#EBEBEB] hover:border-[#10854F]/40 hover:shadow-[0_20px_40px_rgba(16,133,79,0.1)] transition-all duration-500">
+            {/* Custom Generated Background Image */}
+            <div className="absolute inset-0 bg-black/40 z-10 transition-opacity duration-500 group-hover:bg-black/50 pointer-events-none"></div>
             <Image
-              src={heroBanners[3]}
-              alt="Promo banner 1"
+              src="/assets/images/explore-banner-bg.png"
+              alt="Explore Banner Background"
               width={800}
               height={450}
-              className="h-full w-full object-contain lg:object-cover transition-transform duration-700 group-hover:scale-105"
+              className="h-full w-full object-cover transition-transform duration-[1000ms] group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <div className="absolute bottom-5 left-5 right-5 translate-y-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-              <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white backdrop-blur-md">
-                Khám phá ngay
-              </span>
+            
+            {/* Top Typography Overlay */}
+            <div className="absolute top-6 left-6 right-6 z-20 pointer-events-none">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/30 px-3 py-1.5 backdrop-blur-md shadow-sm">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4ADE80] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#4ADE80]"></span>
+                </span>
+                <span className="text-[11px] font-black uppercase tracking-wider text-white">
+                  Bộ sưu tập mới
+                </span>
+              </div>
+              <h3 className="text-3xl md:text-4xl font-black text-white leading-[1.15] tracking-tight drop-shadow-lg">
+                Tất cả cho <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F2C94C] to-[#E5B523]">Boss Yêu</span>
+              </h3>
+              <p className="mt-2 text-sm md:text-base font-medium text-white/90 max-w-[240px] leading-relaxed drop-shadow-md">
+                Dinh dưỡng sạch & phụ kiện cao cấp dành riêng cho bé.
+              </p>
+            </div>
+
+            {/* Layered Floating Frosted Glass Panel */}
+            <div className="absolute left-4 right-4 bottom-4 z-20 p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.5)] transition-all duration-500 group-hover:bg-black/80">
+              {/* Collapsed Description/Tags that reveal on hover */}
+              <div className="max-h-0 opacity-0 overflow-hidden group-hover:max-h-12 group-hover:opacity-100 group-hover:mb-3 transition-all duration-500 ease-in-out">
+                <div className="flex flex-wrap gap-2">
+                  <span className="flex items-center gap-1.5 rounded-full bg-amber-500/20 px-3 py-1 text-[11px] font-bold uppercase text-amber-300 tracking-wider border border-amber-500/30">
+                    <Bone size={14} strokeWidth={2.5} /> Thức ăn
+                  </span>
+                  <span className="flex items-center gap-1.5 rounded-full bg-sky-500/20 px-3 py-1 text-[11px] font-bold uppercase text-sky-300 tracking-wider border border-sky-500/30">
+                    <ShoppingBag size={14} strokeWidth={2.5} /> Phụ kiện
+                  </span>
+                  <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-[11px] font-bold uppercase text-emerald-300 tracking-wider border border-emerald-500/30">
+                    <Heart size={14} strokeWidth={2.5} /> Chăm sóc
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Row - always visible */}
+              <div className="flex items-center justify-between">
+                <span className="text-[12px] font-black uppercase tracking-widest text-[#F2C94C] drop-shadow-sm flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[#F2C94C] animate-pulse"></span>
+                  3F Store
+                </span>
+                <Link 
+                  to="/products"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#F2C94C] to-[#E5B523] px-4 py-2 text-[12px] font-black uppercase tracking-wider text-[#3A2D00] shadow-[0_4px_12px_rgba(242,201,76,0.3)] transition-all duration-300 hover:scale-105 hover:shadow-[0_6px_15px_rgba(242,201,76,0.5)]"
+                >
+                  Khám phá ngay
+                  <ChevronRight size={14} strokeWidth={3} />
+                </Link>
+              </div>
             </div>
           </div>
 
