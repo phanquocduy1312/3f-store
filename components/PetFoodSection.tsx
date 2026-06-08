@@ -2,15 +2,10 @@
 
 import { Link } from "react-router-dom";
 import { Image } from "@/components/Image";
-import { ArrowRight, Star, PawPrint, ShieldCheck, Truck } from "lucide-react";
+import { ArrowRight, Star, PawPrint } from "lucide-react";
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
 import { getCatFoodProducts, getDogFoodProducts } from "@/data/store";
 import type { Product } from "@/types/store";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
 
 const catProducts: Product[] = getCatFoodProducts(12);
 const dogProducts: Product[] = getDogFoodProducts(12);
@@ -104,15 +99,7 @@ function ProductCard({
         <span className="text-[11px] font-semibold text-ink/45">Đã bán {meta.soldLabel}</span>
       </div>
 
-      <div className="mt-3 flex items-center gap-2 text-[11px] font-semibold text-ink/55">
-        <ShieldCheck size={13} className={accentClass} />
-        <span>{meta.featureLabel}</span>
-        <span className="text-ink/20">•</span>
-        <Truck size={13} className={accentClass} />
-        <span>Giao nhanh</span>
-      </div>
-
-      <div className="mt-auto pt-3 flex items-end justify-between">
+      <div className="mt-auto pt-4 flex items-end justify-between">
         <div>
           <span className={`text-base font-black ${accentClass}`}>{product.price}</span>
           {product.oldPrice && (
@@ -129,127 +116,217 @@ function ProductCard({
 
 export function PetFoodSection() {
   return (
-    <section className="relative bg-white py-12">
+    <section className="relative bg-white py-12 lg:py-16">
       <MotionSection className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-12">
+        <div className="grid grid-cols-1 gap-12 lg:gap-16">
           
           {/* Cat Food Section */}
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Banner card - Clean layout */}
-            <div className="relative flex lg:w-1/3 flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#F6FBF4] to-[#DCECD7] border border-[#E5F0E2] p-8 shadow-glass-sm group min-h-[280px] lg:min-h-0">
-              <div className="relative z-20">
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-xs font-bold text-forest backdrop-blur-md">
+          <div className="flex flex-col gap-6 lg:gap-8">
+            {/* Banner Card - Full Width with Rich Content */}
+            <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#F6FBF4] to-[#DCECD7] border border-[#E5F0E2] p-6 sm:p-8 lg:p-10 shadow-lg group min-h-[320px] sm:min-h-[340px] lg:min-h-[360px]">
+              <div className="relative z-20 max-w-2xl">
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-xs font-black uppercase tracking-wider text-forest backdrop-blur-md shadow-sm">
                   <PawPrint size={14} className="fill-current" />
                   Dành cho Mèo
                 </div>
-                <h3 className="text-2xl font-black text-ink mb-2">Dinh dưỡng cân bằng <br/>cho mèo cưng</h3>
-                <p className="text-sm text-ink/70 mb-6 max-w-[60%] sm:max-w-[80%]">Hỗ trợ sức khỏe toàn diện, giúp mèo cưng luôn năng động.</p>
                 
-                <Link to="/products?category=Thức ăn cho mèo" className="inline-flex items-center gap-2 rounded-full bg-forest px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-transform hover:scale-105">
-                  Xem tất cả
-                  <ArrowRight size={14} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
-                </Link>
+                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-ink mb-3 leading-tight">
+                  Dinh dưỡng cân bằng <br className="hidden sm:block" />
+                  cho mèo cưng
+                </h3>
+                
+                <p className="text-sm sm:text-base lg:text-lg text-ink/75 mb-4 max-w-xl leading-relaxed">
+                  Hỗ trợ sức khỏe toàn diện, giúp mèo cưng luôn năng động, khỏe mạnh và phát triển tốt nhất.
+                </p>
+
+                {/* Features List */}
+                <ul className="mb-6 space-y-2 text-sm text-ink/70">
+                  <li className="flex items-center gap-2">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-forest/10">
+                      <svg className="h-3 w-3 text-forest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="font-medium">Thành phần tự nhiên, an toàn 100%</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-forest/10">
+                      <svg className="h-3 w-3 text-forest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="font-medium">Cân bằng protein, vitamin & khoáng chất</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-forest/10">
+                      <svg className="h-3 w-3 text-forest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="font-medium">Hỗ trợ tiêu hóa & làm đẹp lông</span>
+                  </li>
+                </ul>
+
+                {/* Stats */}
+                <div className="mb-6 flex flex-wrap gap-4 text-xs sm:text-sm">
+                  <div className="flex items-center gap-2 rounded-lg bg-white/50 px-3 py-2 backdrop-blur-sm">
+                    <span className="text-lg font-black text-forest">200+</span>
+                    <span className="text-ink/70 font-semibold">Sản phẩm</span>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg bg-white/50 px-3 py-2 backdrop-blur-sm">
+                    <span className="text-lg font-black text-forest">4.8★</span>
+                    <span className="text-ink/70 font-semibold">Đánh giá</span>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg bg-white/50 px-3 py-2 backdrop-blur-sm">
+                    <span className="text-lg font-black text-forest">50k+</span>
+                    <span className="text-ink/70 font-semibold">Đã bán</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="absolute -bottom-10 -right-10 z-10 w-[45%] sm:w-[50%] lg:w-[70%]">
+              {/* Cat Image - Responsive positioning */}
+              <div className="absolute -bottom-8 sm:-bottom-12 lg:-bottom-16 -right-6 sm:-right-8 lg:-right-10 z-10 w-[200px] sm:w-[280px] md:w-[350px] lg:w-[450px]">
                 <Image
                   src="/assets/images/cat.webp"
                   alt="Mèo cưng"
-                  width={300}
-                  height={300}
+                  width={450}
+                  height={450}
                   className="h-auto w-full object-contain transition-transform duration-700 group-hover:scale-105"
                   priority
                 />
               </div>
             </div>
 
-            {/* Cat Products Swiper */}
-            <div className="lg:w-2/3 min-w-0">
-              <Swiper
-                modules={[Navigation, Pagination]}
-                spaceBetween={16}
-                slidesPerView={2}
-                breakpoints={{
-                  640: { slidesPerView: 3, spaceBetween: 20 },
-                  1024: { slidesPerView: 3, spaceBetween: 24 }
-                }}
-                pagination={{ clickable: true, dynamicBullets: true }}
-                className="!pb-12 h-full"
+            {/* Cat Products Grid - 8 products */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:gap-6">
+              {catProducts.slice(0, 8).map((product) => (
+                <ProductCard
+                  key={product.id || product.name}
+                  product={product}
+                  petType="cat"
+                  accentClass="text-forest"
+                  accentSoftClass="bg-forest/5"
+                  hoverBorderClass="border-forest/5 hover:border-forest/20"
+                  imageBgClass="bg-cream/30 group-hover:bg-cream/50"
+                  hoverTitleClass="group-hover:text-forest"
+                />
+              ))}
+            </div>
+
+            {/* View More Button */}
+            <div className="flex justify-center pt-2">
+              <Link 
+                to="/products?category=Thức ăn cho mèo" 
+                className="inline-flex items-center gap-2 rounded-full bg-forest px-6 py-3 sm:px-8 sm:py-3.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95"
               >
-                {catProducts.map((product) => (
-                  <SwiperSlide key={product.id || product.name} className="h-auto">
-                    <ProductCard
-                      product={product}
-                      petType="cat"
-                      accentClass="text-forest"
-                      accentSoftClass="bg-forest/5"
-                      hoverBorderClass="border-forest/5 hover:border-forest/20"
-                      imageBgClass="bg-cream/30 group-hover:bg-cream/50"
-                      hoverTitleClass="group-hover:text-forest"
-                    />
-                  </SwiperSlide>
-                ))}
-              </Swiper>
+                <span>Xem tất cả sản phẩm cho mèo</span>
+                <ArrowRight size={16} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
           </div>
 
           {/* Dog Food Section */}
-          <div className="flex flex-col lg:flex-row-reverse gap-6">
-            {/* Banner card */}
-            <div className="relative flex lg:w-1/3 flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#FFF6F4] to-[#FDE3E0] border border-[#F8DFDB] p-8 shadow-glass-sm group min-h-[280px] lg:min-h-0">
-              <div className="relative z-20">
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-xs font-bold text-[#D97A73] backdrop-blur-md">
+          <div className="flex flex-col gap-6 lg:gap-8">
+            {/* Banner Card - Full Width with Rich Content */}
+            <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#FFF6F4] to-[#FDE3E0] border border-[#F8DFDB] p-6 sm:p-8 lg:p-10 shadow-lg group min-h-[320px] sm:min-h-[340px] lg:min-h-[360px]">
+              <div className="relative z-20 max-w-2xl">
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#D97A73] backdrop-blur-md shadow-sm">
                   <PawPrint size={14} className="fill-current" />
                   Dành cho Chó
                 </div>
-                <h3 className="text-2xl font-black text-ink mb-2">Phát triển toàn diện <br/>cho cún cưng</h3>
-                <p className="text-sm text-ink/70 mb-6 max-w-[60%] sm:max-w-[80%]">Thức ăn giàu protein và vitamin giúp cún cưng luôn khỏe mạnh.</p>
                 
-                <Link to="/products?category=Thức ăn cho chó" className="inline-flex items-center gap-2 rounded-full bg-[#E58F89] px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-transform hover:scale-105">
-                  Xem tất cả
-                  <ArrowRight size={14} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
-                </Link>
+                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-ink mb-3 leading-tight">
+                  Phát triển toàn diện <br className="hidden sm:block" />
+                  cho cún cưng
+                </h3>
+                
+                <p className="text-sm sm:text-base lg:text-lg text-ink/75 mb-4 max-w-xl leading-relaxed">
+                  Thức ăn giàu protein và vitamin giúp cún cưng luôn khỏe mạnh, vui vẻ và năng động mỗi ngày.
+                </p>
+
+                {/* Features List */}
+                <ul className="mb-6 space-y-2 text-sm text-ink/70">
+                  <li className="flex items-center gap-2">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E58F89]/20">
+                      <svg className="h-3 w-3 text-[#D97A73]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="font-medium">Protein cao từ thịt thật tươi ngon</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E58F89]/20">
+                      <svg className="h-3 w-3 text-[#D97A73]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="font-medium">Tăng cường xương khớp & cơ bắp</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E58F89]/20">
+                      <svg className="h-3 w-3 text-[#D97A73]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="font-medium">Phù hợp mọi giống & lứa tuổi</span>
+                  </li>
+                </ul>
+
+                {/* Stats */}
+                <div className="mb-6 flex flex-wrap gap-4 text-xs sm:text-sm">
+                  <div className="flex items-center gap-2 rounded-lg bg-white/50 px-3 py-2 backdrop-blur-sm">
+                    <span className="text-lg font-black text-[#D97A73]">300+</span>
+                    <span className="text-ink/70 font-semibold">Sản phẩm</span>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg bg-white/50 px-3 py-2 backdrop-blur-sm">
+                    <span className="text-lg font-black text-[#D97A73]">4.9★</span>
+                    <span className="text-ink/70 font-semibold">Đánh giá</span>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg bg-white/50 px-3 py-2 backdrop-blur-sm">
+                    <span className="text-lg font-black text-[#D97A73]">80k+</span>
+                    <span className="text-ink/70 font-semibold">Đã bán</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="absolute -bottom-10 -right-10 z-10 w-[50%] sm:w-[55%] lg:w-[75%]">
+              {/* Dog Image - Responsive positioning */}
+              <div className="absolute -bottom-8 sm:-bottom-12 lg:-bottom-16 -right-6 sm:-right-8 lg:-right-10 z-10 w-[220px] sm:w-[300px] md:w-[370px] lg:w-[480px]">
                 <Image
                   src="/assets/images/dog.webp"
                   alt="Cún cưng"
-                  width={300}
-                  height={300}
+                  width={480}
+                  height={480}
                   className="h-auto w-full object-contain transition-transform duration-700 group-hover:scale-105"
                   priority
                 />
               </div>
             </div>
 
-            {/* Dog Products Swiper */}
-            <div className="lg:w-2/3 min-w-0">
-              <Swiper
-                modules={[Navigation, Pagination]}
-                spaceBetween={16}
-                slidesPerView={2}
-                breakpoints={{
-                  640: { slidesPerView: 3, spaceBetween: 20 },
-                  1024: { slidesPerView: 3, spaceBetween: 24 }
-                }}
-                pagination={{ clickable: true, dynamicBullets: true }}
-                className="!pb-12 h-full"
+            {/* Dog Products Grid - 8 products */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:gap-6">
+              {dogProducts.slice(0, 8).map((product) => (
+                <ProductCard
+                  key={product.id || product.name}
+                  product={product}
+                  petType="dog"
+                  accentClass="text-[#D97A73]"
+                  accentSoftClass="bg-[#E58F89]/10"
+                  hoverBorderClass="border-[#E58F89]/10 hover:border-[#E58F89]/30"
+                  imageBgClass="bg-[#FFF6F4]/50 group-hover:bg-[#FFF6F4]"
+                  hoverTitleClass="group-hover:text-[#D97A73]"
+                />
+              ))}
+            </div>
+
+            {/* View More Button */}
+            <div className="flex justify-center pt-2">
+              <Link 
+                to="/products?category=Thức ăn cho chó" 
+                className="inline-flex items-center gap-2 rounded-full bg-[#E58F89] px-6 py-3 sm:px-8 sm:py-3.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95"
               >
-                {dogProducts.map((product) => (
-                  <SwiperSlide key={product.id || product.name} className="h-auto">
-                    <ProductCard
-                      product={product}
-                      petType="dog"
-                      accentClass="text-[#D97A73]"
-                      accentSoftClass="bg-[#E58F89]/10"
-                      hoverBorderClass="border-[#E58F89]/10 hover:border-[#E58F89]/30"
-                      imageBgClass="bg-[#FFF6F4]/50 group-hover:bg-[#FFF6F4]"
-                      hoverTitleClass="group-hover:text-[#D97A73]"
-                    />
-                  </SwiperSlide>
-                ))}
-              </Swiper>
+                <span>Xem tất cả sản phẩm cho chó</span>
+                <ArrowRight size={16} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
           </div>
 

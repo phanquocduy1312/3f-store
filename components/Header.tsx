@@ -1,12 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getCartCount } from "@/lib/cartHelper";
-import { Image } from "@/components/Image";
-import { Menu, Search, ShoppingCart, User, ChevronDown, ChevronRight } from "lucide-react";
+import { FormEvent, useEffect, useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, ChevronRight, Menu, Search, ShoppingCart, User, Heart, TrendingUp } from "lucide-react";
+import { Image } from "@/components/Image";
+import { getCartCount } from "@/lib/cartHelper";
+import { MobileNavigationDrawer } from "./mobile-navigation-drawer";
 
-import { Link } from "react-router-dom";
+type Product = {
+  id: string;
+  name: string;
+  price: string;
+  image: string;
+  category: string;
+};
 
 type MenuItem = {
   label: string;
@@ -16,67 +24,70 @@ type MenuItem = {
 
 const navigationData: MenuItem[] = [
   { label: "Trang chủ", href: "/" },
-  { 
-    label: "Sản phẩm", 
+  {
+    label: "Sản phẩm",
     href: "/products",
     subItems: [
       {
         label: "Thức ăn dành cho chó",
         href: "/products?category=Thức ăn cho chó",
         subItems: [
-          { label: "Thức ăn khô cho Chó", href: "/products?category=Thức ăn khô cho chó" },
-          { label: "Thức ăn ướt cho Chó", href: "/products?category=Thức ăn ướt cho chó" }
-        ]
+          { label: "Thức ăn khô cho chó", href: "/products?category=Thức ăn khô cho chó" },
+          { label: "Thức ăn ướt cho chó", href: "/products?category=Thức ăn ướt cho chó" },
+        ],
       },
       {
         label: "Thức ăn dành cho mèo",
         href: "/products?category=Thức ăn cho mèo",
         subItems: [
-          { label: "Thức ăn khô dành cho Mèo", href: "/products?category=Thức ăn khô dành cho Mèo" },
-          { label: "Thức ăn ướt cho Mèo", href: "/products?category=Thức ăn ướt cho Mèo" }
-        ]
+          { label: "Thức ăn khô dành cho mèo", href: "/products?category=Thức ăn khô dành cho Mèo" },
+          { label: "Thức ăn ướt cho mèo", href: "/products?category=Thức ăn ướt cho Mèo" },
+        ],
       },
       { label: "Phụ kiện cho thú cưng", href: "/products?category=Phụ kiện & Đồ chơi" },
       { label: "Chăm sóc sức khỏe", href: "/products" },
       { label: "Vệ sinh cho thú cưng", href: "/products?category=Vệ sinh cho thú cưng" },
       { label: "Pate & Snack", href: "/products?category=Pate & Snack" },
-      { label: "4PAWS", href: "/products" }
-    ]
+      { label: "4PAWS", href: "/products" },
+    ],
   },
-  { 
-    label: "Thông tin", 
+  {
+    label: "Thông tin",
     href: "#",
     subItems: [
       { label: "Về chúng tôi", href: "#" },
-      { label: "Liên hệ", href: "#" }
-    ]
+      { label: "Liên hệ", href: "#" },
+    ],
   },
   { label: "Tin tức", href: "#" },
-  { label: "Kiểm tra đơn hàng", href: "#" }
+  { label: "Kiểm tra đơn hàng", href: "#" },
 ];
 
 const SubMenuItem = ({ item }: { item: MenuItem }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const hasSubItems = item.subItems && item.subItems.length > 0;
+  const hasSubItems = Boolean(item.subItems?.length);
 
   return (
-    <div 
+    <div
       className="relative"
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
     >
-      <Link 
-        to={item.href} 
+      <Link
+        to={item.href}
         className="flex w-full items-center justify-between px-5 py-3 text-[0.92rem] font-medium text-ink/80 transition-colors duration-200 hover:bg-forest/5 hover:text-forest"
       >
-        <span className={`${hasSubItems && isOpen ? "text-forest font-bold" : ""}`}>{item.label}</span>
-        {hasSubItems && (
-          <ChevronRight size={14} className={`transition-transform duration-200 ${isOpen ? "text-forest translate-x-1" : "text-forest/40"}`} />
-        )}
+        <span className={hasSubItems && isOpen ? "font-bold text-forest" : ""}>{item.label}</span>
+        {hasSubItems ? (
+          <ChevronRight
+            size={14}
+            className={`transition-transform duration-200 ${isOpen ? "translate-x-1 text-forest" : "text-forest/40"}`}
+          />
+        ) : null}
       </Link>
 
       <AnimatePresence>
-        {isOpen && hasSubItems && (
+        {isOpen && hasSubItems ? (
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
@@ -86,9 +97,9 @@ const SubMenuItem = ({ item }: { item: MenuItem }) => {
           >
             <div className="w-56 overflow-hidden rounded-xl border border-forest/10 bg-white py-2 shadow-[0_15px_35px_rgba(0,0,0,0.08)]">
               {item.subItems!.map((child) => (
-                <Link 
-                  key={child.label} 
-                  to={child.href} 
+                <Link
+                  key={child.label}
+                  to={child.href}
                   className="block px-5 py-3 text-[0.9rem] font-medium text-ink/80 transition-colors hover:bg-forest/5 hover:text-forest"
                 >
                   {child.label}
@@ -96,7 +107,7 @@ const SubMenuItem = ({ item }: { item: MenuItem }) => {
               ))}
             </div>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
   );
@@ -104,26 +115,29 @@ const SubMenuItem = ({ item }: { item: MenuItem }) => {
 
 const NavItem = ({ item }: { item: MenuItem }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const hasSubItems = item.subItems && item.subItems.length > 0;
+  const hasSubItems = Boolean(item.subItems?.length);
 
   return (
-    <div 
+    <div
       className="flex h-full items-center"
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
     >
-      <Link 
-        to={item.href} 
+      <Link
+        to={item.href}
         className={`flex items-center gap-1.5 transition-colors duration-200 ${isOpen ? "text-forest" : "hover:text-forest"}`}
       >
         {item.label}
-        {hasSubItems && (
-          <ChevronDown size={14} className={`transition-transform duration-300 ${isOpen ? "-rotate-180 text-forest" : "text-forest/60"}`} />
-        )}
+        {hasSubItems ? (
+          <ChevronDown
+            size={14}
+            className={`transition-transform duration-300 ${isOpen ? "-rotate-180 text-forest" : "text-forest/60"}`}
+          />
+        ) : null}
       </Link>
 
       <AnimatePresence>
-        {isOpen && hasSubItems && (
+        {isOpen && hasSubItems ? (
           <motion.div
             initial={{ opacity: 0, y: 15, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -137,28 +151,87 @@ const NavItem = ({ item }: { item: MenuItem }) => {
               ))}
             </div>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
   );
 };
 
-import { MobileNavigationDrawer } from "./mobile-navigation-drawer";
-
 export function Header() {
   const [cartCount, setCartCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setCartCount(getCartCount());
-    const handleCartUpdate = () => {
-      setCartCount(getCartCount());
-    };
+    const handleCartUpdate = () => setCartCount(getCartCount());
     window.addEventListener("cart-updated", handleCartUpdate);
-    return () => {
-      window.removeEventListener("cart-updated", handleCartUpdate);
-    };
+    return () => window.removeEventListener("cart-updated", handleCartUpdate);
   }, []);
+
+  // Handle click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Fetch suggestions when search query changes
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (searchQuery.trim().length < 2) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+
+      setIsLoadingSuggestions(true);
+      try {
+        const response = await fetch('/data/products.json');
+        const products: Product[] = await response.json();
+        
+        const filtered = products
+          .filter(product => 
+            product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            product.category.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+          .slice(0, 5);
+        
+        setSuggestions(filtered);
+        setShowSuggestions(true);
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+      } finally {
+        setIsLoadingSuggestions(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery]);
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    navigate(query ? `/products?q=${encodeURIComponent(query)}` : "/products");
+    setShowSuggestions(false);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleSuggestionClick = (productName: string) => {
+    setSearchQuery(productName);
+    setShowSuggestions(false);
+    navigate(`/products?q=${encodeURIComponent(productName)}`);
+  };
 
   return (
     <>
@@ -166,83 +239,129 @@ export function Header() {
         initial={{ opacity: 0, y: -18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="sticky top-0 z-50 border-b border-forest/12 bg-cream/[0.94] shadow-[0_10px_30px_rgba(34,52,39,0.08)] backdrop-blur-2xl"
+        className="sticky top-0 z-50 border-b border-forest/12 bg-cream/[0.96] shadow-[0_8px_20px_rgba(34,52,39,0.06)] backdrop-blur-2xl"
       >
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-8 px-4 sm:px-6 lg:px-8">
-          {/* Logo - Width 120px - more balanced */}
-          <a href="/" className="flex items-center" aria-label="3F Store - Trang chủ">
-            <Image 
-              src="/assets/logo/logo.webp" 
-              alt="3F Store logo" 
-              width={120} 
-              height={120} 
-              className="h-auto w-[120px] object-contain" 
-            />
-          </a>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center gap-3 lg:h-[70px] lg:gap-4">
+            {/* Logo */}
+            <Link to="/" className="shrink-0" aria-label="3F Store - Trang chủ">
+              <Image
+                src="/assets/logo/logo.webp"
+                alt="3F Store logo"
+                width={100}
+                height={100}
+                className="h-auto w-[85px] object-contain sm:w-[100px]"
+              />
+            </Link>
 
-          {/* Navigation */}
-          <nav className="relative hidden h-full items-center gap-8 text-[0.95rem] font-bold text-ink/88 lg:flex">
-            {navigationData.map((item) => (
-              <NavItem key={item.label} item={item} />
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-2">
-            {/* Icon buttons with labels */}
-            <button
-              className="flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 text-forest transition hover:bg-white/50"
-              aria-label="Tìm kiếm"
-            >
-              <Search size={22} strokeWidth={2.2} />
-              <span className="text-[0.7rem] font-bold text-center w-full block">Tìm kiếm</span>
-            </button>
-            
-            <Link
-              to="/cart"
-              className="relative flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 text-forest transition hover:bg-white/50"
-              aria-label="Giỏ hàng"
-            >
-              <div className="relative">
-                <ShoppingCart size={22} strokeWidth={2.2} />
-                {cartCount > 0 && (
-                  <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#E11D48] text-[10px] font-black text-white ring-2 ring-white">
-                    {cartCount}
-                  </span>
-                )}
+            {/* Search Bar - Desktop */}
+            <form onSubmit={handleSearchSubmit} className="hidden flex-1 lg:flex lg:px-4" role="search">
+              <div className="flex h-12 w-full items-center rounded-full border border-forest/20 bg-white shadow-[0_2px_8px_rgba(34,52,39,0.08)] transition focus-within:border-forest/40 focus-within:shadow-[0_4px_12px_rgba(34,52,39,0.12)]">
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Tìm kiếm sản phẩm cho boss..."
+                  className="h-full flex-1 bg-transparent px-6 text-[0.95rem] font-medium text-ink outline-none placeholder:text-ink/50"
+                />
+                <button
+                  type="submit"
+                  className="mr-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-forest text-white transition hover:scale-105 hover:bg-forest-700"
+                  aria-label="Tìm kiếm"
+                >
+                  <Search size={18} strokeWidth={2.5} />
+                </button>
               </div>
-              <span className="text-[0.7rem] font-bold text-center w-full block">Giỏ hàng</span>
-            </Link>
+            </form>
 
-            <Link
-              to="/login"
-              className="flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 text-forest transition hover:bg-white/50"
-              aria-label="Tài khoản"
-            >
-              <User size={22} strokeWidth={2.2} />
-              <span className="text-[0.7rem] font-bold text-center w-full block">Tài khoản</span>
-            </Link>
+            {/* Right Icons */}
+            <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
+              <Link
+                to="/wishlist"
+                className="flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3"
+                aria-label="Yêu thích"
+              >
+                <Heart size={24} strokeWidth={2} />
+                <span className="hidden text-[0.72rem] font-bold text-forest/90 sm:block">Yêu thích</span>
+              </Link>
 
-            {/* Mobile Menu */}
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="grid h-10 w-10 place-items-center rounded-full bg-white text-forest shadow-soft lg:hidden" 
-              aria-label="Mở menu"
-            >
-              <Menu size={20} />
-            </button>
+              <Link
+                to="/cart"
+                className="relative flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3"
+                aria-label="Giỏ hàng"
+              >
+                <div className="relative">
+                  <ShoppingCart size={24} strokeWidth={2} />
+                  {cartCount > 0 ? (
+                    <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#E11D48] text-[10px] font-black text-white ring-2 ring-white">
+                      {cartCount}
+                    </span>
+                  ) : null}
+                </div>
+                <span className="hidden text-[0.72rem] font-bold text-forest/90 sm:block">Giỏ hàng</span>
+              </Link>
+
+              <Link
+                to="/login"
+                className="flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3"
+                aria-label="Tài khoản"
+              >
+                <User size={24} strokeWidth={2} />
+                <span className="hidden text-[0.72rem] font-bold text-forest/90 sm:block">Tài khoản</span>
+              </Link>
+
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="grid h-10 w-10 place-items-center rounded-full bg-white text-forest shadow-md lg:hidden"
+                aria-label="Mở menu"
+              >
+                <Menu size={20} />
+              </button>
+            </div>
+          </div>
+
+          {/* Search Bar - Mobile */}
+          <div className="pb-3.5 pt-1 lg:hidden">
+            <form onSubmit={handleSearchSubmit} className="flex items-center" role="search">
+              <div className="flex h-12 w-full items-center rounded-full border border-forest/20 bg-white shadow-[0_2px_8px_rgba(34,52,39,0.08)]">
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Tìm nhanh sản phẩm..."
+                  className="h-full flex-1 bg-transparent px-5 text-[0.95rem] font-medium text-ink outline-none placeholder:text-ink/50"
+                />
+                <button
+                  type="submit"
+                  className="mr-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-forest text-white"
+                  aria-label="Tìm kiếm"
+                >
+                  <Search size={18} strokeWidth={2.5} />
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Navigation Menu */}
+          <div className="hidden border-t border-forest/10 lg:block">
+            <nav className="relative flex h-[54px] items-center gap-8 text-[0.92rem] font-bold text-ink/85">
+              {navigationData.map((item) => (
+                <NavItem key={item.label} item={item} />
+              ))}
+            </nav>
           </div>
         </div>
       </motion.header>
 
       <AnimatePresence>
-        {isMobileMenuOpen && (
+        {isMobileMenuOpen ? (
           <MobileNavigationDrawer
             isOpen={isMobileMenuOpen}
             onClose={() => setIsMobileMenuOpen(false)}
             navigationData={navigationData}
             cartCount={cartCount}
           />
-        )}
+        ) : null}
       </AnimatePresence>
     </>
   );

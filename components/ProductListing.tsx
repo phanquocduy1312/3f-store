@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ChevronDown, Grid, List, Star, PawPrint, Heart, ShoppingCart, AlignJustify, Filter, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductFilters } from "./product-filters";
@@ -14,6 +14,14 @@ function Image({ src, alt, fill, className }: { src: string, alt: string, fill?:
 // Data extraction helpers
 function extractPrice(priceStr: string): number {
   return parseInt(priceStr.replace(/\D/g, "")) || 0;
+}
+
+function normalizeTextForSearch(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d");
 }
 
 function extractBrand(name: string): string {
@@ -71,11 +79,10 @@ const ALL_CATEGORIES = CATEGORY_TREE.flatMap(c => c.subcategories ? [c.name, ...
 
 const WEIGHT_LIST = ["Dưới 1kg", "1 - 5kg", "5 - 10kg", "Trên 10kg"];
 
-import { useSearchParams, useNavigate } from "react-router-dom";
-
 export function ProductListing() {
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryParam = searchParams.get("category");
+  const queryParam = searchParams.get("q")?.trim() ?? "";
 
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -195,14 +202,27 @@ export function ProductListing() {
 
   // Compute filtered products
   const filteredProducts = useMemo(() => {
+    const normalizedQuery = normalizeTextForSearch(queryParam);
     return enhancedProducts.filter(p => {
       if (activeCategory !== "Tất cả sản phẩm" && p.displayCategory !== activeCategory) return false;
       if (selectedBrands.length > 0 && !selectedBrands.includes(p.brand)) return false;
       if (selectedWeights.length > 0 && !selectedWeights.includes(p.weightCat)) return false;
       if (p.priceVal > maxPrice) return false;
+      if (normalizedQuery) {
+        const searchHaystack = normalizeTextForSearch(
+          [
+            p.name,
+            p.category ?? "",
+            p.brand,
+            p.displayCategory,
+            p.displaySubCategory,
+          ].join(" ")
+        );
+        if (!searchHaystack.includes(normalizedQuery)) return false;
+      }
       return true;
     });
-  }, [enhancedProducts, activeCategory, selectedBrands, selectedWeights, maxPrice]);
+  }, [enhancedProducts, activeCategory, selectedBrands, selectedWeights, maxPrice, queryParam]);
 
   // Apply sorting
   const sortedProducts = useMemo(() => {

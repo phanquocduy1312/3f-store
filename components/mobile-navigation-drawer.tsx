@@ -86,18 +86,27 @@ export function MobileNavigationDrawer({
                 <li key={item.label} className="border-b border-forest/5 pb-2 last:border-0 last:pb-0">
                   {hasSubItems ? (
                     <div>
-                      <button
-                        onClick={() => toggleExpand(item.label)}
-                        className="flex w-full items-center justify-between py-2 text-[0.98rem] font-bold text-ink/85"
-                      >
-                        <span className={isExpanded ? "text-forest" : ""}>{item.label}</span>
-                        <ChevronDown
-                          size={16}
-                          className={`transition-transform duration-200 ${
-                            isExpanded ? "-rotate-180 text-forest" : "text-forest/50"
-                          }`}
-                        />
-                      </button>
+                      <div className="flex w-full items-center justify-between gap-2 py-2">
+                        <Link
+                          to={item.href}
+                          onClick={onClose}
+                          className="flex-1 text-[0.98rem] font-bold text-ink/85 hover:text-forest"
+                        >
+                          <span className={isExpanded ? "text-forest" : ""}>{item.label}</span>
+                        </Link>
+                        <button
+                          onClick={() => toggleExpand(item.label)}
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg hover:bg-forest/5"
+                          aria-label={`${isExpanded ? 'Thu gọn' : 'Mở rộng'} ${item.label}`}
+                        >
+                          <ChevronDown
+                            size={16}
+                            className={`transition-transform duration-200 ${
+                              isExpanded ? "-rotate-180 text-forest" : "text-forest/50"
+                            }`}
+                          />
+                        </button>
+                      </div>
 
                       {/* Expandable Sub-items */}
                       {isExpanded && (
@@ -110,20 +119,29 @@ export function MobileNavigationDrawer({
                               <li key={sub.label}>
                                 {hasNested ? (
                                   <div>
-                                    <button
-                                      onClick={() => toggleExpand(sub.label)}
-                                      className="flex w-full items-center justify-between py-1.5 text-[0.9rem] font-bold text-ink/70"
-                                    >
-                                      <span className={isNestedExpanded ? "text-forest" : ""}>
-                                        {sub.label}
-                                      </span>
-                                      <ChevronDown
-                                        size={14}
-                                        className={`transition-transform duration-200 ${
-                                          isNestedExpanded ? "-rotate-180 text-forest" : "text-forest/40"
-                                        }`}
-                                      />
-                                    </button>
+                                    <div className="flex w-full items-center justify-between gap-2 py-1.5">
+                                      <Link
+                                        to={sub.href}
+                                        onClick={onClose}
+                                        className="flex-1 text-[0.9rem] font-bold text-ink/70 hover:text-forest"
+                                      >
+                                        <span className={isNestedExpanded ? "text-forest" : ""}>
+                                          {sub.label}
+                                        </span>
+                                      </Link>
+                                      <button
+                                        onClick={() => toggleExpand(sub.label)}
+                                        className="grid h-7 w-7 shrink-0 place-items-center rounded-lg hover:bg-forest/5"
+                                        aria-label={`${isNestedExpanded ? 'Thu gọn' : 'Mở rộng'} ${sub.label}`}
+                                      >
+                                        <ChevronDown
+                                          size={14}
+                                          className={`transition-transform duration-200 ${
+                                            isNestedExpanded ? "-rotate-180 text-forest" : "text-forest/40"
+                                          }`}
+                                        />
+                                      </button>
+                                    </div>
 
                                     {isNestedExpanded && (
                                       <ul className="mt-1 ml-3 border-l border-forest/5 pl-2.5 space-y-1.5">
