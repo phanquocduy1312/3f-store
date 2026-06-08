@@ -198,15 +198,6 @@ export function Header() {
             </button>
             
             <Link
-              to="/login"
-              className="flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 text-forest transition hover:bg-white/50"
-              aria-label="Tài khoản"
-            >
-              <User size={22} strokeWidth={2.2} />
-              <span className="text-[0.7rem] font-bold text-center w-full block">Tài khoản</span>
-            </Link>
-            
-            <Link
               to="/cart"
               className="relative flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 text-forest transition hover:bg-white/50"
               aria-label="Giỏ hàng"
@@ -220,6 +211,15 @@ export function Header() {
                 )}
               </div>
               <span className="text-[0.7rem] font-bold text-center w-full block">Giỏ hàng</span>
+            </Link>
+
+            <Link
+              to="/login"
+              className="flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 text-forest transition hover:bg-white/50"
+              aria-label="Tài khoản"
+            >
+              <User size={22} strokeWidth={2.2} />
+              <span className="text-[0.7rem] font-bold text-center w-full block">Tài khoản</span>
             </Link>
 
             {/* Mobile Menu */}
