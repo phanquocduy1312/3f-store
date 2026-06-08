@@ -222,14 +222,6 @@ export function Header() {
               <span className="text-[0.7rem] font-bold text-center w-full block">Giỏ hàng</span>
             </Link>
 
-            {/* CTA Button - Desktop */}
-            <Link 
-              to="/login"
-              className="hidden h-12 items-center gap-2 rounded-full bg-forest px-6 text-[0.95rem] font-bold text-white shadow-soft transition hover:scale-105 hover:bg-forest/92 lg:flex"
-            >
-              Đăng nhập
-            </Link>
-            
             {/* Mobile Menu */}
             <button 
               onClick={() => setIsMobileMenuOpen(true)}

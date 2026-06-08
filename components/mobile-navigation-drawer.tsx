@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { X, ChevronDown, LogIn, Search, ShoppingCart, User, PawPrint } from "lucide-react";
+import { X, ChevronDown, Search, ShoppingCart, User, PawPrint } from "lucide-react";
 import { motion } from "framer-motion";
 import { Image } from "@/components/Image";
 
@@ -172,16 +172,7 @@ export function MobileNavigationDrawer({
         </nav>
 
         {/* Footer Area with actions */}
-        <div className="border-t border-forest/10 pt-6 space-y-3">
-          <Link
-            to="/login"
-            onClick={onClose}
-            className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full bg-forest text-[0.95rem] font-bold text-white shadow-soft hover:bg-forest/90 active:scale-95 transition-transform"
-          >
-            <LogIn size={18} />
-            Đăng nhập
-          </Link>
-          
+        <div className="border-t border-forest/10 pt-6">
           <div className="grid grid-cols-2 gap-2">
             <Link
               to="/cart"
