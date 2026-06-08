@@ -116,7 +116,7 @@ export function ReasonsSection() {
             >
               <div className="absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/20 blur-[60px] transition-all duration-700 group-hover:scale-110 group-hover:bg-emerald-400/30" />
               <Image
-                src="/assets/images/reasons-hero.png"
+                src="/assets/images/reasons-hero.webp"
                 alt="Thú cưng và sản phẩm dinh dưỡng 3F Store"
                 width={620}
                 height={620}

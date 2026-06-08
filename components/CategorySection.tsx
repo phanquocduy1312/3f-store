@@ -21,27 +21,27 @@ import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionS
 const categories = [
   {
     title: "Thức ăn cho chó",
-    image: "/assets/images/dog-food.png",
+    image: "/assets/images/dog-food.webp",
   },
   {
     title: "Thức ăn cho mèo",
-    image: "/assets/images/cat-food.png",
+    image: "/assets/images/cat-food.webp",
   },
   {
     title: "Phụ kiện thú cưng",
-    image: "/assets/images/accessories.png",
+    image: "/assets/images/accessories.webp",
   },
   {
     title: "Chăm sóc sức khỏe",
-    image: "/assets/images/health-care.png",
+    image: "/assets/images/health-care.webp",
   },
   {
     title: "Vệ sinh thú cưng",
-    image: "/assets/images/hygiene.png",
+    image: "/assets/images/hygiene.webp",
   },
   {
     title: "On Sale",
-    image: "/assets/images/onsale.png",
+    image: "/assets/images/onsale.webp",
   },
 ];
 

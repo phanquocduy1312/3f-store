@@ -49,7 +49,7 @@ export function Login() {
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 opacity-45 z-0">
           <img
-            src="/assets/images/auth-banner.png"
+            src="/assets/images/auth-banner.webp"
             alt="3F Store Brand Banner"
             className="w-full h-full object-cover scale-105"
           />

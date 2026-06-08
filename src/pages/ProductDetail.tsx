@@ -373,7 +373,7 @@ export function ProductDetail() {
                   <div className="mt-10 mb-10 overflow-hidden rounded-[32px] bg-[#F2F8EE] border border-[#E4EDDB]">
                     <div className="grid grid-cols-1 md:grid-cols-2">
                       <div className="relative min-h-[250px] md:min-h-full">
-                        <Image src="/assets/images/pet-benefits.png" alt="Thú cưng khỏe mạnh" className="absolute inset-0 h-full w-full object-cover" />
+                        <Image src="/assets/images/pet-benefits.webp" alt="Thú cưng khỏe mạnh" className="absolute inset-0 h-full w-full object-cover" />
                       </div>
                       <div className="p-8 lg:p-10">
                         <h3 className="mb-6 text-[22px] font-black leading-tight text-[#111827]">

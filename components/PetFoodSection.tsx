@@ -153,7 +153,7 @@ export function PetFoodSection() {
 
               <div className="absolute -bottom-10 -right-10 z-10 w-[70%]">
                 <Image
-                  src="/assets/images/cat.png"
+                  src="/assets/images/cat.webp"
                   alt="Mèo cưng"
                   width={300}
                   height={300}
@@ -213,7 +213,7 @@ export function PetFoodSection() {
 
               <div className="absolute -bottom-10 -right-10 z-10 w-[75%]">
                 <Image
-                  src="/assets/images/dog.png"
+                  src="/assets/images/dog.webp"
                   alt="Cún cưng"
                   width={300}
                   height={300}

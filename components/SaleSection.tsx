@@ -190,7 +190,7 @@ export function SaleSection() {
 
           <MotionItem {...motionItemProps} className="relative z-10 mb-7 overflow-hidden rounded-[2rem] border border-white/80 bg-white shadow-[0_18px_45px_rgba(41,76,38,0.14)]">
             <Image
-              src="/assets/images/sale.png"
+              src="/assets/images/sale.webp"
               alt="3F Store sale"
               width={1717}
               height={916}

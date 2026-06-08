@@ -115,7 +115,7 @@ export function CartCheckout() {
     return (
       <div className="mx-auto max-w-md px-4 py-20 text-center">
         <div className="mx-auto mb-6 h-48 w-48 overflow-hidden">
-          <Image src="/assets/images/empty-cart.png" alt="Empty Cart" className="h-full w-full object-contain mix-blend-multiply" />
+          <Image src="/assets/images/empty-cart.webp" alt="Empty Cart" className="h-full w-full object-contain mix-blend-multiply" />
         </div>
         <h2 className="text-xl font-black text-ink">Giỏ hàng của bạn đang trống</h2>
         <p className="mt-2 text-xs text-gray-500">Hãy thêm một vài sản phẩm thơm ngon cho các boss cưng nhé!</p>

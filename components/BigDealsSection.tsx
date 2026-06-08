@@ -41,7 +41,7 @@ export function BigDealsSection() {
             <div>
               <div className="relative mx-auto w-full max-w-[1200px] rounded-[36px]">
                 <div className="relative overflow-visible rounded-[36px]">
-                  <Image src="/assets/images/sale.png" alt="Sale frame" width={1200} height={600} className="w-full h-auto object-contain" />
+                  <Image src="/assets/images/sale.webp" alt="Sale frame" width={1200} height={600} className="w-full h-auto object-contain" />
                   <div className="absolute inset-x-6 top-24 bottom-6 flex items-center justify-center">
                     <div className="relative w-full max-w-6xl">
                       {/* navigation buttons */}

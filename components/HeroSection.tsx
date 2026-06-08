@@ -9,10 +9,10 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 const heroBanners = [
-  "/assets/images/banner-1.png",
-  "/assets/images/banner-2.png",
-  "/assets/images/banner-3.png",
-  "/assets/images/banner-4.png",
+  "/assets/images/banner-1.webp",
+  "/assets/images/banner-2.webp",
+  "/assets/images/banner-3.webp",
+  "/assets/images/banner-4.webp",
 ];
 
 export function HeroSection() {
@@ -94,7 +94,7 @@ export function HeroSection() {
               <div className="absolute inset-0 bg-gradient-to-r from-[#10854F] via-[#10854F]/70 to-transparent z-10" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0A5D35] via-transparent to-transparent z-10 opacity-60" />
               <Image 
-                src="/assets/images/promo_pet_3d.png" 
+                src="/assets/images/promo_pet_3d.webp" 
                 alt="Promo Pet" 
                 width={500} 
                 height={500} 

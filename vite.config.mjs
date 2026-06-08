@@ -12,4 +12,13 @@ export default defineConfig({
       "@": path.resolve(rootDir, "."),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom', 'framer-motion', 'lucide-react']
+        }
+      }
+    }
+  }
 });
