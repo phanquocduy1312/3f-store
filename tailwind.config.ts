@@ -10,23 +10,36 @@ const config: Config = {
     extend: {
       colors: {
         forest: {
-          DEFAULT: "#10854F",
-          dark: "#0A5C35",
-          darker: "#05331D",
+          DEFAULT: "rgb(var(--color-primary) / <alpha-value>)",
+          dark: "rgb(var(--color-primary-dark) / <alpha-value>)",
+          darker: "rgb(var(--color-primary-darker) / <alpha-value>)",
+          soft: "rgb(var(--color-primary-soft) / <alpha-value>)",
+          muted: "rgb(var(--color-primary-muted) / <alpha-value>)",
         },
-        cream: "#F8F4EC",
-        honey: "#F2C94C",
-        ink: "#221A12",
+        cream: {
+          DEFAULT: "rgb(var(--color-surface) / <alpha-value>)",
+          soft: "rgb(var(--color-surface-soft) / <alpha-value>)",
+        },
+        honey: {
+          DEFAULT: "rgb(var(--color-accent) / <alpha-value>)",
+          dark: "rgb(var(--color-accent-dark) / <alpha-value>)",
+          soft: "rgb(var(--color-accent-soft) / <alpha-value>)",
+        },
+        ink: {
+          DEFAULT: "rgb(var(--color-ink) / <alpha-value>)",
+          soft: "rgb(var(--color-ink-soft) / <alpha-value>)",
+        },
+        border: "rgb(var(--color-border) / <alpha-value>)",
         sale: {
-          bg: "#082F19",
-          card: "#0C3D22",
+          bg: "rgb(var(--color-sale-bg) / <alpha-value>)",
+          card: "rgb(var(--color-sale-card) / <alpha-value>)",
         }
       },
       boxShadow: {
-        soft: "0 24px 70px rgba(31, 77, 58, 0.08)",
-        lift: "0 28px 80px rgba(31, 77, 58, 0.12)",
-        glass: "0 8px 32px 0 rgba(31, 38, 135, 0.07)",
-        "glass-sm": "0 4px 16px 0 rgba(31, 38, 135, 0.05)",
+        soft: "0 24px 70px rgba(4, 135, 217, 0.08)",
+        lift: "0 28px 80px rgba(4, 135, 217, 0.14)",
+        glass: "0 8px 32px 0 rgba(15, 39, 65, 0.07)",
+        "glass-sm": "0 4px 16px 0 rgba(15, 39, 65, 0.05)",
       },
       borderRadius: {
         "4xl": "2rem",

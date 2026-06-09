@@ -112,8 +112,8 @@ export function ProductFilters({
     <div className="flex flex-col gap-6">
       {/* DANH MỤC */}
       <div className="rounded-[24px] bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#F2EFE9]">
-        <h3 className="mb-4 text-[15px] font-extrabold text-[#221A12] flex items-center gap-2">
-          <AlignJustify size={18} className="text-[#10854F]"/>
+        <h3 className="mb-4 text-[15px] font-extrabold text-[rgb(var(--color-ink))] flex items-center gap-2">
+          <AlignJustify size={18} className="text-[rgb(var(--color-primary))]"/>
           DANH MỤC
         </h3>
         <ul className="space-y-1">
@@ -128,14 +128,14 @@ export function ProductFilters({
                   onClick={() => handleCategoryClick(node.name, hasSub, isParentActive, isExpanded)}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${
                   isParentActive 
-                    ? "bg-[#EAF7EC] text-[#10854F]" 
-                    : "text-[#221A12]/75 hover:bg-[#F9F9F9] hover:text-[#221A12]"
+                    ? "bg-[rgb(var(--color-primary-soft))] text-[rgb(var(--color-primary))]" 
+                    : "text-[rgb(var(--color-ink))]/75 hover:bg-[rgb(var(--color-surface-soft))] hover:text-[rgb(var(--color-ink))]"
                 }`}>
                   <div className="flex items-center gap-2 text-left">
                     {node.name}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs ${isParentActive ? "text-[#10854F]" : "text-[#221A12]/40"}`}>{catCounts[node.name] || 0}</span>
+                    <span className={`text-xs ${isParentActive ? "text-[rgb(var(--color-primary))]" : "text-[rgb(var(--color-ink))]/40"}`}>{catCounts[node.name] || 0}</span>
                     {hasSub && (
                       <ChevronDown size={14} className={`transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                     )}
@@ -153,12 +153,12 @@ export function ProductFilters({
                             onClick={(e) => handleSubCategoryClick(sub, e)}
                             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                               isSubActive
-                                ? "text-[#10854F] bg-[#EAF7EC]/50"
-                                : "text-[#221A12]/60 hover:text-[#221A12] hover:bg-[#F9F9F9]"
+                                ? "text-[rgb(var(--color-primary))] bg-[rgb(var(--color-primary-soft))]/50"
+                                : "text-[rgb(var(--color-ink))]/60 hover:text-[rgb(var(--color-ink))] hover:bg-[rgb(var(--color-surface-soft))]"
                             }`}
                           >
                             <span className="text-left">{sub}</span>
-                            <span className={`text-[10px] ${isSubActive ? "text-[#10854F]" : "text-[#221A12]/30"}`}>{catCounts[sub] || 0}</span>
+                            <span className={`text-[10px] ${isSubActive ? "text-[rgb(var(--color-primary))]" : "text-[rgb(var(--color-ink))]/30"}`}>{catCounts[sub] || 0}</span>
                           </button>
                         </li>
                       );
@@ -173,7 +173,7 @@ export function ProductFilters({
 
       {/* THƯƠNG HIỆU */}
       <div className="rounded-[24px] bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#F2EFE9]">
-        <h3 className="mb-4 text-[15px] font-extrabold text-[#221A12]">
+        <h3 className="mb-4 text-[15px] font-extrabold text-[rgb(var(--color-ink))]">
           THƯƠNG HIỆU
         </h3>
         <div className="space-y-3 max-h-[200px] overflow-y-auto custom-scrollbar pr-2">
@@ -182,7 +182,7 @@ export function ProductFilters({
             return (
               <label key={idx} className="flex items-center justify-between cursor-pointer group">
                 <div className="flex items-center gap-3">
-                  <div className={`relative flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${selectedBrands.includes(brand) ? 'border-[#10854F] bg-[#10854F]' : 'border-[#E0E0E0] bg-white group-hover:border-[#10854F]'}`}>
+                  <div className={`relative flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${selectedBrands.includes(brand) ? 'border-[rgb(var(--color-primary))] bg-[rgb(var(--color-primary))]' : 'border-[#E0E0E0] bg-white group-hover:border-[rgb(var(--color-primary))]'}`}>
                     <input 
                       type="checkbox" 
                       checked={selectedBrands.includes(brand)}
@@ -193,9 +193,9 @@ export function ProductFilters({
                       <path d="M1 5L4.5 8.5L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
-                  <span className="text-sm font-bold text-[#221A12]/80 group-hover:text-[#221A12] text-left">{brand}</span>
+                  <span className="text-sm font-bold text-[rgb(var(--color-ink))]/80 group-hover:text-[rgb(var(--color-ink))] text-left">{brand}</span>
                 </div>
-                <span className="text-xs font-medium text-[#221A12]/40">{count}</span>
+                <span className="text-xs font-medium text-[rgb(var(--color-ink))]/40">{count}</span>
               </label>
             );
           })}
@@ -204,7 +204,7 @@ export function ProductFilters({
 
       {/* KHOẢNG GIÁ */}
       <div className="rounded-[24px] bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#F2EFE9]">
-        <h3 className="mb-4 text-[15px] font-extrabold text-[#221A12]">
+        <h3 className="mb-4 text-[15px] font-extrabold text-[rgb(var(--color-ink))]">
           KHOẢNG GIÁ
         </h3>
         <div className="px-1 pt-2 pb-4">
@@ -215,30 +215,30 @@ export function ProductFilters({
             step="50000"
             value={tempMaxPrice} 
             onChange={(e) => setTempMaxPrice(parseInt(e.target.value))}
-            className="w-full h-1.5 bg-[#EAEAEA] rounded-lg appearance-none cursor-pointer accent-[#10854F]"
+            className="w-full h-1.5 bg-[rgb(var(--color-border))] rounded-lg appearance-none cursor-pointer accent-[rgb(var(--color-primary))]"
           />
         </div>
-        <div className="flex items-center justify-between text-xs font-bold text-[#221A12]/80 mb-5">
+        <div className="flex items-center justify-between text-xs font-bold text-[rgb(var(--color-ink))]/80 mb-5">
           <span>0đ</span>
-          <span className="text-[#10854F]">{formatMoney(tempMaxPrice)}</span>
+          <span className="text-[rgb(var(--color-primary))]">{formatMoney(tempMaxPrice)}</span>
         </div>
         <button 
           onClick={handleApplyFilterMobile}
-          className="w-full rounded-xl bg-[#10854F] py-3 text-xs font-black text-white hover:bg-[#0D7344] transition-colors shadow-md active:scale-95">
+          className="w-full rounded-xl bg-[rgb(var(--color-primary))] py-3 text-xs font-black text-white hover:bg-[rgb(var(--color-primary-dark))] transition-colors shadow-md active:scale-95">
           Áp dụng bộ lọc
         </button>
       </div>
 
       {/* TRỌNG LƯỢNG */}
       <div className="rounded-[24px] bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#F2EFE9]">
-        <h3 className="mb-4 text-[15px] font-extrabold text-[#221A12]">
+        <h3 className="mb-4 text-[15px] font-extrabold text-[rgb(var(--color-ink))]">
           TRỌNG LƯỢNG
         </h3>
         <div className="space-y-3">
           {WEIGHT_LIST.map((weight, idx) => (
             <label key={idx} className="flex items-center justify-between cursor-pointer group">
               <div className="flex items-center gap-3">
-                <div className={`relative flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${selectedWeights.includes(weight) ? 'border-[#10854F] bg-[#10854F]' : 'border-[#E0E0E0] bg-white group-hover:border-[#10854F]'}`}>
+                <div className={`relative flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${selectedWeights.includes(weight) ? 'border-[rgb(var(--color-primary))] bg-[rgb(var(--color-primary))]' : 'border-[#E0E0E0] bg-white group-hover:border-[rgb(var(--color-primary))]'}`}>
                   <input 
                     type="checkbox" 
                     checked={selectedWeights.includes(weight)}
@@ -249,9 +249,9 @@ export function ProductFilters({
                     <path d="M1 5L4.5 8.5L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <span className="text-sm font-bold text-[#221A12]/80 group-hover:text-[#221A12] text-left">{weight}</span>
+                <span className="text-sm font-bold text-[rgb(var(--color-ink))]/80 group-hover:text-[rgb(var(--color-ink))] text-left">{weight}</span>
               </div>
-              <span className="text-xs font-medium text-[#221A12]/40">{weightCounts[weight] || 0}</span>
+              <span className="text-xs font-medium text-[rgb(var(--color-ink))]/40">{weightCounts[weight] || 0}</span>
             </label>
           ))}
         </div>

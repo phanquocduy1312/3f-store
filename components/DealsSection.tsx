@@ -30,26 +30,26 @@ export function DealsSection() {
           <MotionItem {...motionItemProps} className="mb-6 flex items-start justify-between gap-5">
         <div>
           <div className="mb-2 flex items-center gap-2">
-            <PawPrint size={16} className="fill-[#10854F] text-[#10854F]" />
-            <p className="text-xs font-black uppercase tracking-wide text-[#10854F]/75">Sản phẩm nổi bật</p>
+            <PawPrint size={16} className="fill-[rgb(var(--color-primary))] text-[rgb(var(--color-primary))]" />
+            <p className="text-xs font-black uppercase tracking-wide text-[rgb(var(--color-primary))]/75">Sản phẩm nổi bật</p>
           </div>
-          <h2 className="flex items-center gap-2 text-2xl font-black text-[#221A12] sm:text-4xl">
+          <h2 className="flex items-center gap-2 text-2xl font-black text-[rgb(var(--color-ink))] sm:text-4xl">
             Sản phẩm được yêu thích nhất
             <span className="text-3xl">❤️</span>
           </h2>
-          <p className="mt-2 text-sm text-[#221A12]/60">
+          <p className="mt-2 text-sm text-[rgb(var(--color-ink))]/60">
             Những sản phẩm chất lượng được hàng ngàn Boss và Sen tin dùng
           </p>
         </div>
         <div className="hidden gap-3 sm:flex">
           <button 
-            className="product-prev grid h-12 w-12 place-items-center rounded-full border-2 border-[#10854F] bg-white text-[#10854F] shadow-sm transition hover:bg-[#10854F] hover:text-white" 
+            className="product-prev grid h-12 w-12 place-items-center rounded-full border-2 border-[rgb(var(--color-primary))] bg-white text-[rgb(var(--color-primary))] shadow-sm transition hover:bg-[rgb(var(--color-primary))] hover:text-white" 
             aria-label="Sản phẩm trước"
           >
             <ChevronLeft size={20} strokeWidth={2.5} />
           </button>
           <button 
-            className="product-next grid h-12 w-12 place-items-center rounded-full bg-[#10854F] text-white shadow-sm transition hover:bg-[#0D7344]" 
+            className="product-next grid h-12 w-12 place-items-center rounded-full bg-[rgb(var(--color-primary))] text-white shadow-sm transition hover:bg-[rgb(var(--color-primary-dark))]" 
             aria-label="Sản phẩm tiếp theo"
           >
             <ChevronRight size={20} strokeWidth={2.5} />
@@ -68,8 +68,8 @@ export function DealsSection() {
               onClick={() => setActiveCategory(category.id)}
               className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition whitespace-nowrap ${
                 isActive
-                  ? "bg-[#10854F] text-white shadow-md"
-                  : "border-2 border-[#E5E5E5] bg-white text-[#221A12]/70 hover:border-[#10854F]/30"
+                  ? "bg-[rgb(var(--color-primary))] text-white shadow-md"
+                  : "border-2 border-[#E5E5E5] bg-white text-[rgb(var(--color-ink))]/70 hover:border-[rgb(var(--color-primary))]/30"
               }`}
             >
               <Icon size={16} className={isActive ? "fill-white" : ""} />
@@ -111,7 +111,7 @@ export function DealsSection() {
                   
                   {/* Badge Best Seller or Favorite - top left */}
                   {isBestSeller && (
-                    <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-[#10854F] px-3 py-1.5 shadow-md">
+                    <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-[rgb(var(--color-primary))] px-3 py-1.5 shadow-md">
                       <Crown size={12} className="fill-[#FFD700] text-[#FFD700]" />
                       <span className="text-[10px] font-black uppercase tracking-wide text-white">Best Seller</span>
                     </div>
@@ -125,7 +125,7 @@ export function DealsSection() {
 
                   {/* Paw icon circle - top right */}
                   <div className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-white shadow-md">
-                    <PawPrint size={18} className="fill-[#10854F] text-[#10854F]" />
+                    <PawPrint size={18} className="fill-[rgb(var(--color-primary))] text-[rgb(var(--color-primary))]" />
                   </div>
 
                   {/* Product image */}
@@ -141,7 +141,7 @@ export function DealsSection() {
 
                   {/* Product info */}
                   <div className="mt-4">
-                    <h3 className="min-h-[44px] text-sm font-black leading-tight text-[#221A12]">
+                    <h3 className="min-h-[44px] text-sm font-black leading-tight text-[rgb(var(--color-ink))]">
                       {product.name}
                     </h3>
 
@@ -156,18 +156,18 @@ export function DealsSection() {
                             strokeWidth={2}
                           />
                         ))}
-                        <span className="ml-1 text-xs font-bold text-[#221A12]/60">({product.reviews})</span>
+                        <span className="ml-1 text-xs font-bold text-[rgb(var(--color-ink))]/60">({product.reviews})</span>
                       </div>
-                      <span className="text-xs text-[#221A12]/60">
-                        Đã bán: <span className="font-bold text-[#221A12]">{product.sold}</span>
+                      <span className="text-xs text-[rgb(var(--color-ink))]/60">
+                        Đã bán: <span className="font-bold text-[rgb(var(--color-ink))]">{product.sold}</span>
                       </span>
                     </div>
 
                     {/* Price row: new price + old price + discount badge - ONE LINE */}
                     <div className="mt-3 flex items-center gap-2">
-                      <span className="text-lg font-black text-[#10854F] sm:text-xl">{product.price}</span>
+                      <span className="text-lg font-black text-[rgb(var(--color-primary))] sm:text-xl">{product.price}</span>
                       {product.oldPrice && (
-                        <span className="text-xs font-semibold text-[#221A12]/40 line-through">{product.oldPrice}</span>
+                        <span className="text-xs font-semibold text-[rgb(var(--color-ink))]/40 line-through">{product.oldPrice}</span>
                       )}
                       {hasDiscount && (
                         <span className="rounded-md bg-[#EF4444] px-2 py-0.5 text-[10px] font-black text-white">
@@ -179,13 +179,13 @@ export function DealsSection() {
                     {/* Action buttons: Add to cart + Buy now */}
                     <div className="mt-4 flex gap-2">
                       <button 
-                        className="flex flex-1 items-center justify-center rounded-full border-2 border-[#10854F] bg-white px-3 py-2.5 text-xs font-black text-[#10854F] transition hover:bg-[#10854F] hover:text-white active:scale-95 whitespace-nowrap" 
+                        className="flex flex-1 items-center justify-center rounded-full border-2 border-[rgb(var(--color-primary))] bg-white px-3 py-2.5 text-xs font-black text-[rgb(var(--color-primary))] transition hover:bg-[rgb(var(--color-primary))] hover:text-white active:scale-95 whitespace-nowrap" 
                         aria-label={`Thêm ${product.name} vào giỏ hàng`}
                       >
                         <span>Thêm vào giỏ</span>
                       </button>
                       <button 
-                        className="flex flex-1 items-center justify-center rounded-full bg-[#10854F] px-3 py-2.5 text-xs font-black text-white transition hover:bg-[#0D7344] active:scale-95 whitespace-nowrap" 
+                        className="flex flex-1 items-center justify-center rounded-full bg-[rgb(var(--color-primary))] px-3 py-2.5 text-xs font-black text-white transition hover:bg-[rgb(var(--color-primary-dark))] active:scale-95 whitespace-nowrap" 
                         aria-label={`Mua ngay ${product.name}`}
                       >
                         Mua ngay

@@ -68,7 +68,7 @@ export function HeroSection() {
           </div>
 
           {/* Top Right Banner - Layered Glassmorphic Info Card */}
-          <div className="hidden sm:block relative overflow-hidden rounded-3xl bg-[#F4EFE6] shadow-glass-sm group aspect-[16/9] lg:aspect-auto lg:h-auto border border-[#EBEBEB] hover:border-[#10854F]/40 hover:shadow-[0_20px_40px_rgba(16,133,79,0.1)] transition-all duration-500">
+          <div className="hidden sm:block relative overflow-hidden rounded-3xl bg-[#F4EFE6] shadow-glass-sm group aspect-[16/9] lg:aspect-auto lg:h-auto border border-[rgb(var(--color-border))] hover:border-[rgb(var(--color-primary))]/40 hover:shadow-[0_20px_40px_rgba(16,133,79,0.1)] transition-all duration-500">
             {/* Custom Generated Background Image */}
             <div className="absolute inset-0 bg-black/40 z-10 transition-opacity duration-500 group-hover:bg-black/50 pointer-events-none"></div>
             <Image
@@ -134,14 +134,14 @@ export function HeroSection() {
           </div>
 
           {/* Bottom Right Banner - Custom Promotional Card */}
-          <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#10854F] to-[#0A5D35] p-7 shadow-[0_20px_40px_rgba(16,133,79,0.15)] text-white flex flex-col justify-between group min-h-[260px] lg:h-auto border border-white/10">
+          <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[rgb(var(--color-primary))] to-[#0A5D35] p-7 shadow-[0_20px_40px_rgba(16,133,79,0.15)] text-white flex flex-col justify-between group min-h-[260px] lg:h-auto border border-white/10">
             {/* Animated Glow Elements */}
             <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-[#F2C94C]/20 blur-[40px] transition-transform duration-700 group-hover:scale-150 group-hover:bg-[#F2C94C]/30" />
             <div className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-emerald-400/20 blur-[30px] transition-transform duration-700 group-hover:scale-150" />
 
             {/* Image Section */}
             <div className="absolute right-0 top-0 bottom-0 w-[65%] overflow-hidden pointer-events-none">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#10854F] via-[#10854F]/70 to-transparent z-10" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[rgb(var(--color-primary))] via-[rgb(var(--color-primary))]/70 to-transparent z-10" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0A5D35] via-transparent to-transparent z-10 opacity-60" />
               <Image 
                 src="/assets/images/promo_pet_3d.webp" 

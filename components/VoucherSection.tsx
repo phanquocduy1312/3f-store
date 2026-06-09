@@ -156,7 +156,7 @@ export function VoucherSection() {
     <section className="relative overflow-hidden bg-[#F6F2EA] py-0">
       {/* Pet-themed playful background elements */}
       <div className="pointer-events-none absolute left-0 top-0 h-full w-full opacity-40" 
-        style={{ backgroundImage: "radial-gradient(#10854F 1.5px, transparent 1.5px)", backgroundSize: "32px 32px" }} 
+        style={{ backgroundImage: "radial-gradient(rgb(var(--color-primary)) 1.5px, transparent 1.5px)", backgroundSize: "32px 32px" }} 
       />
       
       {/* Decorative large paws in background */}

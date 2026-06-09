@@ -32,7 +32,7 @@ export function App() {
     <main className="min-h-screen bg-white">
       <Header />
 
-      <Suspense fallback={<div className="flex h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-[#10854F] border-t-transparent"></div></div>}>
+      <Suspense fallback={<div className="flex h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-forest border-t-transparent"></div></div>}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />

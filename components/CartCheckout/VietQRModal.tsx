@@ -48,7 +48,7 @@ export function VietQRModal({ isOpen, onClose, orderId, amount }: VietQRModalPro
       <div className="relative w-full max-w-md overflow-hidden rounded-[24px] bg-white shadow-2xl transition-all duration-300">
         
         {/* Header decoration */}
-        <div className="bg-[#10854F] px-6 py-5 text-center text-white">
+        <div className="bg-[rgb(var(--color-primary))] px-6 py-5 text-center text-white">
           <h3 className="flex items-center justify-center gap-2 text-base font-black">
             <QrCode size={20} /> Thanh toán qua VietQR
           </h3>

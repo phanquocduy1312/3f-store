@@ -122,9 +122,9 @@ export function PetFoodSection() {
           {/* Cat Food Section */}
           <div className="flex flex-col gap-6 lg:gap-8">
             {/* Banner Card - Full Width with Rich Content */}
-            <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#F6FBF4] to-[#DCECD7] border border-[#E5F0E2] p-6 sm:p-8 lg:p-10 shadow-lg group min-h-[320px] sm:min-h-[340px] lg:min-h-[360px]">
+            <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[rgb(var(--color-primary-soft))] to-[rgb(var(--color-primary-muted))] border border-[rgb(var(--color-primary-muted))] p-6 sm:p-8 lg:p-10 shadow-lg group min-h-[320px] sm:min-h-[340px] lg:min-h-[360px]">
               <div className="relative z-20 max-w-2xl">
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-xs font-black uppercase tracking-wider text-forest backdrop-blur-md shadow-sm">
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-xs font-black uppercase tracking-wider text-[rgb(var(--color-primary))] backdrop-blur-md shadow-sm">
                   <PawPrint size={14} className="fill-current" />
                   Dành cho Mèo
                 </div>
@@ -141,24 +141,24 @@ export function PetFoodSection() {
                 {/* Features List */}
                 <ul className="mb-6 space-y-2 text-sm text-ink/70">
                   <li className="flex items-center gap-2">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-forest/10">
-                      <svg className="h-3 w-3 text-forest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/60">
+                      <svg className="h-3 w-3 text-[rgb(var(--color-primary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
                     <span className="font-medium">Thành phần tự nhiên, an toàn 100%</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-forest/10">
-                      <svg className="h-3 w-3 text-forest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/60">
+                      <svg className="h-3 w-3 text-[rgb(var(--color-primary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
                     <span className="font-medium">Cân bằng protein, vitamin & khoáng chất</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-forest/10">
-                      <svg className="h-3 w-3 text-forest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/60">
+                      <svg className="h-3 w-3 text-[rgb(var(--color-primary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
@@ -169,15 +169,15 @@ export function PetFoodSection() {
                 {/* Stats */}
                 <div className="mb-6 flex flex-wrap gap-4 text-xs sm:text-sm">
                   <div className="flex items-center gap-2 rounded-lg bg-white/50 px-3 py-2 backdrop-blur-sm">
-                    <span className="text-lg font-black text-forest">200+</span>
+                    <span className="text-lg font-black text-[rgb(var(--color-primary))]">200+</span>
                     <span className="text-ink/70 font-semibold">Sản phẩm</span>
                   </div>
                   <div className="flex items-center gap-2 rounded-lg bg-white/50 px-3 py-2 backdrop-blur-sm">
-                    <span className="text-lg font-black text-forest">4.8★</span>
+                    <span className="text-lg font-black text-[rgb(var(--color-primary))]">4.8★</span>
                     <span className="text-ink/70 font-semibold">Đánh giá</span>
                   </div>
                   <div className="flex items-center gap-2 rounded-lg bg-white/50 px-3 py-2 backdrop-blur-sm">
-                    <span className="text-lg font-black text-forest">50k+</span>
+                    <span className="text-lg font-black text-[rgb(var(--color-primary))]">50k+</span>
                     <span className="text-ink/70 font-semibold">Đã bán</span>
                   </div>
                 </div>
@@ -216,7 +216,7 @@ export function PetFoodSection() {
             <div className="flex justify-center pt-2">
               <Link 
                 to="/products?category=Thức ăn cho mèo" 
-                className="inline-flex items-center gap-2 rounded-full bg-forest px-6 py-3 sm:px-8 sm:py-3.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95"
+                className="inline-flex items-center gap-2 rounded-full bg-[rgb(var(--color-primary))] px-6 py-3 sm:px-8 sm:py-3.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95"
               >
                 <span>Xem tất cả sản phẩm cho mèo</span>
                 <ArrowRight size={16} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
@@ -227,9 +227,9 @@ export function PetFoodSection() {
           {/* Dog Food Section */}
           <div className="flex flex-col gap-6 lg:gap-8">
             {/* Banner Card - Full Width with Rich Content */}
-            <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#FFF6F4] to-[#FDE3E0] border border-[#F8DFDB] p-6 sm:p-8 lg:p-10 shadow-lg group min-h-[320px] sm:min-h-[340px] lg:min-h-[360px]">
+            <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[rgb(var(--color-primary-soft))] to-[rgb(var(--color-primary-muted))] border border-[rgb(var(--color-primary-muted))] p-6 sm:p-8 lg:p-10 shadow-lg group min-h-[320px] sm:min-h-[340px] lg:min-h-[360px]">
               <div className="relative z-20 max-w-2xl">
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#D97A73] backdrop-blur-md shadow-sm">
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-xs font-black uppercase tracking-wider text-[rgb(var(--color-primary))] backdrop-blur-md shadow-sm">
                   <PawPrint size={14} className="fill-current" />
                   Dành cho Chó
                 </div>
@@ -246,24 +246,24 @@ export function PetFoodSection() {
                 {/* Features List */}
                 <ul className="mb-6 space-y-2 text-sm text-ink/70">
                   <li className="flex items-center gap-2">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E58F89]/20">
-                      <svg className="h-3 w-3 text-[#D97A73]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/60">
+                      <svg className="h-3 w-3 text-[rgb(var(--color-primary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
                     <span className="font-medium">Protein cao từ thịt thật tươi ngon</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E58F89]/20">
-                      <svg className="h-3 w-3 text-[#D97A73]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/60">
+                      <svg className="h-3 w-3 text-[rgb(var(--color-primary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
                     <span className="font-medium">Tăng cường xương khớp & cơ bắp</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E58F89]/20">
-                      <svg className="h-3 w-3 text-[#D97A73]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/60">
+                      <svg className="h-3 w-3 text-[rgb(var(--color-primary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
@@ -274,15 +274,15 @@ export function PetFoodSection() {
                 {/* Stats */}
                 <div className="mb-6 flex flex-wrap gap-4 text-xs sm:text-sm">
                   <div className="flex items-center gap-2 rounded-lg bg-white/50 px-3 py-2 backdrop-blur-sm">
-                    <span className="text-lg font-black text-[#D97A73]">300+</span>
+                    <span className="text-lg font-black text-[rgb(var(--color-primary))]">300+</span>
                     <span className="text-ink/70 font-semibold">Sản phẩm</span>
                   </div>
                   <div className="flex items-center gap-2 rounded-lg bg-white/50 px-3 py-2 backdrop-blur-sm">
-                    <span className="text-lg font-black text-[#D97A73]">4.9★</span>
+                    <span className="text-lg font-black text-[rgb(var(--color-primary))]">4.9★</span>
                     <span className="text-ink/70 font-semibold">Đánh giá</span>
                   </div>
                   <div className="flex items-center gap-2 rounded-lg bg-white/50 px-3 py-2 backdrop-blur-sm">
-                    <span className="text-lg font-black text-[#D97A73]">80k+</span>
+                    <span className="text-lg font-black text-[rgb(var(--color-primary))]">80k+</span>
                     <span className="text-ink/70 font-semibold">Đã bán</span>
                   </div>
                 </div>
@@ -308,11 +308,11 @@ export function PetFoodSection() {
                   key={product.id || product.name}
                   product={product}
                   petType="dog"
-                  accentClass="text-[#D97A73]"
-                  accentSoftClass="bg-[#E58F89]/10"
-                  hoverBorderClass="border-[#E58F89]/10 hover:border-[#E58F89]/30"
-                  imageBgClass="bg-[#FFF6F4]/50 group-hover:bg-[#FFF6F4]"
-                  hoverTitleClass="group-hover:text-[#D97A73]"
+                  accentClass="text-forest"
+                  accentSoftClass="bg-forest/5"
+                  hoverBorderClass="border-forest/5 hover:border-forest/20"
+                  imageBgClass="bg-cream/30 group-hover:bg-cream/50"
+                  hoverTitleClass="group-hover:text-forest"
                 />
               ))}
             </div>
@@ -321,7 +321,7 @@ export function PetFoodSection() {
             <div className="flex justify-center pt-2">
               <Link 
                 to="/products?category=Thức ăn cho chó" 
-                className="inline-flex items-center gap-2 rounded-full bg-[#E58F89] px-6 py-3 sm:px-8 sm:py-3.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95"
+                className="inline-flex items-center gap-2 rounded-full bg-[rgb(var(--color-primary))] px-6 py-3 sm:px-8 sm:py-3.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95"
               >
                 <span>Xem tất cả sản phẩm cho chó</span>
                 <ArrowRight size={16} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
