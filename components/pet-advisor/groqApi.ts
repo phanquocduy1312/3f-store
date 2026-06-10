@@ -48,7 +48,7 @@ const GROQ_MODEL = (
 ).trim();
 
 export async function getPetAdviceFromGroq(
-  answers: Record<string, { value: string; customText?: string }>,
+  answers: Record<string, { value: string | string[]; customText?: string }>,
   petType: "dog" | "cat" | "both",
   activeFlow: "dog" | "cat" | null,
   customer: { name: string; phone: string; email: string }
@@ -71,6 +71,15 @@ export async function getPetAdviceFromGroq(
     price: p.price
   }));
 
+  const getAnswerValue = (stepId: string) => {
+    const ans = answers[stepId];
+    if (!ans) return "";
+    if (Array.isArray(ans.value)) {
+      return ans.value.map(v => v === "other" ? (ans.customText || "Khác") : v).join(", ");
+    }
+    return ans.value === "other" ? (ans.customText || "Khác") : ans.value;
+  };
+
   // Build payload
   const payload = {
     customer: {
@@ -81,17 +90,17 @@ export async function getPetAdviceFromGroq(
     pet_profile: {
       pet_type: petType,
       primary_pet: activeFlow || petType,
-      age_group: answers.age_group?.value || "",
-      breed: answers.breed?.value === "other" ? (answers.breed?.customText || "Khác") : (answers.breed?.value || ""),
+      age_group: getAnswerValue("age_group"),
+      breed: getAnswerValue("breed"),
       breed_other_text: answers.breed?.customText || "",
-      weight_range: answers.weight_range?.value || "",
-      coat_type: answers.coat_type?.value || "",
-      need: answers.need?.value || "",
+      weight_range: getAnswerValue("weight_range"),
+      coat_type: getAnswerValue("coat_type"),
+      need: getAnswerValue("need"),
       health_note: "",
-      current_food: answers.current_food?.value === "other" ? (answers.current_food?.customText || "Khác") : (answers.current_food?.value || ""),
-      budget: answers.budget?.value || "",
-      pet_count: answers.pet_count?.value || "",
-      neutered_status: answers.neutered_status?.value || ""
+      current_food: getAnswerValue("current_food"),
+      budget: getAnswerValue("budget"),
+      pet_count: getAnswerValue("pet_count"),
+      neutered_status: getAnswerValue("neutered_status")
     },
     store_context: {
       brand: "3F Store",

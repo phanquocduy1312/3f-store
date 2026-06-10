@@ -6,7 +6,7 @@ export interface QuizOption {
 export interface QuizStepConfig {
   id: string;
   question: string;
-  type: "single_choice" | "text_input";
+  type: "single_choice" | "multi_choice" | "text_input";
   placeholder?: string;
   options?: QuizOption[];
   customInputTrigger?: string; // e.g. "other" -> show text input below choices
@@ -69,7 +69,7 @@ export const dogQuizSteps: QuizStepConfig[] = [
   {
     id: "need",
     question: "Nhu cầu chính của bé hiện tại là gì?",
-    type: "single_choice",
+    type: "multi_choice",
     options: [
       { label: "Ăn hàng ngày", value: "daily" },
       { label: "Tăng cân", value: "gain_weight" },
@@ -85,7 +85,7 @@ export const dogQuizSteps: QuizStepConfig[] = [
   {
     id: "current_food",
     question: "Hiện tại bé đang ăn loại nào?",
-    type: "single_choice",
+    type: "multi_choice",
     options: [
       { label: "Royal Canin", value: "royal_canin" },
       { label: "SmartHeart", value: "smart_heart" },
@@ -104,8 +104,11 @@ export const dogQuizSteps: QuizStepConfig[] = [
       { label: "Dưới 500k", value: "under_500k" },
       { label: "500k–1 triệu", value: "500k_1m" },
       { label: "1–2 triệu", value: "1m_2m" },
-      { label: "Trên 2 triệu", value: "over_2m" }
-    ]
+      { label: "Trên 2 triệu", value: "over_2m" },
+      { label: "Khác", value: "other" }
+    ],
+    customInputTrigger: "other",
+    customInputPlaceholder: "Nhập số tiền (VD: 3 triệu)"
   }
 ];
 
@@ -152,7 +155,7 @@ export const catQuizSteps: QuizStepConfig[] = [
   {
     id: "need",
     question: "Nhu cầu chính của bé hiện tại là gì?",
-    type: "single_choice",
+    type: "multi_choice",
     options: [
       { label: "Ăn hàng ngày", value: "daily" },
       { label: "Kén ăn", value: "picky_eater" },
@@ -190,7 +193,7 @@ export const catQuizSteps: QuizStepConfig[] = [
   {
     id: "current_food",
     question: "Hiện tại bé đang ăn loại nào?",
-    type: "single_choice",
+    type: "multi_choice",
     options: [
       { label: "Royal Canin", value: "royal_canin" },
       { label: "Whiskas", value: "whiskas" },
@@ -210,7 +213,10 @@ export const catQuizSteps: QuizStepConfig[] = [
       { label: "Dưới 500k", value: "under_500k" },
       { label: "500k–1 triệu", value: "500k_1m" },
       { label: "1–2 triệu", value: "1m_2m" },
-      { label: "Trên 2 triệu", value: "over_2m" }
-    ]
+      { label: "Trên 2 triệu", value: "over_2m" },
+      { label: "Khác", value: "other" }
+    ],
+    customInputTrigger: "other",
+    customInputPlaceholder: "Nhập số tiền (VD: 3 triệu)"
   }
 ];

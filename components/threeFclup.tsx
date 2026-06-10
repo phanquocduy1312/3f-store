@@ -15,6 +15,10 @@ import {
 	Info,
 	Sparkles,
 	Truck,
+	Camera,
+	Loader2,
+	Lock,
+	CheckCircle2,
 } from "lucide-react";
 import { ThreeFClubFlowSection } from "./three-f-club-flow-section";
 
@@ -405,6 +409,35 @@ function ThreeFClub({
 
 	const a = { ...DEFAULT_ASSETS, ...assets };
 
+	const [orderCode, setOrderCode] = useState("");
+	const [amount, setAmount] = useState("");
+	const [isScanning, setIsScanning] = useState(false);
+	const [activeTab, setActiveTab] = useState<"shopee" | "phone">("shopee");
+
+	const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		setIsScanning(true);
+		// Giả lập xử lý quét ảnh/QR
+		setTimeout(() => {
+			setIsScanning(false);
+			// Điền tự động dữ liệu giả lập
+			setOrderCode("SP240" + Math.floor(Math.random() * 100000));
+			setAmount("350000"); // 350.000đ
+		}, 1500);
+	};
+
+	const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const val = e.target.value.replace(/\D/g, ""); // Chỉ cho phép nhập số
+		setAmount(val);
+	};
+
+	const formatCurrency = (val: string) => {
+		if (!val) return "";
+		return new Intl.NumberFormat("vi-VN").format(Number(val));
+	};
+
 	const tiers: Tier[] = [
 		{
 			tone: "silver",
@@ -586,22 +619,37 @@ function ThreeFClub({
 					</p>
 
 					<div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-						<button className="flex items-center gap-2 bg-[#092B5A] hover:bg-[#071d3d] transition-colors text-white font-bold py-2.5 px-6 rounded-full shadow-md text-[15px]">
+						<button 
+							onClick={() => setActiveTab("shopee")}
+							className={`flex items-center gap-2 transition-colors font-bold py-2.5 px-6 rounded-full shadow-md text-[15px] ${
+								activeTab === "shopee" 
+									? "bg-[#092B5A] hover:bg-[#071d3d] text-white border border-[#092B5A]" 
+									: "bg-white hover:bg-gray-50 text-[#092B5A] border border-[#092B5A]"
+							}`}
+						>
 							<div className="w-7 h-7 flex items-center justify-center shrink-0">
 								<img src="/assets/images/shoppe.png" alt="Shopee" className="w-full h-full object-contain scale-[2] origin-center" />
 							</div>
 							<span>Tích điểm từ đơn Shopee</span>
 						</button>
 						
-						<button className="flex items-center gap-2.5 bg-white hover:bg-gray-50 transition-colors text-[#092B5A] border border-[#092B5A] font-bold py-2.5 px-6 rounded-full shadow-sm text-[15px]">
-							<Phone size={18} className="text-[#092B5A]" fill="currentColor" />
+						<button 
+							onClick={() => setActiveTab("phone")}
+							className={`flex items-center gap-2.5 transition-colors font-bold py-2.5 px-6 rounded-full shadow-md text-[15px] ${
+								activeTab === "phone" 
+									? "bg-[#092B5A] hover:bg-[#071d3d] text-white border border-[#092B5A]" 
+									: "bg-white hover:bg-gray-50 text-[#092B5A] border border-[#092B5A]"
+							}`}
+						>
+							<Phone size={18} fill="currentColor" className={activeTab === "phone" ? "text-white" : "text-[#092B5A]"} />
 							<span>Tra cứu điểm bằng SĐT</span>
 						</button>
 					</div>
 				</header>
+				{activeTab === "shopee" ? (
 				<div className="relative z-10 mt-6 grid items-start xl:items-stretch gap-6 xl:grid-cols-[minmax(0,1fr)_310px] xl:gap-8">
 					<div className="min-w-0 flex flex-col items-center gap-6 lg:gap-8 xl:items-start w-full">
-						{/* Shopee Form Section */}
+						{/* Forms Section */}
 						<div className="w-full bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 p-6 lg:p-8 flex flex-col xl:flex-row gap-8 overflow-hidden">
 							{/* Left Part: Text & Image */}
 							<div className="flex-[1.2] flex flex-col justify-center relative p-2 sm:p-4">
@@ -647,25 +695,70 @@ function ThreeFClub({
 
 							{/* Right Part: Form */}
 							<div className="flex-1 xl:border-l xl:border-gray-100 xl:pl-8 flex flex-col justify-center">
-								<div className="flex flex-col gap-3">
+								<div className="flex flex-col gap-4">
 									<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
 										<label className="w-full sm:w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">SĐT</label>
 										<input type="text" placeholder="Nhập số điện thoại" className="w-full sm:flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
 									</div>
-									<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
-										<label className="w-full sm:w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Mã đơn Shopee</label>
-										<input type="text" placeholder="Nhập mã đơn Shopee" className="w-full sm:flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
-									</div>
-									<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
-										<label className="w-full sm:w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Tổng tiền đơn</label>
-										<input type="text" placeholder="Nhập tổng tiền đơn (VNĐ)" className="w-full sm:flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
-									</div>
+
 									<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
 										<label className="w-full sm:w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Email</label>
 										<input type="text" placeholder="Nhập email của bạn" className="w-full sm:flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
 									</div>
+
+									<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
+										<label className="w-full sm:w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Mã đơn Shopee</label>
+										<input 
+											value={orderCode} 
+											onChange={e => setOrderCode(e.target.value)} 
+											type="text" 
+											placeholder="Nhập mã đơn Shopee" 
+											className="w-full sm:flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" 
+										/>
+									</div>
+
+									<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
+										<label className="w-full sm:w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Tổng tiền đơn</label>
+										<div className="w-full sm:flex-1 relative">
+											<input 
+												value={formatCurrency(amount)} 
+												onChange={handleAmountChange} 
+												type="text" 
+												placeholder="Nhập tổng tiền đơn (VNĐ)" 
+												className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 pr-24 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" 
+											/>
+											{amount && (
+												<div className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-md border border-green-200 shadow-sm animate-fade-in">
+													+{Math.floor(Number(amount) / 100000)} điểm
+												</div>
+											)}
+										</div>
+									</div>
 									
-									<button className="mt-2 w-full flex justify-center items-center gap-1.5 sm:gap-2 bg-[#092B5A] hover:bg-[#071d3d] transition-colors text-white font-bold py-3 px-4 sm:px-8 rounded-xl shadow-md text-[13.5px] sm:text-[14px]">
+									<div className="flex items-center gap-2 mt-1">
+										<div className="h-px bg-gray-200 flex-1"></div>
+										<span className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Hoặc điền tự động</span>
+										<div className="h-px bg-gray-200 flex-1"></div>
+									</div>
+									
+									<div className="relative w-full">
+										<input type="file" id="upload-qr" accept="image/*" className="hidden" onChange={handleFileUpload} />
+										<label htmlFor="upload-qr" className={`w-full flex items-center justify-center gap-2 border border-dashed rounded-lg py-2.5 px-4 cursor-pointer transition-colors text-[13px] font-bold ${isScanning ? 'border-[#092B5A] bg-blue-50 text-[#092B5A]' : 'border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-[#092B5A] hover:border-[#092B5A]'}`}>
+											{isScanning ? (
+												<>
+													<Loader2 size={16} className="animate-spin" />
+													<span>Đang quét ảnh...</span>
+												</>
+											) : (
+												<>
+													<Camera size={16} />
+													<span>Chụp / Tải ảnh QR đơn hàng</span>
+												</>
+											)}
+										</label>
+									</div>
+
+									<button className="mt-1 w-full flex justify-center items-center gap-1.5 sm:gap-2 bg-[#092B5A] hover:bg-[#071d3d] transition-colors text-white font-bold py-3.5 px-4 sm:px-8 rounded-xl shadow-md text-[13.5px] sm:text-[14px]">
 										<span className="truncate">Gửi đơn Shopee để tích điểm</span>
 										<ArrowRight size={18} className="shrink-0" />
 									</button>
@@ -753,6 +846,37 @@ function ThreeFClub({
 						</div>
 					</div>
 				</div>
+				) : (
+					<div className="relative z-10 mt-6 flex justify-center w-full pb-10">
+						<div className="w-full flex flex-col items-center">
+							<div className="w-full max-w-[650px] mx-auto bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 p-8 sm:p-10 flex flex-col items-center text-center relative overflow-hidden">
+								<div className="w-20 h-20 rounded-full bg-blue-50/50 flex items-center justify-center mb-6">
+									<img src="/assets/images/phone_search.png" alt="Phone Search" className="w-full h-full object-contain scale-[1.8] origin-center" />
+								</div>
+								<h3 className="text-[24px] font-black text-[#092B5A] mb-3 leading-tight">
+									Tra cứu điểm 3F Club
+								</h3>
+								<p className="text-[#546073] text-[15px] leading-relaxed mb-8 max-w-[480px]">
+									Nhập số điện thoại đã mua hàng hoặc đăng ký 3F Club để xem điểm, hạng thành viên và voucher có thể đổi.
+								</p>
+								<div className="w-full max-w-[420px] flex flex-col gap-4">
+									<div className="relative">
+										<Phone size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#092B5A]" />
+										<input type="text" placeholder="Nhập số điện thoại của bạn" className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl text-[15px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-[#A3B2C7] font-medium text-[#092B5A] shadow-sm" />
+									</div>
+									<button className="w-full flex items-center justify-center gap-2 bg-[#092B5A] hover:bg-[#071d3d] transition-colors text-white font-bold py-4 px-6 rounded-xl shadow-md text-[15px]">
+										<span>Tra cứu ngay</span>
+										<ArrowRight size={18} />
+									</button>
+								</div>
+								<div className="flex items-center justify-center gap-1.5 mt-6 text-[13px] text-[#546073] font-medium">
+									<Lock size={14} className="text-[#092B5A]" />
+									<span>Thông tin của bạn được bảo mật tuyệt đối.</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		</section>
 	);
