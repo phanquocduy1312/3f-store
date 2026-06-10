@@ -2,14 +2,17 @@
 
 import { Image } from "@/components/Image";
 import { Link } from "react-router-dom";
-import { Star, Heart, Crown, ShoppingCart } from "lucide-react";
+import { Star, ShoppingCart } from "lucide-react";
 import { motion } from "framer-motion";
+import { SaleBadge } from "@/components/SaleBadge";
+import { NewBadge } from "@/components/NewBadge";
 import type { Product } from "@/types/store";
 
 interface ProductCardProps {
   product: Product;
   isBestSeller?: boolean;
   isFavorite?: boolean;
+  isNew?: boolean;
   index?: number;
 }
 
@@ -22,13 +25,16 @@ function formatCompactSold(sold: number) {
   return `${Math.max(sold, 120)}+`;
 }
 
-export function ProductCard({ product, isBestSeller, isFavorite, index = 0 }: ProductCardProps) {
+export function ProductCard({ product, isNew, index = 0 }: ProductCardProps) {
   const hasDiscount = !!product.oldPrice;
   const priceValue = getPriceValue(product.price);
   const oldPriceValue = product.oldPrice ? getPriceValue(product.oldPrice) : 0;
   const discountPercent = hasDiscount && oldPriceValue > priceValue
     ? Math.round((1 - priceValue / oldPriceValue) * 100)
     : 0;
+
+  // For demonstration, assign some products as "New" if not explicitly passed
+  const showNewBadge = isNew !== undefined ? isNew : (index === 1 || index === 4 || index === 7);
 
   return (
     <motion.article
@@ -41,25 +47,13 @@ export function ProductCard({ product, isBestSeller, isFavorite, index = 0 }: Pr
         to={`/product/${product.id}`}
         className="relative block overflow-hidden bg-gradient-to-b from-cream/50 to-cream/20"
       >
-        {/* Discount Badge */}
-        {hasDiscount && (
-          <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-lg bg-red-500 px-2.5 py-1.5 shadow-lg">
-            <span className="text-xs font-black text-white">-{discountPercent}%</span>
-          </div>
-        )}
-
-        {/* Badge Section */}
-        <div className="absolute right-3 top-3 z-10 flex flex-col gap-2">
-          {isBestSeller && (
-            <div className="flex items-center gap-1 rounded-lg bg-forest px-2.5 py-1.5 shadow-lg">
-              <Crown size={11} className="fill-yellow-300 text-yellow-300" />
-              <span className="text-[10px] font-black uppercase text-white">Best</span>
-            </div>
+        {/* Top Left Badges (Sale & New) */}
+        <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-2 origin-top-left scale-[0.25] sm:scale-[0.28] pointer-events-none">
+          {hasDiscount && (
+            <SaleBadge discount={discountPercent} />
           )}
-          {isFavorite && !isBestSeller && (
-            <div className="flex items-center gap-1 rounded-lg bg-red-500 px-2.5 py-1.5 shadow-lg">
-              <Heart size={11} className="fill-white text-white" />
-            </div>
+          {showNewBadge && (
+            <NewBadge />
           )}
         </div>
 
@@ -99,10 +93,10 @@ export function ProductCard({ product, isBestSeller, isFavorite, index = 0 }: Pr
         {/* Bottom Section (Price & Buttons) glued to bottom */}
         <div className="mt-auto flex flex-col justify-end">
           {/* Price Section */}
-          <div className="mb-2 sm:mb-3 flex flex-wrap items-end gap-1.5 sm:gap-2">
-            <div className="text-lg sm:text-2xl font-black text-forest leading-none">{product.price}</div>
+          <div className="mb-2 sm:mb-3 flex items-end gap-1.5 sm:gap-2 whitespace-nowrap">
+            <div className="text-[1.1rem] sm:text-[1.25rem] font-black text-forest leading-none">{product.price}</div>
             {product.oldPrice && (
-              <div className="mb-0.5 text-[10px] sm:text-sm font-semibold text-ink/40 line-through">{product.oldPrice}</div>
+              <div className="mb-0.5 text-[10px] sm:text-xs font-semibold text-ink/40 line-through">{product.oldPrice}</div>
             )}
           </div>
 
@@ -110,18 +104,17 @@ export function ProductCard({ product, isBestSeller, isFavorite, index = 0 }: Pr
           <div className="flex gap-1.5 sm:gap-2">
             <motion.button
               whileTap={{ scale: 0.95 }}
-              className="flex h-8 w-8 sm:h-10 sm:w-auto sm:flex-1 shrink-0 items-center justify-center gap-1.5 rounded-lg sm:rounded-xl border border-forest sm:border-2 bg-white font-bold text-forest transition-colors hover:bg-forest/5"
+              className="flex h-8 w-8 sm:h-9 sm:w-10 shrink-0 items-center justify-center rounded-lg border border-forest sm:border-[1.5px] bg-white text-forest transition-colors hover:bg-forest/5"
               aria-label={`Thêm ${product.name} vào giỏ hàng`}
             >
-              <ShoppingCart size={14} className="sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline text-xs">Thêm</span>
+              <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.95 }}
-              className="flex h-8 sm:h-10 flex-1 items-center justify-center rounded-lg sm:rounded-xl bg-forest font-bold text-white transition-colors hover:bg-forest-700"
+              className="flex h-8 sm:h-9 flex-1 items-center justify-center rounded-lg bg-forest px-2 font-bold text-white transition-colors hover:bg-[rgb(var(--color-primary-dark))]"
               aria-label={`Mua ngay ${product.name}`}
             >
-              <span className="text-[10px] sm:text-xs">Mua ngay</span>
+              <span className="text-[11px] sm:text-xs whitespace-nowrap">Mua ngay</span>
             </motion.button>
           </div>
         </div>

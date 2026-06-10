@@ -4,6 +4,8 @@ import { ChevronDown, Grid, List, Star, PawPrint, Heart, ShoppingCart, AlignJust
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductFilters } from "./product-filters";
 import { allProducts } from "@/data/store";
+import { SaleBadge } from "@/components/SaleBadge";
+import { NewBadge } from "@/components/NewBadge";
 import type { Product } from "@/types/store";
 
 // Helper for image loading
@@ -350,18 +352,12 @@ export function ProductListing() {
                     <div className="pointer-events-none absolute inset-0 z-30 -translate-x-[150%] -skew-x-12 bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-0 transition-all duration-1000 ease-in-out group-hover:translate-x-[150%] group-hover:opacity-100" />
 
                     {/* Top Badges */}
-                    <div className="absolute left-2 sm:left-3 top-2 sm:top-3 z-10 flex flex-col gap-1">
+                    <div className="absolute left-2 sm:left-3 top-2 sm:top-3 z-10 flex flex-col gap-2 origin-top-left scale-[0.25] sm:scale-[0.28] pointer-events-none">
                       {hasDiscount && (
-                        <div className="flex items-center justify-center rounded-full bg-[#EF4444] px-2 py-0.5 sm:px-2.5 sm:py-1">
-                          <span className="text-[9px] sm:text-[10px] font-black text-white">
-                            -{Math.round((1 - product.priceVal / extractPrice(product.oldPrice!)) * 100)}%
-                          </span>
-                        </div>
+                        <SaleBadge discount={Math.round((1 - product.priceVal / extractPrice(product.oldPrice!)) * 100)} />
                       )}
                       {isNew && (
-                        <div className="flex items-center justify-center rounded-full bg-[rgb(var(--color-primary))] px-2 py-0.5 sm:px-2.5 sm:py-1">
-                          <span className="text-[9px] sm:text-[10px] font-black text-white">Mới</span>
-                        </div>
+                        <NewBadge />
                       )}
                     </div>
 
@@ -412,11 +408,6 @@ export function ProductListing() {
                               )}
                               <div className="flex items-center gap-1 sm:gap-2 min-w-0 overflow-hidden">
                                 <span className="text-sm sm:text-[1.1rem] font-black text-[rgb(var(--color-primary))] truncate">{product.price}</span>
-                                {hasDiscount && (
-                                  <span className="hidden sm:inline-block rounded-[6px] bg-[#EF4444]/10 px-1.5 py-0.5 text-[9px] font-black text-[#EF4444] shrink-0 whitespace-nowrap">
-                                    -{Math.round((1 - product.priceVal / extractPrice(product.oldPrice!)) * 100)}%
-                                  </span>
-                                )}
                               </div>
                             </div>
 

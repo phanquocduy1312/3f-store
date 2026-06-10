@@ -104,8 +104,8 @@ const VoucherCard = ({ voucher, copiedId, handleCopy }: any) => (
     </div>
 
     {/* Cutout details on the border between left and right */}
-    <div className="absolute left-[42px] sm:left-[104px] -top-2 sm:-top-3 z-10 h-4 w-4 sm:h-6 sm:w-6 rounded-full bg-[#F6F2EA] shadow-inner" />
-    <div className="absolute left-[42px] sm:left-[104px] -bottom-2 sm:-bottom-3 z-10 h-4 w-4 sm:h-6 sm:w-6 rounded-full bg-[#F6F2EA] shadow-inner" />
+    <div className="absolute left-[42px] sm:left-[104px] -top-2 sm:-top-3 z-10 h-4 w-4 sm:h-6 sm:w-6 rounded-full bg-[#F5F9FF] shadow-inner" />
+    <div className="absolute left-[42px] sm:left-[104px] -bottom-2 sm:-bottom-3 z-10 h-4 w-4 sm:h-6 sm:w-6 rounded-full bg-[#F5F9FF] shadow-inner" />
     <div className="absolute left-[47px] sm:left-[109px] top-0 bottom-0 border-l-[2px] sm:border-l-[3px] border-dashed border-white/40" />
 
     {/* Right Side: Details & Action */}
@@ -153,7 +153,7 @@ export function VoucherSection() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#F6F2EA] py-0">
+    <section className="relative overflow-hidden bg-[#F5F9FF] py-0">
       {/* Pet-themed playful background elements */}
       <div className="pointer-events-none absolute left-0 top-0 h-full w-full opacity-40" 
         style={{ backgroundImage: "radial-gradient(rgb(var(--color-primary)) 1.5px, transparent 1.5px)", backgroundSize: "32px 32px" }} 

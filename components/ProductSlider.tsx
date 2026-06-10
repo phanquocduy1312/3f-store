@@ -47,7 +47,7 @@ export function ProductSlider() {
   const visibleProducts = filteredProducts.length > 0 ? filteredProducts : featuredProducts;
 
   return (
-    <section className="relative overflow-hidden bg-white py-8 sm:py-20">
+    <section className="relative overflow-hidden bg-transparent pt-4 pb-8 sm:pt-6 sm:pb-20">
       <div className="pointer-events-none absolute left-[10%] top-10 h-48 w-48 rounded-full bg-sky-100/40 blur-3xl" />
       <div className="pointer-events-none absolute right-[8%] bottom-8 h-52 w-52 rounded-full bg-honey/10 blur-3xl" />
 
