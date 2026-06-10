@@ -5,7 +5,7 @@ import { PetFoodSection } from "@/components/PetFoodSection";
 import { ProductSlider } from "@/components/ProductSlider";
 import { ThreeFClub } from "@/components/threeFclup";
 import { VoucherSection } from "@/components/VoucherSection";
-import { ConsultationPopup } from "@/components/ConsultationPopup";
+import { PetAdvisorPopup } from "@/components/pet-advisor/PetAdvisorPopup";
 
 export function Home() {
 	return (
@@ -39,7 +39,7 @@ export function Home() {
 				/>
 				<BlogNewsletter />
 			</div>
-			<ConsultationPopup />
+			<PetAdvisorPopup />
 		</div>
 	);
 }
