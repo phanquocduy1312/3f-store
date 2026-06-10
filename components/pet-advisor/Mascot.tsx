@@ -19,7 +19,7 @@ export function Mascot({ thinking = false, className = "" }: MascotProps) {
         src="/assets/images/dog_cat_heart_rbg.png"
         alt="3F Mascot Dog and Cat"
         className={`w-auto object-contain max-h-[200px] md:max-h-[300px] z-10 ${
-          thinking ? "pet-pulse-soft" : "pet-float-slow"
+          thinking ? "pet-pulse-soft" : ""
         }`}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}

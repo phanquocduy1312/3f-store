@@ -2,6 +2,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Copy, Share2, MessageCircle, ShoppingBag, ExternalLink } from "lucide-react";
 import { AiResultData } from "./mockAiResult";
+import { getProductById } from "@/data/store";
+import { Link } from "react-router-dom";
 
 interface AiResultProps {
   result: AiResultData;
@@ -26,6 +28,13 @@ export function AiResult({ result, onExploreProducts, onConsultAgent, onShareZal
       exit={{ opacity: 0, scale: 0.95 }}
       className="space-y-5 text-left max-h-[500px] overflow-y-auto pr-1"
     >
+      {result.error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 text-[12px] p-3 rounded-xl flex items-start gap-2 leading-relaxed">
+          <span className="shrink-0 text-red-500 font-bold">⚠️</span>
+          <span>{result.error}</span>
+        </div>
+      )}
+
       <div>
         <span className="bg-forest-soft text-forest text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-forest-muted">
           Kết Quả Phân Tích
@@ -46,23 +55,38 @@ export function AiResult({ result, onExploreProducts, onConsultAgent, onShareZal
         </p>
       </div>
 
-      {/* Recommended groups list */}
+      {/* Recommended products list */}
       <div className="space-y-2">
-        <h5 className="text-[14px] font-bold text-ink">Nhóm sản phẩm khuyên dùng:</h5>
-        <div className="space-y-2">
-          {result.recommended_groups.map((group, idx) => (
-            <div key={idx} className="p-3 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="text-[13.5px] font-black text-forest flex items-center gap-1.5">
-                <span className="w-5 h-5 rounded-full bg-forest text-white flex items-center justify-center text-[10px] shrink-0">
-                  {idx + 1}
-                </span>
-                <span>{group.group}</span>
-              </div>
-              <p className="text-[12.5px] text-ink-soft mt-1 leading-normal ml-6">
-                {group.reason}
-              </p>
-            </div>
-          ))}
+        <h5 className="text-[14px] font-bold text-ink">Sản phẩm khuyên dùng cho bé:</h5>
+        <div className="space-y-3">
+          {result.recommended_products?.map((item, idx) => {
+            const product = getProductById(item.id);
+            if (!product) return null;
+            return (
+              <Link to={`/product/${product.id}`} key={idx} className="p-3 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md hover:border-forest/30 transition-all flex gap-3 items-start group block cursor-pointer">
+                <div className="w-16 h-16 shrink-0 bg-gray-50 rounded-lg overflow-hidden border border-gray-100 relative group-hover:border-forest/30 transition-colors">
+                  <img src={product.image} alt={product.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <span className="absolute top-0 left-0 bg-forest text-white text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-br-lg z-10">
+                    {idx + 1}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <h6 className="text-[13px] font-bold text-ink leading-snug line-clamp-2 group-hover:text-forest transition-colors">
+                      {product.name}
+                    </h6>
+                  </div>
+                  <div className="text-[12px] font-black text-[#ED4546] mt-0.5">
+                    {product.price}
+                  </div>
+                  <div className="text-[12px] text-ink-soft mt-1.5 leading-relaxed bg-cream-soft p-2 rounded-lg border border-gray-50">
+                    <span className="font-semibold text-forest">💡 Ưu điểm: </span>
+                    {item.reason}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
 
@@ -113,7 +137,7 @@ export function AiResult({ result, onExploreProducts, onConsultAgent, onShareZal
             <Share2 size={14} />
             <span>Gửi qua Zalo</span>
           </button>
-          
+
           <button
             onClick={onConsultAgent}
             className="bg-white hover:bg-cream-soft border-2 border-gray-200 text-ink font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all text-xs"

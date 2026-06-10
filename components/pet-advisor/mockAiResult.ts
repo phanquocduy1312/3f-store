@@ -11,13 +11,14 @@ export interface QuizData {
 export interface AiResultData {
   summary: string;
   advice: string;
-  recommended_groups: {
-    group: string;
+  recommended_products: {
+    id: string | number;
     reason: string;
   }[];
   care_tips: string[];
   warning: string;
   voucher_code: string;
+  error?: string;
 }
 
 // Map choice value to readable label
@@ -73,17 +74,17 @@ export async function getMockPetAdvice(data: QuizData): Promise<AiResultData> {
     return {
       summary: `Bé là mèo ${getLabel(age)}, giống ${getLabel(breed)}, nhu cầu chính là ${getLabel(need)}, ngân sách ${getLabel(budget)}.`,
       advice: "3F AI gợi ý anh/chị ưu tiên hạt có mùi thơm, dễ tiêu hóa, kết hợp pate hoặc topper để tăng độ ngon miệng.",
-      recommended_groups: [
+      recommended_products: [
         {
-          group: "Hạt mèo trưởng thành dễ ăn",
+          id: 1, /*  */
           reason: "Phù hợp với mèo adult và nhu cầu kén ăn."
         },
         {
-          group: "Pate hoặc topper kích thích vị giác",
+          id: 1, /*  */
           reason: "Giúp tăng mùi vị, hỗ trợ bé ăn ngon và nạp đủ dinh dưỡng."
         },
         {
-          group: "Sản phẩm hỗ trợ tiêu hóa",
+          id: 1, /*  */
           reason: "Phù hợp nếu bé đổi thức ăn hoặc ăn uống thất thường."
         }
       ],
@@ -101,13 +102,13 @@ export async function getMockPetAdvice(data: QuizData): Promise<AiResultData> {
     return {
       summary: `Bé là cún ${getLabel(age)}, giống ${getLabel(breed)}, nhu cầu chính là ${getLabel(need)}, ngân sách ${getLabel(budget)}.`,
       advice: "3F AI gợi ý anh/chị sử dụng các loại hạt sấy thăng hoa (freeze-dried) hoặc hạt trộn thịt sấy để tăng cường hương vị thơm ngon tự nhiên cho cún.",
-      recommended_groups: [
+      recommended_products: [
         {
-          group: "Hạt trộn thịt sấy / Freeze-dried",
+          id: 1, /*  */
           reason: "Tăng mùi thơm từ thịt thật giúp cún kén ăn bắt đầu chịu ăn ngon lành."
         },
         {
-          group: "Sốt dinh dưỡng / Topper thịt bằm",
+          id: 1, /*  */
           reason: "Trộn trực tiếp với hạt khô để làm mềm hạt và kích thích ăn tốt hơn."
         }
       ],
@@ -126,13 +127,13 @@ export async function getMockPetAdvice(data: QuizData): Promise<AiResultData> {
     return {
       summary: `Bé ${isCat ? "mèo" : "cún"} con ${getLabel(age)}, giống ${getLabel(breed)}, nhu cầu chính là ${getLabel(need) || "ăn hàng ngày"}.`,
       advice: `3F AI gợi ý cung cấp chế độ ăn giàu protein, canxi và các chất béo tốt để phát triển toàn diện hệ xương và cơ bắp trong giai đoạn vàng này.`,
-      recommended_groups: [
+      recommended_products: [
         {
-          group: isCat ? "Hạt dinh dưỡng cho mèo con" : "Hạt phát triển toàn diện cho cún con",
+          id: 1, /*  */
           reason: "Hàm lượng dinh dưỡng đậm đặc giúp bé lớn nhanh và khỏe mạnh."
         },
         {
-          group: "Sữa bột chuyên dụng / Sữa dê cho thú cưng",
+          id: 1, /*  */
           reason: "Bổ sung dinh dưỡng dễ hấp thu, hỗ trợ hệ miễn dịch của bé."
         }
       ],
@@ -149,13 +150,13 @@ export async function getMockPetAdvice(data: QuizData): Promise<AiResultData> {
   return {
     summary: `Hồ sơ của bé: ${isCat ? "Mèo" : "Cún"} giống ${getLabel(breed)}, độ tuổi ${getLabel(age)}, nhu cầu ${getLabel(need) || "ăn uống hàng ngày"}, ngân sách ${getLabel(budget)}.`,
     advice: `Dựa trên thông tin anh/chị cung cấp, 3F AI gợi ý chế độ ăn cân bằng dinh dưỡng, tối ưu hóa theo nhu cầu sức khỏe hiện tại của bé cưng.`,
-    recommended_groups: [
+    recommended_products: [
       {
-        group: `Thức ăn ${isCat ? "mèo" : "chó"} chất lượng cao`,
+        id: 1, /*  */
         reason: "Cung cấp dinh dưỡng chuẩn xác, đầy đủ vitamin và khoáng chất."
       },
       {
-        group: "Thức ăn ướt hoặc Pate bổ sung nước",
+        id: 1, /*  */
         reason: "Cải thiện độ ngon miệng và bổ sung nước cho hệ tiết niệu của bé."
       }
     ],

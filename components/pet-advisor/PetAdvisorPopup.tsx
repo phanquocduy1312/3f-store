@@ -8,10 +8,10 @@ import { ContactForm } from "./ContactForm";
 import { AiLoading } from "./AiLoading";
 import { AiResult } from "./AiResult";
 import { ProgressBar } from "./ProgressBar";
-import { FloatingPetButton } from "./FloatingPetButton";
 import { Mascot } from "./Mascot";
 import { dogQuizSteps, catQuizSteps } from "./quizConfig";
-import { getMockPetAdvice, AiResultData } from "./mockAiResult";
+import { AiResultData } from "./mockAiResult";
+import { getPetAdviceFromGroq } from "./groqApi";
 
 const CLOSED_KEY = "pet_popup_closed_at";
 const SUBMITTED_KEY = "pet_quiz_submitted_at";
@@ -36,31 +36,20 @@ export function PetAdvisorPopup() {
 
   const steps = activeFlow === "dog" ? dogQuizSteps : catQuizSteps;
 
-  // Initial trigger and close state verification
+  // Initial trigger
   useEffect(() => {
-    const closedAt = localStorage.getItem(CLOSED_KEY);
-    const submittedAt = localStorage.getItem(SUBMITTED_KEY);
-    const oneDay = 24 * 60 * 60 * 1000;
-    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-
-    const hasClosedRecently = closedAt && (Date.now() - Number(closedAt) < oneDay);
-    const hasSubmittedRecently = submittedAt && (Date.now() - Number(submittedAt) < thirtyDays);
-
-    if (hasClosedRecently || hasSubmittedRecently) {
-      setShowFloat(true);
-    } else {
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-        trackEvent("popup_view");
-      }, 7000);
-      return () => clearTimeout(timer);
-    }
+    const timer = setTimeout(() => {
+      setIsOpen(true);
+      trackEvent("popup_view");
+    }, 7000); // 7 seconds delay
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const handleClose = () => {
     setIsOpen(false);
     setShowFloat(true);
-    localStorage.setItem(CLOSED_KEY, String(Date.now()));
+    sessionStorage.setItem(CLOSED_KEY, String(Date.now()));
     trackEvent("popup_close", { status });
   };
 
@@ -126,15 +115,16 @@ export function PetAdvisorPopup() {
     });
 
     try {
-      const result = await getMockPetAdvice({
-        pet_type: activeFlow || "dog",
-        answers: answersPayload,
-        customer: info,
-      });
+      const result = await getPetAdviceFromGroq(
+        answers,
+        overallPetType || "dog",
+        activeFlow,
+        info
+      );
       setAiResult(result);
       setStatus("result");
       localStorage.setItem(SUBMITTED_KEY, String(Date.now()));
-      trackEvent("mock_ai_success");
+      trackEvent("ai_success");
       trackEvent("voucher_view", { code: result.voucher_code });
     } catch (e) {
       console.error(e);
@@ -144,7 +134,6 @@ export function PetAdvisorPopup() {
 
   return (
     <>
-      <FloatingPetButton visible={showFloat && !isOpen} onClick={handleManualTrigger} />
       <AnimatePresence>
         {isOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -157,7 +146,7 @@ export function PetAdvisorPopup() {
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
               className="bg-white shadow-2xl relative z-10 w-full overflow-hidden flex flex-col md:flex-row
                 max-h-[90vh] md:max-h-[620px] 
-                fixed bottom-0 left-0 right-0 rounded-t-3xl md:relative md:rounded-3xl md:max-w-[780px]"
+                fixed bottom-0 left-0 right-0 rounded-t-3xl md:relative md:rounded-3xl md:max-w-[720px]"
             >
               {/* Close Button */}
               <button onClick={handleClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors z-30" aria-label="Close">
@@ -165,14 +154,27 @@ export function PetAdvisorPopup() {
               </button>
 
               {/* Side Visual panel - hidden on quiz/results on mobile */}
-              <div className={`w-full md:w-[40%] bg-forest-soft/20 md:flex items-center justify-center p-6 relative overflow-hidden select-none border-b md:border-b-0 md:border-r border-gray-100
+              <div className={`w-full md:w-[45%] md:flex items-center justify-center p-6 relative overflow-hidden select-none border-b md:border-b-0 md:border-r border-gray-100
                 ${status === "welcome" ? "flex min-h-[200px]" : "hidden md:flex"}`}
               >
-                <Mascot thinking={status === "loading"} className="max-h-[160px] md:max-h-[280px]" />
+                {/* Light blue background gradient */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-100/80 via-blue-50/50 to-blue-200/30"></div>
+                
+                {/* Decorative paw prints */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden text-blue-300/40">
+                  <PawPrint className="absolute top-6 left-6 rotate-[-25deg]" size={36} fill="currentColor" />
+                  <PawPrint className="absolute top-32 left-12 rotate-[15deg]" size={24} fill="currentColor" />
+                  <PawPrint className="absolute bottom-20 left-8 rotate-[35deg]" size={48} fill="currentColor" />
+                  <PawPrint className="absolute bottom-8 right-12 rotate-[-15deg]" size={32} fill="currentColor" />
+                  <PawPrint className="absolute top-12 right-10 rotate-[20deg]" size={40} fill="currentColor" />
+                  <PawPrint className="absolute top-1/2 right-4 rotate-[-40deg]" size={24} fill="currentColor" />
+                </div>
+
+                <Mascot thinking={status === "loading"} className="max-h-[160px] md:max-h-[280px] drop-shadow-2xl relative z-10" />
               </div>
 
               {/* Form Content panel */}
-              <div className="w-full md:w-[60%] p-6 md:p-8 flex flex-col justify-center min-h-[360px] overflow-y-auto bg-white">
+              <div className="w-full md:w-[55%] p-6 md:p-8 flex flex-col justify-center min-h-[360px] overflow-y-auto bg-white">
                 {status === "quiz" && <ProgressBar current={currentStep + 1} total={steps.length} />}
                 
                 <AnimatePresence mode="wait">
