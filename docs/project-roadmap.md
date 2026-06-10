@@ -26,4 +26,5 @@
 
 ## Phase 5: User Authentication & Profile (Hoàn thành một phần)
 - [x] Thiết kế giao diện Đăng ký/Đăng nhập (Email, Google Auth) kiểu Split-Screen.
+- [x] Tích hợp Popup tư vấn và thu thập lead tự động (Consultation Popup) sau 7 giây tại trang chủ.
 - [ ] Trang quản lý tài khoản người dùng (Lịch sử đơn hàng, địa chỉ...).

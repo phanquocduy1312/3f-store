@@ -1,5 +1,10 @@
 # Project Changelog
 
+## [2026-06-10]
+### Added
+- Thêm component `components/ConsultationPopup.tsx` hỗ trợ thu thập thông tin lead và cung cấp phễu tư vấn thức ăn thú cưng trì hoãn sau 7 giây truy cập trang chủ.
+- Tích hợp `<ConsultationPopup />` vào trang chủ `src/pages/Home.tsx` cùng hiệu ứng làm mờ và tối nền `backdrop-blur-md bg-black/60` và quản lý phiên hiển thị bằng `sessionStorage`.
+
 ## [2026-06-08]
 ### Added
 - Thêm component `components/Auth/PhoneAuthForm.tsx` hỗ trợ luồng đăng nhập/đăng ký bằng Số điện thoại + OTP hoặc Số điện thoại + Mật khẩu.
