@@ -83,8 +83,8 @@ export function HeroSection() {
             <div className="absolute top-6 left-6 right-6 z-20 pointer-events-none">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/30 px-3 py-1.5 backdrop-blur-md shadow-sm">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4ADE80] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#4ADE80]"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-400"></span>
                 </span>
                 <span className="text-[11px] font-black uppercase tracking-wider text-white">
                   Bộ sưu tập mới
@@ -110,7 +110,7 @@ export function HeroSection() {
                   <span className="flex items-center gap-1.5 rounded-full bg-sky-500/20 px-3 py-1 text-[11px] font-bold uppercase text-sky-300 tracking-wider border border-sky-500/30">
                     <ShoppingBag size={14} strokeWidth={2.5} /> Phụ kiện
                   </span>
-                  <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-[11px] font-bold uppercase text-emerald-300 tracking-wider border border-emerald-500/30">
+                  <span className="flex items-center gap-1.5 rounded-full bg-sky-500/20 px-3 py-1 text-[11px] font-bold uppercase text-sky-300 tracking-wider border border-sky-500/30">
                     <Heart size={14} strokeWidth={2.5} /> Chăm sóc
                   </span>
                 </div>
@@ -134,15 +134,15 @@ export function HeroSection() {
           </div>
 
           {/* Bottom Right Banner - Custom Promotional Card */}
-          <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[rgb(var(--color-primary))] to-[#0A5D35] p-7 shadow-[0_20px_40px_rgba(16,133,79,0.15)] text-white flex flex-col justify-between group min-h-[260px] lg:h-auto border border-white/10">
+          <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[rgb(var(--color-primary))] to-[rgb(var(--color-primary-darker))] p-7 shadow-[0_20px_40px_rgba(19,72,111,0.15)] text-white flex flex-col justify-between group min-h-[260px] lg:h-auto border border-white/10">
             {/* Animated Glow Elements */}
             <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-[#F2C94C]/20 blur-[40px] transition-transform duration-700 group-hover:scale-150 group-hover:bg-[#F2C94C]/30" />
-            <div className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-emerald-400/20 blur-[30px] transition-transform duration-700 group-hover:scale-150" />
+            <div className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-sky-400/20 blur-[30px] transition-transform duration-700 group-hover:scale-150" />
 
             {/* Image Section */}
             <div className="absolute right-0 top-0 bottom-0 w-[65%] overflow-hidden pointer-events-none">
               <div className="absolute inset-0 bg-gradient-to-r from-[rgb(var(--color-primary))] via-[rgb(var(--color-primary))]/70 to-transparent z-10" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0A5D35] via-transparent to-transparent z-10 opacity-60" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[rgb(var(--color-primary-darker))] via-transparent to-transparent z-10 opacity-60" />
               <Image 
                 src="/assets/images/promo_pet_3d.webp" 
                 alt="Promo Pet" 
@@ -164,7 +164,7 @@ export function HeroSection() {
                   Ưu đãi 15% <br/>
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFF6D9] to-[#F2C94C]">cho đơn đầu</span>
                 </h3>
-                <p className="text-emerald-50 text-[13px] max-w-[180px] leading-relaxed drop-shadow-sm font-medium opacity-90">
+                <p className="text-sky-50 text-[13px] max-w-[180px] leading-relaxed drop-shadow-sm font-medium opacity-90">
                   Đăng ký ngay để nhận ngập tràn ưu đãi từ 3F Store.
                 </p>
               </div>

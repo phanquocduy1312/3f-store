@@ -48,12 +48,12 @@ export function ProductSlider() {
 
   return (
     <section className="relative overflow-hidden bg-white py-8 sm:py-20">
-      <div className="pointer-events-none absolute left-[10%] top-10 h-48 w-48 rounded-full bg-emerald-100/40 blur-3xl" />
+      <div className="pointer-events-none absolute left-[10%] top-10 h-48 w-48 rounded-full bg-sky-100/40 blur-3xl" />
       <div className="pointer-events-none absolute right-[8%] bottom-8 h-52 w-52 rounded-full bg-honey/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-[1380px] px-2 sm:px-6 lg:px-8">
         <MotionSection className="relative !max-w-none overflow-hidden rounded-[2.5rem] border border-[#E8EFE8] bg-[linear-gradient(180deg,#FFFFFF_0%,#FBFCFA_100%)] px-6 !py-8 shadow-[0_26px_70px_rgba(16,24,40,0.06)] sm:px-8 lg:px-10 lg:!py-10">
-          <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-bl-full bg-emerald-50/80" />
+          <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-bl-full bg-sky-50/80" />
           <div className="pointer-events-none absolute bottom-0 left-0 h-44 w-44 rounded-tr-full bg-cream/40" />
 
           <MotionItem
@@ -85,7 +85,7 @@ export function ProductSlider() {
                   onClick={() => setActiveCategory(category.id)}
                   className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-black transition whitespace-nowrap sm:gap-2 sm:px-5 sm:py-3 sm:text-sm ${
                     isActive
-                      ? "bg-[rgb(var(--color-primary))] text-white shadow-[0_12px_24px_rgba(16,133,79,0.18)]"
+                      ? "bg-[rgb(var(--color-primary))] text-white shadow-[0_12px_24px_rgba(19,72,111,0.18)]"
                       : "border border-[#E3EAE5] bg-white text-[rgb(var(--color-ink))]/72 hover:border-[rgb(var(--color-primary))]/25 hover:bg-[#F8FBF9]"
                   }`}
                 >

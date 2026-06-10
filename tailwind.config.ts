@@ -36,10 +36,10 @@ const config: Config = {
         }
       },
       boxShadow: {
-        soft: "0 24px 70px rgba(4, 135, 217, 0.08)",
-        lift: "0 28px 80px rgba(4, 135, 217, 0.14)",
-        glass: "0 8px 32px 0 rgba(15, 39, 65, 0.07)",
-        "glass-sm": "0 4px 16px 0 rgba(15, 39, 65, 0.05)",
+        soft: "0 24px 70px rgba(19, 72, 111, 0.08)",
+        lift: "0 28px 80px rgba(19, 72, 111, 0.14)",
+        glass: "0 8px 32px 0 rgba(10, 38, 59, 0.07)",
+        "glass-sm": "0 4px 16px 0 rgba(10, 38, 59, 0.05)",
       },
       borderRadius: {
         "4xl": "2rem",

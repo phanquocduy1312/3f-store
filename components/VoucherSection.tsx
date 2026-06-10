@@ -16,9 +16,9 @@ const vouchers = [
     desc: "Đơn tối thiểu 400K. Tối đa 50K.",
     code: "BOSS15",
     exp: "Còn 2 ngày",
-    color: "from-emerald-400 to-emerald-600",
-    bgLight: "bg-emerald-50",
-    textDark: "text-emerald-700",
+    color: "from-sky-400 to-sky-600",
+    bgLight: "bg-sky-50",
+    textDark: "text-sky-700",
     icon: PawPrint,
     label: "HOT DEALS"
   },
@@ -131,7 +131,7 @@ const VoucherCard = ({ voucher, copiedId, handleCopy }: any) => (
           onClick={() => handleCopy(voucher.id, voucher.code)}
           className={`relative z-20 flex w-full sm:w-auto h-5 sm:h-8 px-2 sm:px-4 items-center justify-center rounded-full text-[8px] sm:text-[11px] font-bold uppercase tracking-wider transition-all duration-300 hover:scale-105 active:scale-95 ${
             copiedId === voucher.id 
-              ? "bg-emerald-500 text-white" 
+              ? "bg-sky-500 text-white" 
               : `bg-ink text-white hover:${voucher.bgLight} hover:${voucher.textDark}`
           }`}
           title="Save voucher"
