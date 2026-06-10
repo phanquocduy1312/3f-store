@@ -1,5 +1,12 @@
 # Project Changelog
 
+## [2026-06-10]
+### Added
+- Nâng cấp và triển khai hệ thống tư vấn dinh dưỡng AI đa bước `components/pet-advisor/` (chia tách thành các component nhỏ: `PetAdvisorPopup`, `QuizWelcome`, `QuizStep`, `OptionCard`, `ContactForm`, `AiLoading`, `AiResult`, `ProgressBar`, `FloatingPetButton`, `Mascot`, `quizConfig`, `mockAiResult` đảm bảo giới hạn dưới 200 dòng mỗi file).
+- Tích hợp `<PetAdvisorPopup />` vào trang chủ `src/pages/Home.tsx`, trì hoãn tự động kích hoạt sau 7 giây, lưu trữ trạng thái đóng/hoàn thành bằng `localStorage` (không hiện lại trong 24h nếu đóng, không hiện lại trong 30 ngày nếu gửi form thành công).
+- Bổ sung nút nổi tròn ở góc màn hình (`FloatingPetButton.tsx`) có hiệu ứng sóng rung động (ping ring) và châm ngôn trượt trên hover để kích hoạt thủ công popup bất kỳ lúc nào.
+- Giả lập cơ chế phân tích của AI qua bộ tải xoay kiểm tra chi tiết hồ sơ độ tuổi, giống, nhu cầu, ngân sách trong 1.5s và trả về lời khuyên tương thích kèm nút copy voucher nhanh.
+
 ## [2026-06-08]
 ### Added
 - Thêm component `components/Auth/PhoneAuthForm.tsx` hỗ trợ luồng đăng nhập/đăng ký bằng Số điện thoại + OTP hoặc Số điện thoại + Mật khẩu.

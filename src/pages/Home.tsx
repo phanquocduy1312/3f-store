@@ -5,6 +5,7 @@ import { PetFoodSection } from "@/components/PetFoodSection";
 import { ProductSlider } from "@/components/ProductSlider";
 import { ThreeFClub } from "@/components/threeFclup";
 import { VoucherSection } from "@/components/VoucherSection";
+import { PetAdvisorPopup } from "@/components/pet-advisor/PetAdvisorPopup";
 
 export function Home() {
 	return (
@@ -13,8 +14,6 @@ export function Home() {
 			<VoucherSection />
 			<WhyChooseUsSection />
 			<PetFoodSection />
-
-
 			<div className="relative overflow-hidden bg-cream/20">
 				<div className="pointer-events-none absolute left-0 top-24 h-72 w-72 rounded-full bg-forest/5 blur-3xl" />
 				<div className="pointer-events-none absolute bottom-10 right-0 h-72 w-72 rounded-full bg-honey/10 blur-3xl" />
@@ -40,6 +39,7 @@ export function Home() {
 				/>
 				<BlogNewsletter />
 			</div>
+			<PetAdvisorPopup />
 		</div>
 	);
 }
