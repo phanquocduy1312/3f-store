@@ -15,7 +15,7 @@ export function Home() {
 			<VoucherSection />
 			<CategorySection />
 			<PetFoodSection />
-			<SaleSection />
+		
 			<ThreeFClub
 				assets={{
 					badgeSilver: "/assets/images/badge_silver.png",
