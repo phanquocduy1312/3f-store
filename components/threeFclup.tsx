@@ -10,7 +10,13 @@ import {
 	PawPrint,
 	Percent,
 	Star,
+	Phone,
+	ArrowRight,
+	Info,
+	Sparkles,
+	Truck,
 } from "lucide-react";
+import { ThreeFClubFlowSection } from "./three-f-club-flow-section";
 
 export type ThreeFClubAssets = Partial<{
 	badgeSilver: string;
@@ -495,6 +501,16 @@ function ThreeFClub({
 				</span>
 			),
 		},
+		{
+			text: "Tư vấn dinh dưỡng AI miễn phí",
+			src: "",
+			fallback: <Sparkles size={31} strokeWidth={2.3} />,
+		},
+		{
+			text: "Miễn phí vận chuyển thành viên",
+			src: "",
+			fallback: <Truck size={31} strokeWidth={2.3} />,
+		},
 	];
 
 	return (
@@ -563,16 +579,103 @@ function ThreeFClub({
 					</h2>
 
 					<p className="mt-2 text-[clamp(24px,2.25vw,33px)] font-black leading-tight tracking-[-0.02em] text-[rgb(var(--color-primary))]">
-						Thành viên càng mua, càng lợi
+						 Tích điểm từ mọi đơn hàng
 					</p>
 					<p className="mx-auto mt-2 max-w-[650px] text-[clamp(15px,1.35vw,18px)] font-medium leading-snug text-[rgb(var(--color-ink-soft))]">
-						Tích điểm mỗi đơn hàng, nhận ưu đãi riêng cho Boss & Sen,
-						<br className="hidden sm:block" /> đổi quà và tiết kiệm nhiều hơn
-						cùng 3F Store.
+						Mua tại website hoặc Shopee đều có thể tích điểm, đổi voucher và nhận ưu đãi riêng cho Boss & Sen.
 					</p>
+
+					<div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+						<button className="flex items-center gap-2 bg-[#092B5A] hover:bg-[#071d3d] transition-colors text-white font-bold py-2.5 px-6 rounded-full shadow-md text-[15px]">
+							<div className="w-7 h-7 flex items-center justify-center shrink-0">
+								<img src="/assets/images/shoppe.png" alt="Shopee" className="w-full h-full object-contain scale-[2] origin-center" />
+							</div>
+							<span>Tích điểm từ đơn Shopee</span>
+						</button>
+						
+						<button className="flex items-center gap-2.5 bg-white hover:bg-gray-50 transition-colors text-[#092B5A] border border-[#092B5A] font-bold py-2.5 px-6 rounded-full shadow-sm text-[15px]">
+							<Phone size={18} className="text-[#092B5A]" fill="currentColor" />
+							<span>Tra cứu điểm bằng SĐT</span>
+						</button>
+					</div>
 				</header>
-				<div className="relative z-10 mt-6 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_310px] xl:gap-8">
-					<div className="min-w-0 flex flex-col items-center gap-6 lg:gap-8 xl:items-start">
+				<div className="relative z-10 mt-6 grid items-start xl:items-stretch gap-6 xl:grid-cols-[minmax(0,1fr)_310px] xl:gap-8">
+					<div className="min-w-0 flex flex-col items-center gap-6 lg:gap-8 xl:items-start w-full">
+						{/* Shopee Form Section */}
+						<div className="w-full bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 p-6 lg:p-8 flex flex-col xl:flex-row gap-8 overflow-hidden">
+							{/* Left Part: Text & Image */}
+							<div className="flex-[1.2] flex flex-col justify-center relative p-2 sm:p-4">
+								{/* Decorative Paws */}
+								<PawPrint className="absolute top-0 left-0 text-blue-50 rotate-[-20deg]" size={50} />
+								<PawPrint className="absolute bottom-4 right-12 text-blue-50 rotate-[15deg]" size={80} />
+								<PawPrint className="absolute top-1/2 left-1/3 text-blue-50 rotate-[45deg] opacity-60" size={35} />
+
+								<div className="flex flex-col sm:flex-row gap-6 relative z-10 items-center sm:items-start">
+									<div className="w-[150px] h-[150px] shrink-0 flex items-center justify-center bg-blue-50/40 rounded-2xl p-2 border border-blue-100/50">
+										<img src="/assets/images/shoppe_voucher.png" alt="Shopee Voucher" className="w-full h-full object-contain drop-shadow-md scale-[1.15]" />
+									</div>
+									<div className="flex-1 mt-1">
+										<h3 className="text-[22px] font-black text-[#092B5A] mb-3 leading-tight">
+											Đã mua hàng 3F trên Shopee?
+										</h3>
+										<p className="text-[#092B5A] text-[14px] leading-relaxed mb-4">
+											Đừng bỏ lỡ cơ hội tích điểm! Nhập mã đơn Shopee và SĐT để được cộng điểm vào 3F Club.
+										</p>
+										
+										<ul className="flex flex-col gap-2.5 mb-5">
+											<li className="flex items-center gap-2 text-[14px] text-gray-700 font-medium">
+												<Check size={18} className="text-green-500" strokeWidth={3} />
+												<span>Tích điểm <strong className="text-[#092B5A]">100%</strong> giá trị đơn hàng</span>
+											</li>
+											<li className="flex items-center gap-2 text-[14px] text-gray-700 font-medium">
+												<Check size={18} className="text-green-500" strokeWidth={3} />
+												<span>Đổi hàng ngàn <strong className="text-[#092B5A]">voucher giảm giá</strong></span>
+											</li>
+											<li className="flex items-center gap-2 text-[14px] text-gray-700 font-medium">
+												<Check size={18} className="text-green-500" strokeWidth={3} />
+												<span>Xác minh nhanh chóng trong 24-48h</span>
+											</li>
+										</ul>
+
+										<div className="flex items-start sm:items-center gap-2 text-gray-500 text-[13px] bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+											<Info size={16} className="text-blue-500 shrink-0 mt-0.5 sm:mt-0" />
+											<span>Lưu ý: Mỗi mã đơn chỉ được duyệt tích điểm 1 lần duy nhất.</span>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							{/* Right Part: Form */}
+							<div className="flex-1 xl:border-l xl:border-gray-100 xl:pl-8 flex flex-col justify-center">
+								<div className="flex flex-col gap-3">
+									<div className="flex items-center gap-4">
+										<label className="w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">SĐT</label>
+										<input type="text" placeholder="Nhập số điện thoại" className="flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
+									</div>
+									<div className="flex items-center gap-4">
+										<label className="w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Mã đơn Shopee</label>
+										<input type="text" placeholder="Nhập mã đơn Shopee" className="flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
+									</div>
+									<div className="flex items-center gap-4">
+										<label className="w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Tổng tiền đơn</label>
+										<input type="text" placeholder="Nhập tổng tiền đơn (VNĐ)" className="flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
+									</div>
+									<div className="flex items-center gap-4">
+										<label className="w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Email</label>
+										<input type="text" placeholder="Nhập email của bạn" className="flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
+									</div>
+									
+									<button className="mt-2 w-full flex justify-center items-center gap-2 bg-[#092B5A] hover:bg-[#071d3d] transition-colors text-white font-bold py-3 px-8 rounded-xl shadow-md text-[14px]">
+										<span>Gửi đơn Shopee để tích điểm</span>
+										<ArrowRight size={18} />
+									</button>
+								</div>
+							</div>
+						</div>
+
+						{/* Flow Step Section */}
+						<ThreeFClubFlowSection />
+
 						<div className="w-[100%] grid grid-cols-1 gap-5 lg:grid-cols-3 xl:gap-5 2xl:gap-6">
 							<TierCard
 								tier={tiers[0]}
@@ -591,88 +694,8 @@ function ThreeFClub({
 							/>
 						</div>
 
-						<div
-							className="relative z-10 mx-auto grid min-h-[78px] max-w-[1095px] grid-cols-1 overflow-hidden rounded-[22px] border border-blue-100/90 bg-white/85 shadow-[0_12px_28px_rgba(32,86,162,0.12)] backdrop-blur-md sm:grid-cols-2 lg:grid-cols-4"
-							aria-label="Quyền lợi tổng quan"
-						>
-							{topBenefits.map((benefit, index) => (
-								<div
-									className={cn(
-										"flex min-w-0 items-center gap-3.5 px-5 py-3.5 text-[16px] font-semibold leading-tight text-[rgb(var(--color-primary-darker))] sm:px-6 lg:text-[17px] xl:text-[18px]",
-										index !== topBenefits.length - 1 &&
-											"border-b border-blue-100/80 lg:border-b-0",
-										index % 2 === 0 && "sm:border-r sm:border-blue-100/80",
-										index < topBenefits.length - 1 &&
-											"lg:border-r lg:border-blue-100/80",
-									)}
-									key={benefit.text}
-								>
-									<span className="grid h-11 w-11 shrink-0 place-items-center text-[rgb(var(--color-primary))] sm:h-12 sm:w-12">
-										<AssetOrIcon
-											src={benefit.src}
-											alt=""
-											className="h-full w-full object-contain"
-											fallback={benefit.fallback}
-										/>
-									</span>
-									<span className="text-[1rem]">{benefit.text}</span>
-								</div>
-							))}
-						</div>
 
-						<div className="relative z-20 grid min-h-[96px] overflow-hidden rounded-[27px] bg-gradient-to-r from-[rgb(var(--color-primary))] via-[rgb(var(--color-primary-dark))] to-[rgb(var(--color-primary-dark))] px-5 py-5 text-white shadow-[0_18px_28px_rgba(var(--color-primary),0.22)] sm:grid-cols-[92px_minmax(240px,1fr)] sm:items-center sm:gap-4 lg:grid-cols-[110px_minmax(260px,1fr)_auto] lg:px-7 xl:grid-cols-[130px_minmax(260px,1fr)_auto]">
-							<CtaWaves />
-
-							<div className="relative z-10 mx-auto grid h-16 w-24 -rotate-6 place-items-center text-white sm:mx-0 xl:w-[111px]">
-								<svg
-									className="absolute inset-0 h-full w-full"
-									viewBox="0 0 112 66"
-									fill="none"
-									aria-hidden="true"
-								>
-									<path
-										d="M9 9H103V24C95 26 95 40 103 42V57H9V42C17 40 17 26 9 24V9Z"
-										stroke="currentColor"
-										strokeWidth="4"
-										strokeLinejoin="round"
-									/>
-								</svg>
-								<AssetOrIcon
-									src={a.couponIcon}
-									alt=""
-									className="relative z-10 h-12 w-20 object-contain brightness-0 invert"
-									fallback={<Percent size={42} strokeWidth={2.6} />}
-								/>
-							</div>
-
-							<p className="relative z-10 m-0 mt-3 text-center text-[21px] font-black leading-tight tracking-[-0.035em] sm:mt-0 sm:text-left lg:text-[24px] xl:text-[28px]">
-								Đăng ký 3F Club hôm nay
-								<br />
-								để nhận ngay voucher thành viên mới
-							</p>
-
-							<div className="relative z-10 mt-4 flex flex-wrap items-center justify-center gap-3 whitespace-nowrap sm:col-span-2 lg:col-span-1 lg:mt-0 lg:justify-end">
-								<button
-									className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-3 rounded-[18px] bg-white px-6 text-base font-bold text-[rgb(var(--color-primary))] shadow-[0_10px_18px_rgba(var(--color-primary-dark),0.22)] transition duration-200 hover:-translate-y-0.5 sm:flex-none lg:text-[18px]"
-									type="button"
-									onClick={onJoin}
-								>
-									<span>Tham gia 3F Club</span>
-									<span className="grid h-9 w-9 place-items-center rounded-full bg-[image:linear-gradient(to_bottom,rgb(var(--color-primary)),rgb(var(--color-primary-dark)))] text-white">
-										<ChevronRight size={23} strokeWidth={3} />
-									</span>
-								</button>
-
-								<button
-									className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-[18px] border border-white/80 bg-white/10 px-6 text-base font-bold text-white transition duration-200 hover:-translate-y-0.5 sm:flex-none lg:text-[18px]"
-									type="button"
-									onClick={onLearnMore}
-								>
-									<span>Tìm hiểu thêm</span>
-									<ChevronRight size={23} strokeWidth={2.8} />
-								</button>
-							</div>
-						</div>
+						
 					</div>
 					<div className="flex flex-col gap-3 h-[100%]">
 						<aside
@@ -687,7 +710,7 @@ function ThreeFClub({
 											"border-b border-blue-100/80",
 										index % 2 === 0 &&
 											"sm:border-r sm:border-blue-100/80 xl:border-r-0",
-										index === 2 && "sm:border-b-0 xl:border-b",
+										index === sideBenefits.length - 2 && "sm:border-b-0 xl:border-b",
 									)}
 									key={benefit.text}
 								>
@@ -704,7 +727,7 @@ function ThreeFClub({
 							))}
 						</aside>
 						<div
-							className="pointer-events-none relative z-20 mt-2 ml-auto w-[230px] sm:w-[280px] xl:mt-0 xl:w-[min(315px,23vw)]"
+							className="pointer-events-none relative z-20 mt-2 ml-auto w-[230px] sm:w-[280px] xl:mt-auto xl:w-[min(315px,23vw)]"
 							aria-hidden="true"
 						>
 							<span className="absolute -right-1 top-12 text-[28px] text-blue-300/80">

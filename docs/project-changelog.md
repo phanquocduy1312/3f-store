@@ -6,6 +6,8 @@
 - Tích hợp `<PetAdvisorPopup />` vào trang chủ `src/pages/Home.tsx`, trì hoãn tự động kích hoạt sau 7 giây, lưu trữ trạng thái đóng/hoàn thành bằng `localStorage` (không hiện lại trong 24h nếu đóng, không hiện lại trong 30 ngày nếu gửi form thành công).
 - Bổ sung nút nổi tròn ở góc màn hình (`FloatingPetButton.tsx`) có hiệu ứng sóng rung động (ping ring) và châm ngôn trượt trên hover để kích hoạt thủ công popup bất kỳ lúc nào.
 - Giả lập cơ chế phân tích của AI qua bộ tải xoay kiểm tra chi tiết hồ sơ độ tuổi, giống, nhu cầu, ngân sách trong 1.5s và trả về lời khuyên tương thích kèm nút copy voucher nhanh.
+- Thêm component `<ThreeFClubFlowSection />` (file [three-f-club-flow-section.tsx](file:///c:/Users/Admin/Downloads/ccc/components/three-f-club-flow-section.tsx)) hiển thị quy trình 4 bước tích điểm Shopee, sử dụng các hình ảnh `note.png`, `search.png`, `coin.png`, `mail.png` và responsive hoàn toàn (chevron xoay 90 độ chỉ xuống dưới khi trên thiết bị di động).
+- Tích hợp `<ThreeFClubFlowSection />` vào giữa form gửi đơn Shopee và danh sách Tier Cards trong [threeFclup.tsx](file:///c:/Users/Admin/Downloads/ccc/components/threeFclup.tsx).
 
 ## [2026-06-08]
 ### Added
