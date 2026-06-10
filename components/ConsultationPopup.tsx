@@ -77,16 +77,16 @@ export function ConsultationPopup() {
 						</button>
 
 						{/* Left Side Visual Banner */}
-						<div className="w-full md:w-[45%] bg-[#F0F8FF] flex items-end justify-center pt-8 pb-0 px-4 min-h-[220px] md:min-h-[380px] relative overflow-hidden select-none">
+						<div className="w-full md:w-[45%] bg-white flex items-end justify-center pt-8 pb-0 px-4 min-h-[240px] md:min-h-[400px] relative overflow-hidden select-none">
 							<img
 								src="/assets/images/dog_cat_heart_rbg.png"
 								alt="Dog and Cat mascot"
-								className="max-h-[240px] md:max-h-[320px] w-auto object-contain z-10 drop-shadow-md"
+								className="max-h-[260px] md:max-h-[360px] w-auto object-contain z-10"
 							/>
 						</div>
 
 						{/* Right Side Content Panel */}
-						<div className="w-full md:w-[55%] p-8 md:p-10 flex flex-col justify-center bg-white min-h-[380px]">
+						<div className="w-full md:w-[55%] p-8 md:p-10 flex flex-col justify-center bg-white min-h-[400px]">
 							<AnimatePresence mode="wait">
 								{step === "intro" && (
 									<motion.div
@@ -96,36 +96,44 @@ export function ConsultationPopup() {
 										exit={{ opacity: 0, x: -20 }}
 										className="flex flex-col h-full justify-center"
 									>
-										<div className="mb-6">
-											<h3 className="text-[#0b5ed7] font-black text-[22px] md:text-[26px] leading-[1.3] mb-2">
-												🐾 TÌM THỨC ĂN PHÙ HỢP CHO BÉ
+										<div className="mb-5">
+											<h3 className="text-[#0b5ed7] font-black text-[22px] md:text-[26px] leading-[1.3] mb-3">
+												<span className="inline-flex items-center gap-2">
+													<PawPrint size={24} className="fill-[#0b5ed7] text-[#0b5ed7] shrink-0" />
+													<span>TÌM THỨC ĂN</span>
+												</span>
+												<br />
+												PHÙ HỢP CHO BÉ
 											</h3>
-											<p className="text-gray-700 font-semibold text-[16px]">
-												Chỉ mất <span className="text-red-500 font-bold">30 giây</span>
+											<p className="text-gray-800 font-medium text-[16px]">
+												Chỉ mất <span className="text-[#0b5ed7] font-bold border-b-[2px] border-[#0b5ed7] pb-0.5">30 giây</span>
 											</p>
 										</div>
 
 										{/* Checklist */}
-										<ul className="space-y-3 mb-8">
-											<li className="flex items-center text-gray-800 font-medium text-[15px]">
-												<span className="mr-3 text-xl">✅</span>
-												<span>Gợi ý sản phẩm phù hợp</span>
-											</li>
-											<li className="flex items-center text-gray-800 font-medium text-[15px]">
-												<span className="mr-3 text-xl">✅</span>
-												<span>Voucher 30.000đ</span>
-											</li>
-											<li className="flex items-center text-gray-800 font-medium text-[15px]">
-												<span className="mr-3 text-xl">✅</span>
-												<span>Checklist chăm sóc miễn phí</span>
-											</li>
+										<ul className="space-y-3.5 mb-8">
+											{[
+												{ text: "Gợi ý sản phẩm phù hợp", id: "suggest" },
+												{ text: <>Voucher <span className="font-bold">30.000đ</span></>, id: "voucher" },
+												{ text: "Checklist chăm sóc miễn phí", id: "checklist" }
+											].map((item) => (
+												<li key={item.id} className="flex items-center text-gray-800 font-medium text-[15px]">
+													<div className="flex items-center justify-center w-[20px] h-[20px] rounded bg-[#4CAF50] text-white mr-3 shrink-0">
+														<Check size={14} className="stroke-[3]" />
+													</div>
+													<span>{item.text}</span>
+												</li>
+											))}
 										</ul>
 
 										<button
 											onClick={handleStart}
-											className="w-[160px] bg-[#0b5ed7] hover:bg-[#024ebd] text-white font-bold py-3.5 px-6 rounded-lg transition-colors shadow-sm"
+											className="w-[200px] bg-[#0b5ed7] hover:bg-[#024ebd] text-white font-bold py-3.5 px-5 rounded-xl flex items-center justify-between shadow-sm transition-all duration-300"
 										>
-											Bắt đầu
+											<span className="ml-4 text-[16px]">Bắt đầu</span>
+											<div className="w-6 h-6 rounded-full bg-white text-[#0b5ed7] flex items-center justify-center shrink-0">
+												<ChevronRight size={16} strokeWidth={3} />
+											</div>
 										</button>
 									</motion.div>
 								)}
