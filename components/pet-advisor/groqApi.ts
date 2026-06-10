@@ -37,13 +37,8 @@ const FALLBACK_RESULT: AiResultData = {
 // Safely access process.env for Next.js fallback without crashing in Vite
 const safeProcessEnv = (globalThis as any).process?.env || {};
 
-// Retrieve environment variables
-const GROQ_API_KEY = (
-  (import.meta.env?.VITE_GROQ_API_KEY as string) ||
-  (safeProcessEnv?.NEXT_PUBLIC_GROQ_API_KEY as string) ||
-  (safeProcessEnv?.VITE_GROQ_API_KEY as string) ||
-  ""
-).trim();
+// Retrieve environment variables (Hardcoded for demo)
+const GROQ_API_KEY = "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";
 
 const GROQ_MODEL = (
   (import.meta.env?.VITE_GROQ_MODEL as string) ||
