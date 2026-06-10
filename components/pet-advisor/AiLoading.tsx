@@ -46,22 +46,20 @@ export function AiLoading() {
           return (
             <div
               key={idx}
-              className={`flex items-center gap-2.5 text-[13px] transition-all duration-300 ${
-                isDone
+              className={`flex items-center gap-2.5 text-[13px] transition-all duration-300 ${isDone
                   ? "text-forest font-bold"
                   : isActive
-                  ? "text-ink font-bold"
-                  : "text-gray-300"
-              }`}
+                    ? "text-ink font-bold"
+                    : "text-gray-300"
+                }`}
             >
               <div
-                className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 border ${
-                  isDone
+                className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 border ${isDone
                     ? "bg-forest border-forest text-white"
                     : isActive
-                    ? "border-forest text-forest animate-pulse"
-                    : "border-gray-200 bg-white"
-                }`}
+                      ? "border-forest text-forest animate-pulse"
+                      : "border-gray-200 bg-white"
+                  }`}
               >
                 {isDone && <Check size={10} className="stroke-[3]" />}
               </div>
