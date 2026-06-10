@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { PetAdvisorPopup } from "@/components/pet-advisor/PetAdvisorPopup";
 
 const Home = lazy(() => import("./pages/Home").then(m => ({ default: m.Home })));
 const Products = lazy(() => import("./pages/Products").then(m => ({ default: m.Products })));
@@ -44,6 +45,7 @@ export function App() {
       </Suspense>
       
       {showFooter && <Footer />}
+      <PetAdvisorPopup />
     </main>
   );
 }

@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronRight, Menu, Search, ShoppingCart, User, Heart, TrendingUp } from "lucide-react";
+import { ChevronDown, ChevronRight, Menu, Search, ShoppingCart, User, Heart, TrendingUp, Sparkles } from "lucide-react";
 import { Image } from "@/components/Image";
 import { getCartCount } from "@/lib/cartHelper";
 import { MobileNavigationDrawer } from "./mobile-navigation-drawer";
@@ -276,6 +276,18 @@ export function Header() {
 
             {/* Right Icons */}
             <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent("open-pet-advisor"))}
+                className="flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3"
+                aria-label="Tư vấn AI"
+              >
+                <div className="relative">
+                  <Sparkles size={24} strokeWidth={2} className="text-blue-500" />
+                  <span className="absolute -right-1 -top-1 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-blue-500 ring-2 ring-white animate-pulse"></span>
+                </div>
+                <span className="hidden text-[0.72rem] font-bold text-forest/90 sm:block">Tư vấn AI</span>
+              </button>
+
               <Link
                 to="/wishlist"
                 className="flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3"

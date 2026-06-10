@@ -27,4 +27,5 @@
 ## Phase 5: User Authentication & Profile (Hoàn thành một phần)
 - [x] Thiết kế giao diện Đăng ký/Đăng nhập (Email, Google Auth) kiểu Split-Screen.
 - [x] Nâng cấp và triển khai Popup tư vấn dinh dưỡng AI đa bước (AI Pet Advisor Quiz) tự động hiện sau 7 giây, thu lead và cung cấp lời khuyên cá nhân hóa kèm voucher.
+- [x] Thêm quy trình 4 bước (Flow Section) tích điểm Shopee cho 3F Club sử dụng các icon tùy chỉnh.
 - [ ] Trang quản lý tài khoản người dùng (Lịch sử đơn hàng, địa chỉ...).

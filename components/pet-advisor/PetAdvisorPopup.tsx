@@ -38,12 +38,28 @@ export function PetAdvisorPopup() {
 
   // Initial trigger
   useEffect(() => {
+    const handleOpenEvent = () => {
+      setStatus("welcome");
+      setOverallPetType(null);
+      setActiveFlow(null);
+      setCurrentStep(0);
+      setAnswers({});
+      setAiResult(null);
+      setIsOpen(true);
+      setShowFloat(false);
+      trackEvent("popup_view", { trigger: "header_button" });
+    };
+    window.addEventListener("open-pet-advisor", handleOpenEvent);
+
     const timer = setTimeout(() => {
       setIsOpen(true);
       trackEvent("popup_view");
     }, 7000); // 7 seconds delay
     
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("open-pet-advisor", handleOpenEvent);
+    };
   }, []);
 
   const handleClose = () => {
