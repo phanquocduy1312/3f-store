@@ -84,7 +84,7 @@ const stats = [
 
 export function WhyChooseUsSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#F2F7FF] via-[#FAFCFF] to-[#F5F9FF] py-16 sm:py-24">
+    <section className="relative overflow-hidden bg-gradient-to-b from-[#F2F7FF] via-[#FAFCFF] to-[#F5F9FF] pb-16 pt-8 sm:pb-24 sm:pt-12">
       {/* Decorative background elements */}
       <div className="absolute left-[10%] top-20 text-forest/10">
         <PawPrint size={100} className="rotate-[-20deg]" />
