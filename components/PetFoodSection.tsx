@@ -2,8 +2,9 @@
 
 import { Link } from "react-router-dom";
 import { Image } from "@/components/Image";
-import { ArrowRight, Star, PawPrint } from "lucide-react";
+import { ArrowRight, Star, PawPrint, ShoppingCart } from "lucide-react";
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
+import { SaleBadge } from "@/components/SaleBadge";
 import { getCatFoodProducts, getDogFoodProducts } from "@/data/store";
 import type { Product } from "@/types/store";
 
@@ -56,9 +57,9 @@ function ProductCard({
     <article className={`group flex h-full flex-col rounded-[1.5rem] border bg-white overflow-hidden shadow-glass-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-glass ${hoverBorderClass}`}>
       <Link to={`/product/${product.id || product.name}`} className={`relative flex h-[180px] w-full items-center justify-center transition-colors ${imageBgClass}`}>
         {hasDiscount && (
-          <span className="absolute left-2 top-2 rounded-full bg-[#132117] px-2 py-0.5 text-[10px] font-black text-white shadow-md z-10">
-            -{discount}%
-          </span>
+          <div className="absolute left-2 top-2 z-10 origin-top-left scale-[0.25] sm:scale-[0.28] pointer-events-none">
+            <SaleBadge discount={discount} />
+          </div>
         )}
         <Image
           src={product.image}
@@ -83,30 +84,35 @@ function ProductCard({
         </Link>
 
         <div className="mt-1.5 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1 text-honey">
+          <div className="flex items-center gap-1 text-amber-500">
             <Star size={12} fill="currentColor" strokeWidth={2} />
             <span className="text-xs font-bold text-ink/70">{product.rating}</span>
           </div>
           <span className="text-[11px] font-semibold text-ink/45">Đã bán {meta.soldLabel}</span>
         </div>
 
-        <div className="mt-auto pt-1 flex items-end justify-between">
-          <div>
-            <div className="flex items-baseline gap-1.5">
-              <span className={`text-base font-black ${accentClass}`}>{product.price}</span>
-              {hasDiscount && (
-                <span className="text-[10px] font-black text-red-500 bg-red-50 px-1.5 py-0.5 rounded">
-                  -{discount}%
-                </span>
-              )}
-            </div>
+        <div className="mt-auto pt-2 flex flex-col justify-end">
+          <div className="mb-2 sm:mb-3 flex items-end gap-1.5 sm:gap-2 whitespace-nowrap">
+            <div className={`text-[1.1rem] sm:text-[1.25rem] font-black leading-none ${accentClass}`}>{product.price}</div>
             {product.oldPrice && (
-              <div className="text-[10px] font-semibold text-ink/40 line-through mt-0.5">{product.oldPrice}</div>
+              <div className="mb-0.5 text-[10px] sm:text-xs font-semibold text-ink/40 line-through">{product.oldPrice}</div>
             )}
           </div>
-          <button className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:text-white ${accentSoftClass} ${accentClass}`}>
-            <PawPrint size={14} />
-          </button>
+
+          <div className="flex gap-1.5 sm:gap-2">
+            <button
+              className="flex h-8 w-8 sm:h-9 sm:w-10 shrink-0 items-center justify-center rounded-lg border border-forest sm:border-[1.5px] bg-white text-forest transition-all active:scale-95 hover:bg-forest/5"
+              aria-label={`Thêm ${product.name} vào giỏ hàng`}
+            >
+              <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
+            </button>
+            <button
+              className="flex h-8 sm:h-9 flex-1 items-center justify-center rounded-lg bg-forest px-2 font-bold text-white transition-all active:scale-95 hover:bg-[rgb(var(--color-primary-dark))]"
+              aria-label={`Mua ngay ${product.name}`}
+            >
+              <span className="text-[11px] sm:text-xs whitespace-nowrap">Mua ngay</span>
+            </button>
+          </div>
         </div>
       </div>
     </article>
@@ -115,7 +121,7 @@ function ProductCard({
 
 export function PetFoodSection() {
   return (
-    <section className="relative bg-white py-12 lg:py-16">
+    <section className="relative bg-white pt-12 pb-2 lg:pt-16 lg:pb-0">
       <MotionSection className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-12 lg:gap-16">
           

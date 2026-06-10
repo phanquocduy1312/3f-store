@@ -5,6 +5,8 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { getProductById, getSaleProducts, getFeaturedProducts } from "@/data/store";
 import { addToCart, parsePriceString } from "@/lib/cartHelper";
 import { Image } from "@/components/Image";
+import { SaleBadge } from "@/components/SaleBadge";
+import { NewBadge } from "@/components/NewBadge";
 import { 
   Star, ChevronRight, ShoppingCart, Heart, Share2, 
   Minus, Plus, BellRing, Truck, Ticket, Award, RefreshCcw, CheckCircle, ShieldCheck,
@@ -76,6 +78,16 @@ export function ProductDetail() {
   const crossSellProducts = getSaleProducts(4);
   const similarProducts = getFeaturedProducts(4);
 
+  const currentPriceValue = parsePriceString(selectedVariant?.price ?? product.price);
+  const oldPriceValueStr = selectedVariant?.oldPrice ?? (product as any).oldPrice;
+  const oldPriceValue = oldPriceValueStr ? parsePriceString(oldPriceValueStr) : 0;
+  const hasDiscount = oldPriceValue > currentPriceValue;
+  const discountPercent = hasDiscount ? Math.round((1 - currentPriceValue / oldPriceValue) * 100) : 0;
+  const isNew = (product as any).sold ? (product as any).sold < 500 : true;
+
+  const formattedTotalPrice = (currentPriceValue * quantity).toLocaleString("vi-VN") + "đ";
+  const formattedOldPrice = oldPriceValue > 0 ? (oldPriceValue * quantity).toLocaleString("vi-VN") + "đ" : null;
+
   return (
     <div className="min-h-screen bg-[rgb(var(--color-surface))] pb-32">
       {/* Màn hình hiển thị chi tiết */}
@@ -101,26 +113,13 @@ export function ProductDetail() {
           <div className="lg:col-span-5 lg:sticky lg:top-24 h-fit z-10">
             <div className="group relative aspect-square w-full overflow-hidden rounded-[24px] border border-[rgb(var(--color-border))] bg-white">
               {/* Badges */}
-              <div className="absolute left-4 top-4 z-10 flex flex-col gap-2">
-                <span className="w-max rounded-md bg-[rgb(var(--color-primary))] px-2.5 py-1.5 text-[11px] font-black text-white shadow-sm">
-                  Giảm 21%
-                </span>
-                <span className="w-max rounded-md bg-[#f5b014] px-2.5 py-1.5 text-[11px] font-black text-white shadow-sm">
-                  Best Seller
-                </span>
-                <span className="w-max mt-2 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold text-[rgb(var(--color-primary))] shadow-sm backdrop-blur-sm flex items-center gap-1">
-                  🔥 94k+ đã bán
-                </span>
-              </div>
-              
-              {/* Action Buttons */}
-              <div className="absolute right-4 top-4 z-10 flex flex-col gap-2">
-                <button className="grid h-10 w-10 place-items-center rounded-full bg-white/80 text-[rgb(var(--color-ink-soft))] shadow-sm backdrop-blur-md transition hover:bg-white hover:text-[rgb(var(--color-primary))]">
-                  <Heart size={18} strokeWidth={2.5} />
-                </button>
-                <button className="grid h-10 w-10 place-items-center rounded-full bg-white/80 text-[rgb(var(--color-ink-soft))] shadow-sm backdrop-blur-md transition hover:bg-white hover:text-[rgb(var(--color-ink))]">
-                  <Share2 size={18} strokeWidth={2.5} />
-                </button>
+              <div className="absolute left-4 top-4 z-10 flex flex-col items-start gap-2 origin-top-left scale-[0.4] sm:scale-[0.5] pointer-events-none">
+                {hasDiscount && (
+                  <SaleBadge discount={discountPercent} />
+                )}
+                {isNew && (
+                  <NewBadge />
+                )}
               </div>
 
               <Image 
@@ -182,11 +181,11 @@ export function ProductDetail() {
             <div className="mb-6 rounded-[20px] bg-[rgb(var(--color-primary-soft))] p-5">
               <div className="flex items-end gap-3">
                 <span className="text-[28px] font-black leading-none text-[rgb(var(--color-primary))]">
-                  {selectedVariant?.price ?? product.price}
+                  {formattedTotalPrice}
                 </span>
-                {(selectedVariant?.oldPrice ?? (product as any).oldPrice) && (
+                {formattedOldPrice && (
                   <span className="mb-1 text-base font-semibold text-[rgb(var(--color-ink-soft))] line-through">
-                    {selectedVariant?.oldPrice ?? (product as any).oldPrice}
+                    {formattedOldPrice}
                   </span>
                 )}
                 <span className="mb-1 rounded-md bg-[rgb(var(--color-primary))] px-1.5 py-0.5 text-xs font-black text-white">Giá tốt</span>
@@ -592,22 +591,22 @@ export function ProductDetail() {
              <Image src={product.image} alt={product.name} className="h-12 w-12 rounded-lg bg-[rgb(var(--color-surface-soft))] object-contain p-1 mix-blend-multiply"/>
                <div>
                <div className="text-[13px] font-bold text-[rgb(var(--color-ink))] line-clamp-1 max-w-[300px]">{product.name}</div>
-               <div className="text-[14px] font-black text-[rgb(var(--color-primary))]">{product.price}</div>
+               <div className="text-[14px] font-black text-[rgb(var(--color-primary))]">{formattedTotalPrice}</div>
              </div>
            </div>
            
            {/* Mobile view primarily price */}
             <div className="sm:hidden flex flex-col">
             <span className="text-[12px] font-bold text-[rgb(var(--color-ink-soft))]">Tổng cộng:</span>
-            <span className="text-[18px] font-black text-[rgb(var(--color-primary))]">{product.price}</span>
+            <span className="text-[18px] font-black text-[rgb(var(--color-primary))]">{formattedTotalPrice}</span>
           </div>
 
            <div className="flex gap-2 w-full sm:w-auto">
              <button 
                onClick={() => handleAddToCart(false)}
-               className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-[14px] bg-[rgb(var(--color-primary-soft))] px-6 py-3 text-[14px] font-black text-[rgb(var(--color-primary))] transition hover:bg-[rgb(var(--color-primary-muted))]"
+               className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-[14px] bg-[rgb(var(--color-primary-soft))] px-2 sm:px-6 py-3 text-[13px] sm:text-[14px] font-black text-[rgb(var(--color-primary))] transition hover:bg-[rgb(var(--color-primary-muted))]"
              >
-               <ShoppingCart size={18} strokeWidth={2.5}/> Thêm vào giỏ
+               Thêm vào giỏ
              </button>
              <button 
                 onClick={() => handleAddToCart(true)}

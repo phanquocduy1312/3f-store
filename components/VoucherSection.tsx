@@ -16,9 +16,9 @@ const vouchers = [
     desc: "Đơn tối thiểu 400K. Tối đa 50K.",
     code: "BOSS15",
     exp: "Còn 2 ngày",
-    color: "from-emerald-400 to-emerald-600",
-    bgLight: "bg-emerald-50",
-    textDark: "text-emerald-700",
+    color: "from-sky-400 to-sky-600",
+    bgLight: "bg-sky-50",
+    textDark: "text-sky-700",
     icon: PawPrint,
     label: "HOT DEALS"
   },
@@ -104,8 +104,8 @@ const VoucherCard = ({ voucher, copiedId, handleCopy }: any) => (
     </div>
 
     {/* Cutout details on the border between left and right */}
-    <div className="absolute left-[42px] sm:left-[104px] -top-2 sm:-top-3 z-10 h-4 w-4 sm:h-6 sm:w-6 rounded-full bg-[#F6F2EA] shadow-inner" />
-    <div className="absolute left-[42px] sm:left-[104px] -bottom-2 sm:-bottom-3 z-10 h-4 w-4 sm:h-6 sm:w-6 rounded-full bg-[#F6F2EA] shadow-inner" />
+    <div className="absolute left-[42px] sm:left-[104px] -top-2 sm:-top-3 z-10 h-4 w-4 sm:h-6 sm:w-6 rounded-full bg-[#F5F9FF] shadow-inner" />
+    <div className="absolute left-[42px] sm:left-[104px] -bottom-2 sm:-bottom-3 z-10 h-4 w-4 sm:h-6 sm:w-6 rounded-full bg-[#F5F9FF] shadow-inner" />
     <div className="absolute left-[47px] sm:left-[109px] top-0 bottom-0 border-l-[2px] sm:border-l-[3px] border-dashed border-white/40" />
 
     {/* Right Side: Details & Action */}
@@ -131,7 +131,7 @@ const VoucherCard = ({ voucher, copiedId, handleCopy }: any) => (
           onClick={() => handleCopy(voucher.id, voucher.code)}
           className={`relative z-20 flex w-full sm:w-auto h-5 sm:h-8 px-2 sm:px-4 items-center justify-center rounded-full text-[8px] sm:text-[11px] font-bold uppercase tracking-wider transition-all duration-300 hover:scale-105 active:scale-95 ${
             copiedId === voucher.id 
-              ? "bg-emerald-500 text-white" 
+              ? "bg-sky-500 text-white" 
               : `bg-ink text-white hover:${voucher.bgLight} hover:${voucher.textDark}`
           }`}
           title="Save voucher"
@@ -153,7 +153,7 @@ export function VoucherSection() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#F6F2EA] py-0">
+    <section className="relative overflow-hidden bg-[#F5F9FF] py-0">
       {/* Pet-themed playful background elements */}
       <div className="pointer-events-none absolute left-0 top-0 h-full w-full opacity-40" 
         style={{ backgroundImage: "radial-gradient(rgb(var(--color-primary)) 1.5px, transparent 1.5px)", backgroundSize: "32px 32px" }} 

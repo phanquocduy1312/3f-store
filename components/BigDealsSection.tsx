@@ -4,6 +4,7 @@ import { Image } from "@/components/Image";
 import { ChevronRight, ShoppingCart, Star, PawPrint, Heart } from "lucide-react";
 import { getSaleProducts } from "@/data/store";
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
+import { SaleBadge } from "@/components/SaleBadge";
 
 const categories = [
   { id: "all", label: "Tất cả", icon: PawPrint },
@@ -44,8 +45,8 @@ export function BigDealsSection() {
                 return (
                   <article key={`sale-${i}`} className="group relative h-full rounded-2xl bg-white p-4 shadow-sm transition duration-300 hover:-translate-y-2 hover:shadow-xl sm:p-5">
                     {/* Discount badge */}
-                    <div className="absolute left-2 top-2 z-10 rounded-lg bg-[#FF4D4F] px-2.5 py-1 text-xs font-extrabold text-white shadow-md sm:left-3 sm:top-3">
-                      -{discount}%
+                    <div className="absolute left-2 top-2 z-10 origin-top-left scale-[0.25] sm:scale-[0.28] pointer-events-none sm:left-3 sm:top-3">
+                      <SaleBadge discount={discount} />
                     </div>
 
                     {/* Heart icon - top right */}

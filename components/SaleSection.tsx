@@ -12,6 +12,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
 import { getSaleProducts } from "@/data/store";
+import { SaleBadge } from "@/components/SaleBadge";
 import type { Product } from "@/types/store";
 
 const categoryLabels = ["Thức ăn khô cho mèo", "Thức ăn khô cho chó", "Cát vệ sinh cho mèo", "Pate & snack"];
@@ -66,8 +67,8 @@ function SaleProductCard({ product, index }: { product: Product; index: number }
       transition={{ type: "spring", stiffness: 300, damping: 24 }}
     >
       <div className="relative h-[232px] overflow-hidden rounded-[1.1rem] bg-[#F7F9F2]">
-        <div className="absolute left-0 top-0 z-20 rounded-br-[0.95rem] rounded-tl-[1.1rem] bg-[#EF4444] px-3 py-2 text-sm font-black leading-none text-white shadow-[0_10px_22px_rgba(239,68,68,0.28)]">
-          -{discount}%
+        <div className="absolute left-2 top-2 z-20 origin-top-left scale-[0.25] sm:scale-[0.28] pointer-events-none">
+          <SaleBadge discount={discount} />
         </div>
 
         <div className="absolute right-0 top-0 z-20 rounded-bl-[0.95rem] rounded-tr-[1.1rem] bg-[#EF4444] px-3 py-2 text-sm font-black leading-none text-white shadow-[0_10px_22px_rgba(239,68,68,0.28)]">
