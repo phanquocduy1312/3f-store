@@ -55,8 +55,8 @@ export function ContactForm({ onBack, onSubmit }: ContactFormProps) {
       className="flex flex-col h-full justify-between"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <h4 className="text-[18px] md:text-[20px] font-black text-ink flex items-center gap-2">
+        <div className="text-center md:text-left flex flex-col items-center md:items-start">
+          <h4 className="text-[18px] md:text-[20px] font-black text-ink flex items-center justify-center md:justify-start gap-2 w-full">
             <Gift className="text-[#ED4546] shrink-0" size={24} />
             <span>Gần xong rồi!</span>
           </h4>

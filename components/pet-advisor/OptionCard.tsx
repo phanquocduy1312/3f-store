@@ -5,9 +5,10 @@ interface OptionCardProps {
   label: string;
   selected: boolean;
   onClick: () => void;
+  isMulti?: boolean;
 }
 
-export function OptionCard({ label, selected, onClick }: OptionCardProps) {
+export function OptionCard({ label, selected, onClick, isMulti }: OptionCardProps) {
   return (
     <motion.button
       type="button"
@@ -24,7 +25,7 @@ export function OptionCard({ label, selected, onClick }: OptionCardProps) {
       
       {/* Selected Indicator */}
       <div
-        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+        className={`w-6 h-6 ${isMulti ? 'rounded-[6px]' : 'rounded-full'} border-2 flex items-center justify-center shrink-0 transition-all ${
           selected
             ? "border-forest bg-forest text-white"
             : "border-gray-300 group-hover:border-forest-muted bg-white"

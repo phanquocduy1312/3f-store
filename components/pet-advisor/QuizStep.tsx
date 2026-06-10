@@ -6,43 +6,58 @@ import { OptionCard } from "./OptionCard";
 
 interface QuizStepProps {
   stepConfig: QuizStepConfig;
-  savedAnswer?: { value: string; customText?: string };
+  savedAnswer?: { value: string | string[]; customText?: string };
   onBack: () => void;
-  onNext: (value: string, customText?: string) => void;
+  onNext: (value: string | string[], customText?: string) => void;
 }
 
 export function QuizStep({ stepConfig, savedAnswer, onBack, onNext }: QuizStepProps) {
-  const [selectedValue, setSelectedValue] = useState<string>("");
+  const isMulti = stepConfig.type === "multi_choice";
+  const [selectedValues, setSelectedValues] = useState<string[]>([]);
   const [customText, setCustomText] = useState<string>("");
 
   // Populate saved answers if they exist
   useEffect(() => {
     if (savedAnswer) {
-      setSelectedValue(savedAnswer.value);
+      if (Array.isArray(savedAnswer.value)) {
+        setSelectedValues(savedAnswer.value);
+      } else {
+        setSelectedValues(savedAnswer.value ? [savedAnswer.value] : []);
+      }
       setCustomText(savedAnswer.customText || "");
     } else {
-      setSelectedValue("");
+      setSelectedValues([]);
       setCustomText("");
     }
   }, [stepConfig, savedAnswer]);
 
-  const showCustomInput = selectedValue === stepConfig.customInputTrigger;
+  const showCustomInput = selectedValues.includes(stepConfig.customInputTrigger || "");
 
   const handleOptionSelect = (val: string) => {
-    setSelectedValue(val);
-    
-    // Auto-advance if not triggering a custom input text field
-    if (val !== stepConfig.customInputTrigger) {
-      const timer = setTimeout(() => {
-        onNext(val, "");
-      }, 250);
-      return () => clearTimeout(timer);
+    if (isMulti) {
+      setSelectedValues((prev) => {
+        if (prev.includes(val)) {
+          return prev.filter((v) => v !== val);
+        }
+        return [...prev, val];
+      });
+    } else {
+      setSelectedValues([val]);
+      
+      // Auto-advance if not triggering a custom input text field
+      if (val !== stepConfig.customInputTrigger) {
+        const timer = setTimeout(() => {
+          onNext(val, "");
+        }, 250);
+        return () => clearTimeout(timer);
+      }
     }
   };
 
   const handleNextClick = () => {
-    if (!selectedValue) return;
-    onNext(selectedValue, showCustomInput ? customText : "");
+    if (selectedValues.length === 0) return;
+    const valueToSubmit = isMulti ? selectedValues : selectedValues[0];
+    onNext(valueToSubmit, showCustomInput ? customText : "");
   };
 
   return (
@@ -53,8 +68,9 @@ export function QuizStep({ stepConfig, savedAnswer, onBack, onNext }: QuizStepPr
       className="flex flex-col h-full justify-between"
     >
       <div className="space-y-5">
-        <h4 className="text-[18px] md:text-[20px] font-black text-ink leading-snug">
+        <h4 className="text-[18px] md:text-[20px] font-black text-ink leading-snug text-center md:text-left">
           {stepConfig.question}
+          {isMulti && <span className="block text-[13px] text-ink-soft font-normal mt-1">(Có thể chọn nhiều)</span>}
         </h4>
 
         {/* Options list */}
@@ -63,8 +79,9 @@ export function QuizStep({ stepConfig, savedAnswer, onBack, onNext }: QuizStepPr
             <OptionCard
               key={opt.value}
               label={opt.label}
-              selected={selectedValue === opt.value}
+              selected={selectedValues.includes(opt.value)}
               onClick={() => handleOptionSelect(opt.value)}
+              isMulti={isMulti}
             />
           ))}
         </div>
@@ -102,10 +119,10 @@ export function QuizStep({ stepConfig, savedAnswer, onBack, onNext }: QuizStepPr
         {/* Only show/enable "Next" if option is chosen */}
         <button
           type="button"
-          disabled={!selectedValue || (showCustomInput && !customText.trim())}
+          disabled={selectedValues.length === 0 || (showCustomInput && !customText.trim())}
           onClick={handleNextClick}
           className={`flex items-center gap-1 px-5 py-2.5 rounded-xl font-bold text-[14px] transition-all ${
-            selectedValue && (!showCustomInput || customText.trim())
+            selectedValues.length > 0 && (!showCustomInput || customText.trim())
               ? "bg-forest text-white hover:bg-forest-dark cursor-pointer shadow-sm"
               : "bg-gray-100 text-gray-400 cursor-not-allowed"
           }`}

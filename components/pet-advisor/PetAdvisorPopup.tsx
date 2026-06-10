@@ -20,31 +20,45 @@ function trackEvent(eventName: string, payload = {}) {
   console.log("[TRACK]", eventName, payload);
 }
 
+const STORAGE_KEY = "pet_advisor_state";
+
+const loadState = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch (e) {
+    console.error("Failed to load pet advisor state", e);
+  }
+  return null;
+};
+
 export function PetAdvisorPopup() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [showFloat, setShowFloat] = useState(false);
   
-  // Quiz states
-  const [status, setStatus] = useState<"welcome" | "pet_type" | "both_which" | "quiz" | "contact" | "loading" | "result">("welcome");
-  const [overallPetType, setOverallPetType] = useState<"dog" | "cat" | "both" | null>(null);
-  const [activeFlow, setActiveFlow] = useState<"dog" | "cat" | null>(null);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, { value: string; customText?: string }>>({});
-  const [customer, setCustomer] = useState<{ name: string; phone: string; email: string } | null>(null);
-  const [aiResult, setAiResult] = useState<AiResultData | null>(null);
+  // Quiz states (persisted)
+  const initialState = loadState() || {};
+  const [status, setStatus] = useState<"welcome" | "pet_type" | "both_which" | "quiz" | "contact" | "loading" | "result">(initialState.status || "welcome");
+  const [overallPetType, setOverallPetType] = useState<"dog" | "cat" | "both" | null>(initialState.overallPetType || null);
+  const [activeFlow, setActiveFlow] = useState<"dog" | "cat" | null>(initialState.activeFlow || null);
+  const [currentStep, setCurrentStep] = useState(initialState.currentStep || 0);
+  const [answers, setAnswers] = useState<Record<string, { value: string | string[]; customText?: string }>>(initialState.answers || {});
+  const [customer, setCustomer] = useState<{ name: string; phone: string; email: string } | null>(initialState.customer || null);
+  const [aiResult, setAiResult] = useState<AiResultData | null>(initialState.aiResult || null);
+
+  // Sync to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      status, overallPetType, activeFlow, currentStep, answers, customer, aiResult
+    }));
+  }, [status, overallPetType, activeFlow, currentStep, answers, customer, aiResult]);
 
   const steps = activeFlow === "dog" ? dogQuizSteps : catQuizSteps;
 
   // Initial trigger
   useEffect(() => {
     const handleOpenEvent = () => {
-      setStatus("welcome");
-      setOverallPetType(null);
-      setActiveFlow(null);
-      setCurrentStep(0);
-      setAnswers({});
-      setAiResult(null);
       setIsOpen(true);
       setShowFloat(false);
       trackEvent("popup_view", { trigger: "header_button" });
@@ -70,16 +84,19 @@ export function PetAdvisorPopup() {
   };
 
   const handleManualTrigger = () => {
-    // Reset state and open
+    setIsOpen(true);
+    setShowFloat(false);
+    trackEvent("popup_view", { trigger: "floating_button" });
+  };
+
+  const handleRestart = () => {
     setStatus("welcome");
     setOverallPetType(null);
     setActiveFlow(null);
     setCurrentStep(0);
     setAnswers({});
     setAiResult(null);
-    setIsOpen(true);
-    setShowFloat(false);
-    trackEvent("popup_view", { trigger: "floating_button" });
+    trackEvent("quiz_restart");
   };
 
   const handleStartQuiz = () => {
@@ -98,7 +115,7 @@ export function PetAdvisorPopup() {
     }
   };
 
-  const handleStepSubmit = (value: string, customText?: string) => {
+  const handleStepSubmit = (value: string | string[], customText?: string) => {
     const currentStepConfig = steps[currentStep];
     const newAnswers = { ...answers, [currentStepConfig.id]: { value, customText } };
     setAnswers(newAnswers);
@@ -127,7 +144,7 @@ export function PetAdvisorPopup() {
     // Format payload for AI adviser mapping
     const answersPayload: Record<string, string> = {};
     Object.entries(answers).forEach(([key, val]) => {
-      answersPayload[key] = val.customText || val.value;
+      answersPayload[key] = val.customText || (Array.isArray(val.value) ? val.value.join(", ") : val.value);
     });
 
     try {
@@ -162,7 +179,7 @@ export function PetAdvisorPopup() {
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
               className="bg-white shadow-2xl relative z-10 w-full overflow-hidden flex flex-col md:flex-row
                 max-h-[90vh] md:max-h-[620px] 
-                fixed bottom-0 left-0 right-0 rounded-t-3xl md:relative md:rounded-3xl md:max-w-[720px]"
+                rounded-2xl md:rounded-3xl max-w-[calc(100vw-32px)] md:max-w-[720px] mx-auto"
             >
               {/* Close Button */}
               <button onClick={handleClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors z-30" aria-label="Close">
@@ -197,7 +214,7 @@ export function PetAdvisorPopup() {
                   {status === "welcome" && <QuizWelcome onStart={handleStartQuiz} />}
                   
                   {status === "pet_type" && (
-                    <motion.div key="pet_type" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 text-left">
+                    <motion.div key="pet_type" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 text-center md:text-left">
                       <h4 className="text-[18px] md:text-[20px] font-black text-ink">Anh/chị đang nuôi bé nào?</h4>
                       <div className="grid grid-cols-1 gap-2.5">
                         <button onClick={() => handleSelectPetType("dog")} className="w-full p-4 rounded-2xl border-2 border-gray-200 hover:border-forest text-left transition-all font-bold flex items-center justify-between text-ink hover:bg-cream-soft/20">
@@ -217,7 +234,7 @@ export function PetAdvisorPopup() {
                   )}
 
                   {status === "both_which" && (
-                    <motion.div key="both_which" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 text-left">
+                    <motion.div key="both_which" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 text-center md:text-left">
                       <h4 className="text-[18px] md:text-[20px] font-black text-ink">Anh/chị muốn tư vấn bé nào trước?</h4>
                       <div className="grid grid-cols-2 gap-3">
                         <button onClick={() => { setActiveFlow("dog"); setStatus("quiz"); setCurrentStep(0); }} className="p-4 rounded-2xl border-2 border-gray-200 hover:border-forest font-bold text-center text-ink flex flex-col items-center gap-2">
@@ -247,6 +264,8 @@ export function PetAdvisorPopup() {
                       onExploreProducts={() => { handleClose(); trackEvent("product_click"); navigate(`/products?category=${activeFlow === "dog" ? "Thức ăn cho chó" : "Thức ăn cho mèo"}`); }}
                       onConsultAgent={() => { handleClose(); window.open("https://zalo.me/your_number", "_blank"); }}
                       onShareZalo={() => { window.open(`https://zalo.me/your_number?text=${encodeURIComponent("Tôi vừa nhận được tư vấn cho thú cưng từ 3F: " + aiResult.summary)}`, "_blank"); }}
+                      onClose={handleClose}
+                      onRestart={handleRestart}
                     />
                   )}
                 </AnimatePresence>
