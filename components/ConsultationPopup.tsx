@@ -96,30 +96,30 @@ export function ConsultationPopup() {
 										exit={{ opacity: 0, x: -20 }}
 										className="flex flex-col h-full justify-center"
 									>
-										<div className="mb-5">
-											<h3 className="text-[#0b5ed7] font-black text-[22px] md:text-[26px] leading-[1.3] mb-3">
+										<div className="mb-8">
+											<h3 className="text-[#0b5ed7] font-black text-[26px] md:text-[32px] leading-[1.3] mb-4">
 												<span className="inline-flex items-center gap-2">
-													<PawPrint size={24} className="fill-[#0b5ed7] text-[#0b5ed7] shrink-0" />
+													<PawPrint size={32} className="fill-[#0b5ed7] text-[#0b5ed7] shrink-0" />
 													<span>TÌM THỨC ĂN</span>
 												</span>
 												<br />
 												PHÙ HỢP CHO BÉ
 											</h3>
-											<p className="text-gray-800 font-medium text-[16px]">
-												Chỉ mất <span className="text-[#0b5ed7] font-bold border-b-[2px] border-[#0b5ed7] pb-0.5">30 giây</span>
+											<p className="text-gray-800 font-medium text-[18px] md:text-[20px]">
+												Chỉ mất <span className="text-[#0b5ed7] font-bold border-b-[2.5px] border-[#0b5ed7] pb-0.5">30 giây</span>
 											</p>
 										</div>
 
 										{/* Checklist */}
-										<ul className="space-y-3.5 mb-8">
+										<ul className="space-y-4 md:space-y-5 mb-10">
 											{[
 												{ text: "Gợi ý sản phẩm phù hợp", id: "suggest" },
 												{ text: <>Voucher <span className="font-bold">30.000đ</span></>, id: "voucher" },
 												{ text: "Checklist chăm sóc miễn phí", id: "checklist" }
 											].map((item) => (
-												<li key={item.id} className="flex items-center text-gray-800 font-medium text-[15px]">
-													<div className="flex items-center justify-center w-[20px] h-[20px] rounded bg-[#4CAF50] text-white mr-3 shrink-0">
-														<Check size={14} className="stroke-[3]" />
+												<li key={item.id} className="flex items-center text-gray-800 font-medium text-[16px] md:text-[18px]">
+													<div className="flex items-center justify-center w-[24px] h-[24px] rounded bg-[#4CAF50] text-white mr-3 shrink-0">
+														<Check size={16} className="stroke-[3]" />
 													</div>
 													<span>{item.text}</span>
 												</li>
@@ -128,11 +128,11 @@ export function ConsultationPopup() {
 
 										<button
 											onClick={handleStart}
-											className="w-[200px] bg-[#0b5ed7] hover:bg-[#024ebd] text-white font-bold py-3.5 px-5 rounded-xl flex items-center justify-between shadow-sm transition-all duration-300"
+											className="w-[240px] bg-[#0b5ed7] hover:bg-[#024ebd] text-white font-bold py-4 px-6 rounded-xl flex items-center justify-between shadow-sm transition-all duration-300"
 										>
-											<span className="ml-4 text-[16px]">Bắt đầu</span>
-											<div className="w-6 h-6 rounded-full bg-white text-[#0b5ed7] flex items-center justify-center shrink-0">
-												<ChevronRight size={16} strokeWidth={3} />
+											<span className="ml-4 text-[18px] md:text-[20px]">Bắt đầu</span>
+											<div className="w-8 h-8 rounded-full bg-white text-[#0b5ed7] flex items-center justify-center shrink-0">
+												<ChevronRight size={20} strokeWidth={3} />
 											</div>
 										</button>
 									</motion.div>
