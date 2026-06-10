@@ -648,26 +648,26 @@ function ThreeFClub({
 							{/* Right Part: Form */}
 							<div className="flex-1 xl:border-l xl:border-gray-100 xl:pl-8 flex flex-col justify-center">
 								<div className="flex flex-col gap-3">
-									<div className="flex items-center gap-4">
-										<label className="w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">SĐT</label>
-										<input type="text" placeholder="Nhập số điện thoại" className="flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
+									<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
+										<label className="w-full sm:w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">SĐT</label>
+										<input type="text" placeholder="Nhập số điện thoại" className="w-full sm:flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
 									</div>
-									<div className="flex items-center gap-4">
-										<label className="w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Mã đơn Shopee</label>
-										<input type="text" placeholder="Nhập mã đơn Shopee" className="flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
+									<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
+										<label className="w-full sm:w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Mã đơn Shopee</label>
+										<input type="text" placeholder="Nhập mã đơn Shopee" className="w-full sm:flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
 									</div>
-									<div className="flex items-center gap-4">
-										<label className="w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Tổng tiền đơn</label>
-										<input type="text" placeholder="Nhập tổng tiền đơn (VNĐ)" className="flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
+									<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
+										<label className="w-full sm:w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Tổng tiền đơn</label>
+										<input type="text" placeholder="Nhập tổng tiền đơn (VNĐ)" className="w-full sm:flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
 									</div>
-									<div className="flex items-center gap-4">
-										<label className="w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Email</label>
-										<input type="text" placeholder="Nhập email của bạn" className="flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
+									<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
+										<label className="w-full sm:w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Email</label>
+										<input type="text" placeholder="Nhập email của bạn" className="w-full sm:flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
 									</div>
 									
-									<button className="mt-2 w-full flex justify-center items-center gap-2 bg-[#092B5A] hover:bg-[#071d3d] transition-colors text-white font-bold py-3 px-8 rounded-xl shadow-md text-[14px]">
-										<span>Gửi đơn Shopee để tích điểm</span>
-										<ArrowRight size={18} />
+									<button className="mt-2 w-full flex justify-center items-center gap-1.5 sm:gap-2 bg-[#092B5A] hover:bg-[#071d3d] transition-colors text-white font-bold py-3 px-4 sm:px-8 rounded-xl shadow-md text-[13.5px] sm:text-[14px]">
+										<span className="truncate">Gửi đơn Shopee để tích điểm</span>
+										<ArrowRight size={18} className="shrink-0" />
 									</button>
 								</div>
 							</div>
