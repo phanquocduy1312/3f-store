@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import {
 	Calendar,
@@ -21,6 +21,9 @@ import {
 	CheckCircle2,
 } from "lucide-react";
 import { ThreeFClubFlowSection } from "./three-f-club-flow-section";
+import { loadShopeeRequests, persistShopeeRequests } from "@/lib/shopee-requests";
+import type { ShopeePointRequest } from "@/types/shopee";
+import { scanShopeeOrderImage, createShopeePointRequest } from "@/src/services/shopeePointApi";
 
 export type ThreeFClubAssets = Partial<{
 	badgeSilver: string;
@@ -409,34 +412,256 @@ function ThreeFClub({
 
 	const a = { ...DEFAULT_ASSETS, ...assets };
 
-	const [orderCode, setOrderCode] = useState("");
-	const [amount, setAmount] = useState("");
+	const [form, setForm] = useState({
+		phone: "",
+		email: "",
+		customerName: "",
+		zalo: "",
+		shopeeOrderCode: "",
+		orderAmount: "",
+		imageId: null as number | null,
+		scanId: null as number | null,
+		orderImageUrl: "",
+	});
+	const [phoneError, setPhoneError] = useState("");
+	const [emailError, setEmailError] = useState("");
 	const [isScanning, setIsScanning] = useState(false);
+	const [scanResult, setScanResult] = useState<any | null>(null);
+	const [scanWarnings, setScanWarnings] = useState<string[]>([]);
+	const [scanError, setScanError] = useState("");
+	const [uploadedImagePreview, setUploadedImagePreview] = useState("");
+	const [autoFilledFields, setAutoFilledFields] = useState<Record<string, boolean>>({});
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [activeTab, setActiveTab] = useState<"shopee" | "phone">("shopee");
+	const [submitError, setSubmitError] = useState("");
 
-	const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
+	const scanIdRef = useRef(0);
 
+	// Revoke preview objectURL on change or unmount
+	useEffect(() => {
+		return () => {
+			if (uploadedImagePreview && uploadedImagePreview.startsWith("blob:")) {
+				URL.revokeObjectURL(uploadedImagePreview);
+			}
+		};
+	}, [uploadedImagePreview]);
+
+	useEffect(() => {
+		if (Object.keys(autoFilledFields).length === 0) return;
+
+		const timer = setTimeout(() => {
+			setAutoFilledFields({});
+		}, 2000);
+
+		return () => clearTimeout(timer);
+	}, [autoFilledFields]);
+
+	const normalizeVietnamPhone = (input?: string) => {
+		if (!input) return "";
+		return input.replace(/[^\d]/g, "");
+	};
+
+	const isValidVietnamPhone = (phoneStr?: string) => {
+		const normalized = normalizeVietnamPhone(phoneStr);
+		return /^0\d{8,10}$/.test(normalized);
+	};
+
+	const normalizeAmount = (input: string | number) => {
+		if (typeof input === "number") return input;
+		const onlyNumber = String(input || "").replace(/[^\d]/g, "");
+		return Number(onlyNumber || 0);
+	};
+
+	const calculateEstimatedPoints = (value?: string | number) => {
+		const amountVal = normalizeAmount(value || 0);
+		return Math.floor(amountVal / 10000);
+	};
+
+	const validatePhone = (value: string) => {
+		if (!value.trim()) {
+			setPhoneError("Số điện thoại là bắt buộc");
+			return false;
+		}
+		if (!isValidVietnamPhone(value)) {
+			setPhoneError("Số điện thoại phải từ 9 đến 11 số");
+			return false;
+		}
+		setPhoneError("");
+		return true;
+	};
+
+	const validateEmail = (value: string) => {
+		if (!value.trim()) {
+			setEmailError("");
+			return true;
+		}
+		const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!regex.test(value.trim())) {
+			setEmailError("Email không đúng định dạng");
+			return false;
+		}
+		setEmailError("");
+		return true;
+	};
+
+	const handleOrderImageChange = async (file: File) => {
+		const currentScanId = Date.now();
+		scanIdRef.current = currentScanId;
+
+		setScanError("");
+		setScanWarnings([]);
+		setScanResult(null);
+		setAutoFilledFields({});
 		setIsScanning(true);
-		// Giả lập xử lý quét ảnh/QR
-		setTimeout(() => {
-			setIsScanning(false);
-			// Điền tự động dữ liệu giả lập
-			setOrderCode("SP240" + Math.floor(Math.random() * 100000));
-			setAmount("350000"); // 350.000đ
-		}, 1500);
+
+		if (uploadedImagePreview && uploadedImagePreview.startsWith("blob:")) {
+			URL.revokeObjectURL(uploadedImagePreview);
+		}
+		const previewUrl = URL.createObjectURL(file);
+		setUploadedImagePreview(previewUrl);
+
+		try {
+			const result = await scanShopeeOrderImage(file);
+
+			if (scanIdRef.current !== currentScanId) {
+				return;
+			}
+
+			setScanResult(result);
+			setScanWarnings(result.warnings || []);
+
+			const fields = result.fields || {};
+			const normalizedPhone = normalizeVietnamPhone(fields.phone);
+
+			setForm((prev) => ({
+				...prev,
+				phone: normalizedPhone || "",
+				email: fields.email || "",
+				customerName: fields.customerName || "",
+				zalo: normalizedPhone || "",
+				shopeeOrderCode: fields.shopeeOrderCode || "",
+				orderAmount: fields.orderAmount ? String(fields.orderAmount) : "",
+				imageId: result.imageId || null,
+				scanId: result.scanId || null,
+				orderImageUrl: result.imageUrl || "",
+			}));
+
+			setAutoFilledFields({
+				phone: Boolean(normalizedPhone),
+				email: Boolean(fields.email),
+				customerName: Boolean(fields.customerName),
+				shopeeOrderCode: Boolean(fields.shopeeOrderCode),
+				orderAmount: Boolean(fields.orderAmount),
+			});
+
+		} catch (error: any) {
+			if (scanIdRef.current !== currentScanId) {
+				return;
+			}
+			setScanError(error?.message || "Không quét được ảnh. Vui lòng nhập thủ công.");
+		} finally {
+			if (scanIdRef.current === currentScanId) {
+				setIsScanning(false);
+			}
+		}
 	};
 
 	const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const val = e.target.value.replace(/\D/g, ""); // Chỉ cho phép nhập số
-		setAmount(val);
+		const val = e.target.value.replace(/\D/g, "");
+		setForm(prev => ({ ...prev, orderAmount: val }));
 	};
 
-	const formatCurrency = (val: string) => {
-		if (!val) return "";
-		return new Intl.NumberFormat("vi-VN").format(Number(val));
+	const formatCurrency = (value?: string | number) => {
+		const amountVal = normalizeAmount(value || 0);
+		return amountVal.toLocaleString("vi-VN") + "đ";
 	};
+
+	const clearUploadedImage = () => {
+		if (uploadedImagePreview && uploadedImagePreview.startsWith("blob:")) {
+			URL.revokeObjectURL(uploadedImagePreview);
+		}
+		setUploadedImagePreview("");
+		setScanResult(null);
+		setScanWarnings([]);
+		setScanError("");
+		setAutoFilledFields({});
+		setForm((prev) => ({
+			...prev,
+			phone: "",
+			shopeeOrderCode: "",
+			orderAmount: "",
+			imageId: null,
+			scanId: null,
+			orderImageUrl: "",
+		}));
+		setPhoneError("");
+	};
+
+	const handleResetForm = () => {
+		setForm({
+			phone: "",
+			email: "",
+			customerName: "",
+			zalo: "",
+			shopeeOrderCode: "",
+			orderAmount: "",
+			imageId: null,
+			scanId: null,
+			orderImageUrl: "",
+		});
+		setUploadedImagePreview("");
+		setScanResult(null);
+		setScanWarnings([]);
+		setScanError("");
+		setAutoFilledFields({});
+		setPhoneError("");
+		setEmailError("");
+		setSubmitError("");
+		setIsSubmitted(false);
+	};
+
+	const handleSubmit = async () => {
+		const isPhoneValid = validatePhone(form.phone);
+		const isEmailValid = validateEmail(form.email);
+
+		if (!isPhoneValid || !isEmailValid || !form.shopeeOrderCode.trim() || normalizeAmount(form.orderAmount) <= 0 || isScanning) {
+			return;
+		}
+
+		setIsSubmitting(true);
+		setSubmitError("");
+
+		try {
+			const payload = {
+				phone: normalizeVietnamPhone(form.phone),
+				email: form.email || "",
+				customerName: form.customerName || "",
+				zalo: form.zalo || "",
+				shopeeOrderCode: form.shopeeOrderCode.trim(),
+				orderAmount: normalizeAmount(form.orderAmount),
+				imageId: form.imageId || null,
+				scanId: form.scanId || null,
+			};
+
+			await createShopeePointRequest(payload);
+			setIsSubmitted(true);
+		} catch (error: any) {
+			setSubmitError(error?.message || "Không gửi được yêu cầu tích điểm.");
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	const isFormValid =
+		isValidVietnamPhone(form.phone) &&
+		Boolean(form.shopeeOrderCode.trim()) &&
+		normalizeAmount(form.orderAmount) > 0 &&
+		!isScanning;
+
+	const isSubmitDisabled = 
+		!isFormValid || 
+		isSubmitting;
 
 	const tiers: Tier[] = [
 		{
@@ -694,75 +919,270 @@ function ThreeFClub({
 							</div>
 
 							{/* Right Part: Form */}
-							<div className="flex-1 xl:border-l xl:border-gray-100 xl:pl-8 flex flex-col justify-center">
-								<div className="flex flex-col gap-4">
-									<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
-										<label className="w-full sm:w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">SĐT</label>
-										<input type="text" placeholder="Nhập số điện thoại" className="w-full sm:flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
+							<div className="flex-1 xl:border-l xl:border-gray-100 xl:pl-8 flex flex-col justify-center min-h-[400px]">
+								{isSubmitted ? (
+									<div className="flex flex-col items-center text-center p-5 sm:p-6 bg-green-50/30 border border-green-100 rounded-3xl animate-fade-in">
+										<div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-6 shadow-md shadow-green-200/50">
+											<CheckCircle2 size={32} className="text-green-600" />
+										</div>
+										<h3 className="text-[20px] font-black text-[#092B5A] mb-4">
+											Gửi yêu cầu thành công!
+										</h3>
+										<div className="text-[14px] text-gray-700 font-medium leading-relaxed mb-6 space-y-3">
+											<p>3F đã nhận yêu cầu tích điểm từ đơn Shopee của bạn.</p>
+											<p>Đơn sẽ được xác minh trong 24–48h.</p>
+											<p>Kết quả sẽ được thông báo qua SĐT. Nếu bạn có nhập email, 3F cũng sẽ gửi thông báo qua email.</p>
+										</div>
+										<button 
+											onClick={handleResetForm}
+											className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#092B5A] hover:bg-[#071d3d] transition-colors text-white font-bold py-3 px-8 rounded-xl shadow-md text-[14px]"
+										>
+											<span>Gửi đơn khác</span>
+											<ArrowRight size={16} />
+										</button>
 									</div>
+								) : (
+									<div className="flex flex-col gap-4">
+										<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
+											<div className="w-full sm:w-[110px] shrink-0 flex items-center gap-1.5">
+												<label className="text-[13px] font-bold text-[#092B5A]">SĐT</label>
+												{autoFilledFields.phone && (
+													<span className="text-[9px] font-bold text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded shadow-sm animate-pulse whitespace-nowrap">
+														Tự điền từ ảnh
+													</span>
+												)}
+											</div>
+											<div className="w-full sm:flex-1">
+												<input 
+													type="text" 
+													value={form.phone}
+													onChange={e => {
+														const val = normalizeVietnamPhone(e.target.value);
+														setForm(prev => ({ ...prev, phone: val, zalo: val }));
+														if (phoneError) validatePhone(val);
+													}}
+													onBlur={e => validatePhone(e.target.value)}
+													placeholder="Nhập số điện thoại" 
+													className={`w-full bg-white border rounded-lg px-4 py-3 text-[13px] outline-none focus:ring-1 transition-all placeholder-gray-400 font-medium ${
+														autoFilledFields.phone 
+															? 'border-green-400 focus:border-green-500 focus:ring-green-500 bg-green-50/10' 
+															: phoneError 
+																? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+																: 'border-gray-200 focus:border-[#092B5A] focus:ring-[#092B5A]'
+													}`} 
+												/>
+												{phoneError && (
+													<p className="text-red-500 text-[11px] font-semibold mt-1">{phoneError}</p>
+												)}
+											</div>
+										</div>
 
-									<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
-										<label className="w-full sm:w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Email</label>
-										<input type="text" placeholder="Nhập email của bạn" className="w-full sm:flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" />
-									</div>
+										<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
+											<div className="w-full sm:w-[110px] shrink-0 flex items-center gap-1.5">
+												<label className="text-[13px] font-bold text-[#092B5A] shrink-0">Email (không bắt buộc)</label>
+												{autoFilledFields.email && (
+													<span className="text-[9px] font-bold text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded shadow-sm animate-pulse whitespace-nowrap">
+														Tự điền từ ảnh
+													</span>
+												)}
+											</div>
+											<div className="w-full sm:flex-1">
+												<input 
+													type="text" 
+													value={form.email}
+													onChange={e => {
+														setForm(prev => ({ ...prev, email: e.target.value }));
+														if (emailError) validateEmail(e.target.value);
+													}}
+													onBlur={e => validateEmail(e.target.value)}
+													placeholder="Nhập email của bạn nếu muốn nhận thông báo" 
+													className={`w-full bg-white border rounded-lg px-4 py-3 text-[13px] outline-none focus:ring-1 transition-all placeholder-gray-400 font-medium ${
+														autoFilledFields.email
+															? 'border-green-400 focus:border-green-500 focus:ring-green-500 bg-green-50/10'
+															: emailError 
+																? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+																: 'border-gray-200 focus:border-[#092B5A] focus:ring-[#092B5A]'
+													}`} 
+												/>
+												{emailError && (
+													<p className="text-red-500 text-[11px] font-semibold mt-1">{emailError}</p>
+												)}
+											</div>
+										</div>
 
-									<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
-										<label className="w-full sm:w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Mã đơn Shopee</label>
-										<input 
-											value={orderCode} 
-											onChange={e => setOrderCode(e.target.value)} 
-											type="text" 
-											placeholder="Nhập mã đơn Shopee" 
-											className="w-full sm:flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" 
-										/>
-									</div>
-
-									<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
-										<label className="w-full sm:w-[110px] text-[13px] font-bold text-[#092B5A] shrink-0">Tổng tiền đơn</label>
-										<div className="w-full sm:flex-1 relative">
+										<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
+											<div className="w-full sm:w-[110px] shrink-0 flex items-center gap-1.5">
+												<label className="text-[13px] font-bold text-[#092B5A] shrink-0">Mã đơn Shopee</label>
+												{autoFilledFields.shopeeOrderCode && (
+													<span className="text-[9px] font-bold text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded shadow-sm animate-pulse whitespace-nowrap">
+														Tự điền từ ảnh
+													</span>
+												)}
+											</div>
 											<input 
-												value={formatCurrency(amount)} 
-												onChange={handleAmountChange} 
+												value={form.shopeeOrderCode} 
+												onChange={e => setForm(prev => ({ ...prev, shopeeOrderCode: e.target.value }))} 
 												type="text" 
-												placeholder="Nhập tổng tiền đơn (VNĐ)" 
-												className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 pr-24 text-[13px] outline-none focus:border-[#092B5A] focus:ring-1 focus:ring-[#092B5A] transition-all placeholder-gray-400 font-medium" 
+												placeholder="Nhập mã đơn Shopee" 
+												className={`w-full sm:flex-1 bg-white border rounded-lg px-4 py-3 text-[13px] outline-none focus:ring-1 transition-all placeholder-gray-400 font-medium ${
+													autoFilledFields.shopeeOrderCode
+														? 'border-green-400 focus:border-green-500 focus:ring-green-500 bg-green-50/10'
+														: 'border-gray-200 focus:border-[#092B5A] focus:ring-[#092B5A]'
+												}`} 
 											/>
-											{amount && (
-												<div className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-md border border-green-200 shadow-sm animate-fade-in">
-													+{Math.floor(Number(amount) / 100000)} điểm
+										</div>
+
+										<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
+											<div className="w-full sm:w-[110px] shrink-0 flex items-center gap-1.5">
+												<label className="text-[13px] font-bold text-[#092B5A] shrink-0">Tổng tiền đơn</label>
+												{autoFilledFields.orderAmount && (
+													<span className="text-[9px] font-bold text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded shadow-sm animate-pulse whitespace-nowrap">
+														Tự điền từ ảnh
+													</span>
+												)}
+											</div>
+											<div className="w-full sm:flex-1 relative">
+												<input 
+													value={formatCurrency(form.orderAmount)} 
+													onChange={handleAmountChange} 
+													type="text" 
+													placeholder="Nhập tổng tiền đơn (VNĐ)" 
+													className={`w-full bg-white border rounded-lg px-4 py-3 pr-24 text-[13px] outline-none focus:ring-1 transition-all placeholder-gray-400 font-medium ${
+														autoFilledFields.orderAmount
+															? 'border-green-400 focus:border-green-500 focus:ring-green-500 bg-green-50/10'
+															: 'border-gray-200 focus:border-[#092B5A] focus:ring-[#092B5A]'
+													}`} 
+												/>
+												{form.orderAmount && (
+													<div className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-md border border-green-200 shadow-sm animate-fade-in">
+														+{calculateEstimatedPoints(form.orderAmount)} điểm
+													</div>
+												)}
+											</div>
+										</div>
+										
+										<div className="flex items-center gap-2 mt-1">
+											<div className="h-px bg-gray-200 flex-1"></div>
+											<span className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Hoặc điền tự động</span>
+											<div className="h-px bg-gray-200 flex-1"></div>
+										</div>
+										
+										<div className="flex flex-col gap-1.5 mt-1">
+											<div className="relative w-full">
+												<input 
+													type="file" 
+													id="upload-qr" 
+													accept="image/*" 
+													className="hidden" 
+													onChange={e => {
+														const file = e.target.files?.[0];
+														if (!file) return;
+														handleOrderImageChange(file);
+														e.target.value = "";
+													}} 
+												/>
+												<label htmlFor="upload-qr" className={`w-full flex items-center justify-center gap-2 border border-dashed rounded-lg py-2.5 px-4 cursor-pointer transition-colors text-[13px] font-bold ${isScanning ? 'border-[#092B5A] bg-blue-50 text-[#092B5A]' : 'border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-[#092B5A] hover:border-[#092B5A]'}`}>
+													{isScanning ? (
+														<>
+															<Loader2 size={16} className="animate-spin" />
+															<span>Đang quét ảnh đơn Shopee...</span>
+														</>
+													) : (
+														<>
+															<Camera size={16} />
+															<span>Chụp / Tải ảnh đơn Shopee</span>
+														</>
+													)}
+												</label>
+											</div>
+											<p className="text-[12px] text-gray-400 font-medium">Khuyến khích tải ảnh để 3F xác minh nhanh hơn.</p>
+
+											{uploadedImagePreview ? (
+												<div className="mt-1 flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-2.5">
+													<CheckCircle2 size={16} className="text-green-500 shrink-0" />
+													<div className="flex-1 min-w-0">
+														<span className="text-[12px] text-green-700 font-bold block truncate">Đã tải ảnh lên thành công</span>
+													</div>
+													<button type="button" onClick={clearUploadedImage} className="text-[11px] font-bold text-red-500 hover:text-red-700 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">
+														Xóa
+													</button>
+												</div>
+											) : (
+												<div className="text-[12px] text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-start gap-1.5">
+													<Info size={14} className="shrink-0 mt-0.5" />
+													<span>Bạn có thể gửi không kèm ảnh, tuy nhiên thời gian xác minh có thể lâu hơn.</span>
+												</div>
+											)}
+
+											{scanError && (
+												<div className="mt-2.5 text-[12px] text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 flex items-start gap-1.5 font-semibold">
+													<Info size={14} className="shrink-0 mt-0.5" />
+													<span>{scanError}</span>
+												</div>
+											)}
+
+											{scanResult && (
+												<div className="mt-3 bg-blue-50/40 border border-blue-100/60 rounded-xl p-3.5 text-[13px] text-gray-700 font-medium">
+													<h4 className="font-bold text-[#092B5A] mb-1.5 flex items-center gap-1.5">
+														<Sparkles size={14} className="text-blue-600 animate-pulse" />
+														Đã nhận diện thông tin đơn hàng
+													</h4>
+													<ul className="space-y-1 pl-4 list-disc text-gray-600">
+														<li>SĐT: <strong className="text-gray-900">{scanResult.fields?.phone || "Chưa nhận diện"}</strong></li>
+														<li>Mã đơn: <strong className="text-gray-900">#{scanResult.fields?.shopeeOrderCode || "Chưa nhận diện"}</strong></li>
+														<li>Tổng tiền: <strong className="text-gray-900">{formatCurrency(scanResult.fields?.orderAmount || 0)}</strong></li>
+														<li>Trạng thái: <strong className="text-green-600 font-bold">{scanResult.fields?.orderStatus || "Chưa nhận diện"}</strong></li>
+														<li>Độ tin cậy: <strong className="text-blue-600">{scanResult.confidence || 0}%</strong></li>
+													</ul>
+													
+													{scanWarnings.length > 0 && (
+														<div className="mt-2.5 space-y-1 bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-[12px] text-amber-700 font-semibold font-bold">
+															{scanWarnings.map((warn, i) => (
+																<div key={i} className="flex items-start gap-1.5">
+																	<Info size={14} className="shrink-0 mt-0.5" />
+																	<span>{warn}</span>
+																</div>
+															))}
+														</div>
+													)}
+													
+													<p className="mt-2 text-[10.5px] text-gray-400 italic">
+														OCR chỉ hỗ trợ điền nhanh thông tin. Điểm chỉ được cộng sau khi 3F xác minh và duyệt.
+													</p>
 												</div>
 											)}
 										</div>
-									</div>
-									
-									<div className="flex items-center gap-2 mt-1">
-										<div className="h-px bg-gray-200 flex-1"></div>
-										<span className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Hoặc điền tự động</span>
-										<div className="h-px bg-gray-200 flex-1"></div>
-									</div>
-									
-									<div className="relative w-full">
-										<input type="file" id="upload-qr" accept="image/*" className="hidden" onChange={handleFileUpload} />
-										<label htmlFor="upload-qr" className={`w-full flex items-center justify-center gap-2 border border-dashed rounded-lg py-2.5 px-4 cursor-pointer transition-colors text-[13px] font-bold ${isScanning ? 'border-[#092B5A] bg-blue-50 text-[#092B5A]' : 'border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-[#092B5A] hover:border-[#092B5A]'}`}>
-											{isScanning ? (
+
+										{submitError && (
+											<div className="text-[12.5px] text-red-600 bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-1.5 font-semibold">
+												<Info size={15} className="shrink-0 mt-0.5" />
+												<span>{submitError}</span>
+											</div>
+										)}
+
+										<button 
+											onClick={handleSubmit}
+											disabled={isSubmitDisabled || isSubmitting}
+											className={`mt-1 w-full flex justify-center items-center gap-1.5 sm:gap-2 transition-colors text-white font-bold py-3.5 px-4 sm:px-8 rounded-xl shadow-md text-[13.5px] sm:text-[14px] ${
+												isSubmitDisabled || isSubmitting
+													? "bg-gray-300 cursor-not-allowed shadow-none" 
+													: "bg-[#092B5A] hover:bg-[#071d3d]"
+											}`}
+										>
+											{isSubmitting ? (
 												<>
-													<Loader2 size={16} className="animate-spin" />
-													<span>Đang quét ảnh...</span>
+													<Loader2 size={16} className="animate-spin shrink-0" />
+													<span className="truncate">Đang gửi...</span>
 												</>
 											) : (
 												<>
-													<Camera size={16} />
-													<span>Chụp / Tải ảnh QR đơn hàng</span>
+													<span className="truncate">Gửi đơn Shopee để tích điểm</span>
+													<ArrowRight size={18} className="shrink-0" />
 												</>
 											)}
-										</label>
+										</button>
 									</div>
-
-									<button className="mt-1 w-full flex justify-center items-center gap-1.5 sm:gap-2 bg-[#092B5A] hover:bg-[#071d3d] transition-colors text-white font-bold py-3.5 px-4 sm:px-8 rounded-xl shadow-md text-[13.5px] sm:text-[14px]">
-										<span className="truncate">Gửi đơn Shopee để tích điểm</span>
-										<ArrowRight size={18} className="shrink-0" />
-									</button>
-								</div>
+								)}
 							</div>
 						</div>
 

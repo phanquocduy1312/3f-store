@@ -395,3 +395,33 @@ input {
   .hover\:text-primary:hover { color: rgb(var(--color-primary)); }
   .hover\:border-primary:hover { border-color: rgb(var(--color-primary)); }
 }
+
+/* Custom Scrollbars for Admin Panel */
+.admin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #C7DAF8 transparent;
+}
+.admin-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.admin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-scrollbar::-webkit-scrollbar-thumb {
+  background: #C7DAF8;
+  border-radius: 999px;
+}
+.admin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9FC0F2;
+}
+
+/* Hide scrollbar completely but allow scrolling */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+

@@ -1,0 +1,609 @@
+- main [ref=e3]:
+  - generic [ref=e6]:
+    - complementary [ref=e7]:
+      - img "3F Store Admin" [ref=e9]
+      - navigation [ref=e10]:
+        - button "Dashboard" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+          - generic [ref=e17]: Dashboard
+        - button "Đơn hàng ▼" [ref=e18] [cursor=pointer]:
+          - img [ref=e19]
+          - generic [ref=e22]: Đơn hàng
+          - generic [ref=e23]: ▼
+        - button "Yêu cầu Shopee 12" [ref=e24] [cursor=pointer]:
+          - img [ref=e25]
+          - generic [ref=e28]: Yêu cầu Shopee
+          - generic [ref=e29]: "12"
+        - button "Khách hàng CRM" [ref=e30] [cursor=pointer]:
+          - img [ref=e31]
+          - generic [ref=e36]: Khách hàng CRM
+        - button "Hồ sơ thú cưng" [ref=e37] [cursor=pointer]:
+          - img [ref=e38]
+          - generic [ref=e40]: Hồ sơ thú cưng
+        - button "AI Pet Advisor AI" [ref=e41] [cursor=pointer]:
+          - img [ref=e42]
+          - generic [ref=e44]: AI Pet Advisor
+          - generic [ref=e45]: AI
+        - button "3F Club" [ref=e46] [cursor=pointer]:
+          - img [ref=e47]
+          - generic [ref=e51]: 3F Club
+        - button "Sản phẩm" [ref=e52] [cursor=pointer]:
+          - img [ref=e53]
+          - generic [ref=e57]: Sản phẩm
+        - button "Voucher / Campaign ▼" [ref=e58] [cursor=pointer]:
+          - img [ref=e59]
+          - generic [ref=e62]: Voucher / Campaign
+          - generic [ref=e63]: ▼
+        - button "Nội dung / SEO ▼" [ref=e64] [cursor=pointer]:
+          - img [ref=e65]
+          - generic [ref=e68]: Nội dung / SEO
+          - generic [ref=e69]: ▼
+        - button "Báo cáo ▼" [ref=e70] [cursor=pointer]:
+          - img [ref=e71]
+          - generic [ref=e73]: Báo cáo
+          - generic [ref=e74]: ▼
+        - button "Hỗ trợ khách hàng" [ref=e75] [cursor=pointer]:
+          - img [ref=e76]
+          - generic [ref=e80]: Hỗ trợ khách hàng
+        - button "Cài đặt ▼" [ref=e81] [cursor=pointer]:
+          - img [ref=e82]
+          - generic [ref=e85]: Cài đặt
+          - generic [ref=e86]: ▼
+    - generic [ref=e87]:
+      - generic [ref=e88]:
+        - generic [ref=e89]:
+          - button [ref=e90] [cursor=pointer]:
+            - img [ref=e91]
+          - generic [ref=e92]:
+            - img [ref=e93]
+            - textbox "Tìm kiếm..." [ref=e96]
+        - generic [ref=e97]:
+          - button [ref=e99] [cursor=pointer]:
+            - img [ref=e100]
+            - img [ref=e102]
+          - button "12" [ref=e104] [cursor=pointer]:
+            - img [ref=e105]
+            - generic [ref=e108]: "12"
+          - generic [ref=e110]: AD
+      - main [ref=e111]:
+        - generic [ref=e112]:
+          - generic [ref=e113]:
+            - heading "Yêu cầu Shopee" [level=1] [ref=e114]
+            - paragraph [ref=e115]: Duyệt yêu cầu tích điểm từ đơn Shopee vào 3F Club
+          - generic [ref=e116]:
+            - button "Đối chiếu API hàng loạt" [ref=e117] [cursor=pointer]:
+              - img [ref=e118]
+              - text: Đối chiếu API hàng loạt
+            - button "Xuất danh sách" [ref=e123] [cursor=pointer]:
+              - img [ref=e124]
+              - text: Xuất danh sách
+            - button "Tạo yêu cầu thủ công" [ref=e127] [cursor=pointer]:
+              - img [ref=e128]
+              - text: Tạo yêu cầu thủ công
+        - generic [ref=e129]:
+          - article [ref=e130]:
+            - img [ref=e132]
+            - generic [ref=e135]:
+              - paragraph [ref=e136]: Tổng yêu cầu
+              - paragraph [ref=e137]: "12"
+              - paragraph [ref=e138]: ▲ 18.6%
+          - article [ref=e139]:
+            - img [ref=e141]
+            - generic [ref=e144]:
+              - paragraph [ref=e145]: Đang chờ duyệt
+              - paragraph [ref=e146]: "3"
+              - paragraph [ref=e147]: ▲ 14.3%
+          - article [ref=e148]:
+            - img [ref=e150]
+            - generic [ref=e153]:
+              - paragraph [ref=e154]: Đối chiếu hợp lệ
+              - paragraph [ref=e155]: "3"
+              - paragraph [ref=e156]: ▲ 21.4%
+          - article [ref=e157]:
+            - img [ref=e159]
+            - generic [ref=e161]:
+              - paragraph [ref=e162]: Cần kiểm tra
+              - paragraph [ref=e163]: "4"
+              - paragraph [ref=e164]: ▲ 6.8%
+          - article [ref=e165]:
+            - img [ref=e167]
+            - generic [ref=e170]:
+              - paragraph [ref=e171]: Đã duyệt
+              - paragraph [ref=e172]: "1"
+              - paragraph [ref=e173]: ▲ 22.1%
+          - article [ref=e174]:
+            - img [ref=e176]
+            - generic [ref=e179]:
+              - paragraph [ref=e180]: Điểm đã cộng
+              - paragraph [ref=e181]: "89"
+              - paragraph [ref=e182]: ▲ 18.6%
+        - generic [ref=e184]:
+          - generic [ref=e185]:
+            - img [ref=e186]
+            - textbox "Tìm kiếm mã đơn, SĐT, tên khách..." [ref=e189]
+          - generic [ref=e190]:
+            - combobox [ref=e191]:
+              - option "Tất cả" [selected]
+              - option "Đang chờ duyệt"
+              - option "API hợp lệ"
+              - option "Cần kiểm tra"
+              - option "Cần bổ sung"
+              - option "Đã duyệt"
+              - option "Từ chối"
+              - option "Trùng mã"
+              - option "Không tìm thấy"
+            - img
+          - generic [ref=e192]:
+            - combobox [ref=e193]:
+              - option "Tất cả" [selected]
+              - option "Chưa đối chiếu"
+              - option "Hợp lệ"
+              - option "Cần kiểm tra"
+              - option "Không tìm thấy"
+              - option "Lệch thông tin"
+              - option "Trùng mã"
+            - img
+          - generic [ref=e194]:
+            - combobox [ref=e195]:
+              - option "Tất cả thời gian" [selected]
+              - option "Hôm nay"
+              - option "24 giờ qua"
+              - option "7 ngày qua"
+            - img
+          - button "Bộ lọc" [ref=e196] [cursor=pointer]:
+            - img [ref=e197]
+            - text: Bộ lọc
+          - button "Làm mới" [ref=e198] [cursor=pointer]:
+            - img [ref=e199]
+            - text: Làm mới
+        - generic [ref=e203]:
+          - button "Tất cả 12" [ref=e204] [cursor=pointer]:
+            - generic [ref=e205]: Tất cả
+            - generic [ref=e206]: "12"
+          - button "Đang chờ duyệt 3" [ref=e207] [cursor=pointer]:
+            - generic [ref=e208]: Đang chờ duyệt
+            - generic [ref=e209]: "3"
+          - button "API hợp lệ 1" [ref=e210] [cursor=pointer]:
+            - generic [ref=e211]: API hợp lệ
+            - generic [ref=e212]: "1"
+          - button "Cần kiểm tra 2" [ref=e213] [cursor=pointer]:
+            - generic [ref=e214]: Cần kiểm tra
+            - generic [ref=e215]: "2"
+          - button "Cần bổ sung 1" [ref=e216] [cursor=pointer]:
+            - generic [ref=e217]: Cần bổ sung
+            - generic [ref=e218]: "1"
+          - button "Đã duyệt 1" [ref=e219] [cursor=pointer]:
+            - generic [ref=e220]: Đã duyệt
+            - generic [ref=e221]: "1"
+          - button "Từ chối 1" [ref=e222] [cursor=pointer]:
+            - generic [ref=e223]: Từ chối
+            - generic [ref=e224]: "1"
+          - button "Trùng mã 2" [ref=e225] [cursor=pointer]:
+            - generic [ref=e226]: Trùng mã
+            - generic [ref=e227]: "2"
+          - button "Không tìm thấy 1" [ref=e228] [cursor=pointer]:
+            - generic [ref=e229]: Không tìm thấy
+            - generic [ref=e230]: "1"
+        - generic [ref=e231]:
+          - table [ref=e233]:
+            - rowgroup [ref=e234]:
+              - row "Mã đơn Khách hàng Khách nhập Shopee API Điểm Đối chiếu Trạng thái Xem" [ref=e235]:
+                - columnheader [ref=e236]:
+                  - checkbox [ref=e237]
+                - columnheader "Mã đơn" [ref=e238]
+                - columnheader "Khách hàng" [ref=e239]
+                - columnheader "Khách nhập" [ref=e240]
+                - columnheader "Shopee API" [ref=e241]
+                - columnheader "Điểm" [ref=e242]
+                - columnheader "Đối chiếu" [ref=e243]
+                - columnheader "Trạng thái" [ref=e244]
+                - columnheader "Xem" [ref=e245]
+            - rowgroup [ref=e246]:
+              - row "#240612A1B2C3 1 phút trước Chị Mai 0901 234 667 320.000đ 320.000đ COMPLETED 32 Hợp lệ API hợp lệ" [ref=e247] [cursor=pointer]:
+                - cell [ref=e248]:
+                  - checkbox [ref=e249]
+                - cell "#240612A1B2C3 1 phút trước" [ref=e250]:
+                  - generic [ref=e252]: "#240612A1B2C3"
+                  - paragraph [ref=e253]: 1 phút trước
+                - cell "Chị Mai 0901 234 667" [ref=e254]:
+                  - paragraph [ref=e255]: Chị Mai
+                  - paragraph [ref=e256]: 0901 234 667
+                - cell "320.000đ" [ref=e257]
+                - cell "320.000đ COMPLETED" [ref=e258]:
+                  - paragraph [ref=e259]: 320.000đ
+                  - paragraph [ref=e260]: COMPLETED
+                - cell "32" [ref=e261]
+                - cell "Hợp lệ" [ref=e262]:
+                  - generic [ref=e263]:
+                    - img [ref=e264]
+                    - generic [ref=e267]: Hợp lệ
+                - cell "API hợp lệ" [ref=e268]:
+                  - generic [ref=e269]: API hợp lệ
+                - cell [ref=e270]:
+                  - button [active] [ref=e272]:
+                    - img [ref=e273]
+              - row "#240612D4E5F6 1 phút trước Anh Duy 0938 765 432 450.000đ 450.000đ COMPLETED 45 Hợp lệ Đang chờ duyệt" [ref=e276] [cursor=pointer]:
+                - cell [ref=e277]:
+                  - checkbox [ref=e278]
+                - cell "#240612D4E5F6 1 phút trước" [ref=e279]:
+                  - generic [ref=e281]: "#240612D4E5F6"
+                  - paragraph [ref=e282]: 1 phút trước
+                - cell "Anh Duy 0938 765 432" [ref=e283]:
+                  - paragraph [ref=e284]: Anh Duy
+                  - paragraph [ref=e285]: 0938 765 432
+                - cell "450.000đ" [ref=e286]
+                - cell "450.000đ COMPLETED" [ref=e287]:
+                  - paragraph [ref=e288]: 450.000đ
+                  - paragraph [ref=e289]: COMPLETED
+                - cell "45" [ref=e290]
+                - cell "Hợp lệ" [ref=e291]:
+                  - generic [ref=e292]:
+                    - img [ref=e293]
+                    - generic [ref=e296]: Hợp lệ
+                - cell "Đang chờ duyệt" [ref=e297]:
+                  - generic [ref=e298]: Đang chờ duyệt
+                - cell [ref=e299]:
+                  - button [ref=e301]:
+                    - img [ref=e302]
+              - row "#240612G7H8I9 1 phút trước Chị Linh 0799 888 999 180.000đ 180.000đ SHIPPED 18 Cần kiểm tra Cần kiểm tra" [ref=e305] [cursor=pointer]:
+                - cell [ref=e306]:
+                  - checkbox [ref=e307]
+                - cell "#240612G7H8I9 1 phút trước" [ref=e308]:
+                  - generic [ref=e310]: "#240612G7H8I9"
+                  - paragraph [ref=e311]: 1 phút trước
+                - cell "Chị Linh 0799 888 999" [ref=e312]:
+                  - paragraph [ref=e313]: Chị Linh
+                  - paragraph [ref=e314]: 0799 888 999
+                - cell "180.000đ" [ref=e315]
+                - cell "180.000đ SHIPPED" [ref=e316]:
+                  - paragraph [ref=e317]: 180.000đ
+                  - paragraph [ref=e318]: SHIPPED
+                - cell "18" [ref=e319]
+                - cell "Cần kiểm tra" [ref=e320]:
+                  - generic [ref=e321]:
+                    - img [ref=e322]
+                    - generic [ref=e324]: Cần kiểm tra
+                - cell "Cần kiểm tra" [ref=e325]:
+                  - generic [ref=e326]: Cần kiểm tra
+                - cell [ref=e327]:
+                  - button [ref=e329]:
+                    - img [ref=e330]
+              - row "#240612J1K2L3 1 phút trước Anh Tuấn 0903 111 222 890.000đ 890.000đ COMPLETED 89 Hợp lệ Đã duyệt" [ref=e333] [cursor=pointer]:
+                - cell [ref=e334]:
+                  - checkbox [ref=e335]
+                - cell "#240612J1K2L3 1 phút trước" [ref=e336]:
+                  - generic [ref=e338]: "#240612J1K2L3"
+                  - paragraph [ref=e339]: 1 phút trước
+                - cell "Anh Tuấn 0903 111 222" [ref=e340]:
+                  - paragraph [ref=e341]: Anh Tuấn
+                  - paragraph [ref=e342]: 0903 111 222
+                - cell "890.000đ" [ref=e343]
+                - cell "890.000đ COMPLETED" [ref=e344]:
+                  - paragraph [ref=e345]: 890.000đ
+                  - paragraph [ref=e346]: COMPLETED
+                - cell "89" [ref=e347]
+                - cell "Hợp lệ" [ref=e348]:
+                  - generic [ref=e349]:
+                    - img [ref=e350]
+                    - generic [ref=e353]: Hợp lệ
+                - cell "Đã duyệt" [ref=e354]:
+                  - generic [ref=e355]: Đã duyệt
+                - cell [ref=e356]:
+                  - button [ref=e358]:
+                    - img [ref=e359]
+              - row "#240612M4N5O6 1 phút trước Chị Hà 0912 345 678 250.000đ - NOT_CHECKED 25 Chưa đối chiếu Cần bổ sung" [ref=e362] [cursor=pointer]:
+                - cell [ref=e363]:
+                  - checkbox [ref=e364]
+                - cell "#240612M4N5O6 1 phút trước" [ref=e365]:
+                  - generic [ref=e367]: "#240612M4N5O6"
+                  - paragraph [ref=e368]: 1 phút trước
+                - cell "Chị Hà 0912 345 678" [ref=e369]:
+                  - paragraph [ref=e370]: Chị Hà
+                  - paragraph [ref=e371]: 0912 345 678
+                - cell "250.000đ" [ref=e372]
+                - cell "- NOT_CHECKED" [ref=e373]:
+                  - paragraph [ref=e374]: "-"
+                  - paragraph [ref=e375]: NOT_CHECKED
+                - cell "25" [ref=e376]
+                - cell "Chưa đối chiếu" [ref=e377]:
+                  - generic [ref=e378]:
+                    - img [ref=e379]
+                    - generic [ref=e388]: Chưa đối chiếu
+                - cell "Cần bổ sung" [ref=e389]:
+                  - generic [ref=e390]: Cần bổ sung
+                - cell [ref=e391]:
+                  - button [ref=e393]:
+                    - img [ref=e394]
+              - row "#240612IP6Q7R8 1 phút trước Anh Khoa 0866 777 888 320.000đ - NOT_FOUND 0 Không tìm thấy Không tìm thấy" [ref=e397] [cursor=pointer]:
+                - cell [ref=e398]:
+                  - checkbox [ref=e399]
+                - cell "#240612IP6Q7R8 1 phút trước" [ref=e400]:
+                  - generic [ref=e402]: "#240612IP6Q7R8"
+                  - paragraph [ref=e403]: 1 phút trước
+                - cell "Anh Khoa 0866 777 888" [ref=e404]:
+                  - paragraph [ref=e405]: Anh Khoa
+                  - paragraph [ref=e406]: 0866 777 888
+                - cell "320.000đ" [ref=e407]
+                - cell "- NOT_FOUND" [ref=e408]:
+                  - paragraph [ref=e409]: "-"
+                  - paragraph [ref=e410]: NOT_FOUND
+                - cell "0" [ref=e411]
+                - cell "Không tìm thấy" [ref=e412]:
+                  - generic [ref=e413]:
+                    - img [ref=e414]
+                    - generic [ref=e419]: Không tìm thấy
+                - cell "Không tìm thấy" [ref=e420]:
+                  - generic [ref=e421]: Không tìm thấy
+                - cell [ref=e422]:
+                  - button [ref=e424]:
+                    - img [ref=e425]
+              - row "#240612IS9T1U2 1 phút trước Chị Vy 0899 123 456 420.000đ 390.000đ COMPLETED 39 Lệch tổng tiền Cần kiểm tra" [ref=e428] [cursor=pointer]:
+                - cell [ref=e429]:
+                  - checkbox [ref=e430]
+                - cell "#240612IS9T1U2 1 phút trước" [ref=e431]:
+                  - generic [ref=e433]: "#240612IS9T1U2"
+                  - paragraph [ref=e434]: 1 phút trước
+                - cell "Chị Vy 0899 123 456" [ref=e435]:
+                  - paragraph [ref=e436]: Chị Vy
+                  - paragraph [ref=e437]: 0899 123 456
+                - cell "420.000đ" [ref=e438]
+                - cell "390.000đ COMPLETED" [ref=e439]:
+                  - paragraph [ref=e440]: 390.000đ
+                  - paragraph [ref=e441]: COMPLETED
+                - cell "39" [ref=e442]
+                - cell "Lệch tổng tiền" [ref=e443]:
+                  - generic [ref=e444]:
+                    - img [ref=e445]
+                    - generic [ref=e447]: Lệch tổng tiền
+                - cell "Cần kiểm tra" [ref=e448]:
+                  - generic [ref=e449]: Cần kiểm tra
+                - cell [ref=e450]:
+                  - button [ref=e452]:
+                    - img [ref=e453]
+              - row "#240611ZX9Y8X7 15 giờ trước Anh Phúc 0981 456 789 510.000đ 510.000đ COMPLETED 51 Trùng mã Trùng mã" [ref=e456] [cursor=pointer]:
+                - cell [ref=e457]:
+                  - checkbox [ref=e458]
+                - cell "#240611ZX9Y8X7 15 giờ trước" [ref=e459]:
+                  - generic [ref=e460]:
+                    - generic [ref=e461]: "#240611ZX9Y8X7"
+                    - img [ref=e462]
+                  - paragraph [ref=e464]: 15 giờ trước
+                - cell "Anh Phúc 0981 456 789" [ref=e465]:
+                  - paragraph [ref=e466]: Anh Phúc
+                  - paragraph [ref=e467]: 0981 456 789
+                - cell "510.000đ" [ref=e468]
+                - cell "510.000đ COMPLETED" [ref=e469]:
+                  - paragraph [ref=e470]: 510.000đ
+                  - paragraph [ref=e471]: COMPLETED
+                - cell "51" [ref=e472]
+                - cell "Trùng mã" [ref=e473]:
+                  - generic [ref=e474]:
+                    - img [ref=e475]
+                    - generic [ref=e478]: Trùng mã
+                - cell "Trùng mã" [ref=e479]:
+                  - generic [ref=e480]: Trùng mã
+                - cell [ref=e481]:
+                  - button [ref=e483]:
+                    - img [ref=e484]
+              - row "#240611ZX9Y8X7 16 giờ trước Chị Thảo 0908 112 334 510.000đ 510.000đ COMPLETED 51 Trùng mã Trùng mã" [ref=e487] [cursor=pointer]:
+                - cell [ref=e488]:
+                  - checkbox [ref=e489]
+                - cell "#240611ZX9Y8X7 16 giờ trước" [ref=e490]:
+                  - generic [ref=e491]:
+                    - generic [ref=e492]: "#240611ZX9Y8X7"
+                    - img [ref=e493]
+                  - paragraph [ref=e495]: 16 giờ trước
+                - cell "Chị Thảo 0908 112 334" [ref=e496]:
+                  - paragraph [ref=e497]: Chị Thảo
+                  - paragraph [ref=e498]: 0908 112 334
+                - cell "510.000đ" [ref=e499]
+                - cell "510.000đ COMPLETED" [ref=e500]:
+                  - paragraph [ref=e501]: 510.000đ
+                  - paragraph [ref=e502]: COMPLETED
+                - cell "51" [ref=e503]
+                - cell "Trùng mã" [ref=e504]:
+                  - generic [ref=e505]:
+                    - img [ref=e506]
+                    - generic [ref=e509]: Trùng mã
+                - cell "Trùng mã" [ref=e510]:
+                  - generic [ref=e511]: Trùng mã
+                - cell [ref=e512]:
+                  - button [ref=e514]:
+                    - img [ref=e515]
+              - row "#240610REJ889 2 ngày trước Anh Bình 0977 100 200 210.000đ 210.000đ RETURNED 21 Cần kiểm tra Từ chối" [ref=e518] [cursor=pointer]:
+                - cell [ref=e519]:
+                  - checkbox [ref=e520]
+                - cell "#240610REJ889 2 ngày trước" [ref=e521]:
+                  - generic [ref=e523]: "#240610REJ889"
+                  - paragraph [ref=e524]: 2 ngày trước
+                - cell "Anh Bình 0977 100 200" [ref=e525]:
+                  - paragraph [ref=e526]: Anh Bình
+                  - paragraph [ref=e527]: 0977 100 200
+                - cell "210.000đ" [ref=e528]
+                - cell "210.000đ RETURNED" [ref=e529]:
+                  - paragraph [ref=e530]: 210.000đ
+                  - paragraph [ref=e531]: RETURNED
+                - cell "21" [ref=e532]
+                - cell "Cần kiểm tra" [ref=e533]:
+                  - generic [ref=e534]:
+                    - img [ref=e535]
+                    - generic [ref=e537]: Cần kiểm tra
+                - cell "Từ chối" [ref=e538]:
+                  - generic [ref=e539]: Từ chối
+                - cell [ref=e540]:
+                  - button [ref=e542]:
+                    - img [ref=e543]
+          - generic [ref=e546]:
+            - paragraph [ref=e547]: Hiển thị 1 - 10 / 12 kết quả
+            - generic [ref=e548]:
+              - button "‹" [disabled] [ref=e549]
+              - button "1" [ref=e550] [cursor=pointer]
+              - button "2" [ref=e551] [cursor=pointer]
+              - button "›" [ref=e552] [cursor=pointer]
+      - generic [ref=e553]:
+        - generic [ref=e554]: © 2026 3F Store Admin. Tất cả quyền được bảo lưu.
+        - generic [ref=e555]: Phiên bản 1.0.0
+    - generic [ref=e557]:
+      - generic [ref=e559]:
+        - generic [ref=e560]:
+          - heading "Chi tiết yêu cầu Shopee" [level=2] [ref=e561]
+          - generic [ref=e562]:
+            - generic [ref=e563]: "#240612A1B2C3"
+            - generic [ref=e564]: API hợp lệ
+            - generic [ref=e565]:
+              - img [ref=e566]
+              - generic [ref=e569]: Hợp lệ
+        - button [ref=e570] [cursor=pointer]:
+          - img [ref=e571]
+      - generic [ref=e575]:
+        - generic [ref=e576]:
+          - heading "Tổng quan xử lý" [level=3] [ref=e578]
+          - generic [ref=e580]:
+            - generic [ref=e581]:
+              - paragraph [ref=e582]: Trạng thái
+              - paragraph [ref=e583]: API hợp lệ
+            - generic [ref=e584]:
+              - paragraph [ref=e585]: Điểm dự kiến
+              - paragraph [ref=e586]: "32"
+            - generic [ref=e587]:
+              - paragraph [ref=e588]: Tạo lúc
+              - paragraph [ref=e589]: 18:25 12/06/2026
+            - generic [ref=e590]:
+              - paragraph [ref=e591]: Cập nhật
+              - paragraph [ref=e592]: 18:28 12/06/2026
+        - generic [ref=e593]:
+          - generic [ref=e594]:
+            - generic [ref=e595]:
+              - heading "Thông tin khách hàng" [level=3] [ref=e597]
+              - generic [ref=e598]:
+                - generic [ref=e599]:
+                  - generic [ref=e600]:
+                    - paragraph [ref=e601]: Tên khách
+                    - paragraph [ref=e602]: Chị Mai
+                  - generic [ref=e603]:
+                    - paragraph [ref=e604]: SĐT
+                    - paragraph [ref=e605]: 0901 234 667
+                  - generic [ref=e606]:
+                    - paragraph [ref=e607]: Email
+                    - paragraph [ref=e608]: mai.nguyen@gmail.com
+                  - generic [ref=e609]:
+                    - paragraph [ref=e610]: Zalo
+                    - paragraph [ref=e611]: 0901 234 667
+                - generic [ref=e612]:
+                  - generic [ref=e613]:
+                    - generic [ref=e614]:
+                      - paragraph [ref=e615]: Tình trạng CRM
+                      - paragraph [ref=e616]: Đã có trong CRM
+                    - generic [ref=e617]:
+                      - paragraph [ref=e618]: Hạng thành viên
+                      - paragraph [ref=e619]: Silver
+                    - generic [ref=e620]:
+                      - paragraph [ref=e621]: Điểm hiện tại
+                      - paragraph [ref=e622]: 2.754 điểm
+                  - button "Xem hồ sơ CRM" [ref=e623] [cursor=pointer]:
+                    - text: Xem hồ sơ CRM
+                    - img [ref=e624]
+            - generic [ref=e628]:
+              - heading "Thông tin khách nhập" [level=3] [ref=e630]
+              - generic [ref=e632]:
+                - generic [ref=e633]:
+                  - generic [ref=e634]:
+                    - paragraph [ref=e635]: Mã đơn Shopee
+                    - paragraph [ref=e636]: "#240612A1B2C3"
+                  - generic [ref=e637]:
+                    - paragraph [ref=e638]: Tổng tiền khách nhập
+                    - paragraph [ref=e639]: 320.000đ
+                - generic [ref=e640]:
+                  - paragraph [ref=e641]: Ảnh đơn hàng
+                  - img "Đơn Shopee 240612A1B2C3" [ref=e643]
+                - button "Xem ảnh lớn" [ref=e644] [cursor=pointer]:
+                  - text: Xem ảnh lớn
+                  - img [ref=e645]
+          - generic [ref=e649]:
+            - generic [ref=e650]:
+              - generic [ref=e651]:
+                - heading "Thông tin từ Shopee API" [level=3] [ref=e652]
+                - button "Đối chiếu lại API" [ref=e653] [cursor=pointer]:
+                  - img [ref=e654]
+                  - text: Đối chiếu lại API
+              - generic [ref=e659]:
+                - generic [ref=e660]:
+                  - generic [ref=e661]:
+                    - paragraph [ref=e662]: Trạng thái đơn
+                    - paragraph [ref=e663]: COMPLETED
+                  - generic [ref=e664]:
+                    - paragraph [ref=e665]: Tổng tiền API
+                    - paragraph [ref=e666]: 320.000đ
+                  - generic [ref=e667]:
+                    - paragraph [ref=e668]: Ngày tạo đơn
+                    - paragraph [ref=e669]: 21:23 10/06/2026
+                  - generic [ref=e670]:
+                    - paragraph [ref=e671]: Ngày hoàn tất
+                    - paragraph [ref=e672]: 01:45 12/06/2026
+                  - generic [ref=e673]:
+                    - paragraph [ref=e674]: Shop ID
+                    - paragraph [ref=e675]: "123456789"
+                  - generic [ref=e676]:
+                    - paragraph [ref=e677]: Buyer ID
+                    - paragraph [ref=e678]: "987654321"
+                - generic [ref=e679]:
+                  - button "Đối chiếu lại API" [ref=e680] [cursor=pointer]:
+                    - img [ref=e681]
+                    - text: Đối chiếu lại API
+                  - button "Xem chi tiết API" [ref=e686] [cursor=pointer]:
+                    - text: Xem chi tiết API
+                    - img [ref=e687]
+            - generic [ref=e691]:
+              - heading "So sánh thông tin" [level=3] [ref=e693]
+              - generic [ref=e695]:
+                - generic [ref=e696]:
+                  - generic [ref=e697]:
+                    - paragraph [ref=e698]: Tổng tiền đơn hàng
+                    - generic [ref=e699]: Khớp dữ liệu
+                  - generic [ref=e700]:
+                    - generic [ref=e701]:
+                      - paragraph [ref=e702]: Khách nhập
+                      - paragraph [ref=e703]: 320.000đ
+                    - generic [ref=e704]:
+                      - paragraph [ref=e705]: Shopee API
+                      - paragraph [ref=e706]: 320.000đ
+                - generic [ref=e707]: Tổng tiền khớp.
+            - generic [ref=e708]:
+              - heading "Kết quả đối chiếu" [level=3] [ref=e710]
+              - generic [ref=e712]:
+                - generic [ref=e713]:
+                  - img [ref=e714]
+                  - generic [ref=e717]: Mã đơn tồn tại trên Shopee
+                - generic [ref=e718]:
+                  - img [ref=e719]
+                  - generic [ref=e722]: Đơn thuộc shop 3F Store
+                - generic [ref=e723]:
+                  - img [ref=e724]
+                  - generic [ref=e727]: Đơn đã hoàn tất
+                - generic [ref=e728]:
+                  - img [ref=e729]
+                  - generic [ref=e732]: Tổng tiền khớp
+                - generic [ref=e733]:
+                  - img [ref=e734]
+                  - generic [ref=e737]: Mã đơn chưa từng cộng điểm
+            - generic [ref=e738]:
+              - heading "Lịch sử xử lý" [level=3] [ref=e740]
+              - generic [ref=e742]:
+                - generic [ref=e743]:
+                  - img [ref=e746]
+                  - generic [ref=e750]:
+                    - paragraph [ref=e751]: Khách gửi yêu cầu
+                    - paragraph [ref=e752]: 18:25 12/06/2026
+                    - paragraph [ref=e753]: "Tạo yêu cầu tích điểm cho đơn #240612A1B2C3."
+                - generic [ref=e754]:
+                  - img [ref=e757]
+                  - generic [ref=e760]:
+                    - paragraph [ref=e761]: Hệ thống đối chiếu API
+                    - paragraph [ref=e762]: 18:28 12/06/2026
+                    - paragraph [ref=e763]: Shopee API trả về dữ liệu hợp lệ.
+      - generic [ref=e765]:
+        - generic [ref=e766]: Điểm chỉ được cộng sau khi yêu cầu được duyệt.
+        - generic [ref=e767]:
+          - button "Yêu cầu bổ sung" [ref=e768] [cursor=pointer]
+          - button "Từ chối" [ref=e769] [cursor=pointer]
+          - button "Duyệt & cộng điểm" [ref=e770] [cursor=pointer]
