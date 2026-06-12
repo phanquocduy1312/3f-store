@@ -46,7 +46,8 @@ const config: Config = {
         "5xl": "2.5rem"
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "Arial", "sans-serif"]
+        sans: ['"Be Vietnam Pro"', "system-ui", "sans-serif"],
+        heading: ['"Be Vietnam Pro"', "system-ui", "sans-serif"]
       },
       keyframes: {
         shimmer: {

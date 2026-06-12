@@ -482,8 +482,6 @@ const THREE_F_CLUB_STYLES = `
   box-sizing: border-box;
 }
 
-@import url("https://fonts.googleapis.com/css2?family=Iosevka+Charon:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap");
-
 .three-f-club {
   --three-f-blue: #075ed8;
   --three-f-blue-2: #0f7df2;
@@ -492,7 +490,7 @@ const THREE_F_CLUB_STYLES = `
   --three-f-muted: #3a4862;
   width: 100%;
   padding: 22px;
-  font-family: "Be Vietnam Pro", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Be Vietnam Pro", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--three-f-text);
 }
 
@@ -652,7 +650,7 @@ const THREE_F_CLUB_STYLES = `
   gap: 17px;
   margin: 0;
   color: var(--three-f-blue);
-  font-family: "Iosevka Charon", monospace;
+  font-family: "Be Vietnam Pro", system-ui, sans-serif;
   font-size: clamp(64px, 6.3vw, 102px);
   font-weight: 700;
   line-height: 0.82;
