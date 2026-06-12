@@ -1,7 +1,32 @@
 # Project Changelog
 
 ## [2026-06-12]
+### Added
+- Tích hợp frontend React với các endpoint PHP MVC backend thật cho 3F Club Shopee Point Request:
+  - Kết nối form quét ảnh với API quét ảnh OCR thực tế ở `/api/shopee/order-scan`, cập nhật form state dựa trên thông tin trả về của ảnh mới và sửa cơ chế overwrite fields.
+  - Kết nối form gửi yêu cầu tích điểm với API `/api/shopee/requests` gửi kèm `imageId` và `scanId`.
+  - Thay thế mock data trong trang Admin Shopee Requests bằng API `getShopeePointRequests`, `getShopeePointRequestDetail`, `approveShopeePointRequest`, và `rejectShopeePointRequest`.
+  - Xóa nút "Yêu cầu bổ sung" khỏi bảng quản trị và drawer theo nghiệp vụ mới.
+- Phát triển toàn bộ **PHP thuần backend** (`3f-api/`) cho tính năng 3F Club Shopee Point Requests sử dụng PDO + MySQL:
+  - Cung cấp database schema `schema.sql` với các bảng: `uploaded_order_images`, `order_image_scans`, và `shopee_point_requests`.
+  - Viết helper cấu hình kết nối database an toàn `config/database.php` sử dụng transaction và trả lỗi JSON thay vì lỗi PHP thô.
+  - Viết helper CORS và cấu hình response định dạng JSON `helpers/response.php`.
+  - Viết các helper validation và normalization `helpers/validation.php` (chuẩn hóa SĐT Việt Nam, chuẩn hóa số tiền, trim văn bản).
+  - Viết logic tính điểm tự động `helpers/points.php` và helper tải ảnh `helpers/upload.php` (chỉ chấp nhận JPG/PNG/WEBP < 5MB).
+  - Triển khai 7 file API độc lập trong thư mục `api/`: quét ảnh và mock OCR (`shopee-order-scan.php`), tạo yêu cầu tích điểm (`shopee-request-create.php`), danh sách yêu cầu (`shopee-request-list.php`), chi tiết yêu cầu (`shopee-request-detail.php`), duyệt yêu cầu (`shopee-request-approve.php`), từ chối yêu cầu (`shopee-request-reject.php`), và truy vấn điểm tích lũy/tier thành viên (`customer-points.php`).
+- Xây dựng chức năng **Tạo yêu cầu thủ công** (`components/admin/shopee/ShopeeManualRequestModal.tsx`) trên trang `/admin/shopee-requests` sử dụng mock dữ liệu và `localStorage`.
+- Tích hợp modal tạo yêu cầu vào trang `ShopeeRequestsPage.tsx` hỗ trợ tự động tính toán điểm thực tế, cảnh báo trùng mã đơn Shopee, và ngăn chặn đóng modal vô ý bằng ESC/backdrop nếu form đang có dữ liệu chưa lưu.
+- Cập nhật form **Tích điểm từ đơn Shopee** trên section 3F Club: đổi nhãn Email thành "Email (không bắt buộc)", bổ sung helper text/warning text cho ảnh đơn, tích hợp validation SĐT, mã đơn và tổng tiền đơn, cùng với giao diện thành công và persistence lưu trữ dữ liệu vào `localStorage`.
+- Sửa tính năng **scan ảnh / OCR form** tại 3F Club: tự động nhận diện và điền SĐT (sau khi chuẩn hóa số), bổ sung highlight input SĐT màu xanh lá kèm nhãn "Tự điền từ ảnh" trong 2 giây, thêm hộp hiển thị kết quả nhận diện (SĐT, mã đơn, tổng tiền, trạng thái, độ tin cậy) kèm warning nếu không nhận diện được SĐT, sửa tỷ lệ tính toán điểm dự kiến về chuẩn `/ 10.000`.
+- Khắc phục các lỗi về **quét ảnh đơn Shopee**: tự động reset kết quả cũ khi chọn ảnh mới, áp dụng cơ chế chống race-condition do phản hồi bất đồng bộ bằng `useRef(scanId)`, hỗ trợ overwrite các trường dữ liệu khi quét ảnh mới, tự động giải phóng bộ nhớ `objectURL` cũ, reset giá trị `input.value` để cho phép quét lại cùng 1 file, đa dạng hóa kết quả OCR giả lập theo tên file ("mai"/"1", "duy"/"2" hoặc không nhận diện được SĐT), và sửa nút Xóa ảnh để dọn dẹp toàn bộ dữ liệu tự điền.
+
+### Fixed
+- Khắc phục lỗi CORS và 404 khi gọi API `/api/shopee/order-scan` từ cổng Vite (5173) đến Laragon Apache (80) bằng cách tạo liên kết thư mục (junction link) `3f-api` trong `C:\laragon\www\`.
+
 ### Changed
+- Đổi toàn bộ danh xưng 'AI' sang 'Chuyên gia' hoặc 'Hệ thống' tại các văn bản hiển thị trên giao diện người dùng (nút nổi, màn hình kết quả, biểu mẫu, loading).
+- Xây dựng giao diện trang Admin Dashboard tại đường dẫn `/admin` sử dụng mock dữ liệu hoàn toàn ở phía client.
+- Tách biệt cấu trúc Admin thành 10 sub-component nhỏ dưới thư mục `components/admin/` đảm bảo tính dễ đọc và tuân thủ giới hạn 200 dòng mã trên mỗi file (Sidebar navy gradient, Header, KPI Cards, Task Queue, Biểu đồ doanh thu SVG, Biểu đồ nguồn đơn SVG, Top sản phẩm, Nhu cầu thú cưng, Lead AI, yêu cầu Shopee).
 - Nâng cấp tính năng AI Pet Advisor Popup: bổ sung câu hỏi mô tả vấn đề tự do (`problem_text`), thay thế câu hỏi ngân sách tháng cũ bằng 2 câu hỏi chi tiết về mức mua mỗi lần (`purchase_amount_range`) và thời gian sử dụng (`usage_duration_range`).
 - Nâng cấp logic xử lý phía AI (Groq API): tính toán ngân sách hàng tháng và phân khúc thực tế để tránh tư vấn sai lệch phân khúc sản phẩm.
 - Thiết kế lại màn hình kết quả AI (`AiResult.tsx`): hiển thị rõ ràng thông tin AI hiểu thú cưng như thế nào (kèm các badge nhu cầu phát hiện), phân tích ngân sách chi tiết hàng tháng và phân chia 5 sản phẩm gợi ý thành 3 gói rõ rệt: Tiết kiệm (saving), Cân bằng (balanced), và Tốt hơn cho bé (premium) kèm badge lý do chi tiết và phân khúc tương ứng.

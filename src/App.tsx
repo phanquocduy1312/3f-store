@@ -10,10 +10,14 @@ const ProductDetail = lazy(() => import("./pages/ProductDetail").then(m => ({ de
 const CartCheckout = lazy(() => import("./pages/CartCheckout").then(m => ({ default: m.CartCheckout })));
 const Login = lazy(() => import("./pages/Login").then(m => ({ default: m.Login })));
 const Register = lazy(() => import("./pages/Register").then(m => ({ default: m.Register })));
+const AdminDashboard = lazy(() => import("./pages/admin/admin-dashboard").then(m => ({ default: m.AdminDashboard })));
+const ShopeeRequestsPage = lazy(() => import("./pages/admin/ShopeeRequestsPage"));
 
 export function App() {
   const location = useLocation();
-  const showFooter = !["/login", "/register"].includes(location.pathname);
+  const isAdminRoute = location.pathname.startsWith("/admin");
+  const showHeader = !isAdminRoute;
+  const showFooter = !["/login", "/register"].includes(location.pathname) && !isAdminRoute;
 
   useEffect(() => {
     // Force scroll to top immediately
@@ -31,7 +35,7 @@ export function App() {
 
   return (
     <main className="min-h-screen bg-white">
-      <Header />
+      {showHeader && <Header />}
 
       <Suspense fallback={<div className="flex h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-forest border-t-transparent"></div></div>}>
         <Routes>
@@ -41,11 +45,13 @@ export function App() {
           <Route path="/cart" element={<CartCheckout />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/shopee-requests" element={<ShopeeRequestsPage />} />
         </Routes>
       </Suspense>
       
       {showFooter && <Footer />}
-      <PetAdvisorPopup />
+      {!isAdminRoute && <PetAdvisorPopup />}
     </main>
   );
 }
