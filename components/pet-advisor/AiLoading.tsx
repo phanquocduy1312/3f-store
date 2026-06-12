@@ -34,7 +34,7 @@ export function AiLoading() {
 
       <h4 className="text-[18px] font-black text-ink mb-4 flex items-center justify-center gap-2">
         <Loader2 className="animate-spin text-forest" size={20} />
-        <span>3F AI đang phân tích hồ sơ...</span>
+        <span>Chuyên gia 3F đang phân tích hồ sơ...</span>
       </h4>
 
       {/* Checklist progress tracker */}

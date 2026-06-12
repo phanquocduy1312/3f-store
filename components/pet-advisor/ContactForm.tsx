@@ -4,13 +4,14 @@ import { ChevronLeft, Gift } from "lucide-react";
 
 interface ContactFormProps {
   onBack: () => void;
-  onSubmit: (customer: { name: string; phone: string; email: string }) => void;
+  onSubmit: (customer: { name: string; phone: string; email: string; petName?: string }) => void;
 }
 
 export function ContactForm({ onBack, onSubmit }: ContactFormProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [petName, setPetName] = useState("");
   const [agree, setAgree] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -28,7 +29,6 @@ export function ContactForm({ onBack, onSubmit }: ContactFormProps) {
       return;
     }
 
-    // Simple phone validator (e.g. at least 9-10 digits)
     const cleanPhone = phone.replace(/\D/g, "");
     if (cleanPhone.length < 9 || cleanPhone.length > 11) {
       setErrorMsg("Số điện thoại không hợp lệ. Anh/chị vui lòng kiểm tra lại nhé.");
@@ -44,6 +44,7 @@ export function ContactForm({ onBack, onSubmit }: ContactFormProps) {
       name: name.trim(),
       phone: phone.trim(),
       email: email.trim(),
+      petName: petName.trim() || undefined
     });
   };
 
@@ -58,14 +59,13 @@ export function ContactForm({ onBack, onSubmit }: ContactFormProps) {
         <div className="text-center md:text-left flex flex-col items-center md:items-start">
           <h4 className="text-[18px] md:text-[20px] font-black text-ink flex items-center justify-center md:justify-start gap-2 w-full">
             <Gift className="text-[#ED4546] shrink-0" size={24} />
-            <span>Gần xong rồi!</span>
+            <span>Nhận kết quả tư vấn cá nhân hóa</span>
           </h4>
-          <p className="text-ink-soft text-[14px] leading-relaxed mt-1">
-            Để 3F gửi kết quả tư vấn + voucher 30.000đ cho anh/chị.
+          <p className="text-ink-soft text-[13.5px] leading-relaxed mt-1.5 font-medium">
+            Để 3F gửi kết quả tư vấn, voucher 30.000đ và lưu hồ sơ cho bé, anh/chị để lại thông tin bên dưới nhé.
           </p>
         </div>
 
-        {/* Error alert banner */}
         {errorMsg && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -77,7 +77,7 @@ export function ContactForm({ onBack, onSubmit }: ContactFormProps) {
         )}
 
         <div className="space-y-3">
-          {/* Name input */}
+          {/* Customer Name input */}
           <div>
             <label className="block text-xs font-bold text-ink-soft uppercase tracking-wider mb-1.5">
               Tên của anh/chị *
@@ -87,6 +87,20 @@ export function ContactForm({ onBack, onSubmit }: ContactFormProps) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Nhập tên của bạn..."
+              className="w-full border-2 border-gray-200 focus:border-forest outline-none rounded-xl px-4 py-2.5 text-sm transition-all"
+            />
+          </div>
+
+          {/* Optional Pet Name input */}
+          <div>
+            <label className="block text-xs font-bold text-ink-soft uppercase tracking-wider mb-1.5">
+              Tên của bé (Không bắt buộc)
+            </label>
+            <input
+              type="text"
+              value={petName}
+              onChange={(e) => setPetName(e.target.value)}
+              placeholder="Ví dụ: Lu, Milu, Kiki..."
               className="w-full border-2 border-gray-200 focus:border-forest outline-none rounded-xl px-4 py-2.5 text-sm transition-all"
             />
           </div>
@@ -127,7 +141,7 @@ export function ContactForm({ onBack, onSubmit }: ContactFormProps) {
               onChange={(e) => setAgree(e.target.checked)}
               className="mt-1 w-4 h-4 rounded text-forest focus:ring-forest border-gray-300 transition-colors"
             />
-            <span className="text-[13px] text-ink-soft leading-normal">
+            <span className="text-[13px] text-ink-soft leading-normal font-medium">
               Tôi đồng ý nhận tư vấn và ưu đãi từ 3F.
             </span>
           </label>
@@ -141,7 +155,6 @@ export function ContactForm({ onBack, onSubmit }: ContactFormProps) {
         </button>
       </form>
 
-      {/* Back button */}
       <div className="pt-4 border-t border-gray-100 mt-4">
         <button
           type="button"
