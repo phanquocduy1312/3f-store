@@ -19,12 +19,16 @@ export function QuizStep({ stepConfig, savedAnswer, onBack, onNext }: QuizStepPr
   // Populate saved answers if they exist
   useEffect(() => {
     if (savedAnswer) {
-      if (Array.isArray(savedAnswer.value)) {
-        setSelectedValues(savedAnswer.value);
+      if (stepConfig.type === "textarea") {
+        setCustomText(typeof savedAnswer.value === "string" ? savedAnswer.value : "");
       } else {
-        setSelectedValues(savedAnswer.value ? [savedAnswer.value] : []);
+        if (Array.isArray(savedAnswer.value)) {
+          setSelectedValues(savedAnswer.value);
+        } else {
+          setSelectedValues(savedAnswer.value ? [savedAnswer.value] : []);
+        }
+        setCustomText(savedAnswer.customText || "");
       }
-      setCustomText(savedAnswer.customText || "");
     } else {
       setSelectedValues([]);
       setCustomText("");
@@ -55,10 +59,19 @@ export function QuizStep({ stepConfig, savedAnswer, onBack, onNext }: QuizStepPr
   };
 
   const handleNextClick = () => {
-    if (selectedValues.length === 0) return;
-    const valueToSubmit = isMulti ? selectedValues : selectedValues[0];
-    onNext(valueToSubmit, showCustomInput ? customText : "");
+    if (stepConfig.type === "textarea") {
+      if (!customText.trim()) return;
+      onNext(customText.trim(), "");
+    } else {
+      if (selectedValues.length === 0) return;
+      const valueToSubmit = isMulti ? selectedValues : selectedValues[0];
+      onNext(valueToSubmit, showCustomInput ? customText : "");
+    }
   };
+
+  const isNextDisabled = stepConfig.type === "textarea"
+    ? !customText.trim()
+    : (selectedValues.length === 0 || (showCustomInput && !customText.trim()));
 
   return (
     <motion.div
@@ -68,26 +81,69 @@ export function QuizStep({ stepConfig, savedAnswer, onBack, onNext }: QuizStepPr
       className="flex flex-col h-full justify-between"
     >
       <div className="space-y-5">
-        <h4 className="text-[18px] md:text-[20px] font-black text-ink leading-snug text-center md:text-left">
-          {stepConfig.question}
+        <div>
+          <h4 className="text-[18px] md:text-[20px] font-black text-ink leading-snug text-center md:text-left">
+            {stepConfig.question}
+          </h4>
+          {stepConfig.description && (
+            <p className="text-[13px] text-ink-soft mt-1 leading-normal text-center md:text-left">
+              {stepConfig.description}
+            </p>
+          )}
           {isMulti && <span className="block text-[13px] text-ink-soft font-normal mt-1">(Có thể chọn nhiều)</span>}
-        </h4>
-
-        {/* Options list */}
-        <div className="grid grid-cols-1 gap-2.5 max-h-[300px] overflow-y-auto pr-1">
-          {stepConfig.options?.map((opt) => (
-            <OptionCard
-              key={opt.value}
-              label={opt.label}
-              selected={selectedValues.includes(opt.value)}
-              onClick={() => handleOptionSelect(opt.value)}
-              isMulti={isMulti}
-            />
-          ))}
         </div>
 
+        {/* Conditional rendering of Options list OR Textarea */}
+        {stepConfig.type === "textarea" ? (
+          <div className="space-y-3">
+            <textarea
+              value={customText}
+              onChange={(e) => setCustomText(e.target.value)}
+              placeholder={stepConfig.placeholder || "Nhập thông tin tại đây..."}
+              className="w-full min-h-[120px] border-2 border-gray-200 focus:border-forest outline-none rounded-2xl px-4 py-3 text-[14px] transition-all bg-cream-soft/10 text-ink resize-none"
+              autoFocus
+            />
+            {stepConfig.quickOptions && stepConfig.quickOptions.length > 0 && (
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-bold text-ink-soft uppercase tracking-wider block">Gợi ý nhanh:</span>
+                <div className="flex flex-wrap gap-2">
+                  {stepConfig.quickOptions.map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => {
+                        setCustomText((prev) => {
+                          const trimmed = prev.trim();
+                          if (!trimmed) return opt;
+                          if (trimmed.toLowerCase().includes(opt.toLowerCase())) return prev;
+                          return `${trimmed}, ${opt}`;
+                        });
+                      }}
+                      className="px-3 py-1.5 rounded-full text-xs font-semibold border border-gray-200 bg-white hover:bg-forest-soft/10 hover:border-forest text-ink-soft cursor-pointer transition-all active:scale-95 animate-fade-in"
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-2.5 max-h-[300px] overflow-y-auto pr-1">
+            {stepConfig.options?.map((opt) => (
+              <OptionCard
+                key={opt.value}
+                label={opt.label}
+                selected={selectedValues.includes(opt.value)}
+                onClick={() => handleOptionSelect(opt.value)}
+                isMulti={isMulti}
+              />
+            ))}
+          </div>
+        )}
+
         {/* Conditional Custom Text Input */}
-        {showCustomInput && (
+        {stepConfig.type !== "textarea" && showCustomInput && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -116,13 +172,12 @@ export function QuizStep({ stepConfig, savedAnswer, onBack, onNext }: QuizStepPr
           <span>Quay lại</span>
         </button>
 
-        {/* Only show/enable "Next" if option is chosen */}
         <button
           type="button"
-          disabled={selectedValues.length === 0 || (showCustomInput && !customText.trim())}
+          disabled={isNextDisabled}
           onClick={handleNextClick}
           className={`flex items-center gap-1 px-5 py-2.5 rounded-xl font-bold text-[14px] transition-all ${
-            selectedValues.length > 0 && (!showCustomInput || customText.trim())
+            !isNextDisabled
               ? "bg-forest text-white hover:bg-forest-dark cursor-pointer shadow-sm"
               : "bg-gray-100 text-gray-400 cursor-not-allowed"
           }`}

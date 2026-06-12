@@ -1,19 +1,42 @@
 export interface QuizOption {
   label: string;
   value: string;
+  estimatedAmount?: number;
+  months?: number;
 }
 
 export interface QuizStepConfig {
   id: string;
   question: string;
-  type: "single_choice" | "multi_choice" | "text_input";
+  type: "single_choice" | "multi_choice" | "text_input" | "textarea";
   placeholder?: string;
   options?: QuizOption[];
   customInputTrigger?: string; // e.g. "other" -> show text input below choices
   customInputPlaceholder?: string;
+  description?: string;
+  required?: boolean;
+  quickOptions?: string[];
 }
 
 export const dogQuizSteps: QuizStepConfig[] = [
+  {
+    id: "problem_text",
+    type: "textarea",
+    question: "Bé nhà mình đang gặp vấn đề gì hiện tại?",
+    description: "Mô tả ngắn tình trạng của bé để chuyên gia tư vấn chính xác hơn.",
+    placeholder: "Ví dụ: bé kén ăn, hay ói, đi phân mềm, rụng lông, tiểu ít, hơi gầy...",
+    required: true,
+    quickOptions: [
+      "Kén ăn",
+      "Tiêu hóa yếu",
+      "Rụng lông",
+      "Tiết niệu",
+      "Tăng cân",
+      "Giảm cân",
+      "Hairball",
+      "Chưa rõ vấn đề"
+    ]
+  },
   {
     id: "age_group",
     question: "Bé chó đang ở giai đoạn nào?",
@@ -68,18 +91,21 @@ export const dogQuizSteps: QuizStepConfig[] = [
   },
   {
     id: "need",
-    question: "Nhu cầu chính của bé hiện tại là gì?",
+    question: "Xác nhận thêm nhu cầu",
+    description: "Chuyên gia sẽ dựa trên mô tả của anh/chị để nhận diện nhu cầu. Anh/chị có thể chọn thêm nhóm phù hợp nếu đúng:",
     type: "multi_choice",
     options: [
-      { label: "Ăn hàng ngày", value: "daily" },
-      { label: "Tăng cân", value: "gain_weight" },
+      { label: "Ăn hằng ngày", value: "daily" },
       { label: "Kén ăn", value: "picky_eater" },
       { label: "Tiêu hóa", value: "digestion" },
       { label: "Da lông", value: "skin_coat" },
-      { label: "Dị ứng", value: "allergy" },
       { label: "Tiết niệu", value: "urinary" },
-      { label: "Kiểm soát cân nặng", value: "weight_control" },
-      { label: "Cao cấp", value: "premium" }
+      { label: "Tăng cân", value: "gain_weight" },
+      { label: "Giảm cân", value: "weight_loss" },
+      { label: "Hairball", value: "hairball" },
+      { label: "Đa mèo", value: "multi_cat" },
+      { label: "Cao cấp", value: "premium" },
+      { label: "Khác", value: "other" }
     ]
   },
   {
@@ -97,22 +123,52 @@ export const dogQuizSteps: QuizStepConfig[] = [
     customInputPlaceholder: "Nhập tên thức ăn hiện tại của bé"
   },
   {
-    id: "budget",
-    question: "Ngân sách thức ăn mỗi tháng khoảng bao nhiêu?",
+    id: "purchase_amount_range",
     type: "single_choice",
+    question: "Mỗi lần anh/chị thường mua khoảng bao nhiêu tiền cho bé?",
+    description: "Thông tin này giúp 3F hiểu thói quen mua sắm thực tế, không nhầm với ngân sách mỗi tháng.",
     options: [
-      { label: "Dưới 500k", value: "under_500k" },
-      { label: "500k–1 triệu", value: "500k_1m" },
-      { label: "1–2 triệu", value: "1m_2m" },
-      { label: "Trên 2 triệu", value: "over_2m" },
-      { label: "Khác", value: "other" }
-    ],
-    customInputTrigger: "other",
-    customInputPlaceholder: "Nhập số tiền (VD: 3 triệu)"
+      { label: "Dưới 200K", value: "under_200k", estimatedAmount: 150000 },
+      { label: "200K – 500K", value: "200k_500k", estimatedAmount: 350000 },
+      { label: "500K – 1 triệu", value: "500k_1m", estimatedAmount: 750000 },
+      { label: "1 – 2 triệu", value: "1m_2m", estimatedAmount: 1500000 },
+      { label: "Trên 2 triệu", value: "over_2m", estimatedAmount: 2500000 }
+    ]
+  },
+  {
+    id: "usage_duration_range",
+    type: "single_choice",
+    question: "Số sản phẩm đó thường dùng được trong bao lâu?",
+    description: "Chuyên gia sẽ tính ngân sách thực tế mỗi tháng để tư vấn đúng phân khúc hơn.",
+    options: [
+      { label: "Dưới 1 tháng", value: "under_1m", months: 0.5 },
+      { label: "Khoảng 1 tháng", value: "1m", months: 1 },
+      { label: "2 tháng", value: "2m", months: 2 },
+      { label: "3 – 4 tháng", value: "3_4m", months: 3.5 },
+      { label: "Trên 4 tháng", value: "over_4m", months: 4.5 }
+    ]
   }
 ];
 
 export const catQuizSteps: QuizStepConfig[] = [
+  {
+    id: "problem_text",
+    type: "textarea",
+    question: "Bé nhà mình đang gặp vấn đề gì hiện tại?",
+    description: "Mô tả ngắn tình trạng của bé để chuyên gia tư vấn chính xác hơn.",
+    placeholder: "Ví dụ: bé kén ăn, hay ói, đi phân mềm, rụng lông, tiểu ít, hơi gầy...",
+    required: true,
+    quickOptions: [
+      "Kén ăn",
+      "Tiêu hóa yếu",
+      "Rụng lông",
+      "Tiết niệu",
+      "Tăng cân",
+      "Giảm cân",
+      "Hairball",
+      "Chưa rõ vấn đề"
+    ]
+  },
   {
     id: "age_group",
     question: "Bé mèo đang ở giai đoạn nào?",
@@ -154,19 +210,21 @@ export const catQuizSteps: QuizStepConfig[] = [
   },
   {
     id: "need",
-    question: "Nhu cầu chính của bé hiện tại là gì?",
+    question: "Xác nhận thêm nhu cầu",
+    description: "Chuyên gia sẽ dựa trên mô tả của anh/chị để nhận diện nhu cầu. Anh/chị có thể chọn thêm nhóm phù hợp nếu đúng:",
     type: "multi_choice",
     options: [
-      { label: "Ăn hàng ngày", value: "daily" },
+      { label: "Ăn hằng ngày", value: "daily" },
       { label: "Kén ăn", value: "picky_eater" },
       { label: "Tiêu hóa", value: "digestion" },
       { label: "Da lông", value: "skin_coat" },
       { label: "Tiết niệu", value: "urinary" },
-      { label: "Hairball", value: "hairball" },
       { label: "Tăng cân", value: "gain_weight" },
       { label: "Giảm cân", value: "weight_loss" },
+      { label: "Hairball", value: "hairball" },
       { label: "Đa mèo", value: "multi_cat" },
-      { label: "Cao cấp", value: "premium" }
+      { label: "Cao cấp", value: "premium" },
+      { label: "Khác", value: "other" }
     ]
   },
   {
@@ -206,17 +264,29 @@ export const catQuizSteps: QuizStepConfig[] = [
     customInputPlaceholder: "Nhập tên thức ăn hiện tại của bé"
   },
   {
-    id: "budget",
-    question: "Ngân sách thức ăn mỗi tháng khoảng bao nhiêu?",
+    id: "purchase_amount_range",
     type: "single_choice",
+    question: "Mỗi lần anh/chị thường mua khoảng bao nhiêu tiền cho bé?",
+    description: "Thông tin này giúp 3F hiểu thói quen mua sắm thực tế, không nhầm với ngân sách mỗi tháng.",
     options: [
-      { label: "Dưới 500k", value: "under_500k" },
-      { label: "500k–1 triệu", value: "500k_1m" },
-      { label: "1–2 triệu", value: "1m_2m" },
-      { label: "Trên 2 triệu", value: "over_2m" },
-      { label: "Khác", value: "other" }
-    ],
-    customInputTrigger: "other",
-    customInputPlaceholder: "Nhập số tiền (VD: 3 triệu)"
+      { label: "Dưới 200K", value: "under_200k", estimatedAmount: 150000 },
+      { label: "200K – 500K", value: "200k_500k", estimatedAmount: 350000 },
+      { label: "500K – 1 triệu", value: "500k_1m", estimatedAmount: 750000 },
+      { label: "1 – 2 triệu", value: "1m_2m", estimatedAmount: 1500000 },
+      { label: "Trên 2 triệu", value: "over_2m", estimatedAmount: 2500000 }
+    ]
+  },
+  {
+    id: "usage_duration_range",
+    type: "single_choice",
+    question: "Số sản phẩm đó thường dùng được trong bao lâu?",
+    description: "Chuyên gia sẽ tính ngân sách thực tế mỗi tháng để tư vấn đúng phân khúc hơn.",
+    options: [
+      { label: "Dưới 1 tháng", value: "under_1m", months: 0.5 },
+      { label: "Khoảng 1 tháng", value: "1m", months: 1 },
+      { label: "2 tháng", value: "2m", months: 2 },
+      { label: "3 – 4 tháng", value: "3_4m", months: 3.5 },
+      { label: "Trên 4 tháng", value: "over_4m", months: 4.5 }
+    ]
   }
 ];
