@@ -46,9 +46,7 @@ class ShopeePointRequest {
                 :source
             )
         ";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
+        $params = [
             ':customer_name'     => isset($data['customer_name']) ? $data['customer_name'] : null,
             ':phone'             => $data['phone'],
             ':email'             => isset($data['email']) ? $data['email'] : null,
@@ -59,7 +57,9 @@ class ShopeePointRequest {
             ':image_id'          => isset($data['image_id']) ? $data['image_id'] : null,
             ':scan_id'           => isset($data['scan_id']) ? $data['scan_id'] : null,
             ':source'            => isset($data['source']) ? $data['source'] : 'customer_form'
-        ]);
+        ];
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
 
         return (int)$this->db->lastInsertId();
     }

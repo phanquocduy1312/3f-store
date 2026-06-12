@@ -71,30 +71,6 @@ function cn(...classes: Array<string | false | null | undefined>) {
 	return classes.filter(Boolean).join(" ");
 }
 
-function useIosevkaCharonFont() {
-	useEffect(() => {
-		if (typeof document === "undefined") return;
-		if (document.getElementById("iosevka-charon-font")) return;
-
-		const googlePreconnect = document.createElement("link");
-		googlePreconnect.rel = "preconnect";
-		googlePreconnect.href = "https://fonts.googleapis.com";
-
-		const gstaticPreconnect = document.createElement("link");
-		gstaticPreconnect.rel = "preconnect";
-		gstaticPreconnect.href = "https://fonts.gstatic.com";
-		gstaticPreconnect.crossOrigin = "anonymous";
-
-		const fontLink = document.createElement("link");
-		fontLink.id = "iosevka-charon-font";
-		fontLink.rel = "stylesheet";
-		fontLink.href =
-			"https://fonts.googleapis.com/css2?family=Iosevka+Charon:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap";
-
-		document.head.append(googlePreconnect, gstaticPreconnect, fontLink);
-	}, []);
-}
-
 type AssetOrIconProps = {
 	src?: string;
 	alt: string;
@@ -408,8 +384,6 @@ function ThreeFClub({
 	onGoldClick,
 	onPlatinumClick,
 }: ThreeFClubProps) {
-	useIosevkaCharonFont();
-
 	const a = { ...DEFAULT_ASSETS, ...assets };
 
 	const [form, setForm] = useState({
@@ -586,7 +560,7 @@ function ThreeFClub({
 		setScanWarnings([]);
 		setScanError("");
 		setAutoFilledFields({});
-		setForm((prev) => ({
+			setForm((prev) => ({
 			...prev,
 			phone: "",
 			shopeeOrderCode: "",
@@ -636,7 +610,7 @@ function ThreeFClub({
 			const payload = {
 				phone: normalizeVietnamPhone(form.phone),
 				email: form.email || "",
-				customerName: form.customerName || "",
+				customerName: form.customerName.trim(),
 				zalo: form.zalo || "",
 				shopeeOrderCode: form.shopeeOrderCode.trim(),
 				orderAmount: normalizeAmount(form.orderAmount),
@@ -655,6 +629,7 @@ function ThreeFClub({
 
 	const isFormValid =
 		isValidVietnamPhone(form.phone) &&
+		Boolean(form.customerName.trim()) &&
 		Boolean(form.shopeeOrderCode.trim()) &&
 		normalizeAmount(form.orderAmount) > 0 &&
 		!isScanning;
@@ -810,7 +785,7 @@ function ThreeFClub({
 					<h2
 						id="three-f-title"
 						className="m-0 inline-flex items-end justify-center gap-3 text-[clamp(60px,6.3vw,102px)] font-bold leading-[0.82] tracking-[-0.065em] text-[rgb(var(--color-primary))] drop-shadow-[0_15px_25px_rgba(var(--color-primary),0.13)] sm:gap-4"
-						style={{ fontFamily: '"Iosevka Charon", monospace' }}
+						style={{ fontFamily: '"Be Vietnam Pro", system-ui, sans-serif' }}
 						aria-label="3F Club"
 					>
 						<span className="inline-block">3F</span>
@@ -943,16 +918,16 @@ function ThreeFClub({
 									</div>
 								) : (
 									<div className="flex flex-col gap-4">
-										<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
-											<div className="w-full sm:w-[110px] shrink-0 flex items-center gap-1.5">
-												<label className="text-[13px] font-bold text-[#092B5A]">SĐT</label>
-												{autoFilledFields.phone && (
-													<span className="text-[9px] font-bold text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded shadow-sm animate-pulse whitespace-nowrap">
-														Tự điền từ ảnh
-													</span>
-												)}
-											</div>
-											<div className="w-full sm:flex-1">
+										<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+											<div className="space-y-1.5">
+												<div className="flex items-center gap-1.5">
+													<label className="text-[13px] font-bold text-[#092B5A]">SĐT</label>
+													{autoFilledFields.phone && (
+														<span className="text-[9px] font-bold text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded shadow-sm animate-pulse whitespace-nowrap">
+															Tự điền từ ảnh
+														</span>
+													)}
+												</div>
 												<input 
 													type="text" 
 													value={form.phone}
@@ -972,21 +947,32 @@ function ThreeFClub({
 													}`} 
 												/>
 												{phoneError && (
-													<p className="text-red-500 text-[11px] font-semibold mt-1">{phoneError}</p>
+													<p className="text-red-500 text-[11px] font-semibold">{phoneError}</p>
 												)}
 											</div>
-										</div>
 
-										<div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-4">
-											<div className="w-full sm:w-[110px] shrink-0 flex items-center gap-1.5">
-												<label className="text-[13px] font-bold text-[#092B5A] shrink-0">Email (không bắt buộc)</label>
-												{autoFilledFields.email && (
-													<span className="text-[9px] font-bold text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded shadow-sm animate-pulse whitespace-nowrap">
-														Tự điền từ ảnh
-													</span>
-												)}
+											<div className="space-y-1.5">
+												<div className="flex items-center gap-1.5">
+													<label className="text-[13px] font-bold text-[#092B5A]">Tên người dùng</label>
+												</div>
+												<input 
+													type="text" 
+													value={form.customerName}
+													onChange={e => setForm(prev => ({ ...prev, customerName: e.target.value }))}
+													placeholder="Nhập tên người dùng hoặc tên khách hàng" 
+													className="w-full bg-white border rounded-lg px-4 py-3 text-[13px] outline-none focus:ring-1 transition-all placeholder-gray-400 font-medium border-gray-200 focus:border-[#092B5A] focus:ring-[#092B5A]"
+												/>
 											</div>
-											<div className="w-full sm:flex-1">
+
+											<div className="space-y-1.5 md:col-span-2">
+												<div className="flex items-center gap-1.5">
+													<label className="text-[13px] font-bold text-[#092B5A] shrink-0">Email (không bắt buộc)</label>
+													{autoFilledFields.email && (
+														<span className="text-[9px] font-bold text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded shadow-sm animate-pulse whitespace-nowrap">
+															Tự điền từ ảnh
+														</span>
+													)}
+												</div>
 												<input 
 													type="text" 
 													value={form.email}
@@ -1005,7 +991,7 @@ function ThreeFClub({
 													}`} 
 												/>
 												{emailError && (
-													<p className="text-red-500 text-[11px] font-semibold mt-1">{emailError}</p>
+													<p className="text-red-500 text-[11px] font-semibold">{emailError}</p>
 												)}
 											</div>
 										</div>
