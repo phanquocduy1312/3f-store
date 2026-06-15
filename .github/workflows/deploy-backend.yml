@@ -17,37 +17,19 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PLESK_SSH_KEY }}" > ~/.ssh/plesk_key
-          chmod 600 ~/.ssh/plesk_key
-          ssh-keyscan -p ${{ secrets.PLESK_PORT }} ${{ secrets.PLESK_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy 3f-api to Plesk httpdocs
-        run: |
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/plesk_key -p ${{ secrets.PLESK_PORT }}" \
-            --exclude=".env" \
-            --exclude=".git" \
-            --exclude=".github" \
-            --exclude="storage/uploads" \
-            --exclude="storage/logs" \
-            --exclude="node_modules" \
-            --exclude="vendor" \
-            3f-api/ ${{ secrets.PLESK_USER }}@${{ secrets.PLESK_HOST }}:${{ secrets.PLESK_PATH }}/
-
-      - name: Ensure storage directories exist
-        run: |
-          ssh -i ~/.ssh/plesk_key -p ${{ secrets.PLESK_PORT }} ${{ secrets.PLESK_USER }}@${{ secrets.PLESK_HOST }} "
-            mkdir -p ${{ secrets.PLESK_PATH }}/storage/uploads &&
-            mkdir -p ${{ secrets.PLESK_PATH }}/storage/logs
-          "
-
-      - name: Fix permissions
-        run: |
-          ssh -i ~/.ssh/plesk_key -p ${{ secrets.PLESK_PORT }} ${{ secrets.PLESK_USER }}@${{ secrets.PLESK_HOST }} "
-            cd ${{ secrets.PLESK_PATH }} &&
-            find . -type f -exec chmod 644 {} \; &&
-            find . -type d -exec chmod 755 {} \;
-          "
+      - name: FTP Deploy 3f-api to Plesk httpdocs
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./3f-api/
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          exclude: |
+            **/.env
+            **/storage/uploads/**
+            **/storage/logs/**
+            **/.git/**
+            **/.github/**
+            **/node_modules/**
+            **/vendor/**
