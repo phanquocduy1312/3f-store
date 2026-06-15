@@ -1,5 +1,19 @@
 # Project Changelog
 
+## [2026-06-15]
+### Added
+- Tích hợp thành công **Shopee Open Platform OAuth sandbox** cho phân hệ kết nối Shop của 3F Club:
+  - Cấu hình môi trường qua `.env` và cập nhật `config/config.php` để lấy credentials động (hỗ trợ database và shopee sandbox).
+  - Tích hợp một custom `.env` parser tại entrypoint `public/index.php` nhằm hỗ trợ đọc environment variables trong môi trường PHP thuần mà không cần dependencies bên ngoài.
+  - Sửa lỗi `Wrong sign` bằng cách cập nhật sandbox base URL chuẩn của Shopee UAT: `https://openplatform.sandbox.test-stable.shopee.sg`.
+  - Tối ưu hóa bộ phân tích `.env` bằng cách tự động trim khoảng trắng thừa ở cuối/đầu giá trị sau khi loại bỏ dấu nháy kép/nháy đơn.
+  - Tạo bảng `shopee_tokens` trong database `3f` với unique key `shop_id` + `partner_id`.
+  - Tạo model `ShopeeTokenModel` xử lý các tác vụ database (`findByShopId`, `getLatestToken`, `upsertToken`, `updateToken`).
+  - Tạo service `ShopeeApiService` xử lý mã hóa chữ ký API v2 (HMAC-SHA256), tạo URL ủy quyền, đổi code lấy tokens, và gửi request cURL tích hợp Sandbox API.
+  - Thêm hệ thống ghi log bảo mật `storage/logs/shopee.log` ghi lại thông tin chi tiết request (env, base_url, path, partner_id, timestamp, base_string, sign, URL request và response) đồng thời tự động che (mask) token bí mật.
+  - Tạo `ShopeeAuthController` cung cấp 3 endpoint RESTful: tạo URL kết nối (`GET /api/admin/shopee/auth-url`), xử lý callback nhận tokens (`GET /api/shopee/callback`), và kiểm tra trạng thái kết nối (`GET /api/admin/shopee/connection-status`).
+  - Đăng ký và cấu hình các route mới trong `public/index.php` và `app/Core/Router.php`.
+
 ## [2026-06-12]
 ### Added
 - Tích hợp frontend React với các endpoint PHP MVC backend thật cho 3F Club Shopee Point Request:

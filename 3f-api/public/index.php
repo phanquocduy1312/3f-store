@@ -14,6 +14,30 @@ set_error_handler(function($severity, $message, $file, $line) {
     throw new \ErrorException($message, 0, $severity, $file, $line);
 });
 
+// Load environment variables from .env
+$envFile = dirname(__DIR__) . '/.env';
+if (file_exists($envFile)) {
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (empty($line) || strpos($line, '#') === 0) {
+            continue;
+        }
+        $parts = explode('=', $line, 2);
+        if (count($parts) === 2) {
+            $key = trim($parts[0]);
+            $val = trim($parts[1]);
+            if (preg_match('/^"(.*)"$/', $val, $matches) || preg_match("/^'(.*)'$/", $val, $matches)) {
+                $val = $matches[1];
+            }
+            $val = trim($val);
+            putenv("{$key}={$val}");
+            $_ENV[$key] = $val;
+            $_SERVER[$key] = $val;
+        }
+    }
+}
+
 // 1. Load CORS
 require_once dirname(__DIR__) . '/app/Helpers/cors.php';
 
@@ -33,6 +57,7 @@ use App\Core\Response;
 use App\Controllers\ShopeeOrderScanController;
 use App\Controllers\ShopeePointRequestController;
 use App\Controllers\CustomerPointController;
+use App\Controllers\ShopeeAuthController;
 
 try {
     // 3. Initialize Router
@@ -46,6 +71,11 @@ try {
     $router->post("/api/admin/shopee/requests/approve", [ShopeePointRequestController::class, "approve"]);
     $router->post("/api/admin/shopee/requests/reject", [ShopeePointRequestController::class, "reject"]);
     $router->get("/api/customer/points", [CustomerPointController::class, "points"]);
+
+    // Shopee OAuth Sandbox Routes
+    $router->get("/api/admin/shopee/auth-url", [ShopeeAuthController::class, "getAuthUrl"]);
+    $router->get("/api/shopee/callback", [ShopeeAuthController::class, "callback"]);
+    $router->get("/api/admin/shopee/connection-status", [ShopeeAuthController::class, "connectionStatus"]);
 
     // 5. Dispatch Request
     $router->dispatch();

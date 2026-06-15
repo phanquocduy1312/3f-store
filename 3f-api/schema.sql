@@ -69,3 +69,18 @@ CREATE TABLE IF NOT EXISTS `shopee_point_requests` (
 CREATE INDEX idx_requests_phone ON shopee_point_requests(phone);
 CREATE INDEX idx_requests_order_code ON shopee_point_requests(shopee_order_code);
 CREATE INDEX idx_requests_processing_status ON shopee_point_requests(processing_status);
+
+-- 4. Table for Shopee Open Platform tokens
+CREATE TABLE IF NOT EXISTS `shopee_tokens` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `shop_id` VARCHAR(100) NOT NULL,
+  `partner_id` VARCHAR(100) NOT NULL,
+  `access_token` VARCHAR(255) NOT NULL,
+  `refresh_token` VARCHAR(255) NOT NULL,
+  `expire_in` INT NOT NULL,
+  `token_expired_at` TIMESTAMP NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY `idx_shop_partner` (`shop_id`, `partner_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

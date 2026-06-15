@@ -21,6 +21,7 @@
 ## Phase 4: Backend Integration (Đang triển khai)
 - [x] Xây dựng Backend API PHP thuần & database MySQL cho phân hệ tích điểm Shopee (3F Club Shopee Point Requests).
 - [x] Thay thế dữ liệu Mock bằng dữ liệu thật qua API Fetching cho tính năng 3F Club Shopee Point Request.
+- [x] Tích hợp Shopee Open Platform OAuth Sandbox (kết nối shop, đổi code lấy access/refresh token, tự động refresh, và lưu trữ an toàn trong database).
 - [ ] Thiết lập Database hoàn chỉnh cho phần còn lại (Sản phẩm, Người dùng).
 - [ ] Tích hợp thanh toán online (SePay / Stripe).
 

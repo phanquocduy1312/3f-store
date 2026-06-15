@@ -5,17 +5,25 @@ class Router {
     private $routes = [];
 
     /**
+     * Normalizes a route path to always have a leading slash and no trailing slash
+     */
+    private function normalizePath($path) {
+        $path = '/' . trim($path, '/');
+        return $path === '/' ? '/' : rtrim($path, '/');
+    }
+
+    /**
      * Registers a GET route.
      */
     public function get($path, $handler) {
-        $this->routes['GET'][$path] = $handler;
+        $this->routes['GET'][$this->normalizePath($path)] = $handler;
     }
 
     /**
      * Registers a POST route.
      */
     public function post($path, $handler) {
-        $this->routes['POST'][$path] = $handler;
+        $this->routes['POST'][$this->normalizePath($path)] = $handler;
     }
 
     /**
@@ -35,7 +43,10 @@ class Router {
                 'admin.shopee.request_detail' => '/api/admin/shopee/requests/detail',
                 'admin.shopee.request_approve'=> '/api/admin/shopee/requests/approve',
                 'admin.shopee.request_reject' => '/api/admin/shopee/requests/reject',
-                'customer.points'             => '/api/customer/points'
+                'customer.points'             => '/api/customer/points',
+                'admin.shopee.auth_url'       => '/api/admin/shopee/auth-url',
+                'shopee.callback'             => '/api/shopee/callback',
+                'admin.shopee.conn_status'    => '/api/admin/shopee/connection-status'
             ];
             $path = isset($mapping[$routeQuery]) ? $mapping[$routeQuery] : '';
         } else {
@@ -52,10 +63,8 @@ class Router {
                 $path = $uri;
             }
 
-            // Strip trailing slash if present
-            if ($path !== '/' && substr($path, -1) === '/') {
-                $path = rtrim($path, '/');
-            }
+            // Normalize path for consistent matching
+            $path = $this->normalizePath($path);
         }
 
         if (!isset($this->routes[$method][$path])) {

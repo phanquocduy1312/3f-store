@@ -181,3 +181,17 @@ export async function rejectShopeePointRequest(requestId: number, reason: string
 
   return data;
 }
+
+/**
+ * Retrieves customer points by phone number.
+ */
+export async function getCustomerPoints(phone: string) {
+  const res = await fetch(`${API_BASE_URL}/api/customer/points?phone=${encodeURIComponent(phone)}`);
+  const data = await res.json();
+
+  if (!res.ok || !data.success) {
+    throw new Error(data?.message || "Không lấy được điểm khách hàng");
+  }
+
+  return data;
+}

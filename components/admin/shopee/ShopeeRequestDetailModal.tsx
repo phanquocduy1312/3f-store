@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import type { ShopeePointRequest } from "@/types/shopee";
 import { ShopeeApiBadge } from "./ShopeeApiBadge";
 import { ShopeeStatusBadge } from "./ShopeeStatusBadge";
+import { buildImageUrl } from "@/src/config/api";
 
 interface ShopeeRequestDetailModalProps {
   request?: ShopeePointRequest;
@@ -61,9 +62,9 @@ function InfoBox({ label, value }: { label: string; value: string }) {
 
 function DetailField({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-[12px] font-bold uppercase tracking-[0.03em] text-[#64748B]">{label}</p>
-      <p className="mt-1 text-[16px] font-black text-[#0B1F3A]">{value}</p>
+      <p className="mt-1 text-[16px] font-black text-[#0B1F3A] break-words">{value}</p>
     </div>
   );
 }
@@ -364,7 +365,7 @@ export function ShopeeRequestDetailModal({
                       </p>
                       <div className="h-[180px] overflow-hidden rounded-2xl border border-[#DCEBFF] bg-[#F6FAFF]">
                         <img
-                          src={request.orderImageUrl || "/assets/images/demodonhang.png"}
+                          src={request.orderImageUrl ? buildImageUrl(request.orderImageUrl) : "/assets/images/demodonhang.png"}
                           alt={`Đơn Shopee ${request.shopeeOrderCode}`}
                           className="h-full w-full object-cover"
                         />
@@ -373,7 +374,7 @@ export function ShopeeRequestDetailModal({
 
                     <button
                       type="button"
-                      onClick={() => setPreviewImage(request.orderImageUrl || "/assets/images/demodonhang.png")}
+                      onClick={() => setPreviewImage(request.orderImageUrl ? buildImageUrl(request.orderImageUrl) : "/assets/images/demodonhang.png")}
                       className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#DCEBFF] bg-white px-4 text-[14px] font-bold text-[#0057E7] transition hover:bg-[#F6FAFF]"
                     >
                       Xem ảnh lớn <ExternalLink className="h-4 w-4" />

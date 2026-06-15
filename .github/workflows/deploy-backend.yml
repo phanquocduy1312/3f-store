@@ -1,0 +1,53 @@
+name: Deploy Backend to Plesk
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+    paths:
+      - "3f-api/**"
+      - ".github/workflows/deploy-backend.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PLESK_SSH_KEY }}" > ~/.ssh/plesk_key
+          chmod 600 ~/.ssh/plesk_key
+          ssh-keyscan -p ${{ secrets.PLESK_PORT }} ${{ secrets.PLESK_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy 3f-api to Plesk httpdocs
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/plesk_key -p ${{ secrets.PLESK_PORT }}" \
+            --exclude=".env" \
+            --exclude=".git" \
+            --exclude=".github" \
+            --exclude="storage/uploads" \
+            --exclude="storage/logs" \
+            --exclude="node_modules" \
+            --exclude="vendor" \
+            3f-api/ ${{ secrets.PLESK_USER }}@${{ secrets.PLESK_HOST }}:${{ secrets.PLESK_PATH }}/
+
+      - name: Ensure storage directories exist
+        run: |
+          ssh -i ~/.ssh/plesk_key -p ${{ secrets.PLESK_PORT }} ${{ secrets.PLESK_USER }}@${{ secrets.PLESK_HOST }} "
+            mkdir -p ${{ secrets.PLESK_PATH }}/storage/uploads &&
+            mkdir -p ${{ secrets.PLESK_PATH }}/storage/logs
+          "
+
+      - name: Fix permissions
+        run: |
+          ssh -i ~/.ssh/plesk_key -p ${{ secrets.PLESK_PORT }} ${{ secrets.PLESK_USER }}@${{ secrets.PLESK_HOST }} "
+            cd ${{ secrets.PLESK_PATH }} &&
+            find . -type f -exec chmod 644 {} \; &&
+            find . -type d -exec chmod 755 {} \;
+          "
