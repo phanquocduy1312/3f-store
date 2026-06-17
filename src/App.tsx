@@ -22,10 +22,11 @@ const AdminOrdersPage = lazy(() => import("./pages/admin/AdminOrdersPage").then(
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin").then(m => ({ default: m.AdminLogin })));
 
 function AdminRouteGuard() {
-  const token = localStorage.getItem("admin_token");
-  if (!token) {
-    return <Navigate to="/admin/login" replace />;
-  }
+  // Temporary bypass for active development. Comment in to restore auth guarding.
+  // const token = localStorage.getItem("admin_token");
+  // if (!token) {
+  //   return <Navigate to="/admin/login" replace />;
+  // }
   return <Outlet />;
 }
 
