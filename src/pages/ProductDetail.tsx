@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { getProductById, getSaleProducts, getFeaturedProducts } from "@/data/store";
+import { getProductDetail, getProducts } from "@/src/api/productsApi";
 import { addToCart, parsePriceString } from "@/lib/cartHelper";
 import { Image } from "@/components/Image";
 import { SaleBadge } from "@/components/SaleBadge";
@@ -12,11 +12,31 @@ import {
   Minus, Plus, BellRing, Truck, Ticket, Award, RefreshCcw, CheckCircle, ShieldCheck,
   Fish, BicepsFlexed, Droplets, Eye, HeartHandshake
 } from "lucide-react";
+import type { Product } from "@/types/store";
+
+function getDescriptionLines(description?: string) {
+  return String(description ?? "")
+    .split(/<br\s*\/?>|\n/gi)
+    .map((line) => line.replace(/<[^>]+>/g, "").trim())
+    .filter(Boolean);
+}
+
+const EMPTY_PRODUCT: Product = {
+  id: "",
+  name: "",
+  price: "0đ",
+  image: "",
+  rating: 4.8,
+  reviews: 0,
+  sold: 0,
+};
 
 export function ProductDetail() {
   const { id } = useParams();
-  const product = getProductById(id as string);
   const navigate = useNavigate();
+  const [product, setProduct] = useState<Product>(EMPTY_PRODUCT);
+  const [isLoadingProduct, setIsLoadingProduct] = useState(true);
+  const [detailError, setDetailError] = useState<string | null>(null);
   
   if (!product) {
     return <div className="py-20 text-center font-bold text-xl">Không tìm thấy sản phẩm</div>;
@@ -30,15 +50,70 @@ export function ProductDetail() {
   const [selectedVariantId, setSelectedVariantId] = useState(
     productVariants.length > 0 ? productVariants[0].id : null
   );
-  const selectedVariant = productVariants.find(v => v.id === selectedVariantId) ?? productVariants[0] ?? null;
+  const selectedVariant = productVariants.find(v => v.id === selectedVariantId) ?? null;
 
   const [showToast, setShowToast] = useState(false);
+  const [crossSellProducts, setCrossSellProducts] = useState<Product[]>([]);
+  const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
+  const [cartMessage, setCartMessage] = useState<string | null>(null);
   
   const tabsRef = useRef<HTMLDivElement>(null);
   const [isSticky, setIsSticky] = useState(false);
   
   // Active image: use selected variant image if available
   const [activeImage, setActiveImage] = useState(selectedVariant?.image || product.image);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!id) return;
+
+    setIsLoadingProduct(true);
+    setDetailError(null);
+    setSelectedVariantId(null);
+    setCartMessage(null);
+
+    getProductDetail(id)
+      .then(({ item }) => {
+        if (!isMounted) return;
+        setProduct(item);
+        setActiveImage(item.image);
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        setProduct(EMPTY_PRODUCT);
+        setDetailError(error instanceof Error ? error.message : "Khong tai duoc san pham.");
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingProduct(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    Promise.all([
+      getProducts({ sort: "popular", limit: 4 }),
+      getProducts({ sort: "newest", limit: 4 }),
+    ])
+      .then(([saleResult, featuredResult]) => {
+        if (!isMounted) return;
+        setCrossSellProducts(saleResult.items);
+        setSimilarProducts(featuredResult.items);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setCrossSellProducts([]);
+        setSimilarProducts([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (selectedVariant?.image) setActiveImage(selectedVariant.image);
@@ -56,17 +131,26 @@ export function ProductDetail() {
 
   const handleAddToCart = (goToCart = false) => {
     if (!product) return;
+    if (productVariants.length > 0 && !selectedVariantId) {
+      setCartMessage("Vui lòng chọn phân loại sản phẩm.");
+      return;
+    }
     const variantPrice = selectedVariant?.price ?? product.price;
     const variantOldPrice = selectedVariant?.oldPrice ?? (product as any).oldPrice;
     addToCart({
       id: selectedVariant?.id ?? product.id,
+      productId: String(product.backendId ?? product.sourceProductId ?? product.id),
+      variantId: selectedVariant?.id,
+      sku: selectedVariant?.sku,
       name: product.name,
       image: selectedVariant?.image ?? product.image,
       price: parsePriceString(variantPrice),
       originalPrice: variantOldPrice ? parsePriceString(variantOldPrice) : undefined,
+      variantName: selectedVariant?.label,
       variant: selectedVariant?.label ?? "Mặc định"
     }, quantity);
 
+    setCartMessage(null);
     if (goToCart) {
       navigate("/cart");
     } else {
@@ -74,9 +158,6 @@ export function ProductDetail() {
       setTimeout(() => setShowToast(false), 3000);
     }
   };
-
-  const crossSellProducts = getSaleProducts(4);
-  const similarProducts = getFeaturedProducts(4);
 
   const currentPriceValue = parsePriceString(selectedVariant?.price ?? product.price);
   const oldPriceValueStr = selectedVariant?.oldPrice ?? (product as any).oldPrice;
@@ -87,6 +168,16 @@ export function ProductDetail() {
 
   const formattedTotalPrice = (currentPriceValue * quantity).toLocaleString("vi-VN") + "đ";
   const formattedOldPrice = oldPriceValue > 0 ? (oldPriceValue * quantity).toLocaleString("vi-VN") + "đ" : null;
+
+  const descriptionLines = getDescriptionLines(product.description);
+
+  if (isLoadingProduct) {
+    return <div className="py-20 text-center font-bold text-xl">Đang tải sản phẩm...</div>;
+  }
+
+  if (detailError || !product.id) {
+    return <div className="py-20 text-center font-bold text-xl">{detailError || "Không tìm thấy sản phẩm"}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-[rgb(var(--color-surface))] pb-32">
@@ -234,6 +325,7 @@ export function ProductDetail() {
                         key={v.id}
                         onClick={() => {
                           setSelectedVariantId(v.id);
+                          setCartMessage(null);
                           if (v.image) setActiveImage(v.image);
                         }}
                         className={`flex items-center gap-2 rounded-[12px] border-2 px-3 py-2 text-left transition ${
@@ -268,6 +360,9 @@ export function ProductDetail() {
                     );
                   })}
                 </div>
+                {cartMessage && (
+                  <p className="mt-3 text-sm font-bold text-red-600">{cartMessage}</p>
+                )}
               </div>
             )}
 
@@ -398,7 +493,15 @@ export function ProductDetail() {
               {activeTab === "description" && (
                 <div className="prose prose-sm max-w-none text-[rgb(var(--color-ink))] prose-headings:text-[rgb(var(--color-ink))] prose-a:text-[rgb(var(--color-primary))]">
                   <h2 className="text-xl font-black mb-4">{product.name}</h2>
-                  <p className="mb-4 leading-relaxed">Sản phẩm <strong>{product.name}</strong> được làm từ nguyên liệu tươi ngon và chọn lọc kỹ lưỡng. Chúng tôi cam kết mang lại nguồn dinh dưỡng tốt nhất, cân bằng và đầy đủ để thú cưng của bạn phát triển khỏe mạnh mỗi ngày.</p>
+                  {descriptionLines.length > 0 ? (
+                    <div className="mb-4 space-y-3 leading-relaxed">
+                      {descriptionLines.slice(0, 18).map((line, index) => (
+                        <p key={index}>{line}</p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mb-4 leading-relaxed">Sản phẩm <strong>{product.name}</strong> được làm từ nguyên liệu tươi ngon và chọn lọc kỹ lưỡng. Chúng tôi cam kết mang lại nguồn dinh dưỡng tốt nhất, cân bằng và đầy đủ để thú cưng của bạn phát triển khỏe mạnh mỗi ngày.</p>
+                  )}
 
                   <h3 className="text-lg font-bold mt-6 mb-3">Lợi ích nổi bật:</h3>
                   <ul className="space-y-2 mb-8">

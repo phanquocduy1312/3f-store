@@ -12,6 +12,10 @@ const Login = lazy(() => import("./pages/Login").then(m => ({ default: m.Login }
 const Register = lazy(() => import("./pages/Register").then(m => ({ default: m.Register })));
 const AdminDashboard = lazy(() => import("./pages/admin/admin-dashboard").then(m => ({ default: m.AdminDashboard })));
 const ShopeeRequestsPage = lazy(() => import("./pages/admin/ShopeeRequestsPage"));
+const LoyaltySettingsPage = lazy(() => import("./pages/admin/LoyaltySettingsPage"));
+const ThreeFClubPage = lazy(() => import("./pages/admin/ThreeFClubPage"));
+const CustomerLoyaltyPage = lazy(() => import("./pages/admin/CustomerLoyaltyPage"));
+const CustomerRewardsPage = lazy(() => import("./pages/client/CustomerRewardsPage"));
 
 export function App() {
   const location = useLocation();
@@ -47,6 +51,10 @@ export function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/shopee-requests" element={<ShopeeRequestsPage />} />
+          <Route path="/admin/loyalty-settings" element={<LoyaltySettingsPage />} />
+          <Route path="/admin/3f-club" element={<ThreeFClubPage />} />
+          <Route path="/admin/customers/:id/loyalty" element={<CustomerLoyaltyPage />} />
+          <Route path="/3f-club/rewards" element={<CustomerRewardsPage />} />
         </Routes>
       </Suspense>
       

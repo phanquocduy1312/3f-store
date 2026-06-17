@@ -34,11 +34,10 @@ type MenuItem = {
 const menuItems: MenuItem[] = [
   { name: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { name: "Đơn hàng", icon: ShoppingBag, hasChevron: true },
-  { name: "Yêu cầu Shopee", icon: CheckSquare, badge: "12", path: "/admin/shopee-requests" },
   { name: "Khách hàng CRM", icon: Users },
   { name: "Hồ sơ thú cưng", icon: Heart },
   { name: "AI Pet Advisor", icon: Sparkles, badge: "AI" },
-  { name: "3F Club", icon: Gift },
+  { name: "3F Club", icon: Gift, path: "/admin/3f-club" },
   { name: "Sản phẩm", icon: Package },
   { name: "Voucher / Campaign", icon: Tag, hasChevron: true },
   { name: "Nội dung / SEO", icon: FileText, hasChevron: true },

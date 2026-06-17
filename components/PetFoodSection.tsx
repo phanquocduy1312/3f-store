@@ -5,11 +5,9 @@ import { Image } from "@/components/Image";
 import { ArrowRight, Star, PawPrint, ShoppingCart } from "lucide-react";
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
 import { SaleBadge } from "@/components/SaleBadge";
-import { getCatFoodProducts, getDogFoodProducts } from "@/data/store";
+import { getProducts } from "@/src/api/productsApi";
+import { useEffect, useState } from "react";
 import type { Product } from "@/types/store";
-
-const catProducts: Product[] = getCatFoodProducts(12);
-const dogProducts: Product[] = getDogFoodProducts(12);
 
 function getPriceValue(price: string) {
   return Number(price.replace(/\D/g, "")) || 0;
@@ -120,6 +118,31 @@ function ProductCard({
 }
 
 export function PetFoodSection() {
+  const [catProducts, setCatProducts] = useState<Product[]>([]);
+  const [dogProducts, setDogProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all([
+      getProducts({ petType: "cat", limit: 12, sort: "popular" }),
+      getProducts({ petType: "dog", limit: 12, sort: "popular" }),
+    ])
+      .then(([catResult, dogResult]) => {
+        if (!isMounted) return;
+        setCatProducts(catResult.items);
+        setDogProducts(dogResult.items);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setCatProducts([]);
+        setDogProducts([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <section className="relative bg-white pt-12 pb-2 lg:pt-16 lg:pb-0">
       <MotionSection className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">

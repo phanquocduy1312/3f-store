@@ -130,6 +130,11 @@ class ShopeePointRequestController {
                     "approvedPoints"     => isset($row['approved_points']) ? (int)$row['approved_points'] : 0,
                     "processingStatus"   => $row['processing_status'] ?? null,
                     "verificationStatus" => $row['verification_status'] ?? null,
+                    "matchedShopeeOrderId" => $row['matched_shopee_order_id'] ?? null,
+                    "shopeeApiStatus"      => $row['shopee_api_status'] ?? null,
+                    "shopeeApiOrderAmount" => isset($row['shopee_api_order_amount']) ? (int)$row['shopee_api_order_amount'] : null,
+                    "verifiedAt"           => $row['verified_at'] ?? null,
+                    "verificationNote"     => $row['verification_note'] ?? null,
                     "imageUrl"           => $row['imageUrl'] ?? null,
                     "createdAt"          => $row['created_at'] ?? null
                 ];
@@ -182,6 +187,12 @@ class ShopeePointRequestController {
                 "approvedPoints"     => isset($request['approved_points']) ? (int)$request['approved_points'] : 0,
                 "processingStatus"   => $request['processing_status'] ?? null,
                 "verificationStatus" => $request['verification_status'] ?? null,
+                "matchedShopeeOrderId" => $request['matched_shopee_order_id'] ?? null,
+                "shopeeApiStatus"      => $request['shopee_api_status'] ?? null,
+                "shopeeApiOrderAmount" => isset($request['shopee_api_order_amount']) ? (int)$request['shopee_api_order_amount'] : null,
+                "shopeeApiRawJson"     => $request['shopee_api_raw_json'] ?? null,
+                "verifiedAt"           => $request['verified_at'] ?? null,
+                "verificationNote"     => $request['verification_note'] ?? null,
                 "adminNote"          => $request['admin_note'] ?? null,
                 "rejectedReason"     => $request['rejected_reason'] ?? null,
                 "createdAt"          => $request['created_at'] ?? null,
@@ -287,18 +298,38 @@ class ShopeePointRequestController {
                 $verificationStatus = 'valid';
             }
 
+            // Calculate points dynamically using LoyaltyPointService
+            $useApiAmount = (!empty($request['shopee_api_order_amount']) && $verificationStatus === 'valid');
+            $amountToUse = $useApiAmount ? (int)$request['shopee_api_order_amount'] : (int)$request['order_amount'];
+            
+            $pointPreview = \App\Services\LoyaltyPointService::previewPoints($amountToUse, $request['phone'], "shopee", true);
+            $approvedPoints = (int)$pointPreview['finalPoints'];
+
             $requestModel->approve($requestId, [
                 "verification_status" => $verificationStatus,
-                "approved_points"     => $request['expected_points'],
+                "approved_points"     => $approvedPoints,
                 "admin_note"          => $adminNote
             ]);
+
+            // Ghi nhận transaction lịch sử điểm
+            $transactionModel = new \App\Models\CustomerPointTransactionModel();
+            $transactionModel->addTransaction(
+                $request['phone'],
+                'earn_shopee_order',
+                $approvedPoints,
+                null,
+                'shopee_point_request',
+                $requestId,
+                'Tích điểm từ đơn Shopee #' . $request['shopee_order_code']
+            );
 
             $dbConnection->commit();
 
             Response::json([
                 "success"        => true,
                 "message"        => "Đã duyệt yêu cầu và cộng điểm.",
-                "approvedPoints" => (int)$request['expected_points']
+                "approvedPoints" => $approvedPoints,
+                "pointBreakdown" => $pointPreview
             ], 200);
 
         } catch (Exception $e) {

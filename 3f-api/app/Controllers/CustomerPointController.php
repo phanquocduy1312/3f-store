@@ -22,14 +22,18 @@ class CustomerPointController {
 
         try {
             $requestModel = new ShopeePointRequest();
-            $approvedPoints = $requestModel->sumApprovedPointsByPhone($phone);
-            $memberTier = PointService::calculateMemberTier($approvedPoints);
+            $lifetimePoints = $requestModel->sumApprovedPointsByPhone($phone);
+            
+            $transactionModel = new \App\Models\CustomerPointTransactionModel();
+            $availablePoints = $transactionModel->getBalance($phone);
+            
+            $memberTier = PointService::calculateMemberTier($lifetimePoints);
 
             Response::json([
                 "success"         => true,
                 "phone"           => $phone,
-                "availablePoints" => $approvedPoints,
-                "lifetimePoints"  => $approvedPoints,
+                "availablePoints" => $availablePoints,
+                "lifetimePoints"  => $lifetimePoints,
                 "memberTier"      => $memberTier
             ], 200);
 

@@ -22,7 +22,12 @@
 - [x] Xây dựng Backend API PHP thuần & database MySQL cho phân hệ tích điểm Shopee (3F Club Shopee Point Requests).
 - [x] Thay thế dữ liệu Mock bằng dữ liệu thật qua API Fetching cho tính năng 3F Club Shopee Point Request.
 - [x] Tích hợp Shopee Open Platform OAuth Sandbox (kết nối shop, đổi code lấy access/refresh token, tự động refresh, và lưu trữ an toàn trong database).
-- [ ] Thiết lập Database hoàn chỉnh cho phần còn lại (Sản phẩm, Người dùng).
+- [x] Tích hợp tính năng đối chiếu đơn Shopee (order verification) đơn lẻ và hàng loạt qua Shopee Sandbox API, cập nhật verification_status.
+- [x] Sửa lỗi UI, logic hiển thị actions và đồng bộ thống kê trang Admin Shopee Requests.
+- [x] Xây dựng script deploy PHP backend qua FTP (scripts/deploy_ftp.py) và tài liệu hướng dẫn (docs/deploy-ftp-python.md) thay thế CI/CD khi GitHub Actions và SSH bị khóa.
+- [x] Thiết lập Database và API hoàn chỉnh cho Sản phẩm (Di chuyển thành công 113 sản phẩm + 910 variants từ products.json sang MySQL).
+- [ ] Thiết lập Database hoàn chỉnh cho Người dùng.
+
 - [ ] Tích hợp thanh toán online (SePay / Stripe).
 
 ## Phase 5: User Authentication & Profile (Hoàn thành một phần)
@@ -31,4 +36,8 @@
 - [x] Thêm quy trình 4 bước (Flow Section) và nâng cấp form tích điểm Shopee cho 3F Club (hỗ trợ optional fields, validation, warning khi thiếu ảnh, và view thành công).
 - [x] Xây dựng trang Admin Dashboard giao diện tại route `/admin` (bao gồm các biểu đồ thống kê SVG, danh sách lead tư vấn, yêu cầu tích điểm Shopee).
 - [x] Xây dựng chức năng Tạo yêu cầu thủ công trong trang Quản lý Yêu cầu Shopee Admin.
+- [x] Xây dựng phân hệ Cấu hình Quy tắc Tích điểm (Loyalty Point Rules) trong Backend và Admin Settings Page.
+- [x] Gom các trang quản trị 3F Club thành một trang duy nhất dạng tab tại `/admin/3f-club`.
+- [x] Triển khai phân hệ Quà đổi điểm (Loyalty Rewards Catalog), Yêu cầu đổi quà (Redemptions), và Lịch sử điểm (Transactions) ở Backend và Admin Frontend.
+- [x] Xây dựng trang đổi quà tích điểm cho khách hàng (Customer Rewards Page) tại route `/3f-club/rewards`.
 - [ ] Trang quản lý tài khoản người dùng (Lịch sử đơn hàng, địa chỉ...).

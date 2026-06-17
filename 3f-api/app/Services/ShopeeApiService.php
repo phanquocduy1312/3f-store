@@ -133,6 +133,12 @@ class ShopeeApiService {
             $queryParams['shop_id'] = (int)$shopId;
         }
 
+        // Merge extra query parameters if method is GET and body contains them
+        if (strtoupper($method) === 'GET' && is_array($body) && !empty($body)) {
+            $queryParams = array_merge($queryParams, $body);
+            $body = [];
+        }
+
         $url = $this->baseUrl . $path . '?' . http_build_query($queryParams);
 
         $baseStr = $this->partnerId . $path . $timestamp;
@@ -291,5 +297,71 @@ class ShopeeApiService {
         $port = isset($parts['port']) ? ':' . $parts['port'] : '';
         $path = isset($parts['path']) ? $parts['path'] : '';
         return $scheme . $host . $port . $path . '?' . $newQuery;
+    }
+
+    /**
+     * Retrieves the latest valid token from database, refreshing it if expired or close to expiration.
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public function getLatestValidToken() {
+        $tokenModel = new \App\Models\ShopeeTokenModel();
+        $token = $tokenModel->getLatestToken();
+        if (!$token) {
+            throw new \Exception("Chưa kết nối Shopee Shop hoặc không tìm thấy token.");
+        }
+
+        $expiredAt = strtotime($token['token_expired_at']);
+        // Refresh token if expired or expiring in less than 5 minutes (300 seconds)
+        if ($expiredAt <= time() + 300) {
+            $refreshResult = $this->refreshAccessToken($token['refresh_token'], $token['shop_id']);
+            if (isset($refreshResult['status']) && $refreshResult['status'] === 200 && isset($refreshResult['data']['access_token'])) {
+                $data = $refreshResult['data'];
+                $expireIn = (int)$data['expire_in'];
+                $newExpiredAt = date('Y-m-d H:i:s', time() + $expireIn);
+                
+                $tokenData = [
+                    'access_token'     => $data['access_token'],
+                    'refresh_token'    => $data['refresh_token'],
+                    'expire_in'        => $expireIn,
+                    'token_expired_at' => $newExpiredAt
+                ];
+                $tokenModel->updateToken($token['shop_id'], $tokenData);
+                
+                $token = $tokenModel->findByShopId($token['shop_id']);
+            } else {
+                $errorMsg = isset($refreshResult['data']['message']) ? $refreshResult['data']['message'] : json_encode($refreshResult);
+                throw new \Exception("Refresh token thất bại: " . $errorMsg);
+            }
+        }
+        return $token;
+    }
+
+    /**
+     * Looks up order detail from Shopee API.
+     *
+     * @param string $orderSn
+     * @return array|null
+     * @throws \Exception
+     */
+    public function getOrderDetail($orderSn) {
+        $token = $this->getLatestValidToken();
+        $path = '/api/v2/order/get_order_detail';
+        
+        $params = [
+            'order_sn_list'            => $orderSn,
+            'response_optional_fields' => 'total_amount,order_status,pay_time'
+        ];
+        
+        $res = $this->request($path, 'GET', $params, $token['access_token'], $token['shop_id']);
+        
+        if (isset($res['status']) && $res['status'] === 200 && isset($res['data']['response']['order_list'])) {
+            $orderList = $res['data']['response']['order_list'];
+            if (!empty($orderList)) {
+                return $orderList[0];
+            }
+        }
+        return null;
     }
 }

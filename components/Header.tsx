@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronRight, Menu, Search, ShoppingCart, User, Heart, TrendingUp, Sparkles } from "lucide-react";
 import { Image } from "@/components/Image";
+import { getProducts } from "@/src/api/productsApi";
 import { getCartCount } from "@/lib/cartHelper";
 import { MobileNavigationDrawer } from "./mobile-navigation-drawer";
 
@@ -13,7 +14,7 @@ type Product = {
   name: string;
   price: string;
   image: string;
-  category: string;
+  category?: string;
 };
 
 type MenuItem = {
@@ -196,20 +197,12 @@ export function Header() {
 
       setIsLoadingSuggestions(true);
       try {
-        const response = await fetch('/data/products.json');
-        const products: Product[] = await response.json();
-        
-        const filtered = products
-          .filter(product => 
-            product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.category.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-          .slice(0, 5);
-        
-        setSuggestions(filtered);
+        const result = await getProducts({ q: searchQuery.trim(), limit: 5, sort: "popular" });
+        setSuggestions(result.items.slice(0, 5));
         setShowSuggestions(true);
       } catch (error) {
         console.error('Error fetching suggestions:', error);
+        setSuggestions([]);
       } finally {
         setIsLoadingSuggestions(false);
       }

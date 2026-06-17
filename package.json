@@ -11,7 +11,8 @@
     "optimize:models": "node scripts/optimize-models.mjs",
     "optimize:images": "node scripts/convert-images-to-webp.mjs",
     "check:models": "node scripts/check-model-sizes.mjs",
-    "import:products": "node scripts/import-products-from-excel.mjs"
+    "import:products": "node scripts/import-products-from-excel.mjs",
+    "import:products:mysql": "node scripts/import-products-json-to-mysql.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
@@ -23,6 +24,7 @@
     "gsap": "^3.12.7",
     "lucide-react": "^0.475.0",
     "meshoptimizer": "^1.1.1",
+    "mysql2": "^3.22.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-intersection-observer": "^10.0.3",

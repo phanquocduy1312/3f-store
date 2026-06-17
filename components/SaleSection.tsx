@@ -11,7 +11,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
-import { getSaleProducts } from "@/data/store";
+import { getProducts } from "@/src/api/productsApi";
 import { SaleBadge } from "@/components/SaleBadge";
 import type { Product } from "@/types/store";
 
@@ -180,7 +180,21 @@ function SaleProductCard({ product, index }: { product: Product; index: number }
 }
 
 export function SaleSection() {
-  const saleProducts = getSaleProducts(12);
+  const [saleProducts, setSaleProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    getProducts({ sort: "popular", limit: 12 })
+      .then((result) => {
+        if (isMounted) setSaleProducts(result.items);
+      })
+      .catch(() => {
+        if (isMounted) setSaleProducts([]);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <section className="relative bg-white pt-10 pb-10 sm:pb-14">

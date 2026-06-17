@@ -13,6 +13,7 @@ return [
     ],
     "app" => [
         "base_url"   => "http://localhost/3f-api/public",
+        "public_url" => getenv("APP_PUBLIC_URL") ?: "https://trial1506895.mbws.vn",
         "upload_url" => "/storage/uploads"
     ],
     "ocr" => [

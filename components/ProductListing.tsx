@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ChevronDown, Grid, List, Star, PawPrint, Heart, ShoppingCart, AlignJustify, Filter, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductFilters } from "./product-filters";
-import { allProducts } from "@/data/store";
+import { getProducts, type ProductSort } from "@/src/api/productsApi";
 import { SaleBadge } from "@/components/SaleBadge";
 import { NewBadge } from "@/components/NewBadge";
 import type { Product } from "@/types/store";
@@ -61,6 +61,33 @@ function getWeightCategory(kg: number | null): string {
   return "Trên 10kg";
 }
 
+function deriveDisplayCategory(product: Product) {
+  const text = normalizeTextForSearch(`${product.category ?? ""} ${product.name}`);
+  let category = "Phá»¥ kiá»‡n & Äá»“ chÆ¡i";
+
+  if (text.includes("cho cho") || text.includes("thuc an kho cho cho")) category = "Thá»©c Äƒn cho chÃ³";
+  else if (text.includes("meo")) category = "Thá»©c Äƒn cho mÃ¨o";
+
+  if (text.includes("ve sinh") || text.includes("cat dau") || text.includes("khay") || text.includes("bon ve sinh")) {
+    category = "Vá»‡ sinh cho thÃº cÆ°ng";
+  } else if (text.includes("pate") || text.includes("snack") || text.includes("sup") || text.includes("soup")) {
+    category = "Pate & Snack";
+  } else if (text.includes("sua") || text.includes("dinh duong")) {
+    category = "Sá»¯a & Dinh dÆ°á»¡ng";
+  }
+
+  let subCategory = "";
+  if (category === "Thá»©c Äƒn cho chÃ³") {
+    if (text.includes("kho") || text.includes("hat")) subCategory = "Thá»©c Äƒn khÃ´ cho chÃ³";
+    else if (text.includes("uot") || text.includes("lon") || text.includes("pate")) subCategory = "Thá»©c Äƒn Æ°á»›t cho chÃ³";
+  } else if (category === "Thá»©c Äƒn cho mÃ¨o") {
+    if (text.includes("kho") || text.includes("hat")) subCategory = "Thá»©c Äƒn khÃ´ dÃ nh cho MÃ¨o";
+    else if (text.includes("uot") || text.includes("lon") || text.includes("pate")) subCategory = "Thá»©c Äƒn Æ°á»›t cho MÃ¨o";
+  }
+
+  return { category, subCategory };
+}
+
 const CATEGORY_TREE = [
   { name: "Tất cả sản phẩm" },
   {
@@ -80,6 +107,22 @@ const CATEGORY_TREE = [
 const ALL_CATEGORIES = CATEGORY_TREE.flatMap(c => c.subcategories ? [c.name, ...c.subcategories] : [c.name]);
 
 const WEIGHT_LIST = ["Dưới 1kg", "1 - 5kg", "5 - 10kg", "Trên 10kg"];
+
+function getApiCategoryParams(category: string): { petType?: string; productType?: string } {
+  const text = normalizeTextForSearch(category);
+  const params: { petType?: string; productType?: string } = {};
+
+  if (text.includes("meo")) params.petType = "cat";
+  if (text.includes("cho")) params.petType = "dog";
+  if (text.includes("kho") || text.includes("hat")) params.productType = "dry_food";
+  if (text.includes("uot")) params.productType = "wet_food";
+  if (text.includes("pate") || text.includes("snack")) params.productType = "pate_snack";
+  if (text.includes("sua") || text.includes("dinh duong")) params.productType = "nutrition";
+  if (text.includes("ve sinh")) params.productType = "hygiene";
+  if (text.includes("phu kien") || text.includes("do choi")) params.productType = "accessory";
+
+  return params;
+}
 
 export function ProductListing() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -117,10 +160,52 @@ export function ProductListing() {
   const [sortBy, setSortBy] = useState<string>("popular");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 12;
+  const [apiProducts, setApiProducts] = useState<Product[]>([]);
+  const [apiTotalPages, setApiTotalPages] = useState(1);
+  const [apiTotal, setApiTotal] = useState(0);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [productError, setProductError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const categoryFilters = activeCategory === "Tất cả sản phẩm" ? {} : getApiCategoryParams(activeCategory);
+
+    setIsLoadingProducts(true);
+    setProductError(null);
+
+    getProducts({
+      q: queryParam || undefined,
+      page: currentPage,
+      limit: itemsPerPage,
+      sort: sortBy as ProductSort,
+      maxPrice,
+      ...categoryFilters,
+    })
+      .then((result) => {
+        if (!isMounted) return;
+        setApiProducts(result.items);
+        setApiTotalPages(result.pagination.totalPages || 1);
+        setApiTotal(result.pagination.total || result.items.length);
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        setApiProducts([]);
+        setApiTotalPages(1);
+        setApiTotal(0);
+        setProductError(error instanceof Error ? error.message : "Khong tai duoc san pham.");
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingProducts(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeCategory, currentPage, itemsPerPage, maxPrice, queryParam, sortBy]);
 
   // Enhance all products with derived data once
   const enhancedProducts = useMemo(() => {
-    return allProducts.map(p => {
+    return apiProducts.map(p => {
       const priceVal = extractPrice(p.price);
       const brand = extractBrand(p.name);
       const weightKg = extractWeightKg(p.name);
@@ -146,17 +231,19 @@ export function ProductListing() {
         else if (rawName.includes("ướt") || rawName.includes("lon") || rawName.includes("pate") || rawCat.includes("ướt")) subCat = "Thức ăn ướt cho Mèo";
       }
 
+      const derivedCategory = deriveDisplayCategory(p);
+
       return {
         ...p,
         priceVal,
         brand,
         weightKg,
         weightCat,
-        displayCategory: cat,
-        displaySubCategory: subCat
+        displayCategory: derivedCategory.category,
+        displaySubCategory: derivedCategory.subCategory
       };
     });
-  }, []);
+  }, [apiProducts]);
 
   // Compute dynamic counts
   const categoryProducts = useMemo(() => {
@@ -236,8 +323,8 @@ export function ProductListing() {
   }, [filteredProducts, sortBy]);
 
   // Pagination
-  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage) || 1;
-  const currentProducts = sortedProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = apiTotalPages || 1;
+  const currentProducts = sortedProducts;
 
   // Handlers
   const toggleBrand = (brand: string) => {
@@ -303,7 +390,7 @@ export function ProductListing() {
                   <h1 className="text-[2rem] font-extrabold uppercase text-[rgb(var(--color-ink))] tracking-tight">{activeCategory}</h1>
                 </div>
                 <p className="text-sm font-medium text-[rgb(var(--color-ink-soft))] md:ml-10">
-                  Hiển thị {filteredProducts.length} sản phẩm phù hợp cho bé cưng của bạn
+                  Hiển thị {apiTotal} sản phẩm phù hợp cho bé cưng của bạn
                 </p>
               </div>
 
@@ -337,7 +424,15 @@ export function ProductListing() {
 
             {/* Product Grid */}
             <div className={`grid gap-3 sm:gap-4 ${viewMode === "grid" ? "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"}`}>
-              {currentProducts.length > 0 ? currentProducts.map((product, idx) => {
+              {isLoadingProducts ? (
+                <div className="col-span-full py-12 text-center text-sm font-bold text-[rgb(var(--color-ink))]/50">
+                  Đang tải sản phẩm...
+                </div>
+              ) : productError ? (
+                <div className="col-span-full rounded-2xl border border-red-100 bg-red-50 px-4 py-8 text-center text-sm font-bold text-red-700">
+                  {productError}
+                </div>
+              ) : currentProducts.length > 0 ? currentProducts.map((product, idx) => {
                 const hasDiscount = !!product.oldPrice;
                 // Compute random "Mới" based on ID or index
                 const isNew = product.sold < 50 && product.rating > 4.5;

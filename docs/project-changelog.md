@@ -1,7 +1,57 @@
 # Project Changelog
 
+## [2026-06-17]
+### Added
+- Di chuyển toàn bộ dữ liệu danh mục sản phẩm từ file tĩnh `data/products.json` sang cơ sở dữ liệu MySQL thật:
+  - Khởi tạo database schema `product_catalog_schema.sql` gồm các bảng `product_categories`, `products`, `product_variants`, `product_images`, `product_import_batches`, `product_import_rows`, và `inventory_transactions`.
+  - Sửa lỗi độ dài khóa index (max key length 3072 bytes) trong MySQL bằng cách prefix index trường `image_url` thành `image_url(255)`.
+  - Cập nhật script `scripts/import-products-json-to-mysql.mjs` hỗ trợ nullish coalescing cho mật khẩu rỗng để chạy mượt mà trên môi trường local.
+  - Di chuyển thành công toàn bộ **113 sản phẩm** và **910 variants** lên cả database local và production.
+  - Tích hợp và kiểm thử các API RESTful sản phẩm, danh mục và chi tiết sản phẩm trên backend PHP MVC.
+  - Vệ sinh và xóa bỏ các tệp script di trú tạm thời trên môi trường production để bảo mật hệ thống.
+
 ## [2026-06-15]
 ### Added
+- Gom các trang quản trị 3F Club thành một trang duy nhất dạng tab tại `/admin/3f-club`:
+  - Tách các trang `ShopeeRequestsPage.tsx` và `LoyaltySettingsPage.tsx` thành các component section tương ứng (`ShopeeRequestsSection.tsx` và `LoyaltySettingsSection.tsx`) giúp tái sử dụng và giữ nguyên các link route cũ để đảm bảo tính tương thích ngược.
+  - Thiết kế trang `ThreeFClubPage.tsx` tích hợp 5 tab hoạt động thực tế kết nối trực tiếp với backend API: Yêu cầu Shopee, Cấu hình điểm, Quà đổi điểm, Yêu cầu đổi quà và Lịch sử điểm.
+  - Tích hợp bộ đếm summary cards (Tổng yêu cầu, Đang chờ duyệt, API hợp lệ, Đã duyệt, Quy đổi hiện tại) nhận dữ liệu trực tiếp và cập nhật theo thời gian thực từ các section qua callbacks.
+  - Cập nhật điều hướng `admin-sidebar.tsx` để gom nhóm gọn gàng và chỉ hiển thị duy nhất menu "3F Club" dẫn tới `/admin/3f-club`.
+- Triển khai phân hệ Quà đổi điểm, Yêu cầu đổi quà, và Lịch sử điểm cho 3F Club:
+  - Tạo các bảng MySQL mới: `loyalty_rewards` (lưu trữ quà tặng/voucher, loại quà, điểm yêu cầu, tồn kho, giới hạn), `loyalty_reward_redemptions` (lưu trữ lịch sử yêu cầu đổi quà của khách hàng, trạng thái xử lý, người duyệt), và `customer_point_transactions` (lưu trữ chi tiết các giao dịch cộng/trừ/hoàn điểm).
+  - Viết các model PHP backend tương ứng (`LoyaltyRewardModel.php`, `LoyaltyRewardRedemptionModel.php`, `CustomerPointTransactionModel.php`) tích hợp cơ chế tự động tạo bảng (auto-migration) và seeding dữ liệu quà mẫu (Voucher 50.000đ, Combo súp thưởng PetQ, Freeship) một cách an toàn bên ngoài các database transaction bằng cách sử dụng static `$migrated` flag.
+  - Cập nhật logic tích điểm khi duyệt đơn Shopee (`ShopeePointRequestController.php`) và kiểm tra điểm khả dụng (`CustomerPointController.php`) để tích hợp transaction log thực tế và tính toán điểm khả dụng động thay vì hardcode.
+  - Triển khai các API RESTful trong `LoyaltyController.php` phục vụ quản trị (quản lý quà tặng, duyệt/từ chối/bàn giao yêu cầu đổi quà, xem lịch sử điểm) và khách hàng (tra cứu điểm, xem danh sách quà hoạt động, yêu cầu đổi quà có kiểm tra stock/limit/điểm khả dụng qua database transaction và tự động hoàn điểm/tăng lại stock khi từ chối).
+  - Xây dựng các UI component section phía admin (`LoyaltyRewardsSection.tsx`, `LoyaltyRedemptionsSection.tsx`, `LoyaltyTransactionsSection.tsx`) với đầy đủ bảng danh sách, modal tạo/sửa quà, filter loại quà/trạng thái và các hành động xử lý duyệt/từ chối/đã giao có xác nhận và hiển thị thông báo toast.
+  - Phát triển trang Đổi quà Tích điểm phía khách hàng (`CustomerRewardsPage.tsx`) tại route `/3f-club/rewards` cho phép nhập SĐT để tra cứu hạng thành viên, điểm khả dụng, lịch sử giao dịch/yêu cầu đổi quà và đổi quà trực tuyến.
+- Phát triển phân hệ Cấu hình Quy tắc Tích điểm (Loyalty Point Rules Configuration):
+  - Thiết kế bảng `loyalty_point_rules` lưu cấu hình: số tiền quy đổi mỗi điểm (`money_per_point`), làm tròn (`rounding_mode`), đơn tối thiểu (`min_order_amount`), điểm tối đa (`max_points_per_order`), hệ số nhân (`multiplier`), trạng thái kích hoạt (`is_active`), starts_at, ends_at.
+  - Tạo model `LoyaltyPointRuleModel.php` xử lý DB và tự động khởi tạo/seed quy tắc Shopee mặc định (10.000đ = 1 điểm, floor làm tròn) khi class được khởi tạo.
+  - Xây dựng service `LoyaltyPointService.php` tính toán điểm linh hoạt theo quy tắc active.
+  - Cập nhật logic `approve()` trong `ShopeePointRequestController.php` và `PointService::calculateShopeePoints` để tính toán điểm dựa trên quy tắc động thay vì hardcode. Ưu tiên số tiền đối chiếu thực tế `shopee_api_order_amount` nếu đơn hàng valid.
+  - Cung cấp các API admin quản trị: xem danh sách quy tắc, tạo quy tắc, cập nhật quy tắc, tắt kích hoạt quy tắc, và API xem trước kết quả tích điểm (`/api/admin/loyalty/calculate-preview`).
+  - Đăng ký route và fallback mapping trong `Router.php` và `index.php`.
+  - Phát triển giao diện cài đặt Admin (`src/pages/admin/LoyaltySettingsPage.tsx`) hiển thị quy tắc, form chỉnh sửa trực quan, xem trước điểm tích lũy (Live Preview Calculator) và lịch sử các cấu hình.
+  - Tích hợp route `/admin/loyalty-settings` vào `App.tsx` và liên kết điều hướng `"Cấu hình điểm"` trong `AdminSidebar.tsx`.
+- Sửa lỗi UI và logic hiển thị trạng thái/actions trang Admin Shopee Requests:
+  - Khắc phục lỗi cú pháp JSX hiển thị trùng lặp mã đơn và thiếu đóng khối điều kiện trong `ShopeeRequestDetailModal.tsx`.
+  - Giới hạn hiển thị và kích hoạt các action button Duyệt/Từ chối chỉ khi `processingStatus === "pending"`.
+  - Cập nhật text footer modal theo trạng thái duyệt (`approved` -> "Yêu cầu này đã được duyệt và cộng điểm.", `rejected` -> "Yêu cầu này đã bị từ chối.").
+  - Thêm cảnh báo xác nhận `window.confirm` khi duyệt đơn hàng chưa hợp lệ trên Shopee API.
+  - Sửa logic thống kê trên dashboard (stats card) và các tabs đếm số lượng để cùng sử dụng thời gian tạo đơn (`createdAt`) làm bộ lọc chính, thay vì sử dụng `approvedAt`.
+  - Bổ sung cảnh báo lệch tiền chi tiết (chênh lệch số tiền cụ thể) trong modal so sánh thông tin.
+  - Hiển thị badge cảnh báo phụ `⚠ Đã duyệt thủ công` trong bảng danh sách và modal nếu đơn hàng đã được duyệt nhưng API Shopee không hợp lệ.
+- Tích hợp tính năng đối chiếu đơn Shopee (Shopee order verification) cho yêu cầu tích điểm:
+  - Thêm các cột kết quả đối chiếu vào database (`matched_shopee_order_id`, `shopee_api_status`, `shopee_api_order_amount`, `shopee_api_raw_json`, `verified_at`, `verification_note`) trong bảng `shopee_point_requests` qua tính năng auto-migration khi model khởi động.
+  - Viết controller `ShopeeVerifyController` độc lập xử lý single verify (`POST /api/admin/shopee/requests/verify`) và bulk verify (`POST /api/admin/shopee/requests/verify-bulk`).
+  - Nâng cấp `ShopeeApiService` hỗ trợ custom GET query parameters, lấy valid token thông minh và gọi API detail đơn hàng Shopee.
+  - Bổ sung kiểm tra trùng lặp (duplicate) mã đơn hàng, đối chiếu chéo trạng thái đơn hàng (`COMPLETED`) và cho phép sai số tổng tiền làm tròn tối đa 100 VND.
+- Phát triển kịch bản và tài liệu deploy backend bằng Python qua FTP:
+  - Viết script `scripts/deploy_ftp.py` đồng bộ hóa nội dung `3f-api/` lên Plesk `/httpdocs` qua FTP, lọc bỏ các file nhạy cảm và dữ liệu (`.env`, `storage/uploads`, `storage/logs`).
+  - Hỗ trợ so sánh dung lượng file để tối ưu tốc độ upload và tránh overwrite file không đổi.
+  - Tự động tạo thư mục remote đệ quy nếu chưa tồn tại.
+  - Cập nhật `.gitignore` để tự động bỏ qua cấu hình cục bộ `.deploy.env`.
+  - Soạn thảo tài liệu hướng dẫn chạy deploy chi tiết trong `docs/deploy-ftp-python.md`.
 - Tích hợp thành công **Shopee Open Platform OAuth sandbox** cho phân hệ kết nối Shop của 3F Club:
   - Cấu hình môi trường qua `.env` và cập nhật `config/config.php` để lấy credentials động (hỗ trợ database và shopee sandbox).
   - Tích hợp một custom `.env` parser tại entrypoint `public/index.php` nhằm hỗ trợ đọc environment variables trong môi trường PHP thuần mà không cần dependencies bên ngoài.

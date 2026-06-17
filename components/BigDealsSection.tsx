@@ -2,9 +2,11 @@
 
 import { Image } from "@/components/Image";
 import { ChevronRight, ShoppingCart, Star, PawPrint, Heart } from "lucide-react";
-import { getSaleProducts } from "@/data/store";
+import { useEffect, useState } from "react";
+import { getProducts } from "@/src/api/productsApi";
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
 import { SaleBadge } from "@/components/SaleBadge";
+import type { Product } from "@/types/store";
 
 const categories = [
   { id: "all", label: "Tất cả", icon: PawPrint },
@@ -15,7 +17,21 @@ const categories = [
 ];
 
 export function BigDealsSection() {
-  const saleProducts = getSaleProducts(12); // Get 8+ products
+  const [saleProducts, setSaleProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    getProducts({ sort: "popular", limit: 12 })
+      .then((result) => {
+        if (isMounted) setSaleProducts(result.items);
+      })
+      .catch(() => {
+        if (isMounted) setSaleProducts([]);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
   
   return (
     <section className="relative bg-gradient-to-b from-[#FFF9F5] to-[#FFF2F0] py-10 sm:py-12 lg:py-16">
