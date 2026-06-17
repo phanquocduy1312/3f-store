@@ -64,11 +64,14 @@ class AdminSession {
             FROM admin_sessions s
             JOIN admin_users u ON s.admin_user_id = u.id
             WHERE s.token_hash = :token_hash
-              AND s.expires_at > NOW()
+              AND s.expires_at > :now
               AND s.revoked_at IS NULL
             LIMIT 1
         ");
-        $stmt->execute([':token_hash' => $tokenHash]);
+        $stmt->execute([
+            ':token_hash' => $tokenHash,
+            ':now' => date('Y-m-d H:i:s')
+        ]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($row && (int)$row['is_active'] === 1) {
