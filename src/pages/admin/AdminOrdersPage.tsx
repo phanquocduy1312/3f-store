@@ -1011,7 +1011,7 @@ export function AdminOrdersPage() {
                         });
                         setConfirmText("");
                       }}
-                      className="px-4 py-2.5 rounded-xl text-xs font-black bg-red-650 hover:bg-red-700 text-white shadow-sm flex items-center gap-1.5 transition animate-pulse-once"
+                      className="px-4 py-2.5 rounded-xl text-xs font-black bg-red-600 hover:bg-red-700 text-white shadow-sm flex items-center gap-1.5 transition animate-pulse-once"
                     >
                       <X size={14} /> Hủy đơn
                     </button>
@@ -1051,7 +1051,7 @@ export function AdminOrdersPage() {
                       });
                       setConfirmText("");
                     }}
-                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-indigo-650 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-1.5 transition"
+                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-1.5 transition"
                   >
                     <Package size={14} /> Chuyển sang chuẩn bị hàng
                   </button>
@@ -1072,7 +1072,7 @@ export function AdminOrdersPage() {
                       });
                       setConfirmText("");
                     }}
-                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-purple-650 hover:bg-purple-700 text-white shadow-sm flex items-center gap-1.5 transition"
+                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-purple-600 hover:bg-purple-700 text-white shadow-sm flex items-center gap-1.5 transition"
                   >
                     <Truck size={14} /> Bắt đầu giao hàng
                   </button>
@@ -1093,7 +1093,7 @@ export function AdminOrdersPage() {
                       });
                       setConfirmText("");
                     }}
-                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-green-650 hover:bg-green-700 text-white shadow-sm flex items-center gap-1.5 transition"
+                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-green-600 hover:bg-green-700 text-white shadow-sm flex items-center gap-1.5 transition"
                   >
                     <CheckCircle size={14} /> Hoàn tất đơn
                   </button>
@@ -1102,7 +1102,7 @@ export function AdminOrdersPage() {
                 {(selectedOrder.order_status === "completed" || selectedOrder.order_status === "cancelled") && (
                   <button
                     onClick={() => setSelectedOrder(null)}
-                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-slate-650 hover:bg-slate-700 text-white shadow-sm transition"
+                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-slate-600 hover:bg-slate-700 text-white shadow-sm transition"
                   >
                     Đóng
                   </button>
