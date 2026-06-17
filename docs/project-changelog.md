@@ -2,6 +2,14 @@
 
 ## [2026-06-17]
 ### Added
+- Triển khai tính năng Tìm kiếm Sản phẩm Real-time trên Production:
+  - Xây dựng component `ProductSearchBox.tsx` hỗ trợ tự động gợi ý dropdown (sản phẩm, phân loại, giá, rating, số đã bán), debounce 300ms, abort stale requests và bắt phím (ArrowUp, ArrowDown, Escape, Enter) cùng click-outside.
+  - Tích hợp ô tìm kiếm mới vào desktop/mobile headers thay cho ô input tĩnh cũ.
+  - Đồng bộ hóa tham số tìm kiếm `q` trên thanh URL với trang danh sách sản phẩm `ProductListing.tsx` và tự động cập nhật tiêu đề kết quả tìm kiếm.
+  - Cập nhật backend `Product::listProducts` hỗ trợ tìm kiếm khớp chuỗi theo tên, thương hiệu, mô tả, slug sản phẩm và SKU/tên variant.
+  - Sửa lỗi PDO `Invalid parameter number` bằng cách sử dụng các placeholder độc lập cho từng vị trí truy vấn.
+  - Thêm cơ chế sắp xếp theo mức độ liên quan (relevance scoring) ưu tiên khớp đầu tên, sau đó là chứa trong tên, và thương hiệu.
+  - Triển khai limit clamping tới max 20 sản phẩm cho gợi ý tìm kiếm để bảo vệ tài nguyên hệ thống.
 - Tái cấu trúc toàn bộ luồng Giỏ hàng & Thanh toán và nghiệp vụ mã giảm giá trên Production:
   - Thiết kế layout 2 cột trên desktop (trái: giỏ hàng, thông tin khách, địa chỉ; phải: mã giảm giá, phương thức thanh toán, tổng tiền và nút đặt hàng) và tự động xếp cột dọc chuẩn nghiệp vụ trên mobile.
   - Tích hợp API hành chính Việt Nam v2 (`provinces.open-api.vn/api/v2`) tự động tải tỉnh/phường sau sáp nhập 07/2025, bỏ field Quận/Huyện trong luồng checkout mới.

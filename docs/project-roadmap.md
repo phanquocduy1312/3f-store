@@ -14,6 +14,7 @@
 - [x] Quản lý Global State cho Giỏ hàng.
 - [x] Trang Thanh toán (Checkout Page) tích hợp VietQR và Form giao hàng.
 - [x] Triển khai Quick Add To Cart Modal cho product card ngoài trang chủ và trang danh mục.
+- [x] Triển khai tính năng tìm kiếm sản phẩm realtime gợi ý dropdown dưới thanh search header và query parameter search mapping trên trang danh mục.
 
 ## Phase 3: Mobile Responsive & Performance (Hoàn thành)
 - [x] Tối ưu hiệu năng tải trang dưới 1 giây (WebP, Code Splitting, Suspense).
