@@ -82,6 +82,7 @@ export function AdminOrdersPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   // Selected Order Detail Modal
   const [selectedOrder, setSelectedOrder] = useState<OrderDetail | null>(null);
@@ -106,7 +107,7 @@ export function AdminOrdersPage() {
     setIsLoading(true);
     const params: AdminOrderListParams = {
       page: currentPage,
-      limit: 20,
+      limit: pageSize,
     };
     if (searchQuery.trim()) params.q = searchQuery.trim();
     if (statusFilter) params.order_status = statusFilter;
@@ -141,7 +142,7 @@ export function AdminOrdersPage() {
 
   useEffect(() => {
     fetchOrdersData();
-  }, [currentPage, statusFilter, paymentFilter, startDate, endDate]);
+  }, [currentPage, pageSize, statusFilter, paymentFilter, startDate, endDate]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,6 +172,68 @@ export function AdminOrdersPage() {
     } finally {
       setIsUpdatingStatus(false);
     }
+  };
+
+  const renderPageNumbers = () => {
+    const pages = [];
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(pagination.totalPages, currentPage + 2);
+
+    if (startPage > 1) {
+      pages.push(
+        <button
+          key={1}
+          onClick={() => setCurrentPage(1)}
+          className={`px-3 py-1.5 text-xs font-bold rounded-xl transition border ${
+            currentPage === 1
+              ? "bg-[#0057E7] text-white border-[#0057E7]"
+              : "bg-white text-gray-650 hover:bg-slate-50 border-[#DCEBFF]"
+          }`}
+        >
+          1
+        </button>
+      );
+      if (startPage > 2) {
+        pages.push(<span key="dots-start" className="px-1 text-gray-400">...</span>);
+      }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => setCurrentPage(i)}
+          className={`px-3 py-1.5 text-xs font-bold rounded-xl transition border ${
+            currentPage === i
+              ? "bg-[#0057E7] text-white border-[#0057E7]"
+              : "bg-white text-gray-650 hover:bg-slate-50 border-[#DCEBFF]"
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    if (endPage < pagination.totalPages) {
+      if (endPage < pagination.totalPages - 1) {
+        pages.push(<span key="dots-end" className="px-1 text-gray-400">...</span>);
+      }
+      pages.push(
+        <button
+          key={pagination.totalPages}
+          onClick={() => setCurrentPage(pagination.totalPages)}
+          className={`px-3 py-1.5 text-xs font-bold rounded-xl transition border ${
+            currentPage === pagination.totalPages
+              ? "bg-[#0057E7] text-white border-[#0057E7]"
+              : "bg-white text-gray-650 hover:bg-slate-50 border-[#DCEBFF]"
+          }`}
+        >
+          {pagination.totalPages}
+        </button>
+      );
+    }
+
+    return pages;
   };
 
   return (
@@ -575,27 +638,55 @@ export function AdminOrdersPage() {
             </div>
 
             {/* Pagination footer */}
-            {pagination.totalPages > 1 && (
-              <div className="bg-white border-t border-[#EEF6FF] px-6 py-4 flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-400">
-                  Hiển thị {(pagination.page - 1) * pagination.limit + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} trong tổng số {pagination.total} đơn
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    disabled={currentPage <= 1}
-                    onClick={() => setCurrentPage(p => p - 1)}
-                    className="px-4 py-2 border rounded-xl text-xs font-bold bg-[#F6FAFF] hover:bg-white transition disabled:opacity-50"
-                  >
-                    Trước
-                  </button>
-                  <button
-                    disabled={currentPage >= pagination.totalPages}
-                    onClick={() => setCurrentPage(p => p + 1)}
-                    className="px-4 py-2 border rounded-xl text-xs font-bold bg-[#F6FAFF] hover:bg-white transition disabled:opacity-50"
-                  >
-                    Sau
-                  </button>
+            {pagination.total > 0 && (
+              <div className="bg-white border-t border-[#EEF6FF] px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-4">
+                  <span className="text-xs font-bold text-[#64748B]">
+                    Hiển thị {pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} trong tổng số {pagination.total} đơn
+                  </span>
+                  
+                  {/* Page size selector */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-400">Số đơn mỗi trang:</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="rounded-lg border border-[#DCEBFF] bg-[#F6FAFF] px-2 py-1 text-xs font-bold text-[#0B1F3A] focus:border-[#0057E7] focus:outline-none"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
                 </div>
+
+                {pagination.totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={currentPage <= 1}
+                      onClick={() => setCurrentPage(p => p - 1)}
+                      className="px-3 py-1.5 border border-[#DCEBFF] rounded-xl text-xs font-bold bg-[#F6FAFF] hover:bg-white text-gray-600 transition disabled:opacity-50"
+                    >
+                      Trước
+                    </button>
+                    
+                    <div className="flex items-center gap-1.5">
+                      {renderPageNumbers()}
+                    </div>
+
+                    <button
+                      disabled={currentPage >= pagination.totalPages}
+                      onClick={() => setCurrentPage(p => p + 1)}
+                      className="px-3 py-1.5 border border-[#DCEBFF] rounded-xl text-xs font-bold bg-[#F6FAFF] hover:bg-white text-gray-600 transition disabled:opacity-50"
+                    >
+                      Sau
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
