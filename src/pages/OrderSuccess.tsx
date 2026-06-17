@@ -206,6 +206,35 @@ export function OrderSuccess() {
               </div>
             ))}
           </div>
+
+          {/* Pricing Breakdown */}
+          <div className="border-t border-forest/10 mt-6 pt-6 space-y-3 text-sm">
+            <div className="flex justify-between text-gray-500 font-medium">
+              <span>Tạm tính</span>
+              <span className="font-bold text-ink">{(parseFloat(order.subtotal)).toLocaleString("vi-VN")}đ</span>
+            </div>
+            <div className="flex justify-between text-gray-500 font-medium">
+              <span>Phí vận chuyển</span>
+              <span className="font-bold text-ink">{(parseFloat(order.shipping_fee)).toLocaleString("vi-VN")}đ</span>
+            </div>
+            {(order.coupon_code || order.couponCode) && (
+              <div className="flex justify-between text-gray-500 font-medium">
+                <span>Mã giảm giá</span>
+                <span className="font-bold text-forest">{order.coupon_code || order.couponCode}</span>
+              </div>
+            )}
+            {parseFloat(order.discount) > 0 && (
+              <div className="flex justify-between text-red-600 font-medium">
+                <span>Giảm giá</span>
+                <span className="font-bold">-{parseFloat(order.discount).toLocaleString("vi-VN")}đ</span>
+              </div>
+            )}
+            <hr className="border-forest/10 my-2" />
+            <div className="flex justify-between text-base font-black text-forest">
+              <span>Tổng cộng</span>
+              <span>{(parseFloat(order.total)).toLocaleString("vi-VN")}đ</span>
+            </div>
+          </div>
         </div>
 
         {/* Footer CTAs */}

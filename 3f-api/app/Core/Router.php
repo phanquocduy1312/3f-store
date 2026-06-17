@@ -91,7 +91,8 @@ class Router {
                 'admin.auth.login'            => '/api/admin/auth/login',
                 'admin.auth.logout'           => '/api/admin/auth/logout',
                 'admin.auth.me'               => '/api/admin/auth/me',
-                'admin.auth.bootstrap'        => '/api/admin/auth/bootstrap'
+                'admin.auth.bootstrap'        => '/api/admin/auth/bootstrap',
+                'coupons.validate'            => '/api/coupons/validate'
             ];
             $path = isset($mapping[$routeQuery]) ? $mapping[$routeQuery] : '';
         } else {

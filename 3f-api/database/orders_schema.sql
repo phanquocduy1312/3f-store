@@ -90,3 +90,33 @@ CREATE TABLE IF NOT EXISTS order_payment_proofs (
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_proofs_order (order_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS coupons (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(100) UNIQUE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description TEXT NULL,
+  discount_type ENUM('fixed','percent') NOT NULL,
+  discount_value DECIMAL(12,2) NOT NULL,
+  max_discount_amount DECIMAL(12,2) NULL,
+  min_order_amount DECIMAL(12,2) DEFAULT 0.00,
+  usage_limit INT NULL,
+  used_count INT DEFAULT 0,
+  per_customer_limit INT NULL,
+  starts_at DATETIME NULL,
+  ends_at DATETIME NULL,
+  is_active TINYINT(1) DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS coupon_usages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  coupon_id INT NOT NULL,
+  order_id INT NOT NULL,
+  customer_phone VARCHAR(50) NULL,
+  discount_amount DECIMAL(12,2) NOT NULL,
+  used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_usages_coupon (coupon_id),
+  INDEX idx_usages_order (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

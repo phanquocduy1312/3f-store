@@ -1,15 +1,19 @@
 # Project Changelog
 
 ## [2026-06-17]
+### Added
+- Tái cấu trúc toàn bộ luồng Giỏ hàng & Thanh toán và nghiệp vụ mã giảm giá trên Production:
+  - Thiết kế layout 2 cột trên desktop (trái: giỏ hàng, thông tin khách, địa chỉ; phải: mã giảm giá, phương thức thanh toán, tổng tiền và nút đặt hàng) và tự động xếp cột dọc chuẩn nghiệp vụ trên mobile.
+  - Tích hợp API hành chính Việt Nam v2 (`provinces.open-api.vn/api/v2`) tự động tải tỉnh/phường sau sáp nhập 07/2025, bỏ field Quận/Huyện trong luồng checkout mới.
+  - Di trú database an toàn: tự động thêm cột `coupon_code` vào bảng `orders`, tạo bảng `coupons` và `coupon_usages` và tự động seed mã `GIAM50K` trên môi trường local/production.
+  - Viết controller validation `/api/coupons/validate` kiểm tra tính hợp lệ của mã giảm giá (giá trị tối thiểu, giới hạn sử dụng toàn cục và theo khách hàng, ngày hiệu lực) và tính số tiền giảm chính xác.
+  - Bảo vệ giao dịch (`createOrder`): validate lại coupon trên server, cập nhật số lần dùng và ghi log `coupon_usages` đồng bộ trong single transaction database.
+  - Đồng bộ hiển thị đầy đủ mã giảm giá, giảm giá, tạm tính, phí vận chuyển và tổng tiền sau giảm tại trang Success, Theo dõi đơn hàng (Tracking), và trang Admin Orders (bảng danh sách và chi tiết Drawer).
+
 ### Fixed
-- Đồng bộ và chuẩn hóa toàn bộ flow trạng thái đơn hàng (chỉ cho phép `pending` → `confirmed` → `packing` → `shipping` → `completed` hoặc `pending` → `cancelled`), chặn hoàn toàn thao tác hủy đơn sau khi đã xác nhận.
-- Loại bỏ hoàn toàn hành động thanh toán thủ công khỏi Drawer chi tiết đơn hàng.
-- Bổ sung bộ thẻ tóm tắt thống kê tổng quan responsive (Tổng đơn, Chờ xác nhận, Đang xử lý, Đang giao, Hoàn tất, Doanh thu) tại trang `/admin/orders`.
-- Sửa lỗi hiển thị địa chỉ nhận hàng bị ngắt dòng/thiếu trong Drawer chi tiết bằng CSS text-wrapping tự động.
-- Cập nhật backend `OrderController.php` hỗ trợ truyền lọc theo ngày và tự động ghi chú log chi tiết theo nghiệp vụ 3F Store.
-- Loại bỏ phần Voucher ("Ưu đãi dành cho bạn") khỏi trang chi tiết sản phẩm để tối giản giao diện theo yêu cầu.
-- Sửa lỗi tên sản phẩm ở phần "Mua kèm cho boss ăn ngon hơn 🐱" bị trồi lên đè giá bằng cách bọc tiêu đề `<h3>` vào thẻ wrapper block `div` cách ly khỏi flexbox container, giúp `line-clamp-2` hoạt động ổn định và chính xác trên mọi trình duyệt.
-- Khắc phục lỗi crash trắng màn hình tại trang Quản lý đơn hàng Admin (`AdminOrdersPage.tsx`) khi mở chi tiết đơn hàng bằng cách bổ sung `items` và `status_logs` vào API danh sách đơn hàng admin của backend (`Order.php`), đồng thời thêm optional chaining bảo vệ an toàn ở frontend.
+- Loại bỏ hoàn toàn section chọn Phương thức vận chuyển, hardcode phí ship = 0đ cả ở frontend và backend.
+- Chuyển widget chọn phương thức thanh toán (COD / VietQR) từ form địa chỉ sang cột Summary bên phải trên trang Checkout.
+- Đồng bộ số tiền VietQR tự động quét mã bằng tổng tiền thực tế sau khi trừ giảm giá của coupon.
 
 ### Added
 - Triển khai luồng kết nối "Kết nối Shopee" (OAuth Connection Flow) cho 3F Store / 3F Club:

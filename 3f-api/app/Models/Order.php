@@ -27,8 +27,33 @@ class Order {
         $statements = array_filter(array_map('trim', preg_split('/;\s*(?:\r?\n|$)/', $sql)));
         foreach ($statements as $statement) {
             if ($statement !== '') {
-                $this->db->exec($statement);
+                try {
+                    $this->db->exec($statement);
+                } catch (\PDOException $e) {
+                    // Ignore duplicate table errors
+                }
             }
+        }
+
+        // Alter orders table to add coupon_code if it doesn't exist
+        try {
+            $checkCol = $this->db->query("SHOW COLUMNS FROM orders LIKE 'coupon_code'")->fetch();
+            if (!$checkCol) {
+                $this->db->exec("ALTER TABLE orders ADD COLUMN coupon_code VARCHAR(100) NULL AFTER discount");
+            }
+        } catch (\PDOException $e) {
+            // Ignore if already added
+        }
+
+        // Seed demo coupons
+        try {
+            $stmt = $this->db->prepare("SELECT id FROM coupons WHERE code = 'GIAM50K'");
+            $stmt->execute();
+            if (!$stmt->fetch()) {
+                $this->db->exec("INSERT INTO coupons (code, name, description, discount_type, discount_value, min_order_amount, is_active) VALUES ('GIAM50K', 'Giảm 50K', 'Giảm 50.000đ cho đơn từ 399.000đ', 'fixed', 50000.00, 399000.00, 1)");
+            }
+        } catch (\PDOException $e) {
+            // Ignore database errors
         }
     }
 
@@ -45,12 +70,12 @@ class Order {
                     order_code, customer_id, receiver_name, phone, email, zalo,
                     province, district, ward, address_line, note,
                     payment_method, payment_status, order_status,
-                    subtotal, shipping_fee, discount, total
+                    subtotal, shipping_fee, discount, coupon_code, total
                 ) VALUES (
                     :order_code, :customer_id, :receiver_name, :phone, :email, :zalo,
                     :province, :district, :ward, :address_line, :note,
                     :payment_method, :payment_status, :order_status,
-                    :subtotal, :shipping_fee, :discount, :total
+                    :subtotal, :shipping_fee, :discount, :coupon_code, :total
                 )
             ";
             $stmtOrder = $db->prepare($sqlOrder);
@@ -72,6 +97,7 @@ class Order {
                 ':subtotal' => (float)$orderData['subtotal'],
                 ':shipping_fee' => (float)($orderData['shipping_fee'] ?? 0.00),
                 ':discount' => (float)($orderData['discount'] ?? 0.00),
+                ':coupon_code' => isset($orderData['coupon_code']) ? $orderData['coupon_code'] : null,
                 ':total' => (float)$orderData['total']
             ]);
 
@@ -125,6 +151,13 @@ class Order {
 
         $order['items'] = (new OrderItem())->getItemsByOrderId((int)$order['id']);
         $order['status_logs'] = $this->getStatusLogs((int)$order['id']);
+        
+        $order['couponCode'] = $order['coupon_code'] ?? null;
+        $order['discountAmount'] = (float)($order['discount'] ?? 0.00);
+        $order['subtotalAmount'] = (float)($order['subtotal'] ?? 0.00);
+        $order['shippingFee'] = (float)($order['shipping_fee'] ?? 0.00);
+        $order['totalAmount'] = (float)($order['total'] ?? 0.00);
+
         return $order;
     }
 
@@ -145,6 +178,13 @@ class Order {
 
         $order['items'] = (new OrderItem())->getItemsByOrderId((int)$order['id']);
         $order['status_logs'] = $this->getStatusLogs((int)$order['id']);
+
+        $order['couponCode'] = $order['coupon_code'] ?? null;
+        $order['discountAmount'] = (float)($order['discount'] ?? 0.00);
+        $order['subtotalAmount'] = (float)($order['subtotal'] ?? 0.00);
+        $order['shippingFee'] = (float)($order['shipping_fee'] ?? 0.00);
+        $order['totalAmount'] = (float)($order['total'] ?? 0.00);
+
         return $order;
     }
 
@@ -155,6 +195,11 @@ class Order {
 
         foreach ($orders as &$order) {
             $order['items'] = (new OrderItem())->getItemsByOrderId((int)$order['id']);
+            $order['couponCode'] = $order['coupon_code'] ?? null;
+            $order['discountAmount'] = (float)($order['discount'] ?? 0.00);
+            $order['subtotalAmount'] = (float)($order['subtotal'] ?? 0.00);
+            $order['shippingFee'] = (float)($order['shipping_fee'] ?? 0.00);
+            $order['totalAmount'] = (float)($order['total'] ?? 0.00);
         }
         return $orders;
     }
@@ -217,6 +262,11 @@ class Order {
         foreach ($items as &$order) {
             $order['items'] = (new OrderItem())->getItemsByOrderId((int)$order['id']);
             $order['status_logs'] = $this->getStatusLogs((int)$order['id']);
+            $order['couponCode'] = $order['coupon_code'] ?? null;
+            $order['discountAmount'] = (float)($order['discount'] ?? 0.00);
+            $order['subtotalAmount'] = (float)($order['subtotal'] ?? 0.00);
+            $order['shippingFee'] = (float)($order['shipping_fee'] ?? 0.00);
+            $order['totalAmount'] = (float)($order['total'] ?? 0.00);
         }
 
         // Calculate summary
@@ -331,8 +381,8 @@ class Order {
         ");
         return $stmt->execute([
             ':order_id' => (int)$orderId,
-            ':from_status' => $fromStatus,
-            ':to_status' => $toStatus,
+            ':from_status' => $fromStatus !== null ? $fromStatus : '',
+            ':to_status' => $toStatus !== null ? $toStatus : '',
             ':note' => $note,
             ':changed_by' => $changedBy ?: 'system'
         ]);

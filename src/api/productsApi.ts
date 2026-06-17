@@ -287,9 +287,10 @@ export type CreateOrderPayload = {
   shipping: {
     receiverName: string;
     phone: string;
-    province: string;
-    district: string;
-    ward: string;
+    provinceCode: string;
+    provinceName: string;
+    wardCode: string;
+    wardName: string;
     addressLine: string;
     note?: string;
   };
@@ -299,6 +300,7 @@ export type CreateOrderPayload = {
     quantity: number;
   }>;
   paymentMethod: "cod" | "bank_transfer";
+  couponCode?: string;
 };
 
 export type OrderItemDetail = {
@@ -351,6 +353,8 @@ export type OrderDetail = {
   status_logs?: OrderStatusLog[];
   customer_name?: string;
   customer_phone?: string;
+  coupon_code?: string | null;
+  couponCode?: string | null;
   customer_email?: string | null;
 };
 
@@ -368,6 +372,33 @@ export type OrderCheckResponse = {
   success: boolean;
   data: OrderDetail[];
 };
+
+export type ValidateCouponPayload = {
+  code: string;
+  subtotal: number;
+  customerPhone?: string;
+};
+
+export type ValidateCouponResponse = {
+  success: boolean;
+  message?: string;
+  data?: {
+    id: number;
+    code: string;
+    name: string;
+    description: string;
+    discountType: "fixed" | "percent";
+    discountValue: number;
+    discountAmount: number;
+  };
+};
+
+export async function validateCoupon(payload: ValidateCouponPayload): Promise<ValidateCouponResponse> {
+  return apiJson<ValidateCouponResponse>("/api/coupons/validate", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
 
 export async function createOrder(payload: CreateOrderPayload): Promise<CreateOrderResponse> {
   return apiJson<CreateOrderResponse>("/api/orders/create", {

@@ -348,6 +348,12 @@ export function OrderTracking() {
                     <span>Phí vận chuyển:</span>
                     <span>{(parseFloat(activeOrder.shipping_fee)).toLocaleString("vi-VN")}đ</span>
                   </div>
+                  {(activeOrder.coupon_code || activeOrder.couponCode) && (
+                    <div className="flex justify-between text-gray-500 font-medium">
+                      <span>Mã giảm giá:</span>
+                      <span className="font-bold text-forest">{activeOrder.coupon_code || activeOrder.couponCode}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-gray-500 font-medium">
                     <span>Giảm giá:</span>
                     <span>-{(parseFloat(activeOrder.discount)).toLocaleString("vi-VN")}đ</span>

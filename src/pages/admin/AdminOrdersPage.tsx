@@ -468,7 +468,12 @@ export function AdminOrdersPage() {
                             {PAYMENT_METHOD_MAP[order.payment_method] || order.payment_method}
                           </td>
                           <td className="px-6 py-4 font-black text-[#0B1F3A]">
-                            {(parseFloat(order.total)).toLocaleString("vi-VN")}đ
+                            <div>{(parseFloat(order.total)).toLocaleString("vi-VN")}đ</div>
+                            {(order.coupon_code || order.couponCode) && (
+                              <div className="text-[10px] text-green-600 font-bold bg-green-50 px-1.5 py-0.5 rounded border border-green-200 mt-1 inline-block" title={`Đã áp dụng mã ${order.coupon_code || order.couponCode}`}>
+                                Mã: {order.coupon_code || order.couponCode}
+                              </div>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <span className={`inline-flex px-2.5 py-0.5 rounded-full border text-[11px] font-black ${stat.bg} ${stat.text}`}>
@@ -977,6 +982,12 @@ export function AdminOrdersPage() {
                     <div className="flex justify-between text-gray-500 font-medium">
                       <span>Phí vận chuyển:</span>
                       <span>{(parseFloat(selectedOrder.shipping_fee)).toLocaleString("vi-VN")}đ</span>
+                    </div>
+                    <div className="flex justify-between text-gray-500 font-medium">
+                      <span>Mã giảm giá:</span>
+                      <span className="font-bold text-[#0b1f3a]">
+                        {selectedOrder.coupon_code || selectedOrder.couponCode || "Không áp dụng"}
+                      </span>
                     </div>
                     <div className="flex justify-between text-gray-500 font-medium">
                       <span>Giảm giá:</span>

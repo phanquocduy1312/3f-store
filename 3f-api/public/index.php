@@ -63,6 +63,7 @@ use App\Controllers\LoyaltyController;
 use App\Controllers\ProductController;
 use App\Controllers\OrderController;
 use App\Controllers\AdminAuthController;
+use App\Controllers\CouponController;
 
 try {
     // 0. Pre-instantiate models to run database migrations outside of transactions
@@ -74,6 +75,7 @@ try {
     new \App\Models\LoyaltyProductionModel();
     new \App\Models\Product();
     new \App\Models\Order();
+    new \App\Models\Coupon();
     new \App\Models\AdminUser();
     new \App\Models\AdminSession();
     new \App\Models\AuditLog();
@@ -100,6 +102,7 @@ try {
 
     // Order E-commerce Routes
     $router->post("/api/orders/create", [OrderController::class, "create"]);
+    $router->post("/api/coupons/validate", [CouponController::class, "validate"]);
     $router->get("/api/orders/detail", [OrderController::class, "detail"]);
     $router->get("/api/orders/check", [OrderController::class, "check"]);
     $router->get("/api/admin/orders", [OrderController::class, "adminList"]);

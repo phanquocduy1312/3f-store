@@ -1,134 +1,159 @@
-import { Ticket, Percent, ArrowRight, Truck } from "lucide-react";
+import { useState } from "react";
+import { Ticket, Percent, ArrowRight, CreditCard, Banknote, Landmark } from "lucide-react";
 import { formatPrice } from "@/lib/cartHelper";
 
 interface OrderSummaryProps {
   subtotal: number;
-  shippingFee: number;
-  appliedVoucher: { code: string; discount: number; type: "percent" | "fixed" } | null;
-  onApplyVoucher: (code: string) => void;
+  appliedVoucher: { code: string; discountAmount: number; description?: string } | null;
+  onApplyVoucher: (code: string) => Promise<{ success: boolean; message?: string }>;
   onRemoveVoucher: () => void;
   onSubmit: (e: React.FormEvent) => void;
   isSubmitting: boolean;
-  shippingMethod: string;
-  setShippingMethod: (v: string) => void;
+  paymentMethod: string;
+  setPaymentMethod: (v: string) => void;
 }
 
 export function OrderSummary({
   subtotal,
-  shippingFee,
   appliedVoucher,
   onApplyVoucher,
   onRemoveVoucher,
   onSubmit,
   isSubmitting,
-  shippingMethod,
-  setShippingMethod
+  paymentMethod,
+  setPaymentMethod
 }: OrderSummaryProps) {
-  
-  // Calculate discount value
-  const voucherDiscount = appliedVoucher 
-    ? (appliedVoucher.type === "percent" 
-        ? Math.min(subtotal * (appliedVoucher.discount / 100), 50000) 
-        : appliedVoucher.discount)
-    : 0;
+  const [couponInput, setCouponInput] = useState("");
+  const [couponError, setCouponError] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
 
-  const finalTotal = Math.max(0, subtotal + shippingFee - voucherDiscount);
+  const handleApply = async () => {
+    const trimmed = couponInput.trim();
+    if (!trimmed) return;
+    setIsValidating(true);
+    setCouponError("");
+    const res = await onApplyVoucher(trimmed);
+    setIsValidating(false);
+    if (res.success) {
+      setCouponInput("");
+    } else {
+      setCouponError(res.message || "Mã giảm giá không hợp lệ.");
+    }
+  };
 
-  // Available vouchers
-  const vouchers = [
-    { code: "SENMOI", title: "Giảm 50k", desc: "Đơn từ 399k", minSubtotal: 399000, value: 50000, type: "fixed" as const },
-    { code: "FREESHIP25K", title: "Freeship 25k", desc: "Đơn từ 300k", minSubtotal: 300000, value: 25000, type: "fixed" as const }
-  ];
+  const discountAmount = appliedVoucher ? appliedVoucher.discountAmount : 0;
+  const shippingFee = 0; // Hardcoded to 0 for production business requirement
+  const finalTotal = Math.max(0, subtotal + shippingFee - discountAmount);
 
   return (
     <div className="space-y-6">
-      {/* Shipping Method Choice */}
-      <div className="rounded-2xl border border-forest/10 bg-white p-4 sm:p-5 shadow-sm">
-        <h3 className="mb-4 flex items-center gap-2 text-sm sm:text-[15px] font-black text-forest">
-          <Truck size={16} className="sm:w-[18px] sm:h-[18px]" /> Phương thức vận chuyển
-        </h3>
-        <div className="space-y-2.5 sm:space-y-3">
-          <label className={`flex cursor-pointer items-start sm:items-center justify-between rounded-xl border-2 p-2.5 sm:p-3 transition active:scale-[0.98] ${shippingMethod === "standard" ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
-            <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
-              <input
-                type="radio"
-                name="shipping"
-                value="standard"
-                checked={shippingMethod === "standard"}
-                onChange={() => setShippingMethod("standard")}
-                className="accent-forest mt-0.5 sm:mt-0 shrink-0"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="text-xs sm:text-sm font-bold text-ink">Giao hàng tiêu chuẩn</div>
-                <div className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-2">Nhận hàng sau 2-4 ngày làm việc</div>
-              </div>
-            </div>
-            <span className="text-xs sm:text-sm font-bold text-forest ml-2 shrink-0">25.000đ</span>
-          </label>
-
-          <label className={`flex cursor-pointer items-start sm:items-center justify-between rounded-xl border-2 p-2.5 sm:p-3 transition active:scale-[0.98] ${shippingMethod === "express" ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
-            <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
-              <input
-                type="radio"
-                name="shipping"
-                value="express"
-                checked={shippingMethod === "express"}
-                onChange={() => setShippingMethod("express")}
-                className="accent-forest mt-0.5 sm:mt-0 shrink-0"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="text-xs sm:text-sm font-bold text-ink">Giao hàng hỏa tốc 2H</div>
-                <div className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-2">Nhận trong 2 giờ (chỉ HCM/Hà Nội)</div>
-              </div>
-            </div>
-            <span className="text-xs sm:text-sm font-bold text-forest ml-2 shrink-0">50.000đ</span>
-          </label>
-        </div>
-      </div>
-
-      {/* Discount Coupons */}
+      {/* Discount Coupon Box */}
       <div className="rounded-2xl border border-forest/10 bg-white p-4 sm:p-5 shadow-sm">
         <h3 className="mb-3 flex items-center gap-2 text-sm sm:text-[15px] font-black text-forest">
-          <Ticket size={16} className="sm:w-[18px] sm:h-[18px]" /> Mã giảm giá của bạn
+          <Ticket size={16} className="sm:w-[18px] sm:h-[18px]" /> Mã giảm giá
         </h3>
-        
-        {/* Quick Vouchers */}
-        <div className="grid grid-cols-1 gap-2">
-          {vouchers.map((v) => {
-            const isElligible = subtotal >= v.minSubtotal;
-            const isApplied = appliedVoucher?.code === v.code;
-            return (
-              <div 
-                key={v.code}
-                className={`flex items-center justify-between gap-2 rounded-xl border p-2.5 transition ${isApplied ? "border-forest bg-forest/5" : "border-forest/10 bg-white"} ${!isElligible ? "opacity-60" : ""}`}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-black text-ink">{v.title}</div>
-                  <div className="text-[10px] text-gray-400 truncate">{v.desc}</div>
-                </div>
-                {isApplied ? (
-                  <button
-                    onClick={onRemoveVoucher}
-                    className="shrink-0 rounded-lg bg-red-100 px-2.5 py-1 text-[10px] sm:text-[11px] font-bold text-red-600 hover:bg-red-200 transition active:scale-95"
-                  >
-                    Bỏ
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => onApplyVoucher(v.code)}
-                    disabled={!isElligible}
-                    className={`shrink-0 rounded-lg px-2.5 py-1 text-[10px] sm:text-[11px] font-bold transition active:scale-95 ${isElligible ? "bg-forest/10 text-forest hover:bg-forest hover:text-white" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
-                  >
-                    Áp dụng
-                  </button>
-                )}
+
+        {appliedVoucher ? (
+          /* Applied Voucher Card */
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-forest bg-forest/5 p-3 sm:p-3.5 transition">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 text-xs font-black text-forest">
+                <Percent size={12} />
+                Mã: {appliedVoucher.code}
               </div>
-            );
-          })}
+              <div className="text-[10px] text-gray-500 font-medium mt-0.5 truncate">
+                {appliedVoucher.description || `Giảm ${formatPrice(appliedVoucher.discountAmount)}`}
+              </div>
+              <div className="text-xs font-bold text-forest mt-1">
+                Giảm: -{formatPrice(appliedVoucher.discountAmount)}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onRemoveVoucher}
+              className="shrink-0 rounded-lg bg-red-50 hover:bg-red-100 px-3 py-1.5 text-xs font-black text-red-600 shadow-sm transition active:scale-95"
+            >
+              Gỡ mã
+            </button>
+          </div>
+        ) : (
+          /* Coupon Input Form */
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponInput}
+                onChange={(e) => {
+                  setCouponInput(e.target.value);
+                  setCouponError("");
+                }}
+                placeholder="Nhập mã giảm giá"
+                className="flex-1 min-w-0 rounded-xl border border-forest/15 px-3 py-2 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30 uppercase"
+                disabled={isValidating}
+              />
+              <button
+                type="button"
+                onClick={handleApply}
+                disabled={!couponInput.trim() || isValidating}
+                className="shrink-0 rounded-xl bg-forest px-4 text-xs font-bold text-white shadow-soft transition hover:bg-forest/90 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+              >
+                {isValidating ? "Đang check..." : "Áp dụng"}
+              </button>
+            </div>
+            {couponError && (
+              <p className="text-[11px] font-bold text-red-500 mt-1 pl-1">
+                {couponError}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Payment Options Section */}
+      <div className="rounded-2xl border border-forest/10 bg-white p-4 sm:p-5 shadow-sm">
+        <h3 className="mb-4 flex items-center gap-2 text-sm sm:text-[15px] font-black text-forest">
+          <CreditCard size={16} className="sm:w-[18px] sm:h-[18px]" /> Phương thức thanh toán
+        </h3>
+        <div className="space-y-2.5 sm:space-y-3">
+          <label className={`flex cursor-pointer items-start sm:items-center justify-between rounded-xl border-2 p-2.5 sm:p-3 transition active:scale-[0.98] ${paymentMethod === "cod" ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
+            <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 mr-2">
+              <input
+                type="radio"
+                name="payment"
+                value="cod"
+                checked={paymentMethod === "cod"}
+                onChange={() => setPaymentMethod("cod")}
+                className="accent-forest mt-0.5 sm:mt-0 shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs sm:text-sm font-bold text-ink">Thanh toán khi nhận hàng (COD)</div>
+                <div className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-2">Nhận hàng rồi mới thanh toán tiền mặt</div>
+              </div>
+            </div>
+            <Banknote className="text-forest/60 shrink-0" size={18} />
+          </label>
+
+          <label className={`flex cursor-pointer items-start sm:items-center justify-between rounded-xl border-2 p-2.5 sm:p-3 transition active:scale-[0.98] ${paymentMethod === "vietqr" ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
+            <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 mr-2">
+              <input
+                type="radio"
+                name="payment"
+                value="vietqr"
+                checked={paymentMethod === "vietqr"}
+                onChange={() => setPaymentMethod("vietqr")}
+                className="accent-forest mt-0.5 sm:mt-0 shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs sm:text-sm font-bold text-ink">Chuyển khoản Ngân hàng (VietQR)</div>
+                <div className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-2">Tạo mã QR chuyển khoản sau khi đặt hàng</div>
+              </div>
+            </div>
+            <Landmark className="text-forest/60 shrink-0" size={18} />
+          </label>
         </div>
       </div>
 
-      {/* Bill Breakdown */}
+      {/* Bill Summary totals */}
       <div className="rounded-2xl border border-forest/10 bg-white p-4 sm:p-5 shadow-sm">
         <h3 className="mb-4 text-sm sm:text-[15px] font-black text-ink">Tổng giá trị đơn hàng</h3>
         <div className="space-y-2.5 sm:space-y-3 text-xs sm:text-sm">
@@ -140,10 +165,10 @@ export function OrderSummary({
             <span>Phí vận chuyển</span>
             <span className="font-bold">{formatPrice(shippingFee)}</span>
           </div>
-          {voucherDiscount > 0 && (
+          {discountAmount > 0 && (
             <div className="flex justify-between text-red-600">
               <span className="flex items-center gap-1"><Percent size={12} className="sm:w-[14px] sm:h-[14px]"/> Giảm giá</span>
-              <span className="font-bold">-{formatPrice(voucherDiscount)}</span>
+              <span className="font-bold">-{formatPrice(discountAmount)}</span>
             </div>
           )}
           <hr className="border-forest/10 my-2" />
