@@ -1,8 +1,10 @@
 import { lazy, Suspense, useEffect } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate, Outlet } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PetAdvisorPopup } from "@/components/pet-advisor/PetAdvisorPopup";
+import { QuickAddToCartModal } from "@/components/QuickAddToCartModal";
+import { Toaster } from "sonner";
 
 const Home = lazy(() => import("./pages/Home").then(m => ({ default: m.Home })));
 const Products = lazy(() => import("./pages/Products").then(m => ({ default: m.Products })));
@@ -12,6 +14,23 @@ const Login = lazy(() => import("./pages/Login").then(m => ({ default: m.Login }
 const Register = lazy(() => import("./pages/Register").then(m => ({ default: m.Register })));
 const AdminDashboard = lazy(() => import("./pages/admin/admin-dashboard").then(m => ({ default: m.AdminDashboard })));
 const ShopeeRequestsPage = lazy(() => import("./pages/admin/ShopeeRequestsPage"));
+const LoyaltySettingsPage = lazy(() => import("./pages/admin/LoyaltySettingsPage"));
+const ThreeFClubPage = lazy(() => import("./pages/admin/ThreeFClubPage"));
+const CustomerLoyaltyPage = lazy(() => import("./pages/admin/CustomerLoyaltyPage"));
+const CustomerRewardsPage = lazy(() => import("./pages/client/CustomerRewardsPage"));
+const OrderSuccess = lazy(() => import("./pages/OrderSuccess").then(m => ({ default: m.OrderSuccess })));
+const OrderTracking = lazy(() => import("./pages/OrderTracking").then(m => ({ default: m.OrderTracking })));
+const AdminOrdersPage = lazy(() => import("./pages/admin/AdminOrdersPage").then(m => ({ default: m.AdminOrdersPage })));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin").then(m => ({ default: m.AdminLogin })));
+
+function AdminRouteGuard() {
+  // Temporary bypass for active development. Comment in to restore auth guarding.
+  // const token = localStorage.getItem("admin_token");
+  // if (!token) {
+  //   return <Navigate to="/admin/login" replace />;
+  // }
+  return <Outlet />;
+}
 
 export function App() {
   const location = useLocation();
@@ -45,13 +64,32 @@ export function App() {
           <Route path="/cart" element={<CartCheckout />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/shopee-requests" element={<ShopeeRequestsPage />} />
+          
+          {/* Public Admin Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+
+          {/* Protected Admin Routes */}
+          <Route element={<AdminRouteGuard />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/orders" element={<AdminOrdersPage />} />
+            <Route path="/admin/shopee-requests" element={<ShopeeRequestsPage />} />
+            <Route path="/admin/loyalty-settings" element={<LoyaltySettingsPage />} />
+            <Route path="/admin/3f-club" element={<ThreeFClubPage />} />
+            <Route path="/admin/customers/:id/loyalty" element={<CustomerLoyaltyPage />} />
+          </Route>
+
+          <Route path="/3f-club/rewards" element={<CustomerRewardsPage />} />
+          <Route path="/order-success/:orderCode" element={<OrderSuccess />} />
+          <Route path="/orders/:orderCode" element={<OrderTracking />} />
+          <Route path="/order-check" element={<OrderTracking />} />
         </Routes>
       </Suspense>
       
       {showFooter && <Footer />}
       {!isAdminRoute && <PetAdvisorPopup />}
+      {!isAdminRoute && <QuickAddToCartModal />}
+
+      <Toaster richColors position="top-right" closeButton />
     </main>
   );
 }

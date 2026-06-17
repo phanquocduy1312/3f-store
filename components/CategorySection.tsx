@@ -147,6 +147,15 @@ export function CategorySection() {
               const config = cardConfig[category.title as keyof typeof cardConfig] || cardConfig["Thức ăn cho chó"];
               const IconComponent = config.Icon;
 
+              const categoryLinks: Record<string, string> = {
+                "Thức ăn cho chó": "/products?category=thuc-an-cho-cho",
+                "Thức ăn cho mèo": "/products?category=thuc-an-cho-meo",
+                "Phụ kiện thú cưng": "/products?category=phu-kien-do-choi",
+                "Chăm sóc sức khỏe": "/products?category=sua-dinh-duong",
+                "Vệ sinh thú cưng": "/products?category=ve-sinh-thu-cung",
+              };
+              const linkHref = categoryLinks[category.title] || "/products";
+
               return (
                 <MotionItem
                   {...motionItemProps}
@@ -173,7 +182,7 @@ export function CategorySection() {
 
                   <div className="mt-auto pt-2 relative z-10">
                     <Link
-                      to={`/products?category=${category.title === "On Sale" ? "Tất cả sản phẩm" : category.title}`}
+                      to={linkHref}
                       className="mx-auto inline-flex items-center gap-2 rounded-full border border-forest/10 bg-forest/5 px-6 py-2.5 text-sm font-bold text-forest transition-all duration-300 group-hover:bg-forest group-hover:text-white"
                       aria-label={`Khám phá ${category.title}`}
                     >

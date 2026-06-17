@@ -7,20 +7,14 @@ class PointService {
      * Formula: 10,000 VND = 1 point.
      */
     public static function calculateShopeePoints($orderAmount) {
-        return (int)floor((int)$orderAmount / 10000);
+        return \App\Services\LoyaltyPointService::calculatePoints($orderAmount, "shopee");
     }
 
     /**
      * Computes the member tier based on approved points.
      */
     public static function calculateMemberTier($points) {
-        $pts = (int)$points;
-        if ($pts < 500) {
-            return "Silver";
-        } elseif ($pts < 1500) {
-            return "Gold";
-        } else {
-            return "Platinum";
-        }
+        $tier = (new \App\Models\LoyaltyProductionModel())->getTierForPoints((int)$points);
+        return $tier ? $tier['name'] : "Silver";
     }
 }

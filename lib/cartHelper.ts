@@ -1,11 +1,15 @@
 export interface CartItem {
   id: string;
+  productId?: string;
+  variantId?: string;
+  sku?: string;
   name: string;
   image: string;
   price: number; // numeric value, e.g. 23000
   originalPrice?: number; // optional, e.g. 29000
   quantity: number;
   variant: string; // chosen flavor
+  variantName?: string;
 }
 
 const STORAGE_KEY = "3f_cart_items";

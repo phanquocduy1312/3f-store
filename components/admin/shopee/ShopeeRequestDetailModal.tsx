@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   CircleDashed,
   ExternalLink,
+  Loader2,
   RefreshCcw,
   ShieldCheck,
   X,
@@ -19,11 +20,13 @@ import { cn } from "@/lib/utils";
 import type { ShopeePointRequest } from "@/types/shopee";
 import { ShopeeApiBadge } from "./ShopeeApiBadge";
 import { ShopeeStatusBadge } from "./ShopeeStatusBadge";
+import { buildImageUrl } from "@/src/config/api";
 
 interface ShopeeRequestDetailModalProps {
   request?: ShopeePointRequest;
   duplicatedCodes: string[];
   open: boolean;
+  isVerifying?: boolean;
   onClose: () => void;
   onReject: () => void;
   onApprove: () => void;
@@ -61,9 +64,9 @@ function InfoBox({ label, value }: { label: string; value: string }) {
 
 function DetailField({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-[12px] font-bold uppercase tracking-[0.03em] text-[#64748B]">{label}</p>
-      <p className="mt-1 text-[16px] font-black text-[#0B1F3A]">{value}</p>
+      <p className="mt-1 text-[16px] font-black text-[#0B1F3A] break-words">{value}</p>
     </div>
   );
 }
@@ -155,6 +158,7 @@ export function ShopeeRequestDetailModal({
   request,
   duplicatedCodes,
   open,
+  isVerifying = false,
   onClose,
   onReject,
   onApprove,
@@ -222,61 +226,90 @@ export function ShopeeRequestDetailModal({
   const verificationStatus = request.verificationStatus || request.apiCheckStatus;
 
   const isDuplicate = duplicatedCodes.includes(request.shopeeOrderCode) || verificationStatus === "duplicate";
-  const disabledActions = isTerminalStatus(processingStatus);
-  const amountMismatch = verificationStatus === "mismatch" || (
-    request.apiChecked &&
-    typeof request.apiOrderAmount === "number" &&
-    request.apiOrderAmount !== request.customerInputAmount
-  );
-  const apiNotFound = verificationStatus === "not_found";
+  const isPending = processingStatus === "pending";
+  const isApproved = processingStatus === "approved";
+  const isRejected = processingStatus === "rejected";
+  const disabledActions = isApproved || isRejected;
 
+  // Amount mismatch: use real numbers if available
+  const shopeeAmount = request.apiOrderAmount;
+  const inputAmount = request.customerInputAmount;
+  const amountMismatch =
+    verificationStatus === "mismatch" ||
+    (typeof shopeeAmount === "number" && typeof inputAmount === "number" && shopeeAmount !== inputAmount);
+  const amountDiff = typeof shopeeAmount === "number" && typeof inputAmount === "number"
+    ? Math.abs(shopeeAmount - inputAmount) : 0;
+
+  const apiNotFound = verificationStatus === "not_found";
+  const isInvalidStatus = verificationStatus === "invalid_order_status";
+  // Approved manually = approved but verificationStatus was not valid at approval time
+  const approvedManually = isApproved && verificationStatus !== "valid";
+
+  // Build comparison tone and message
   let compareTone: "default" | "success" | "warning" | "danger" = "default";
-  let compareMessage = (
-    <>
-      <span className="block mb-1 font-bold">Đề xuất xử lý: Đối chiếu thông tin</span>
-      <span className="font-normal">Lý do: Đang tiến hành kiểm tra hoặc chưa rõ kết quả từ API.</span>
-    </>
-  );
+  let compareReasons: string[] = [];
 
   if (apiNotFound) {
     compareTone = "danger";
-    compareMessage = (
-      <>
-        <span className="block mb-1 font-bold">Đề xuất xử lý: Từ chối</span>
-        <span className="font-normal">Lý do: Không tìm thấy mã đơn trên Shopee API.</span>
-      </>
-    );
-  } else if (isDuplicate) {
+    compareReasons.push("Không tìm thấy mã đơn trên Shopee API.");
+  }
+  if (isDuplicate) {
     compareTone = "danger";
-    compareMessage = (
-      <>
-        <span className="block mb-1 font-bold">Đề xuất xử lý: Từ chối</span>
-        <span className="font-normal">Lý do: Mã đơn đã xuất hiện trong hệ thống.</span>
-      </>
-    );
-  } else if (amountMismatch) {
+    compareReasons.push("Mã đơn đã xuất hiện trong hệ thống.");
+  }
+  if (isInvalidStatus && amountMismatch && !apiNotFound) {
     compareTone = "warning";
-    compareMessage = (
-      <>
-        <span className="block mb-1 font-bold">Đề xuất xử lý: Nên từ chối hoặc kiểm tra thủ công</span>
-        <span className="font-normal">Lý do: Tổng tiền khách nhập không khớp với Shopee API.</span>
-      </>
-    );
-  } else if (verificationStatus === "valid") {
+    compareReasons.push("Đơn chưa hoàn tất và tổng tiền không khớp Shopee API.");
+  } else {
+    if (isInvalidStatus) {
+      compareTone = compareTone === "default" ? "warning" : compareTone;
+      compareReasons.push("Đơn Shopee chưa hoàn tất.");
+    }
+    if (amountMismatch && !apiNotFound) {
+      compareTone = compareTone === "default" ? "warning" : compareTone;
+      compareReasons.push("Tổng tiền khách nhập không khớp với Shopee API.");
+    }
+  }
+  if (verificationStatus === "valid" && compareTone === "default") {
     compareTone = "success";
+  }
+
+  let compareMessage: React.ReactNode;
+  if (compareTone === "success") {
     compareMessage = (
       <>
         <span className="block mb-1 font-bold">Đề xuất xử lý: Có thể duyệt</span>
         <span className="font-normal">Lý do: Mã đơn tồn tại, đơn thuộc shop 3F, tổng tiền khớp, chưa từng cộng điểm.</span>
       </>
     );
+  } else if (compareTone === "danger") {
+    compareMessage = (
+      <>
+        <span className="block mb-1 font-bold">Đề xuất xử lý: Từ chối</span>
+        <span className="font-normal">Lý do: {compareReasons.join(" ")}</span>
+      </>
+    );
+  } else if (compareTone === "warning") {
+    compareMessage = (
+      <>
+        <span className="block mb-1 font-bold">Đề xuất xử lý: Kiểm tra thủ công</span>
+        <span className="font-normal">Lý do: {compareReasons.join(" ")}</span>
+      </>
+    );
+  } else {
+    compareMessage = (
+      <>
+        <span className="block mb-1 font-bold">Đề xuất xử lý: Đối chiếu thông tin</span>
+        <span className="font-normal">Lý do: Đang tiến hành kiểm tra hoặc chưa rõ kết quả từ API.</span>
+      </>
+    );
   }
 
   const footerMessage =
-    processingStatus === "approved"
+    isApproved
       ? "Yêu cầu này đã được duyệt và cộng điểm."
-      : processingStatus === "rejected"
-        ? `Yêu cầu này đã bị từ chối. Lý do: ${request.rejectedReason || "Không có lý do"}`
+      : isRejected
+        ? "Yêu cầu này đã bị từ chối."
         : "Điểm chỉ được cộng sau khi yêu cầu được duyệt.";
 
   return (
@@ -295,6 +328,11 @@ export function ShopeeRequestDetailModal({
                 <span className="text-lg font-black text-[#003B7A]">#{request.shopeeOrderCode}</span>
                 <ShopeeStatusBadge status={processingStatus} />
                 <ShopeeApiBadge status={verificationStatus} compact />
+                {approvedManually && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">
+                    ⚠ Đã duyệt thủ công
+                  </span>
+                )}
               </div>
             </div>
 
@@ -364,7 +402,7 @@ export function ShopeeRequestDetailModal({
                       </p>
                       <div className="h-[180px] overflow-hidden rounded-2xl border border-[#DCEBFF] bg-[#F6FAFF]">
                         <img
-                          src={request.orderImageUrl || "/assets/images/demodonhang.png"}
+                          src={request.orderImageUrl ? buildImageUrl(request.orderImageUrl) : "/assets/images/demodonhang.png"}
                           alt={`Đơn Shopee ${request.shopeeOrderCode}`}
                           className="h-full w-full object-cover"
                         />
@@ -373,7 +411,7 @@ export function ShopeeRequestDetailModal({
 
                     <button
                       type="button"
-                      onClick={() => setPreviewImage(request.orderImageUrl || "/assets/images/demodonhang.png")}
+                      onClick={() => setPreviewImage(request.orderImageUrl ? buildImageUrl(request.orderImageUrl) : "/assets/images/demodonhang.png")}
                       className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#DCEBFF] bg-white px-4 text-[14px] font-bold text-[#0057E7] transition hover:bg-[#F6FAFF]"
                     >
                       Xem ảnh lớn <ExternalLink className="h-4 w-4" />
@@ -416,52 +454,85 @@ export function ShopeeRequestDetailModal({
 
               <div className="space-y-5 xl:col-span-7">
                 <DetailCard
-                  title="Thông tin từ Shopee API"
+                  title="Thông tin đối chiếu Shopee API"
                   action={
-                    <button
-                      type="button"
-                      onClick={onReconcile}
-                      className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[#BFD7FF] bg-white px-4 text-[13px] font-bold text-[#0057E7] transition hover:bg-[#F6FAFF]"
-                    >
-                      <RefreshCcw className="h-4 w-4" />
-                      Đối chiếu lại API
-                    </button>
+                    processingStatus === "pending" ? (
+                      <button
+                        type="button"
+                        disabled={isVerifying}
+                        onClick={onReconcile}
+                        className={cn(
+                          "inline-flex h-10 items-center gap-2 rounded-2xl border px-4 text-[13px] font-bold transition",
+                          isVerifying
+                            ? "cursor-not-allowed border-[#DCEBFF] bg-[#F6FAFF] text-[#94A3B8]"
+                            : "border-[#BFD7FF] bg-white text-[#0057E7] hover:bg-[#F6FAFF]",
+                        )}
+                      >
+                        {isVerifying ? (
+                          <><Loader2 className="h-4 w-4 animate-spin" /> Đang đối chiếu...</>
+                        ) : (
+                          <><RefreshCcw className="h-4 w-4" /> Đối chiếu API</>
+                        )}
+                      </button>
+                    ) : undefined
                   }
                 >
-                  {request.apiChecked ? (
+                  {verificationStatus && verificationStatus !== "not_checked" ? (
                     <>
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <DetailField label="Trạng thái đơn" value={request.apiOrderStatus || "-"} />
-                        <DetailField label="Tổng tiền API" value={formatCurrency(request.apiOrderAmount)} />
-                        <DetailField label="Ngày tạo đơn" value={formatDateTime(request.apiCreateTime)} />
-                        <DetailField label="Ngày hoàn tất" value={formatDateTime(request.apiCompleteTime)} />
-                        <DetailField label="Shop ID" value={request.apiShopId || "-"} />
-                        <DetailField label="Buyer ID" value={request.apiBuyerId || "-"} />
+                        <div className="min-w-0">
+                          <p className="text-[12px] font-bold uppercase tracking-[0.03em] text-[#64748B]">Trạng thái đối chiếu</p>
+                          <div className="mt-1"><ShopeeApiBadge status={verificationStatus} /></div>
+                        </div>
+                        <DetailField label="Mã đơn khách nhập" value={`#${request.shopeeOrderCode}`} />
+                        {request.matchedShopeeOrderId && (
+                          <DetailField label="Mã đơn Shopee khớp" value={request.matchedShopeeOrderId} />
+                        )}
+                        <DetailField label="Tổng tiền khách nhập" value={formatCurrency(request.customerInputAmount)} />
+                        {request.apiOrderAmount !== undefined && (
+                          <DetailField label="Tổng tiền Shopee API" value={formatCurrency(request.apiOrderAmount)} />
+                        )}
+                        {request.apiOrderStatus && (
+                          <DetailField label="Trạng thái đơn Shopee" value={request.apiOrderStatus} />
+                        )}
+                        {request.verifiedAt && (
+                          <DetailField label="Thời gian đối chiếu" value={formatDateTime(request.verifiedAt)} />
+                        )}
+                        {request.verificationNote && (
+                          <div className="md:col-span-2">
+                            <p className="text-[12px] font-bold uppercase tracking-[0.03em] text-[#64748B]">Ghi chú đối chiếu</p>
+                            <p className="mt-1 text-[14px] text-[#0B1F3A] rounded-xl bg-[#F6FAFF] border border-[#DCEBFF] p-3">{request.verificationNote}</p>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="mt-4 flex flex-wrap gap-3">
-                        <button
-                          type="button"
-                          onClick={onReconcile}
-                          className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#BFD7FF] bg-white px-5 text-[14px] font-bold text-[#0057E7] transition hover:bg-[#F6FAFF]"
-                        >
-                          <RefreshCcw className="h-4 w-4" />
-                          Đối chiếu lại API
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => window.alert("Popup chi tiết API sẽ được nối backend/mock ở bước tiếp theo.")}
-                          className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#DCEBFF] bg-white px-5 text-[14px] font-bold text-[#0B1F3A] transition hover:bg-[#F6FAFF]"
-                        >
-                          Xem chi tiết API <ExternalLink className="h-4 w-4" />
-                        </button>
-                      </div>
+                      {processingStatus === "pending" && (
+                        <div className="mt-4">
+                          <button
+                            type="button"
+                            disabled={isVerifying}
+                            onClick={onReconcile}
+                            className={cn(
+                              "inline-flex h-11 items-center gap-2 rounded-2xl border px-5 text-[14px] font-bold transition",
+                              isVerifying
+                                ? "cursor-not-allowed border-[#DCEBFF] bg-[#F6FAFF] text-[#94A3B8]"
+                                : "border-[#BFD7FF] bg-white text-[#0057E7] hover:bg-[#F6FAFF]",
+                            )}
+                          >
+                            {isVerifying ? (
+                              <><Loader2 className="h-4 w-4 animate-spin" /> Đang đối chiếu...</>
+                            ) : (
+                              <><RefreshCcw className="h-4 w-4" /> Đối chiếu lại API</>
+                            )}
+                          </button>
+                        </div>
+                      )}
                     </>
                   ) : (
                     <div className="rounded-[20px] border border-dashed border-[#DCEBFF] bg-[#F6FAFF] p-5">
                       <p className="text-[18px] font-black text-[#0B1F3A]">Chưa đối chiếu API</p>
                       <p className="mt-2 text-[14px] text-[#64748B]">
-                        Bấm “Đối chiếu lại API” để kiểm tra đơn hàng.
+                        Bấm “Đối chiếu API” để kiểm tra đơn hàng với Shopee.
                       </p>
                     </div>
                   )}
@@ -475,6 +546,13 @@ export function ShopeeRequestDetailModal({
                       rightValue={apiNotFound ? "-" : formatCurrency(request.apiOrderAmount)}
                       tone={compareTone}
                     />
+
+                    {amountMismatch && !apiNotFound && amountDiff > 0 && (
+                      <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-[14px] font-semibold text-orange-700">
+                        <span className="block font-bold">Tổng tiền khách nhập không khớp với Shopee API.</span>
+                        <span className="mt-1 block font-normal text-[13px]">Chênh lệch: {formatCurrency(amountDiff)}</span>
+                      </div>
+                    )}
 
                     <div
                       className={cn(
@@ -536,6 +614,12 @@ export function ShopeeRequestDetailModal({
                     </div>
                   )}
 
+                  {approvedManually && (
+                    <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-[14px] font-semibold text-amber-700">
+                      ⚠ Đã duyệt dù Shopee API chưa hợp lệ
+                    </div>
+                  )}
+
                   {!!request.verificationIssues?.length && (
                     <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-[14px] text-orange-700">
                       <p className="font-black">Cần kiểm tra:</p>
@@ -556,24 +640,32 @@ export function ShopeeRequestDetailModal({
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-xs font-semibold text-[#64748B]">{footerMessage}</div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                disabled={disabledActions}
-                onClick={onReject}
-                className="h-11 rounded-2xl border border-red-200 bg-red-50 px-5 text-[14px] font-bold text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Từ chối
-              </button>
-              <button
-                type="button"
-                disabled={disabledActions}
-                onClick={onApprove}
-                className="h-11 rounded-2xl bg-[#0057E7] px-6 text-[14px] font-black text-white shadow-[0_8px_18px_rgba(0,87,231,0.22)] transition hover:bg-[#003B7A] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Duyệt & cộng điểm
-              </button>
-            </div>
+            {processingStatus === "pending" && (
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onReject}
+                  className="h-11 rounded-2xl border border-red-200 bg-red-50 px-5 text-[14px] font-bold text-red-600 transition hover:bg-red-100"
+                >
+                  Từ chối
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (verificationStatus !== "valid") {
+                      const confirmApprove = window.confirm(
+                        "Yêu cầu này chưa được Shopee API xác minh hợp lệ. Bạn vẫn muốn duyệt thủ công?"
+                      );
+                      if (!confirmApprove) return;
+                    }
+                    onApprove();
+                  }}
+                  className="h-11 rounded-2xl bg-[#0057E7] px-6 text-[14px] font-black text-white shadow-[0_8px_18px_rgba(0,87,231,0.22)] transition hover:bg-[#003B7A]"
+                >
+                  Duyệt & cộng điểm
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

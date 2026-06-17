@@ -1,5 +1,6 @@
 import { useState, FormEvent, useEffect } from "react";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 
 interface RegisterFormProps {
   onSuccess?: () => void;
@@ -70,7 +71,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      alert("Đăng ký thành công! (Dữ liệu mô phỏng)");
+      toast.success("Đăng ký thành công! (Dữ liệu mô phỏng)");
       if (onSuccess) onSuccess();
     }, 1200);
   };

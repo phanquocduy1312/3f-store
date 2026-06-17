@@ -1,4 +1,4 @@
-import { AlertTriangle, Eye, MoreHorizontal } from "lucide-react";
+import { AlertTriangle, Eye, Loader2, MoreHorizontal, RefreshCcw } from "lucide-react";
 import {
   formatCurrency,
   formatRelativeTime,
@@ -16,8 +16,13 @@ interface ShopeeRequestTableProps {
   page: number;
   totalPages: number;
   totalItems: number;
+  selectedIds: Set<string>;
+  verifyingIds: Set<string>;
   onSelect: (id: string) => void;
   onPageChange: (page: number) => void;
+  onToggleSelect: (id: string) => void;
+  onToggleSelectAll: () => void;
+  onVerifySingle: (id: string) => void;
 }
 
 export function ShopeeRequestTable({
@@ -27,11 +32,18 @@ export function ShopeeRequestTable({
   page,
   totalPages,
   totalItems,
+  selectedIds,
+  verifyingIds,
   onSelect,
   onPageChange,
+  onToggleSelect,
+  onToggleSelectAll,
+  onVerifySingle,
 }: ShopeeRequestTableProps) {
   const start = totalItems === 0 ? 0 : (page - 1) * 10 + 1;
   const end = Math.min(page * 10, totalItems);
+
+  const allChecked = requests.length > 0 && requests.every((r) => selectedIds.has(r.id));
 
   return (
     <section className="min-w-0 overflow-hidden rounded-[24px] border border-[#DCEBFF] bg-white shadow-[0_8px_24px_rgba(6,43,95,0.06)]">
@@ -43,26 +55,35 @@ export function ShopeeRequestTable({
       ) : (
         <>
           <div className="admin-scrollbar overflow-x-auto">
-            <table className="w-full min-w-[980px] table-fixed">
+            <table className="w-full min-w-[1080px] table-fixed">
               <thead className="bg-[#F8FBFF] text-left text-[11px] font-black uppercase tracking-[0.04em] text-[#64748B]">
                 <tr>
                   <th className="w-10 px-3 py-3">
-                    <input type="checkbox" className="h-4 w-4 rounded border-[#DCEBFF]" />
+                    <input
+                      type="checkbox"
+                      checked={allChecked}
+                      onChange={onToggleSelectAll}
+                      className="h-4 w-4 rounded border-[#DCEBFF]"
+                    />
                   </th>
-                  <th className="w-[180px] px-4 py-3">Mã đơn</th>
-                  <th className="w-[190px] px-4 py-3">Khách hàng</th>
-                  <th className="w-[140px] px-4 py-3">Khách nhập</th>
-                  <th className="w-[150px] px-4 py-3">Shopee API</th>
-                  <th className="w-[80px] px-4 py-3">Điểm</th>
+                  <th className="w-[170px] px-4 py-3">Mã đơn</th>
+                  <th className="w-[180px] px-4 py-3">Khách hàng</th>
+                  <th className="w-[130px] px-4 py-3">Khách nhập</th>
+                  <th className="w-[140px] px-4 py-3">Shopee API</th>
+                  <th className="w-[70px] px-4 py-3">Điểm</th>
                   <th className="w-[140px] px-4 py-3">Đối chiếu</th>
-                  <th className="w-[140px] px-4 py-3">Trạng thái</th>
-                  <th className="w-[72px] px-3 py-3">Xem</th>
+                  <th className="w-[110px] px-4 py-3">Trạng thái</th>
+                  <th className="w-[140px] px-3 py-3">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {requests.map((request) => {
                   const isSelected = selectedId === request.id;
                   const isDuplicate = duplicatedCodes.includes(request.shopeeOrderCode);
+                  const isVerifying = verifyingIds.has(request.id);
+                  const canVerify =
+                    request.processingStatus !== "approved" &&
+                    request.processingStatus !== "rejected";
 
                   return (
                     <tr
@@ -73,8 +94,13 @@ export function ShopeeRequestTable({
                         isSelected && "bg-[#F6FAFF] ring-1 ring-inset ring-[#BFD7FF]",
                       )}
                     >
-                      <td className="px-3 py-3 align-middle" onClick={(event) => event.stopPropagation()}>
-                        <input type="checkbox" className="h-4 w-4 rounded border-[#DCEBFF]" />
+                      <td className="px-3 py-3 align-middle" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(request.id)}
+                          onChange={() => onToggleSelect(request.id)}
+                          className="h-4 w-4 rounded border-[#DCEBFF]"
+                        />
                       </td>
                       <td className="px-4 py-3 align-middle">
                         <div className="flex items-center gap-2 font-black text-[#082B5F]">
@@ -97,6 +123,7 @@ export function ShopeeRequestTable({
                             "mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold",
                             request.apiOrderStatus === "COMPLETED" && "bg-green-50 text-green-600",
                             request.apiOrderStatus === "SHIPPED" && "bg-blue-50 text-blue-600",
+                            request.apiOrderStatus === "TO_CONFIRM_RECEIVE" && "bg-amber-50 text-amber-600",
                             (request.apiOrderStatus === "CANCELLED" ||
                               request.apiOrderStatus === "RETURNED" ||
                               request.apiOrderStatus === "NOT_FOUND") &&
@@ -110,25 +137,51 @@ export function ShopeeRequestTable({
                         {getRequestAmountForPoints(request) ? request.expectedPoints : 0}
                       </td>
                       <td className="px-4 py-3 align-middle">
-                        <ShopeeApiBadge status={request.verificationStatus || request.apiCheckStatus} compact />
+                        <div className="flex flex-col gap-1 items-start">
+                          <ShopeeApiBadge status={request.verificationStatus || request.apiCheckStatus} compact />
+                          {request.processingStatus === "approved" && (request.verificationStatus || request.apiCheckStatus) !== "valid" && (
+                            <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 whitespace-nowrap">
+                              ⚠ Đã duyệt thủ công
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 align-middle">
                         <ShopeeStatusBadge status={request.processingStatus || request.status} />
                       </td>
-                      <td className="px-3 py-3 align-middle" onClick={(event) => event.stopPropagation()}>
-                        <div className="flex items-center justify-center gap-2">
+                      <td className="px-3 py-3 align-middle" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-2">
+                          {canVerify && (
+                            <button
+                              type="button"
+                              disabled={isVerifying}
+                              onClick={() => onVerifySingle(request.id)}
+                              className={cn(
+                                "inline-flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-[11px] font-bold transition",
+                                isVerifying
+                                  ? "cursor-not-allowed border-[#DCEBFF] bg-[#F6FAFF] text-[#94A3B8]"
+                                  : "border-[#BFD7FF] bg-white text-[#0057E7] hover:bg-[#EEF6FF]",
+                              )}
+                            >
+                              {isVerifying ? (
+                                <>
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  Đang đối chiếu...
+                                </>
+                              ) : (
+                                <>
+                                  <RefreshCcw className="h-3.5 w-3.5" />
+                                  Đối chiếu
+                                </>
+                              )}
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => onSelect(request.id)}
-                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#DCEBFF] text-[#64748B] transition hover:bg-[#F6FAFF] hover:text-[#0057E7]"
+                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#DCEBFF] text-[#64748B] transition hover:bg-[#F6FAFF] hover:text-[#0057E7]"
                           >
                             <Eye className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            className="hidden h-9 w-9 items-center justify-center rounded-xl border border-[#DCEBFF] text-[#64748B] transition hover:bg-[#F6FAFF] min-[1800px]:flex"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
                           </button>
                         </div>
                       </td>

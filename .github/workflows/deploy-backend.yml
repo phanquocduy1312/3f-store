@@ -1,0 +1,35 @@
+name: Deploy Backend to Plesk
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+    paths:
+      - "3f-api/**"
+      - ".github/workflows/deploy-backend.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: FTP Deploy 3f-api to Plesk httpdocs
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./3f-api/
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          exclude: |
+            **/.env
+            **/storage/uploads/**
+            **/storage/logs/**
+            **/.git/**
+            **/.github/**
+            **/node_modules/**
+            **/vendor/**

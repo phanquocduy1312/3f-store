@@ -1,12 +1,15 @@
-import React from "react";
-import { ArrowRight } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { AdminCard } from "./admin-card";
-
+import { getShopeePointRequests } from "@/src/services/shopeePointApi";
+import { formatCurrency } from "@/lib/shopee-requests";
+import type { ShopeePointRequest } from "@/types/shopee";
 interface ShopeeRequest {
   orderCode: string;
   amount: string;
   points: string;
-  status: "Pending" | "Need info" | "Approved" | "Rejected";
+  status: string;
   time: string;
 }
 
@@ -15,43 +18,34 @@ interface AdminShopeeRequestListProps {
 }
 
 export function AdminShopeeRequestList({ searchValue }: AdminShopeeRequestListProps) {
-  const requests: ShopeeRequest[] = [
-    {
-      orderCode: "#240612A1B2C3",
-      amount: "320.000đ",
-      points: "32 điểm",
-      status: "Pending",
-      time: "5 phút trước"
-    },
-    {
-      orderCode: "#240612D4E5F6",
-      amount: "450.000đ",
-      points: "45 điểm",
-      status: "Pending",
-      time: "15 phút trước"
-    },
-    {
-      orderCode: "#240612G7H8I9",
-      amount: "180.000đ",
-      points: "18 điểm",
-      status: "Pending",
-      time: "22 phút trước"
-    },
-    {
-      orderCode: "#240612J1K2L3",
-      amount: "890.000đ",
-      points: "89 điểm",
-      status: "Pending",
-      time: "35 phút trước"
-    },
-    {
-      orderCode: "#240612M4N5O6",
-      amount: "250.000đ",
-      points: "25 điểm",
-      status: "Need info",
-      time: "1 giờ trước"
-    }
-  ];
+  const [requests, setRequests] = useState<ShopeeRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const result = await getShopeePointRequests({ limit: 5 });
+        const mapped = (result.data || []).map((row: any) => ({
+          orderCode: row.shopeeOrderCode || "",
+          amount: formatCurrency(Number(row.orderAmount || 0)),
+          points: `${Number(row.expectedPoints || 0)} điểm`,
+          status: row.processingStatus || "pending",
+          time: new Date(row.createdAt).toLocaleDateString("vi-VN", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          })
+        }));
+        setRequests(mapped);
+      } catch (err) {
+        console.error("Failed to load shopee requests", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRequests();
+  }, []);
 
   // Filter requests based on global search value
   const filteredRequests = requests.filter(req => {
@@ -60,24 +54,36 @@ export function AdminShopeeRequestList({ searchValue }: AdminShopeeRequestListPr
     return req.orderCode.toLowerCase().includes(s);
   });
 
-  const getStatusStyle = (status: ShopeeRequest["status"]) => {
+  const getStatusStyle = (status: string) => {
     switch (status) {
-      case "Pending":
+      case "pending":
         return "bg-orange-50 text-orange-600 border-orange-200";
-      case "Need info":
+      case "need_info":
         return "bg-blue-50 text-blue-600 border-blue-200";
-      case "Approved":
+      case "approved":
         return "bg-green-50 text-green-600 border-green-200";
-      case "Rejected":
+      case "rejected":
         return "bg-red-50 text-red-600 border-red-200";
+      default:
+        return "bg-slate-50 text-slate-600 border-slate-200";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending": return "Chờ duyệt";
+      case "need_info": return "Cần TT";
+      case "approved": return "Đã duyệt";
+      case "rejected": return "Từ chối";
+      default: return status;
     }
   };
 
   const headerAction = (
-    <button className="text-[#0057E7] hover:text-[#003B7A] text-[12px] font-bold flex items-center gap-1 transition-colors">
+    <Link to="/admin/shopee-requests" className="text-[#0057E7] hover:text-[#003B7A] text-[12px] font-bold flex items-center gap-1 transition-colors">
       <span>Xem tất cả</span>
       <ArrowRight size={14} />
-    </button>
+    </Link>
   );
 
   return (
@@ -88,7 +94,11 @@ export function AdminShopeeRequestList({ searchValue }: AdminShopeeRequestListPr
       className="h-[360px] flex flex-col"
     >
       <div className="flex-1 mt-2 overflow-y-auto admin-scrollbar pr-1">
-        {filteredRequests.length === 0 ? (
+        {loading ? (
+          <div className="flex h-full items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-[#0057E7]" />
+          </div>
+        ) : filteredRequests.length === 0 ? (
           <div className="text-center py-8 text-slate-400 text-[13px] font-medium">
             Không tìm thấy mã đơn nào phù hợp.
           </div>
@@ -111,7 +121,7 @@ export function AdminShopeeRequestList({ searchValue }: AdminShopeeRequestListPr
                       </span>
                     </div>
                     <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10.5px] font-bold leading-tight ${getStatusStyle(req.status)}`}>
-                      {req.status}
+                      {getStatusLabel(req.status)}
                     </span>
                   </div>
 

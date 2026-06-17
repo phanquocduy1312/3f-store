@@ -5,11 +5,11 @@ import { Image } from "@/components/Image";
 import { ArrowRight, Star, PawPrint, ShoppingCart } from "lucide-react";
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
 import { SaleBadge } from "@/components/SaleBadge";
-import { getCatFoodProducts, getDogFoodProducts } from "@/data/store";
+import { getProducts } from "@/src/api/productsApi";
+import { useEffect, useState } from "react";
 import type { Product } from "@/types/store";
-
-const catProducts: Product[] = getCatFoodProducts(12);
-const dogProducts: Product[] = getDogFoodProducts(12);
+import { addToCart, parsePriceString } from "@/lib/cartHelper";
+import { toast } from "sonner";
 
 function getPriceValue(price: string) {
   return Number(price.replace(/\D/g, "")) || 0;
@@ -101,12 +101,51 @@ function ProductCard({
 
           <div className="flex gap-1.5 sm:gap-2">
             <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const hasVariants = product.variants && product.variants.length > 1;
+                if (hasVariants) {
+                  window.dispatchEvent(
+                    new CustomEvent("open-quick-add", {
+                      detail: { productId: product.id, intent: "add-to-cart" },
+                    })
+                  );
+                } else {
+                  const defVar = product.variants?.[0];
+                  addToCart({
+                    id: defVar?.id ?? product.id,
+                    productId: String(product.backendId ?? product.sourceProductId ?? product.id),
+                    variantId: defVar?.id,
+                    sku: defVar?.sku,
+                    name: product.name,
+                    image: defVar?.image ?? product.image,
+                    price: parsePriceString(defVar?.price ?? product.price),
+                    originalPrice: (defVar?.oldPrice ?? product.oldPrice) ? parsePriceString(defVar?.oldPrice ?? product.oldPrice) : undefined,
+                    variantName: defVar?.label,
+                    variant: defVar?.label ?? "Mặc định",
+                  }, 1);
+
+                  toast.success(`Đã thêm "${product.name}" vào giỏ hàng!`);
+                }
+              }}
               className="flex h-8 w-8 sm:h-9 sm:w-10 shrink-0 items-center justify-center rounded-lg border border-forest sm:border-[1.5px] bg-white text-forest transition-all active:scale-95 hover:bg-forest/5"
               aria-label={`Thêm ${product.name} vào giỏ hàng`}
             >
               <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
             <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.dispatchEvent(
+                  new CustomEvent("open-quick-add", {
+                    detail: { productId: product.id, intent: "buy-now" },
+                  })
+                );
+              }}
               className="flex h-8 sm:h-9 flex-1 items-center justify-center rounded-lg bg-forest px-2 font-bold text-white transition-all active:scale-95 hover:bg-[rgb(var(--color-primary-dark))]"
               aria-label={`Mua ngay ${product.name}`}
             >
@@ -120,6 +159,31 @@ function ProductCard({
 }
 
 export function PetFoodSection() {
+  const [catProducts, setCatProducts] = useState<Product[]>([]);
+  const [dogProducts, setDogProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all([
+      getProducts({ petType: "cat", limit: 12, sort: "popular" }),
+      getProducts({ petType: "dog", limit: 12, sort: "popular" }),
+    ])
+      .then(([catResult, dogResult]) => {
+        if (!isMounted) return;
+        setCatProducts(catResult.items);
+        setDogProducts(dogResult.items);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setCatProducts([]);
+        setDogProducts([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <section className="relative bg-white pt-12 pb-2 lg:pt-16 lg:pb-0">
       <MotionSection className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -203,25 +267,31 @@ export function PetFoodSection() {
             </div>
 
             {/* Cat Products Grid - 12 products */}
-            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {catProducts.slice(0, 12).map((product) => (
-                <ProductCard
-                  key={product.id || product.name}
-                  product={product}
-                  petType="cat"
-                  accentClass="text-forest"
-                  accentSoftClass="bg-forest/5"
-                  hoverBorderClass="border-forest/5 hover:border-forest/20"
-                  imageBgClass="bg-cream/30 group-hover:bg-cream/50"
-                  hoverTitleClass="group-hover:text-forest"
-                />
-              ))}
-            </div>
+            {catProducts.length > 0 ? (
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {catProducts.slice(0, 12).map((product) => (
+                  <ProductCard
+                    key={product.id || product.name}
+                    product={product}
+                    petType="cat"
+                    accentClass="text-forest"
+                    accentSoftClass="bg-forest/5"
+                    hoverBorderClass="border-forest/5 hover:border-forest/20"
+                    imageBgClass="bg-cream/30 group-hover:bg-cream/50"
+                    hoverTitleClass="group-hover:text-forest"
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-sm font-semibold text-gray-500">
+                Chưa có sản phẩm phù hợp.
+              </div>
+            )}
 
             {/* View More Button */}
             <div className="flex justify-center pt-2">
               <Link 
-                to="/products?category=Thức ăn cho mèo" 
+                to="/products?petType=cat" 
                 className="inline-flex items-center gap-2 rounded-full bg-[rgb(var(--color-primary))] px-6 py-3 sm:px-8 sm:py-3.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95"
               >
                 <span>Xem tất cả sản phẩm cho mèo</span>
@@ -308,25 +378,31 @@ export function PetFoodSection() {
             </div>
 
             {/* Dog Products Grid - 12 products */}
-            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {dogProducts.slice(0, 12).map((product) => (
-                <ProductCard
-                  key={product.id || product.name}
-                  product={product}
-                  petType="dog"
-                  accentClass="text-forest"
-                  accentSoftClass="bg-forest/5"
-                  hoverBorderClass="border-forest/5 hover:border-forest/20"
-                  imageBgClass="bg-cream/30 group-hover:bg-cream/50"
-                  hoverTitleClass="group-hover:text-forest"
-                />
-              ))}
-            </div>
+            {dogProducts.length > 0 ? (
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {dogProducts.slice(0, 12).map((product) => (
+                  <ProductCard
+                    key={product.id || product.name}
+                    product={product}
+                    petType="dog"
+                    accentClass="text-forest"
+                    accentSoftClass="bg-forest/5"
+                    hoverBorderClass="border-forest/5 hover:border-forest/20"
+                    imageBgClass="bg-cream/30 group-hover:bg-cream/50"
+                    hoverTitleClass="group-hover:text-forest"
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-sm font-semibold text-gray-500">
+                Chưa có sản phẩm phù hợp.
+              </div>
+            )}
 
             {/* View More Button */}
             <div className="flex justify-center pt-2">
               <Link 
-                to="/products?category=Thức ăn cho chó" 
+                to="/products?petType=dog" 
                 className="inline-flex items-center gap-2 rounded-full bg-[rgb(var(--color-primary))] px-6 py-3 sm:px-8 sm:py-3.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95"
               >
                 <span>Xem tất cả sản phẩm cho chó</span>

@@ -1,8 +1,7 @@
-import productsJson from "./products.json";
 import type { Product, Category, Feature, BlogPost } from "../types/store";
 import { PawPrint, CheckCircle, Truck, Heart, ShieldCheck, Clock, Stethoscope, RotateCcw } from "lucide-react";
 
-const ALL_PRODUCTS: Product[] = (productsJson as unknown) as Product[];
+const ALL_PRODUCTS: Product[] = [];
 // Limit number of products rendered to avoid heavy DOM / visual artifacts
 const MAX_PRODUCTS = 20;
 export const products: Product[] = ALL_PRODUCTS.slice(0, MAX_PRODUCTS);
@@ -151,11 +150,11 @@ export const footerColumns = [
 
 export const socialLinks: string[] = ["Facebook", "Instagram", "YouTube"];
 
-export const blogPosts: BlogPost[] = products.slice(0, 6).map((p) => ({
-  title: p.name.slice(0, 80),
-  image: p.image,
-  date: "2026-06-04",
-  category: String((p as any).category ?? "Tin tức").split(">")[0].trim(),
-}));
+export const blogPosts: BlogPost[] = [
+  { title: "Cách chọn thức ăn phù hợp cho boss", image: "/assets/images/cat-food.webp", date: "2026-06-04", category: "Dinh dưỡng" },
+  { title: "Bí quyết giữ khay vệ sinh luôn sạch", image: "/assets/images/hygiene.webp", date: "2026-06-04", category: "Vệ sinh" },
+  { title: "Dấu hiệu thú cưng cần đổi khẩu phần", image: "/assets/images/pet-benefits.webp", date: "2026-06-04", category: "Chăm sóc" },
+  { title: "Đồ chơi giúp boss vận động mỗi ngày", image: "/assets/images/accessories.webp", date: "2026-06-04", category: "Phụ kiện" },
+];
 
 export default products;

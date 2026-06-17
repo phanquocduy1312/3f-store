@@ -289,7 +289,7 @@ export function PetAdvisorPopup() {
 
                   {status === "result" && aiResult && (
                     <AiResult key="result" result={aiResult}
-                      onExploreProducts={() => { handleClose(); trackEvent("pet_advisor_product_clicked", { action: "explore" }); navigate(`/products?category=${activeFlow === "dog" ? "Thức ăn cho chó" : "Thức ăn cho mèo"}`); }}
+                  onExploreProducts={() => { handleClose(); trackEvent("pet_advisor_product_clicked", { action: "explore" }); navigate(`/products?petType=${activeFlow === "dog" ? "dog" : "cat"}`); }}
                       onConsultAgent={() => { handleClose(); trackEvent("pet_advisor_zalo_clicked", { type: "chat" }); window.open("https://zalo.me/your_number", "_blank"); }}
                       onShareZalo={() => { trackEvent("pet_advisor_zalo_clicked", { type: "share" }); window.open(`https://zalo.me/your_number?text=${encodeURIComponent("Tôi vừa nhận được tư vấn cho thú cưng từ 3F: " + aiResult.summary)}`, "_blank"); }}
                       onClose={handleClose}

@@ -1,5 +1,6 @@
 import { useState, FormEvent } from "react";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -42,7 +43,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     // Simulate API calling
     setTimeout(() => {
       setIsLoading(false);
-      alert("Đăng nhập thành công! (Dữ liệu mô phỏng)");
+      toast.success("Đăng nhập thành công! (Dữ liệu mô phỏng)");
       if (onSuccess) onSuccess();
     }, 1200);
   };

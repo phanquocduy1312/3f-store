@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   Calendar,
   Info,
@@ -131,7 +132,7 @@ export function ShopeeManualRequestModal({
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      window.alert("Kích thước ảnh tối đa là 5MB.");
+      toast.error("Kích thước ảnh tối đa là 5MB.");
       return;
     }
 
@@ -195,12 +196,12 @@ export function ShopeeManualRequestModal({
         receivedFrom,
       });
 
-      window.alert("Đã tạo yêu cầu thủ công thành công.");
+      toast.success("Đã tạo yêu cầu thủ công thành công.");
       resetForm();
       onClose();
     } catch (err) {
       console.error(err);
-      window.alert("Đã xảy ra lỗi khi tạo yêu cầu.");
+      toast.error("Đã xảy ra lỗi khi tạo yêu cầu.");
     } finally {
       setLoading(false);
     }

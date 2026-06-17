@@ -14,7 +14,9 @@ import {
   Sparkles,
   Tag,
   Users,
+  LogOut,
 } from "lucide-react";
+import { adminLogout } from "@/src/api/productsApi";
 
 interface AdminSidebarProps {
   activeMenu: string;
@@ -33,12 +35,11 @@ type MenuItem = {
 
 const menuItems: MenuItem[] = [
   { name: "Dashboard", icon: LayoutDashboard, path: "/admin" },
-  { name: "Đơn hàng", icon: ShoppingBag, hasChevron: true },
-  { name: "Yêu cầu Shopee", icon: CheckSquare, badge: "12", path: "/admin/shopee-requests" },
+  { name: "Đơn hàng", icon: ShoppingBag, hasChevron: true, path: "/admin/orders" },
   { name: "Khách hàng CRM", icon: Users },
   { name: "Hồ sơ thú cưng", icon: Heart },
   { name: "AI Pet Advisor", icon: Sparkles, badge: "AI" },
-  { name: "3F Club", icon: Gift },
+  { name: "3F Club", icon: Gift, path: "/admin/3f-club" },
   { name: "Sản phẩm", icon: Package },
   { name: "Voucher / Campaign", icon: Tag, hasChevron: true },
   { name: "Nội dung / SEO", icon: FileText, hasChevron: true },
@@ -50,6 +51,33 @@ const menuItems: MenuItem[] = [
 export function AdminSidebar({ activeMenu, setActiveMenu, collapsed }: AdminSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [adminName, setAdminName] = React.useState("Quản trị viên");
+  const [adminRole, setAdminRole] = React.useState("admin");
+
+  React.useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setAdminName(user.name || "Quản trị viên");
+        setAdminRole(user.role || "admin");
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await adminLogout();
+    } catch (e) {
+      // Ignore
+    }
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("admin_user");
+    navigate("/admin/login");
+  };
 
   return (
     <aside
@@ -121,6 +149,23 @@ export function AdminSidebar({ activeMenu, setActiveMenu, collapsed }: AdminSide
           );
         })}
       </nav>
+
+      {/* Admin Profile & Logout Section */}
+      <div className={`shrink-0 border-t border-[#DCEBFF] p-4 bg-white flex ${collapsed ? "flex-col items-center gap-3" : "items-center justify-between"} transition-all duration-300`}>
+        {!collapsed && (
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-black text-[#0B1F3A] truncate">{adminName}</span>
+            <span className="text-[10px] text-slate-400 font-bold capitalize">{adminRole}</span>
+          </div>
+        )}
+        <button
+          onClick={handleLogout}
+          title="Đăng xuất"
+          className={`flex items-center justify-center text-[#64748B] hover:text-[#EF3340] hover:bg-[#FFF2F3] rounded-xl transition-all duration-200 ${collapsed ? "h-10 w-10" : "h-9 w-9 bg-slate-50"}`}
+        >
+          <LogOut className="h-[18px] w-[18px]" />
+        </button>
+      </div>
     </aside>
   );
 }

@@ -6,9 +6,14 @@ use PDO;
 
 class ShopeePointRequest {
     private $db;
+    private static $migrated = false;
 
     public function __construct() {
         $this->db = Database::getInstance()->getConnection();
+        if (!self::$migrated) {
+            $this->checkAndMigrate();
+            self::$migrated = true;
+        }
     }
 
     /**
@@ -248,5 +253,94 @@ class ShopeePointRequest {
         $stmt->execute([':phone' => $phone]);
         $res = $stmt->fetch();
         return $res && isset($res['total_approved']) ? (int)$res['total_approved'] : 0;
+    }
+
+    /**
+     * Checks if verification columns exist and adds them if missing.
+     */
+    public function checkAndMigrate() {
+        try {
+            $stmt = $this->db->query("SHOW COLUMNS FROM `shopee_point_requests` LIKE 'matched_shopee_order_id'");
+            $column = $stmt->fetch();
+            
+            if (!$column) {
+                $this->db->exec("ALTER TABLE `shopee_point_requests` ADD COLUMN `matched_shopee_order_id` VARCHAR(100) NULL AFTER `verification_status`");
+                $this->db->exec("ALTER TABLE `shopee_point_requests` ADD COLUMN `shopee_api_status` VARCHAR(50) NULL AFTER `matched_shopee_order_id`");
+                $this->db->exec("ALTER TABLE `shopee_point_requests` ADD COLUMN `shopee_api_order_amount` INT NULL AFTER `shopee_api_status`");
+                $this->db->exec("ALTER TABLE `shopee_point_requests` ADD COLUMN `shopee_api_raw_json` LONGTEXT NULL AFTER `shopee_api_order_amount`");
+                $this->db->exec("ALTER TABLE `shopee_point_requests` ADD COLUMN `verified_at` DATETIME NULL AFTER `shopee_api_raw_json`");
+                $this->db->exec("ALTER TABLE `shopee_point_requests` ADD COLUMN `verification_note` TEXT NULL AFTER `verified_at`");
+            }
+        } catch (\Exception $e) {
+            error_log("Database migration check failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Updates verification status and info.
+     */
+    public function updateVerification($id, $data) {
+        $sql = "
+            UPDATE shopee_point_requests 
+            SET verification_status = :verification_status,
+                matched_shopee_order_id = :matched_shopee_order_id,
+                shopee_api_status = :shopee_api_status,
+                shopee_api_order_amount = :shopee_api_order_amount,
+                shopee_api_raw_json = :shopee_api_raw_json,
+                verified_at = NOW(),
+                verification_note = :verification_note
+            WHERE id = :id
+        ";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':verification_status'     => $data['verification_status'],
+            ':matched_shopee_order_id' => isset($data['matched_shopee_order_id']) ? $data['matched_shopee_order_id'] : null,
+            ':shopee_api_status'       => isset($data['shopee_api_status']) ? $data['shopee_api_status'] : null,
+            ':shopee_api_order_amount' => isset($data['shopee_api_order_amount']) ? (int)$data['shopee_api_order_amount'] : null,
+            ':shopee_api_raw_json'     => isset($data['shopee_api_raw_json']) ? $data['shopee_api_raw_json'] : null,
+            ':verification_note'       => isset($data['verification_note']) ? $data['verification_note'] : null,
+            ':id'                      => $id
+        ]);
+    }
+
+    /**
+     * Gets requests pending verification.
+     */
+    public function getPendingVerificationRequests($ids = null) {
+        if ($ids !== null) {
+            if (empty($ids)) return [];
+            $inQuery = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $this->db->prepare("
+                SELECT * FROM shopee_point_requests 
+                WHERE id IN ($inQuery) AND processing_status = 'pending'
+            ");
+            $stmt->execute($ids);
+            return $stmt->fetchAll();
+        }
+        
+        $stmt = $this->db->prepare("
+            SELECT * FROM shopee_point_requests 
+            WHERE processing_status = 'pending' AND verification_status = 'not_checked'
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Checks if another approved or valid request exists with the same order code.
+     */
+    public function checkDuplicateOrderCode($orderCode, $excludeId) {
+        $stmt = $this->db->prepare("
+            SELECT id FROM shopee_point_requests 
+            WHERE shopee_order_code = :code 
+              AND id != :exclude_id
+              AND (processing_status = 'approved' OR verification_status = 'valid')
+            LIMIT 1
+        ");
+        $stmt->execute([
+            ':code'       => $orderCode,
+            ':exclude_id' => $excludeId
+        ]);
+        return $stmt->fetch() ?: null;
     }
 }

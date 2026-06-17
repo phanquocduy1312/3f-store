@@ -181,3 +181,75 @@ export async function rejectShopeePointRequest(requestId: number, reason: string
 
   return data;
 }
+
+/**
+ * Verifies a single Shopee point request against Shopee API.
+ */
+export async function verifyShopeePointRequest(id: number) {
+  const res = await fetch(`${API_BASE_URL}/api/admin/shopee/requests/verify`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id }),
+  });
+
+  const data = await res.json();
+
+  if (res.status === 401 || res.status === 403) {
+    throw new Error("Bạn không có quyền thực hiện thao tác này");
+  }
+
+  if (!res.ok || !data.success) {
+    const msg = data?.message || "";
+    if (msg.toLowerCase().includes("token") || msg.toLowerCase().includes("shopee")) {
+      throw new Error("Không thể kết nối Shopee API. Vui lòng kiểm tra kết nối Shopee.");
+    }
+    throw new Error(msg || "Không thể đối chiếu yêu cầu");
+  }
+
+  return data;
+}
+
+/**
+ * Verifies multiple Shopee point requests against Shopee API.
+ */
+export async function verifyBulkShopeePointRequests(ids: number[]) {
+  const res = await fetch(`${API_BASE_URL}/api/admin/shopee/requests/verify-bulk`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ids }),
+  });
+
+  const data = await res.json();
+
+  if (res.status === 401 || res.status === 403) {
+    throw new Error("Bạn không có quyền thực hiện thao tác này");
+  }
+
+  if (!res.ok || !data.success) {
+    const msg = data?.message || "";
+    if (msg.toLowerCase().includes("token") || msg.toLowerCase().includes("shopee")) {
+      throw new Error("Không thể kết nối Shopee API. Vui lòng kiểm tra kết nối Shopee.");
+    }
+    throw new Error(msg || "Không thể đối chiếu hàng loạt");
+  }
+
+  return data;
+}
+
+/**
+ * Retrieves customer points by phone number.
+ */
+export async function getCustomerPoints(phone: string) {
+  const res = await fetch(`${API_BASE_URL}/api/customer/points?phone=${encodeURIComponent(phone)}`);
+  const data = await res.json();
+
+  if (!res.ok || !data.success) {
+    throw new Error(data?.message || "Không lấy được điểm khách hàng");
+  }
+
+  return data;
+}

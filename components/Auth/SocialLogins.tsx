@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+
 interface SocialLoginsProps {
   label?: string;
   hideLabel?: boolean;
@@ -5,7 +7,7 @@ interface SocialLoginsProps {
 
 export function SocialLogins({ label = "Hoặc tiếp tục với", hideLabel = false }: SocialLoginsProps) {
   const handleSocialLogin = (provider: string) => {
-    alert(`Đăng nhập qua ${provider} (Mô phỏng chức năng)`);
+    toast.info(`Đăng nhập qua ${provider} (Mô phỏng chức năng)`);
   };
 
   return (

@@ -51,7 +51,7 @@ export type ShopeePointRequest = {
   apiChecked: boolean;
   apiCheckStatus: ShopeeApiCheckStatus;
   apiOrderAmount?: number;
-  apiOrderStatus?: ShopeeApiOrderStatus;
+  apiOrderStatus?: string;
   apiShopId?: string;
   apiBuyerId?: string;
   apiCreateTime?: string;
@@ -62,6 +62,9 @@ export type ShopeePointRequest = {
   processingStatus?: ShopeeProcessingStatus;
   verificationStatus?: ShopeeVerificationStatus;
   verificationIssues?: string[];
+  matchedShopeeOrderId?: string;
+  verifiedAt?: string;
+  verificationNote?: string;
   adminNote?: string;
   rejectedReason?: string;
   source?: "customer_form" | "manual_admin";

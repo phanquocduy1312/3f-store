@@ -1,6 +1,7 @@
 import { AiResultData } from "./mockAiResult";
-import { getCatFoodProducts, getDogFoodProducts } from "@/data/store";
+import { getProducts } from "@/src/api/productsApi";
 import { detectNeeds, detectSeriousWarning, calculateMonthlyBudget, getBudgetSegment } from "./petAdvisorUtils";
+import type { Product } from "@/types/store";
 
 const FALLBACK_RESULT: AiResultData = {
   summary: "3F đã ghi nhận hồ sơ của bé.",
@@ -53,13 +54,22 @@ export async function getPetAdviceFromGroq(
   customer: { name: string; phone: string; email: string; petName?: string }
 ): Promise<AiResultData> {
 
-  let availableProducts = [];
-  if (activeFlow === "cat" || petType === "cat") {
-    availableProducts = getCatFoodProducts(30);
-  } else if (activeFlow === "dog" || petType === "dog") {
-    availableProducts = getDogFoodProducts(30);
-  } else {
-    availableProducts = [...getCatFoodProducts(15), ...getDogFoodProducts(15)];
+  let availableProducts: Product[] = [];
+  try {
+    if (activeFlow === "cat" || petType === "cat") {
+      availableProducts = (await getProducts({ petType: "cat", limit: 30, sort: "popular" })).items;
+    } else if (activeFlow === "dog" || petType === "dog") {
+      availableProducts = (await getProducts({ petType: "dog", limit: 30, sort: "popular" })).items;
+    } else {
+      const [catResult, dogResult] = await Promise.all([
+        getProducts({ petType: "cat", limit: 15, sort: "popular" }),
+        getProducts({ petType: "dog", limit: 15, sort: "popular" }),
+      ]);
+      availableProducts = [...catResult.items, ...dogResult.items];
+    }
+  } catch (error) {
+    console.error("[PRODUCT CATALOG API ERROR]", error);
+    availableProducts = [];
   }
 
   const catalog = availableProducts.map(p => ({

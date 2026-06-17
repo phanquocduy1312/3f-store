@@ -7,11 +7,12 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import { getProductsByCategory } from "@/data/store";
+import { getProducts } from "@/src/api/productsApi";
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SaleBadge } from "@/components/SaleBadge";
 import { NewBadge } from "@/components/NewBadge";
+import type { Product } from "@/types/store";
 
 const categories = [
   { id: "all", label: "Tất cả", icon: PawPrint },
@@ -23,6 +24,31 @@ const categories = [
 
 export function DealsSection() {
   const [activeCategory, setActiveCategory] = useState("all");
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const categoryParams =
+      activeCategory === "food"
+        ? { productType: "dry_food" }
+        : activeCategory === "accessories" || activeCategory === "toys"
+          ? { productType: "accessory" }
+          : activeCategory === "care"
+            ? { productType: "hygiene" }
+            : {};
+
+    getProducts({ ...categoryParams, sort: "popular", limit: 12 })
+      .then((result) => {
+        if (isMounted) setProducts(result.items);
+      })
+      .catch(() => {
+        if (isMounted) setProducts([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeCategory]);
 
   return (
     <section className="relative bg-white py-8 sm:py-12">
@@ -99,7 +125,7 @@ export function DealsSection() {
                 }}
                 className="!pb-12"
               >
-          {getProductsByCategory(activeCategory, 12).map((product, index) => {
+          {products.map((product, index) => {
             const isBestSeller = index === 0;
             const isFavorite = index === 1;
             const hasDiscount = !!product.oldPrice;

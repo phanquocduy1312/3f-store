@@ -11,7 +11,7 @@ import type { ShopeePointRequest } from "@/types/shopee";
 import { useState } from "react";
 import { ShopeeApiBadge } from "./ShopeeApiBadge";
 import { ShopeeStatusBadge } from "./ShopeeStatusBadge";
-
+import { buildImageUrl } from "@/src/config/api";
 interface ShopeeRequestDetailPanelProps {
   request?: ShopeePointRequest;
   duplicatedCodes: string[];
@@ -163,7 +163,7 @@ export function ShopeeRequestDetailPanel({
           <DetailCard title="Ảnh đơn">
             <div className="h-[120px] overflow-hidden rounded-2xl border border-[#DCEBFF] bg-[#F6FAFF]">
               {request.orderImageUrl ? (
-                <img src={request.orderImageUrl} alt={`Đơn Shopee ${request.shopeeOrderCode}`} className="h-full w-full object-cover" />
+                <img src={buildImageUrl(request.orderImageUrl)} alt={`Đơn Shopee ${request.shopeeOrderCode}`} className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full items-center justify-center text-[12px] font-semibold text-[#94A3B8]">Chưa có ảnh đơn</div>
               )}
@@ -171,7 +171,7 @@ export function ShopeeRequestDetailPanel({
             <button
               type="button"
               disabled={!request.orderImageUrl}
-              onClick={() => request.orderImageUrl && setPreviewImage(request.orderImageUrl)}
+              onClick={() => request.orderImageUrl && setPreviewImage(buildImageUrl(request.orderImageUrl))}
               className="mt-3 inline-flex items-center gap-2 text-[13px] font-bold text-[#0057E7] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Xem ảnh lớn <ExternalLink className="h-4 w-4" />
