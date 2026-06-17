@@ -94,7 +94,7 @@ class Order {
             }
 
             // 3. Log initial status
-            $this->logStatusChange($orderId, '', $orderData['order_status'] ?: 'pending', 'Đơn hàng khởi tạo thành công', 'system');
+            $this->logStatusChange($orderId, null, $orderData['order_status'] ?: 'pending', 'Đơn hàng được tạo từ website', 'customer/system');
 
             if (!$inTransaction) {
                 $db->commit();
@@ -109,7 +109,13 @@ class Order {
     }
 
     public function getOrderDetails($orderCode) {
-        $stmt = $this->db->prepare("SELECT * FROM orders WHERE order_code = :order_code LIMIT 1");
+        $stmt = $this->db->prepare("
+            SELECT o.*, c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email 
+            FROM orders o 
+            LEFT JOIN customers c ON o.customer_id = c.id 
+            WHERE o.order_code = :order_code 
+            LIMIT 1
+        ");
         $stmt->execute([':order_code' => trim($orderCode)]);
         $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -123,7 +129,13 @@ class Order {
     }
 
     public function getOrderDetailsById($orderId) {
-        $stmt = $this->db->prepare("SELECT * FROM orders WHERE id = :order_id LIMIT 1");
+        $stmt = $this->db->prepare("
+            SELECT o.*, c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email 
+            FROM orders o 
+            LEFT JOIN customers c ON o.customer_id = c.id 
+            WHERE o.id = :order_id 
+            LIMIT 1
+        ");
         $stmt->execute([':order_id' => (int)$orderId]);
         $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -148,25 +160,38 @@ class Order {
     }
 
     public function listOrders($filters = []) {
-        $sql = "SELECT * FROM orders WHERE 1=1";
+        $sql = "SELECT o.*, c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email 
+                FROM orders o 
+                LEFT JOIN customers c ON o.customer_id = c.id 
+                WHERE 1=1";
         $params = [];
 
         if (!empty($filters['q'])) {
-            $sql .= " AND (order_code LIKE :q OR phone LIKE :q OR receiver_name LIKE :q)";
+            $sql .= " AND (o.order_code LIKE :q OR o.phone LIKE :q OR o.receiver_name LIKE :q OR c.name LIKE :q)";
             $params[':q'] = '%' . trim($filters['q']) . '%';
         }
 
         if (!empty($filters['order_status'])) {
-            $sql .= " AND order_status = :order_status";
+            $sql .= " AND o.order_status = :order_status";
             $params[':order_status'] = trim($filters['order_status']);
         }
 
         if (!empty($filters['payment_status'])) {
-            $sql .= " AND payment_status = :payment_status";
+            $sql .= " AND o.payment_status = :payment_status";
             $params[':payment_status'] = trim($filters['payment_status']);
         }
 
-        $sql .= " ORDER BY id DESC";
+        if (!empty($filters['start_date'])) {
+            $sql .= " AND DATE(o.created_at) >= :start_date";
+            $params[':start_date'] = trim($filters['start_date']);
+        }
+
+        if (!empty($filters['end_date'])) {
+            $sql .= " AND DATE(o.created_at) <= :end_date";
+            $params[':end_date'] = trim($filters['end_date']);
+        }
+
+        $sql .= " ORDER BY o.id DESC";
 
         $page = max(1, (int)($filters['page'] ?? 1));
         $limit = min(100, max(1, (int)($filters['limit'] ?? 20)));
@@ -189,8 +214,35 @@ class Order {
         $stmt->execute();
         $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        foreach ($items as &$order) {
+            $order['items'] = (new OrderItem())->getItemsByOrderId((int)$order['id']);
+            $order['status_logs'] = $this->getStatusLogs((int)$order['id']);
+        }
+
+        // Calculate summary
+        $summarySql = "
+            SELECT 
+                COUNT(*) as totalOrders,
+                SUM(CASE WHEN order_status = 'pending' THEN 1 ELSE 0 END) as pendingOrders,
+                SUM(CASE WHEN order_status IN ('confirmed', 'packing') THEN 1 ELSE 0 END) as processingOrders,
+                SUM(CASE WHEN order_status = 'shipping' THEN 1 ELSE 0 END) as shippingOrders,
+                SUM(CASE WHEN order_status = 'completed' THEN 1 ELSE 0 END) as completedOrders,
+                SUM(CASE WHEN order_status = 'completed' THEN total ELSE 0 END) as completedRevenue
+            FROM orders
+        ";
+        $summaryRow = $this->db->query($summarySql)->fetch(PDO::FETCH_ASSOC);
+        $summary = [
+            'totalOrders' => (int)($summaryRow['totalOrders'] ?? 0),
+            'pendingOrders' => (int)($summaryRow['pendingOrders'] ?? 0),
+            'processingOrders' => (int)($summaryRow['processingOrders'] ?? 0),
+            'shippingOrders' => (int)($summaryRow['shippingOrders'] ?? 0),
+            'completedOrders' => (int)($summaryRow['completedOrders'] ?? 0),
+            'completedRevenue' => (float)($summaryRow['completedRevenue'] ?? 0)
+        ];
+
         return [
             'items' => $items,
+            'summary' => $summary,
             'pagination' => [
                 'page' => $page,
                 'limit' => $limit,
@@ -218,16 +270,15 @@ class Order {
         // Validate state transitions
         $allowedTransitions = [
             'pending' => ['confirmed', 'cancelled'],
-            'confirmed' => ['packing', 'cancelled'],
-            'packing' => ['shipping', 'cancelled'],
+            'confirmed' => ['packing'],
+            'packing' => ['shipping'],
             'shipping' => ['completed'],
             'completed' => [],
             'cancelled' => [],
-            'refunded' => []
         ];
 
         if (!in_array($newStatus, $allowedTransitions[$currentStatus] ?? [], true)) {
-            throw new Exception("Trạng thái chuyển đổi từ {$currentStatus} sang {$newStatus} không hợp lệ.");
+            throw new Exception("Không thể chuyển trạng thái đơn hàng không đúng trình tự.");
         }
 
         // Update the order_status field

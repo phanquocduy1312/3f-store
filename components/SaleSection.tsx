@@ -14,6 +14,8 @@ import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionS
 import { getProducts } from "@/src/api/productsApi";
 import { SaleBadge } from "@/components/SaleBadge";
 import type { Product } from "@/types/store";
+import { addToCart, parsePriceString } from "@/lib/cartHelper";
+import { toast } from "sonner";
 
 const categoryLabels = ["Thức ăn khô cho mèo", "Thức ăn khô cho chó", "Cát vệ sinh cho mèo", "Pate & snack"];
 
@@ -161,6 +163,34 @@ function SaleProductCard({ product, index }: { product: Product; index: number }
         <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
           <motion.button
             whileTap={{ scale: 0.94 }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const hasVariants = product.variants && product.variants.length > 1;
+              if (hasVariants) {
+                window.dispatchEvent(
+                  new CustomEvent("open-quick-add", {
+                    detail: { productId: product.id, intent: "add-to-cart" },
+                  })
+                );
+              } else {
+                const defVar = product.variants?.[0];
+                addToCart({
+                  id: defVar?.id ?? product.id,
+                  productId: String(product.backendId ?? product.sourceProductId ?? product.id),
+                  variantId: defVar?.id,
+                  sku: defVar?.sku,
+                  name: product.name,
+                  image: defVar?.image ?? product.image,
+                  price: parsePriceString(defVar?.price ?? product.price),
+                  originalPrice: (defVar?.oldPrice ?? product.oldPrice) ? parsePriceString(defVar?.oldPrice ?? product.oldPrice) : undefined,
+                  variantName: defVar?.label,
+                  variant: defVar?.label ?? "Mặc định",
+                }, 1);
+
+                toast.success(`Đã thêm "${product.name}" vào giỏ hàng!`);
+              }
+            }}
             className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#2F8A11] px-2.5 text-sm font-black text-white shadow-[0_10px_24px_rgba(47,138,17,0.28)] transition hover:bg-[#246B0D]"
           >
             <ShoppingCart size={17} className="shrink-0" />
@@ -168,6 +198,15 @@ function SaleProductCard({ product, index }: { product: Product; index: number }
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.94 }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              window.dispatchEvent(
+                new CustomEvent("open-quick-add", {
+                  detail: { productId: product.id, intent: "buy-now" },
+                })
+              );
+            }}
             className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#D5DEC9] bg-white px-2.5 text-sm font-bold text-[#263A2A] transition hover:border-[#9FBA92] hover:bg-[#F6FAF2]"
           >
             <Eye size={16} className="shrink-0" />

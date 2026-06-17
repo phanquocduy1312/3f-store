@@ -3,6 +3,7 @@ import { useParams, useSearchParams, Link } from "react-router-dom";
 import { ArrowLeft, Calendar, CheckCircle2, Clock, MapPin, Package, Search, ShoppingBag, ShieldCheck, CreditCard, Award } from "lucide-react";
 import { getOrderDetails, checkOrdersByPhone, OrderDetail } from "@/src/api/productsApi";
 import { Image } from "@/components/Image";
+import { toast } from "sonner";
 
 // Status translation & color map
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
@@ -66,7 +67,7 @@ export function OrderTracking() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!phoneQuery.trim()) {
-      alert("Vui lòng nhập số điện thoại");
+      toast.error("Vui lòng nhập số điện thoại");
       return;
     }
     setSearchParams({ phone: phoneQuery });
@@ -210,7 +211,8 @@ export function OrderTracking() {
               <div className="relative pl-8 border-l-2 border-gray-100 ml-4 space-y-8">
                 {activeOrder.status_logs && activeOrder.status_logs.length > 0 ? (
                   activeOrder.status_logs.map((log) => {
-                    const st = STATUS_MAP[log.status] || { label: log.status, color: "text-gray-600", bg: "bg-gray-100" };
+                    const toStatus = log.to_status || "pending";
+                    const st = STATUS_MAP[toStatus] || { label: toStatus, color: "text-gray-600", bg: "bg-gray-100" };
                     return (
                       <div key={log.id} className="relative">
                         <div className={`absolute -left-[41px] top-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white border-2 border-forest text-forest`}>

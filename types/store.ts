@@ -15,6 +15,12 @@ export type ProductVariant = {
   oldPrice?: string;   // Original price before discount
   image: string;       // Variant-specific image URL
   stock?: number;      // Available stock (0 = available on demand)
+  option1Name?: string;
+  option1Value?: string;
+  option2Name?: string;
+  option2Value?: string;
+  option3Name?: string;
+  option3Value?: string;
 };
 
 export type Product = {
@@ -47,6 +53,10 @@ export type Product = {
   stock?: number;
   /** Purchasable variants (size, flavor, color, etc.) */
   variants?: ProductVariant[];
+  /** Options groupings (e.g. Kích cỡ, Hương vị) */
+  options?: Array<{ name: string; values: string[] }>;
+  productType?: string;
+  petType?: string;
 };
 
 export type Feature = {

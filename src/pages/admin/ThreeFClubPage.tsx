@@ -24,6 +24,7 @@ import { ShopeeRequestsSection } from "@/components/admin/shopee/ShopeeRequestsS
 import { API_BASE_URL } from "@/src/config/api";
 import { getAdminLoyaltyRedemptions } from "@/src/services/loyaltyRedemptionsApi";
 import type { ShopeePointRequest } from "@/types/shopee";
+import { toast } from "sonner";
 
 type MainTab = "shopee" | "points" | "tiers" | "rewards" | "history";
 type RewardsSubTab = "redemptions" | "catalog";
@@ -53,6 +54,54 @@ export default function ThreeFClubPage() {
   const [rewardsSubTab, setRewardsSubTab] = useState<RewardsSubTab>("catalog");
 
   const [requests, setRequests] = useState<ShopeePointRequest[]>([]);
+  const [shopeeConnection, setShopeeConnection] = useState<{
+    connected: boolean;
+    shopId?: string;
+    shopName?: string;
+    tokenExpiredAt?: string;
+  } | null>(null);
+  const [connectingShopee, setConnectingShopee] = useState(false);
+
+  const loadShopeeConnectionStatus = async () => {
+    try {
+      const res = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/shopee/connection-status`);
+      if (res.success && res.data) {
+        setShopeeConnection(res.data);
+      }
+    } catch (err) {
+      console.error("Failed to load Shopee connection status", err);
+    }
+  };
+
+  const handleConnectShopee = async () => {
+    setConnectingShopee(true);
+    try {
+      const res = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/shopee/connect`, {
+        method: "GET"
+      });
+      if (res.success && res.data?.authorizeUrl) {
+        window.location.href = res.data.authorizeUrl;
+      } else {
+        toast.error("Không lấy được link kết nối Shopee.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Lỗi kết nối Shopee.");
+    } finally {
+      setConnectingShopee(false);
+    }
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const shopeeParam = params.get("shopee");
+    if (shopeeParam === "connected") {
+      toast.success("Kết nối Shopee thành công!");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (shopeeParam === "error") {
+      toast.error("Kết nối Shopee thất bại. Vui lòng thử lại!");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
   const [activeRule, setActiveRule] = useState<LoyaltyRule | null>(null);
   const [overview, setOverview] = useState({
     pendingRedemptions: 0,
@@ -97,6 +146,7 @@ export default function ThreeFClubPage() {
 
   useEffect(() => {
     loadOverview();
+    loadShopeeConnectionStatus();
   }, []);
 
   useEffect(() => {
@@ -187,11 +237,40 @@ export default function ThreeFClubPage() {
         />
 
         <main className="space-y-5 px-4 py-4 sm:px-6 sm:py-6">
-          <section className="flex flex-col gap-2">
-            <h1 className="text-[30px] font-black text-[#0B1F3A]">3F Club</h1>
-            <p className="text-[14px] font-semibold text-[#64748B]">
-              Duyệt đơn Shopee, cấu hình điểm và xử lý đổi quà trong một luồng vận hành.
-            </p>
+          <section className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-[30px] font-black text-[#0B1F3A]">3F Club</h1>
+              <p className="text-[14px] font-semibold text-[#64748B]">
+                Duyệt đơn Shopee, cấu hình điểm và xử lý đổi quà trong một luồng vận hành.
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-[#DCEBFF] shadow-sm shrink-0">
+              <div className="flex flex-col items-end">
+                <span className="text-[11px] font-bold text-[#64748B]">TRẠNG THÁI SHOPEE</span>
+                {shopeeConnection?.connected ? (
+                  <span className="text-[13px] font-black text-[#039855]">
+                    Đã kết nối ({shopeeConnection.shopName || shopeeConnection.shopId})
+                  </span>
+                ) : (
+                  <span className="text-[13px] font-black text-[#64748B]">
+                    Chưa kết nối
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleConnectShopee}
+                disabled={connectingShopee}
+                className={`inline-flex h-10 items-center justify-center rounded-xl px-4 text-[13px] font-black transition ${
+                  shopeeConnection?.connected
+                    ? "border border-[#DCEBFF] bg-white text-[#64748B] hover:bg-slate-50"
+                    : "bg-[#0057E7] text-white hover:bg-[#0046b8]"
+                }`}
+              >
+                {connectingShopee ? "Đang xử lý..." : shopeeConnection?.connected ? "Kết nối lại" : "Kết nối Shopee"}
+              </button>
+            </div>
           </section>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
@@ -288,12 +367,26 @@ export default function ThreeFClubPage() {
   );
 }
 
-async function fetchJsonWithTimeout(url: string) {
+async function fetchJsonWithTimeout(url: string, options?: RequestInit) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 10000);
+  const token = localStorage.getItem("admin_token");
+
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+    headers["X-Admin-Token"] = token;
+  }
 
   try {
-    const response = await fetch(url, { signal: controller.signal });
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        ...headers,
+        ...(options?.headers || {}),
+      },
+    });
     const data = await response.json();
 
     if (!response.ok || data.success === false) {

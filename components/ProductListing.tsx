@@ -7,6 +7,8 @@ import { getProducts, getProductFilters, type ProductSort, type ProductFiltersDa
 import { SaleBadge } from "@/components/SaleBadge";
 import { NewBadge } from "@/components/NewBadge";
 import type { Product } from "@/types/store";
+import { addToCart, parsePriceString } from "@/lib/cartHelper";
+import { toast } from "sonner";
 
 // Helper for image loading
 function Image({ src, alt, className }: { src: string, alt: string, className?: string }) {
@@ -325,13 +327,41 @@ export function ProductListing() {
                               </div>
                             </div>
 
-                            <Link
-                              to={`/product/${linkId}`}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const hasVariants = product.variants && product.variants.length > 1;
+                                if (hasVariants) {
+                                  window.dispatchEvent(
+                                    new CustomEvent("open-quick-add", {
+                                      detail: { productId: product.id, intent: "add-to-cart" },
+                                    })
+                                  );
+                                } else {
+                                  const defVar = product.variants?.[0];
+                                  addToCart({
+                                    id: defVar?.id ?? product.id,
+                                    productId: String(product.backendId ?? product.sourceProductId ?? product.id),
+                                    variantId: defVar?.id,
+                                    sku: defVar?.sku,
+                                    name: product.name,
+                                    image: defVar?.image ?? product.image,
+                                    price: parsePriceString(defVar?.price ?? product.price),
+                                    originalPrice: (defVar?.oldPrice ?? product.oldPrice) ? parsePriceString(defVar?.oldPrice ?? product.oldPrice) : undefined,
+                                    variantName: defVar?.label,
+                                    variant: defVar?.label ?? "Mặc định",
+                                  }, 1);
+
+                                  toast.success(`Đã thêm "${product.name}" vào giỏ hàng!`);
+                                }
+                              }}
                               title="Thêm vào giỏ"
                               className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-[rgb(var(--color-primary-soft))] text-[rgb(var(--color-primary))] shadow-sm transition-all hover:scale-105 hover:bg-[rgb(var(--color-primary))] hover:text-white active:scale-95"
                             >
                               <ShoppingCart size={14} strokeWidth={2.5} className="sm:w-4 sm:h-4" />
-                            </Link>
+                            </button>
                           </div>
                         </div>
                       </div>

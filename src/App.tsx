@@ -3,6 +3,8 @@ import { Routes, Route, useLocation, Navigate, Outlet } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PetAdvisorPopup } from "@/components/pet-advisor/PetAdvisorPopup";
+import { QuickAddToCartModal } from "@/components/QuickAddToCartModal";
+import { Toaster } from "sonner";
 
 const Home = lazy(() => import("./pages/Home").then(m => ({ default: m.Home })));
 const Products = lazy(() => import("./pages/Products").then(m => ({ default: m.Products })));
@@ -85,6 +87,9 @@ export function App() {
       
       {showFooter && <Footer />}
       {!isAdminRoute && <PetAdvisorPopup />}
+      {!isAdminRoute && <QuickAddToCartModal />}
+
+      <Toaster richColors position="top-right" closeButton />
     </main>
   );
 }

@@ -287,6 +287,8 @@ class OrderController {
                 'q' => Request::query('q'),
                 'order_status' => Request::query('order_status'),
                 'payment_status' => Request::query('payment_status'),
+                'start_date' => Request::query('start_date'),
+                'end_date' => Request::query('end_date'),
                 'page' => Request::query('page', 1),
                 'limit' => Request::query('limit', 20)
             ];
@@ -314,6 +316,24 @@ class OrderController {
                 Response::json(["success" => false, "message" => "Thiếu ID đơn hàng hoặc trạng thái mới."], 400);
             }
 
+            if (empty($note)) {
+                if ($newStatus === 'confirmed') {
+                    $note = "Admin xác nhận đơn hàng";
+                } elseif ($newStatus === 'packing') {
+                    $note = "Đơn chuyển sang chuẩn bị hàng";
+                } elseif ($newStatus === 'shipping') {
+                    $note = "Đơn bắt đầu giao hàng";
+                } elseif ($newStatus === 'completed') {
+                    $note = "Đơn hoàn tất, đã trừ tồn kho và cộng điểm 3F Club";
+                } elseif ($newStatus === 'cancelled') {
+                    $note = "Đơn đã hủy, tồn kho đã giữ được giải phóng";
+                }
+            } else {
+                if ($newStatus === 'cancelled') {
+                    $note = "Đơn đã hủy, tồn kho đã giữ được giải phóng. Lý do: " . $note;
+                }
+            }
+
             $db = \App\Core\Database::getInstance()->getConnection();
             $orderModel = new Order();
 
@@ -327,14 +347,26 @@ class OrderController {
 
                 $currentStatus = $order['order_status'];
 
+                // Block any operation if order is already completed or cancelled
+                if ($currentStatus === 'completed' || $currentStatus === 'cancelled') {
+                    throw new Exception("Không thể chuyển trạng thái đơn hàng không đúng trình tự.");
+                }
+
+                // Double adjustment protection
+                if ($currentStatus === $newStatus) {
+                    $db->commit();
+                    Response::json(["success" => true, "message" => "Đơn hàng đã ở trạng thái này."], 200);
+                    return;
+                }
+
                 // Update status in orders table (validates transitions internally)
                 $orderModel->updateOrderStatus($orderId, $newStatus, $note, 'admin');
 
                 // Stock Adjustment Logic
-                if ($newStatus === 'cancelled') {
+                if ($newStatus === 'cancelled' && $currentStatus === 'pending') {
                     // Release reserved stock
                     InventoryService::releaseStock($db, $order['items'], $order['order_code']);
-                } elseif ($newStatus === 'completed') {
+                } elseif ($newStatus === 'completed' && $currentStatus === 'shipping') {
                     // Fulfill reserved stock
                     InventoryService::fulfillStock($db, $order['items'], $order['order_code']);
 
@@ -407,7 +439,8 @@ class OrderController {
             }
 
         } catch (Exception $e) {
-            Response::json(["success" => false, "message" => "Lỗi cập nhật trạng thái đơn hàng: " . $e->getMessage()], 500);
+            $code = ($e instanceof \PDOException) ? 500 : 400;
+            Response::json(["success" => false, "message" => $e->getMessage()], $code);
         }
     }
 
@@ -425,6 +458,16 @@ class OrderController {
             }
 
             $orderModel = new Order();
+            $order = $orderModel->getOrderDetailsById($orderId);
+            if (!$order) {
+                Response::json(["success" => false, "message" => "Không tìm thấy đơn hàng."], 404);
+                return;
+            }
+            if ($order['order_status'] === 'cancelled') {
+                Response::json(["success" => false, "message" => "Không thể đánh dấu thanh toán cho đơn hàng đã hủy."], 400);
+                return;
+            }
+            
             $orderModel->updatePaymentStatus($orderId, 'paid', $note, 'admin');
 
             // Write Audit Log

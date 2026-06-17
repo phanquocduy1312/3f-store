@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import { SaleBadge } from "@/components/SaleBadge";
 import { NewBadge } from "@/components/NewBadge";
 import type { Product } from "@/types/store";
+import { addToCart, parsePriceString } from "@/lib/cartHelper";
+import { toast } from "sonner";
 
 interface ProductCardProps {
   product: Product;
@@ -104,6 +106,34 @@ export function ProductCard({ product, isNew, index = 0 }: ProductCardProps) {
           <div className="flex gap-1.5 sm:gap-2">
             <motion.button
               whileTap={{ scale: 0.95 }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const hasVariants = product.variants && product.variants.length > 1;
+                if (hasVariants) {
+                  window.dispatchEvent(
+                    new CustomEvent("open-quick-add", {
+                      detail: { productId: product.id, intent: "add-to-cart" },
+                    })
+                  );
+                } else {
+                  const defVar = product.variants?.[0];
+                  addToCart({
+                    id: defVar?.id ?? product.id,
+                    productId: String(product.backendId ?? product.sourceProductId ?? product.id),
+                    variantId: defVar?.id,
+                    sku: defVar?.sku,
+                    name: product.name,
+                    image: defVar?.image ?? product.image,
+                    price: parsePriceString(defVar?.price ?? product.price),
+                    originalPrice: (defVar?.oldPrice ?? product.oldPrice) ? parsePriceString(defVar?.oldPrice ?? product.oldPrice) : undefined,
+                    variantName: defVar?.label,
+                    variant: defVar?.label ?? "Mặc định",
+                  }, 1);
+
+                  toast.success(`Đã thêm "${product.name}" vào giỏ hàng!`);
+                }
+              }}
               className="flex h-8 w-8 sm:h-9 sm:w-10 shrink-0 items-center justify-center rounded-lg border border-forest sm:border-[1.5px] bg-white text-forest transition-colors hover:bg-forest/5"
               aria-label={`Thêm ${product.name} vào giỏ hàng`}
             >
@@ -111,6 +141,15 @@ export function ProductCard({ product, isNew, index = 0 }: ProductCardProps) {
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.95 }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.dispatchEvent(
+                  new CustomEvent("open-quick-add", {
+                    detail: { productId: product.id, intent: "buy-now" },
+                  })
+                );
+              }}
               className="flex h-8 sm:h-9 flex-1 items-center justify-center rounded-lg bg-forest px-2 font-bold text-white transition-colors hover:bg-[rgb(var(--color-primary-dark))]"
               aria-label={`Mua ngay ${product.name}`}
             >

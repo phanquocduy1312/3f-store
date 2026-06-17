@@ -77,6 +77,7 @@ try {
     new \App\Models\AdminUser();
     new \App\Models\AdminSession();
     new \App\Models\AuditLog();
+    new \App\Models\ShopeeTokenModel();
 
     // 3. Initialize Router
     $router = new Router();
@@ -118,7 +119,9 @@ try {
 
     // Shopee OAuth Sandbox Routes
     $router->get("/api/admin/shopee/auth-url", [ShopeeAuthController::class, "getAuthUrl"]);
+    $router->get("/api/admin/shopee/connect", [ShopeeAuthController::class, "connect"]);
     $router->get("/api/shopee/callback", [ShopeeAuthController::class, "callback"]);
+    $router->get("/api/shopee/callback/", [ShopeeAuthController::class, "callback"]);
     $router->get("/api/admin/shopee/connection-status", [ShopeeAuthController::class, "connectionStatus"]);
 
     // Loyalty Rule Config Routes

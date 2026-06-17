@@ -13,6 +13,7 @@
 - [x] Xây dựng giao diện Drawer/Modal Giỏ hàng.
 - [x] Quản lý Global State cho Giỏ hàng.
 - [x] Trang Thanh toán (Checkout Page) tích hợp VietQR và Form giao hàng.
+- [x] Triển khai Quick Add To Cart Modal cho product card ngoài trang chủ và trang danh mục.
 
 ## Phase 3: Mobile Responsive & Performance (Hoàn thành)
 - [x] Tối ưu hiệu năng tải trang dưới 1 giây (WebP, Code Splitting, Suspense).
@@ -43,5 +44,5 @@
 - [x] Xây dựng trang đổi quà tích điểm cho khách hàng (Customer Rewards Page) tại route `/3f-club/rewards`.
 - [x] Xây dựng trang Thành công Đơn hàng (Order Success) hỗ trợ tạo mã VietQR thanh toán nhanh chuyển khoản.
 - [x] Xây dựng trang Theo dõi đơn hàng (Order Tracking) trực quan hiển thị timeline trạng thái đơn hàng và lịch sử điểm thưởng.
-- [x] Xây dựng trang Quản lý đơn hàng Admin (`/admin/orders`) hỗ trợ chuyển đổi trạng thái, ghi chú lý do và duyệt thanh toán.
+- [x] Xây dựng trang Quản lý đơn hàng Admin (`/admin/orders`) hỗ trợ chuyển đổi trạng thái tuần tự theo quy trình 3F Store, thống kê nhanh qua summary cards, lọc theo ngày và hiển thị địa chỉ chi tiết không bị cắt xén.
 - [ ] Trang quản lý tài khoản người dùng (Lịch sử đơn hàng, địa chỉ...).

@@ -75,6 +75,7 @@ export type ApiProduct = {
   variantCount: number;
   images?: ApiProductImage[];
   variants?: ApiProductVariant[];
+  options?: Array<{ name: string; values: string[] }>;
 };
 
 export type ProductListResponse = {
@@ -166,6 +167,12 @@ export function mapApiProduct(product: ApiProduct): Product {
     oldPrice: variant.oldPriceText || undefined,
     image: variant.imageUrl || mainImage,
     stock: variant.stockQuantity,
+    option1Name: variant.option1Name || undefined,
+    option1Value: variant.option1Value || undefined,
+    option2Name: variant.option2Name || undefined,
+    option2Value: variant.option2Value || undefined,
+    option3Name: variant.option3Name || undefined,
+    option3Value: variant.option3Value || undefined,
   }));
 
   return {
@@ -191,6 +198,9 @@ export function mapApiProduct(product: ApiProduct): Product {
     currency: product.currency,
     stock: product.totalStock,
     variants,
+    options: product.options || undefined,
+    productType: product.productType || undefined,
+    petType: product.petType || undefined,
   };
 }
 
@@ -307,10 +317,11 @@ export type OrderItemDetail = {
 export type OrderStatusLog = {
   id: number;
   order_id: number;
-  status: string;
+  from_status: string | null;
+  to_status: string | null;
   note: string | null;
   created_at: string;
-  created_by: string;
+  changed_by: string;
 };
 
 export type OrderDetail = {
@@ -338,6 +349,9 @@ export type OrderDetail = {
   updated_at: string;
   items: OrderItemDetail[];
   status_logs?: OrderStatusLog[];
+  customer_name?: string;
+  customer_phone?: string;
+  customer_email?: string | null;
 };
 
 export type CreateOrderResponse = {
@@ -378,6 +392,8 @@ export type AdminOrderListParams = {
   q?: string;
   order_status?: string;
   payment_status?: string;
+  start_date?: string;
+  end_date?: string;
   page?: number;
   limit?: number;
 };
@@ -386,6 +402,14 @@ export type AdminOrderListResponse = {
   success: boolean;
   data: {
     items: OrderDetail[];
+    summary: {
+      totalOrders: number;
+      pendingOrders: number;
+      processingOrders: number;
+      shippingOrders: number;
+      completedOrders: number;
+      completedRevenue: number;
+    };
     pagination: {
       page: number;
       limit: number;

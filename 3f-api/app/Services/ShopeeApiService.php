@@ -309,32 +309,38 @@ class ShopeeApiService {
         $tokenModel = new \App\Models\ShopeeTokenModel();
         $token = $tokenModel->getLatestToken();
         if (!$token) {
-            throw new \Exception("Chưa kết nối Shopee Shop hoặc không tìm thấy token.");
+            throw new \Exception("No active Shopee token found in database.");
         }
 
-        $expiredAt = strtotime($token['token_expired_at']);
-        // Refresh token if expired or expiring in less than 5 minutes (300 seconds)
-        if ($expiredAt <= time() + 300) {
-            $refreshResult = $this->refreshAccessToken($token['refresh_token'], $token['shop_id']);
-            if (isset($refreshResult['status']) && $refreshResult['status'] === 200 && isset($refreshResult['data']['access_token'])) {
-                $data = $refreshResult['data'];
-                $expireIn = (int)$data['expire_in'];
-                $newExpiredAt = date('Y-m-d H:i:s', time() + $expireIn);
-                
-                $tokenData = [
-                    'access_token'     => $data['access_token'],
-                    'refresh_token'    => $data['refresh_token'],
-                    'expire_in'        => $expireIn,
-                    'token_expired_at' => $newExpiredAt
-                ];
-                $tokenModel->updateToken($token['shop_id'], $tokenData);
-                
-                $token = $tokenModel->findByShopId($token['shop_id']);
-            } else {
-                $errorMsg = isset($refreshResult['data']['message']) ? $refreshResult['data']['message'] : json_encode($refreshResult);
-                throw new \Exception("Refresh token thất bại: " . $errorMsg);
+        $expireTimestamp = strtotime($token['access_token_expire_at']);
+        if ($expireTimestamp <= time() + 300) {
+            $res = $this->refreshAccessToken($token['refresh_token'], $token['shop_id']);
+            $data = $res['data'];
+            
+            if (!empty($data['error'])) {
+                throw new \Exception("Failed to refresh Shopee token: " . ($data['message'] ?? $data['error']));
             }
+            if (empty($data['access_token']) || empty($data['refresh_token'])) {
+                throw new \Exception("Failed to refresh Shopee token: access_token or refresh_token is missing in response.");
+            }
+
+            $expireIn = (int)$data['expire_in'];
+            $accessTokenExpireAt = date('Y-m-d H:i:s', time() + $expireIn);
+            $refreshTokenExpireAt = date('Y-m-d H:i:s', time() + 30 * 86400); // 30 days default
+
+            $updatedData = [
+                'shop_id'                 => $token['shop_id'],
+                'access_token'            => $data['access_token'],
+                'refresh_token'           => $data['refresh_token'],
+                'access_token_expire_at'  => $accessTokenExpireAt,
+                'refresh_token_expire_at' => $refreshTokenExpireAt,
+                'is_active'               => 1
+            ];
+
+            $tokenModel->upsertToken($updatedData);
+            $token = $tokenModel->findByShopId($token['shop_id']);
         }
+
         return $token;
     }
 

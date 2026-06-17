@@ -1,7 +1,27 @@
 # Project Changelog
 
 ## [2026-06-17]
+### Fixed
+- Đồng bộ và chuẩn hóa toàn bộ flow trạng thái đơn hàng (chỉ cho phép `pending` → `confirmed` → `packing` → `shipping` → `completed` hoặc `pending` → `cancelled`), chặn hoàn toàn thao tác hủy đơn sau khi đã xác nhận.
+- Loại bỏ hoàn toàn hành động thanh toán thủ công khỏi Drawer chi tiết đơn hàng.
+- Bổ sung bộ thẻ tóm tắt thống kê tổng quan responsive (Tổng đơn, Chờ xác nhận, Đang xử lý, Đang giao, Hoàn tất, Doanh thu) tại trang `/admin/orders`.
+- Sửa lỗi hiển thị địa chỉ nhận hàng bị ngắt dòng/thiếu trong Drawer chi tiết bằng CSS text-wrapping tự động.
+- Cập nhật backend `OrderController.php` hỗ trợ truyền lọc theo ngày và tự động ghi chú log chi tiết theo nghiệp vụ 3F Store.
+- Loại bỏ phần Voucher ("Ưu đãi dành cho bạn") khỏi trang chi tiết sản phẩm để tối giản giao diện theo yêu cầu.
+- Sửa lỗi tên sản phẩm ở phần "Mua kèm cho boss ăn ngon hơn 🐱" bị trồi lên đè giá bằng cách bọc tiêu đề `<h3>` vào thẻ wrapper block `div` cách ly khỏi flexbox container, giúp `line-clamp-2` hoạt động ổn định và chính xác trên mọi trình duyệt.
+- Khắc phục lỗi crash trắng màn hình tại trang Quản lý đơn hàng Admin (`AdminOrdersPage.tsx`) khi mở chi tiết đơn hàng bằng cách bổ sung `items` và `status_logs` vào API danh sách đơn hàng admin của backend (`Order.php`), đồng thời thêm optional chaining bảo vệ an toàn ở frontend.
+
 ### Added
+- Triển khai luồng kết nối "Kết nối Shopee" (OAuth Connection Flow) cho 3F Store / 3F Club:
+  - Thiết kế bảng `shopee_oauth_states` để bảo vệ chống giả mạo trạng thái kết nối và di trú an toàn bảng `shopee_tokens` mà không làm mất dữ liệu cũ.
+  - Xây dựng `ShopeeService.php` cung cấp các helper ký chữ ký số HMAC-SHA256, xây dựng URL ủy quyền, trao đổi mã code lấy token, làm mới token và tải chi tiết shop/đơn hàng từ Shopee Open Platform API.
+  - Bổ sung route admin `/api/admin/shopee/connect` tạo state ngẫu nhiên và route callback `/api/shopee/callback` (hỗ trợ cả dấu gạch chéo phụ) để xử lý hoàn tất quá trình xác thực và tự động redirect.
+  - Thiết kế UI "Kết nối Shopee" với trạng thái đồng bộ hóa thời gian thực và tự động xử lý popup Sonner Toast từ query params trên trang quản trị `/admin/3f-club`.
+- Triển khai tính năng Quick Add To Cart Modal (Chọn variant và số lượng nhanh ngoài danh sách sản phẩm):
+  - Cập nhật các kiểu dữ liệu `Product` và `ProductVariant` trong `types/store.ts` và `src/api/productsApi.ts` để lưu trữ đầy đủ thông tin phân loại sản phẩm.
+  - Tạo component `QuickAddToCartModal.tsx` thực hiện hiển thị modal, tải chi tiết sản phẩm, chọn variants linh hoạt, giới hạn số lượng theo tồn kho và thực hiện thêm giỏ/mua ngay.
+  - Tích hợp modal và cấu hình hệ thống toast thông báo chung trên toàn trang di động & desktop tại `src/App.tsx`.
+  - Cập nhật các nút thêm giỏ/mua ngay trên các product card tại `ProductCard.tsx`, `ProductListing.tsx`, `PetFoodSection.tsx`, và `SaleSection.tsx` để mở modal nhanh.
 - Phân tích và triển khai toàn bộ luồng mua hàng cho 3F Store từ trang chủ đến hoàn tất đơn hàng và tích điểm 3F Club:
   - Thiết kế và triển khai cơ sở dữ liệu `orders_schema.sql` cho đơn hàng (`orders`, `order_items`, `order_status_logs`, `order_payment_proofs`).
   - Viết các models backend PHP: `Customer.php`, `Order.php`, `OrderItem.php` quản lý trạng thái, lịch sử logs và thông tin khách hàng giao hàng.

@@ -1,6 +1,7 @@
 import { useState, FormEvent } from "react";
 import { Mail, Phone, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { SocialLogins } from "./SocialLogins";
+import { toast } from "sonner";
 
 interface PhoneAuthFormProps {
   onSwitchToEmail?: () => void;
@@ -55,7 +56,7 @@ export function PhoneAuthForm({ onSwitchToEmail, onSuccess }: PhoneAuthFormProps
     // Mock login
     setTimeout(() => {
       setIsLoading(false);
-      alert("Đăng nhập thành công!");
+      toast.success("Đăng nhập thành công!");
       if (onSuccess) onSuccess();
     }, 1200);
   };
@@ -88,7 +89,7 @@ export function PhoneAuthForm({ onSwitchToEmail, onSuccess }: PhoneAuthFormProps
     // Mock registration completion
     setTimeout(() => {
       setIsLoading(false);
-      alert("Đăng nhập/Đăng ký thành công!");
+      toast.success("Đăng nhập/Đăng ký thành công!");
       if (onSuccess) onSuccess();
     }, 1200);
   };

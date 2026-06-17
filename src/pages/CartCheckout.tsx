@@ -9,6 +9,7 @@ import { VietQRModal } from "@/components/CartCheckout/VietQRModal";
 import { Image } from "@/components/Image";
 import type { CartItem } from "@/lib/cartHelper";
 import { createOrder } from "@/src/api/productsApi";
+import { toast } from "sonner";
 
 export function CartCheckout() {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ export function CartCheckout() {
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone || !province || !district || !detailedAddress) {
-      alert("Vui lòng điền đầy đủ các thông tin giao hàng có dấu (*)");
+      toast.warning("Vui lòng điền đầy đủ các thông tin giao hàng có dấu (*)");
       return;
     }
 
@@ -91,10 +92,10 @@ export function CartCheckout() {
         clearCart();
         navigate(`/order-success/${res.data.order_code}`);
       } else {
-        alert("Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.");
+        toast.error("Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.");
       }
     } catch (err: any) {
-      alert(err.message || "Tạo đơn hàng thất bại.");
+      toast.error(err.message || "Tạo đơn hàng thất bại.");
     } finally {
       setIsSubmitting(false);
     }
