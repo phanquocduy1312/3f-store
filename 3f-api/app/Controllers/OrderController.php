@@ -80,7 +80,7 @@ class OrderController {
                 }
 
                 // Check Product Existence
-                $stmtProd = $db->prepare("SELECT id, name, main_image_url, has_variants FROM products WHERE id = :id AND is_active = 1");
+                $stmtProd = $db->prepare("SELECT id, name, main_image_url FROM products WHERE id = :id AND is_active = 1");
                 $stmtProd->execute([':id' => $productId]);
                 $product = $stmtProd->fetch(PDO::FETCH_ASSOC);
 
@@ -88,13 +88,19 @@ class OrderController {
                     Response::json(["success" => false, "message" => "Không tìm thấy sản phẩm hoặc sản phẩm đã ngừng bán (ID {$productId})."], 404);
                 }
 
+                // Check if product has active variants in product_variants table
+                $stmtVarCount = $db->prepare("SELECT COUNT(*) AS cnt FROM product_variants WHERE product_id = :id AND is_active = 1");
+                $stmtVarCount->execute([':id' => $productId]);
+                $varCountRow = $stmtVarCount->fetch(PDO::FETCH_ASSOC);
+                $hasVariants = ((int)($varCountRow['cnt'] ?? 0)) > 0;
+
                 $productName = $product['name'];
                 $variantName = null;
                 $sku = null;
                 $price = 0.00;
                 $imageUrl = $product['main_image_url'];
 
-                if ($product['has_variants'] || $variantId > 0) {
+                if ($hasVariants || $variantId > 0) {
                     if ($variantId <= 0) {
                         Response::json(["success" => false, "message" => "Sản phẩm '{$productName}' yêu cầu chọn phân loại sản phẩm."], 400);
                     }
