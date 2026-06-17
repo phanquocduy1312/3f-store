@@ -1,13 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronRight, Menu, Search, ShoppingCart, User, Heart, TrendingUp, Sparkles } from "lucide-react";
 import { Image } from "@/components/Image";
-import { getProducts } from "@/src/api/productsApi";
 import { getCartCount } from "@/lib/cartHelper";
 import { MobileNavigationDrawer } from "./mobile-navigation-drawer";
+import { ProductSearchBox } from "@/src/components/ProductSearchBox";
 
 type Product = {
   id: string;
@@ -145,11 +145,6 @@ const NavItem = ({ item }: { item: MenuItem }) => {
 export function Header() {
   const [cartCount, setCartCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<Product[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -158,57 +153,6 @@ export function Header() {
     window.addEventListener("cart-updated", handleCartUpdate);
     return () => window.removeEventListener("cart-updated", handleCartUpdate);
   }, []);
-
-  // Handle click outside to close suggestions
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Fetch suggestions when search query changes
-  useEffect(() => {
-    const fetchSuggestions = async () => {
-      if (searchQuery.trim().length < 2) {
-        setSuggestions([]);
-        setShowSuggestions(false);
-        return;
-      }
-
-      setIsLoadingSuggestions(true);
-      try {
-        const result = await getProducts({ q: searchQuery.trim(), limit: 5, sort: "popular" });
-        setSuggestions(result.items.slice(0, 5));
-        setShowSuggestions(true);
-      } catch (error) {
-        console.error('Error fetching suggestions:', error);
-        setSuggestions([]);
-      } finally {
-        setIsLoadingSuggestions(false);
-      }
-    };
-
-    const debounceTimer = setTimeout(fetchSuggestions, 300);
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery]);
-
-  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const query = searchQuery.trim();
-    navigate(query ? `/products?q=${encodeURIComponent(query)}` : "/products");
-    setShowSuggestions(false);
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleSuggestionClick = (productName: string) => {
-    setSearchQuery(productName);
-    setShowSuggestions(false);
-    navigate(`/products?q=${encodeURIComponent(productName)}`);
-  };
 
   return (
     <>
@@ -232,24 +176,7 @@ export function Header() {
             </Link>
 
             {/* Search Bar - Desktop */}
-            <form onSubmit={handleSearchSubmit} className="hidden flex-1 lg:flex lg:px-4" role="search">
-              <div className="flex h-12 w-full items-center rounded-full border border-forest/20 bg-white shadow-[0_2px_8px_rgba(34,52,39,0.08)] transition focus-within:border-forest/40 focus-within:shadow-[0_4px_12px_rgba(34,52,39,0.12)]">
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Tìm kiếm sản phẩm cho boss..."
-                  className="h-full flex-1 bg-transparent px-6 text-[0.95rem] font-medium text-ink outline-none placeholder:text-ink/50"
-                />
-                <button
-                  type="submit"
-                  className="mr-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-forest text-white transition hover:scale-105 hover:bg-forest-700"
-                  aria-label="Tìm kiếm"
-                >
-                  <Search size={18} strokeWidth={2.5} />
-                </button>
-              </div>
-            </form>
+            <ProductSearchBox className="hidden lg:block lg:flex-1 lg:px-4" />
 
             {/* Right Icons */}
             <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
@@ -311,24 +238,7 @@ export function Header() {
 
           {/* Search Bar - Mobile */}
           <div className="pb-3.5 pt-1 lg:hidden">
-            <form onSubmit={handleSearchSubmit} className="flex items-center" role="search">
-              <div className="flex h-12 w-full items-center rounded-full border border-forest/20 bg-white shadow-[0_2px_8px_rgba(34,52,39,0.08)]">
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Tìm nhanh sản phẩm..."
-                  className="h-full flex-1 bg-transparent px-5 text-[0.95rem] font-medium text-ink outline-none placeholder:text-ink/50"
-                />
-                <button
-                  type="submit"
-                  className="mr-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-forest text-white"
-                  aria-label="Tìm kiếm"
-                >
-                  <Search size={18} strokeWidth={2.5} />
-                </button>
-              </div>
-            </form>
+            <ProductSearchBox placeholder="Tìm nhanh sản phẩm..." />
           </div>
 
           {/* Navigation Menu */}

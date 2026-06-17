@@ -11,9 +11,22 @@ use Exception;
 class ProductController {
     public function list() {
         try {
+            $q = Request::query('q');
+            $limit = Request::query('limit');
+            
+            if ($q !== null && trim((string)$q) !== '') {
+                $defaultLimit = 12;
+                $limitVal = $limit !== null ? (int)$limit : $defaultLimit;
+                if ($limitVal > 20) {
+                    $limitVal = 20;
+                }
+            } else {
+                $limitVal = $limit !== null ? (int)$limit : 24;
+            }
+
             $service = new ProductCatalogService();
             $data = $service->listProducts([
-                'q' => Request::query('q'),
+                'q' => $q,
                 'category' => Request::query('category'),
                 'categorySlug' => Request::query('categorySlug'),
                 'petType' => Request::query('petType'),
@@ -22,7 +35,7 @@ class ProductController {
                 'minPrice' => Request::query('minPrice'),
                 'maxPrice' => Request::query('maxPrice'),
                 'page' => Request::query('page', 1),
-                'limit' => Request::query('limit', 24),
+                'limit' => $limitVal,
                 'sort' => Request::query('sort', 'newest')
             ]);
 

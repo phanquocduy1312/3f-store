@@ -1,7 +1,7 @@
 ---
 title: Real-time Product Search Implementation
 description: Implement real-time product search suggestions dropdown in Header, and query parameter search mapping on the Products catalog page.
-status: planning
+status: completed
 priority: high
 effort: medium
 branch: dev

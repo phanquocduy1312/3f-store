@@ -213,6 +213,16 @@ export async function getProducts(params: ProductListParams = {}) {
   };
 }
 
+export async function searchProducts(keyword: string, limit = 8, signal?: AbortSignal) {
+  const params = new URLSearchParams();
+  params.set("q", keyword);
+  params.set("limit", String(limit));
+
+  return apiJson<ProductListResponse>(`/api/products?${params.toString()}`, {
+    signal,
+  });
+}
+
 export async function getProductDetail(identifier: string) {
   const key = /^\d{10,}$/.test(identifier) ? "sourceProductId" : /^\d+$/.test(identifier) ? "id" : "slug";
   const response = await apiJson<ProductDetailResponse>(
