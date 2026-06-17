@@ -1,7 +1,7 @@
 ---
 title: Production Checkout & Coupon System Refactoring
 description: Implement robust administrative division validation via provinces.open-api.vn v2, dynamic backend-validated coupon logic, and layout reorganization on desktop/mobile.
-status: planning
+status: completed
 priority: high
 effort: medium
 branch: dev

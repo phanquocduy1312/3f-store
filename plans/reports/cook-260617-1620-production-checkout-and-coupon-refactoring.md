@@ -3,19 +3,27 @@
 * **Date**: 260617
 * **Time**: 1620
 * **Task**: Checkout and coupon refactoring for production.
-* **Status**: Planning phase.
+* **Status**: Completed
 
-## Current Findings
-* Existing DB `orders` schema has columns for subtotal, shipping_fee, discount, and total. No `coupon_code` column exists.
-* Database auto-migrates inside `Order::migrate()` by reading `/database/orders_schema.sql`.
-* Frontend `CartCheckout.tsx` currently displays pre-set fixed buttons for coupons and shipping options.
-* Vietnam provinces API needs v2 endpoint: `https://provinces.open-api.vn/api/v2/`.
+## Achievements & Implementation Summary
+All objectives have been successfully met, fully tested, and deployed to production staging:
 
-## Action Items
-* Add schema updates to `orders_schema.sql` and run `ALTER TABLE orders ADD COLUMN coupon_code` in `Order::migrate()`.
-* Seed `GIAM50K` coupon.
-* Implement `Coupon` model, validation controller `/api/coupons/validate`, and register in `index.php`.
-* Modify `OrderController::create` to compute coupon details server-side inside a database transaction.
-* Refactor frontend layout into 2 desktop columns / 1 mobile column.
-* Retrieve provinces and wards dynamically, format address payload correctly.
-* Display coupon and discount values on administrative detail views.
+1. **Database Schema & Migrations**:
+   - Declared `coupons` and `coupon_usages` tables in `orders_schema.sql`.
+   - Updated `Order::migrate()` to automatically run `ALTER TABLE orders ADD COLUMN coupon_code` and seed the `GIAM50K` coupon.
+
+2. **Backend Logic**:
+   - Created `Coupon.php` and `CouponController.php` supporting detailed validity, date range, min subtotal, and per-user constraint checks.
+   - Refactored `OrderController::create` to recalculate coupon validity and total sums server-side within a secure database transaction block.
+
+3. **Frontend Redesign**:
+   - Reorganized `CartCheckout.tsx` to display in 2 desktop columns (sticky summary and payment block on the right) and a single mobile column.
+   - Removed the shipping options block, hardcoding ship fee to `0`.
+   - Integrated administrative v2 API (`provinces.open-api.vn/api/v2`) loading provinces and wards dynamically, removing the district selection.
+   - Connected backend-validated coupon text input field and cancellation badges.
+   - Synchronized totals breakdown for Admin orders, tracking timeline, and success view.
+
+4. **Verification & Deployment**:
+   - `npx tsc --noEmit` and `npm run build` compiled without any errors.
+   - Backend order tests executed successfully.
+   - PHP changes uploaded to Plesk production server via `deploy_ftp.py`. Verified coupon validation live.
