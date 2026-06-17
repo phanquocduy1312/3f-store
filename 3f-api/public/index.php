@@ -61,6 +61,8 @@ use App\Controllers\ShopeeAuthController;
 use App\Controllers\ShopeeVerifyController;
 use App\Controllers\LoyaltyController;
 use App\Controllers\ProductController;
+use App\Controllers\OrderController;
+use App\Controllers\AdminAuthController;
 
 try {
     // 0. Pre-instantiate models to run database migrations outside of transactions
@@ -71,11 +73,20 @@ try {
     new \App\Models\CustomerPointTransactionModel();
     new \App\Models\LoyaltyProductionModel();
     new \App\Models\Product();
+    new \App\Models\Order();
+    new \App\Models\AdminUser();
+    new \App\Models\AdminSession();
+    new \App\Models\AuditLog();
 
     // 3. Initialize Router
     $router = new Router();
 
     // 4. Register Routes
+    $router->post("/api/admin/auth/login", [AdminAuthController::class, "login"]);
+    $router->post("/api/admin/auth/logout", [AdminAuthController::class, "logout"]);
+    $router->get("/api/admin/auth/me", [AdminAuthController::class, "me"]);
+    $router->post("/api/admin/auth/bootstrap", [AdminAuthController::class, "bootstrap"]);
+
     $router->post("/api/shopee/order-scan", [ShopeeOrderScanController::class, "scan"]);
     $router->post("/api/shopee/requests", [ShopeePointRequestController::class, "create"]);
     $router->get("/api/admin/shopee/requests", [ShopeePointRequestController::class, "list"]);
@@ -86,14 +97,24 @@ try {
     $router->post("/api/admin/shopee/requests/verify-bulk", [ShopeeVerifyController::class, "verifyBulk"]);
     $router->get("/api/customer/points", [CustomerPointController::class, "points"]);
 
+    // Order E-commerce Routes
+    $router->post("/api/orders/create", [OrderController::class, "create"]);
+    $router->get("/api/orders/detail", [OrderController::class, "detail"]);
+    $router->get("/api/orders/check", [OrderController::class, "check"]);
+    $router->get("/api/admin/orders", [OrderController::class, "adminList"]);
+    $router->post("/api/admin/orders/update-status", [OrderController::class, "adminUpdateStatus"]);
+    $router->post("/api/admin/orders/mark-paid", [OrderController::class, "adminMarkPaid"]);
+
     // Product Catalog Routes
     $router->get("/api/products", [ProductController::class, "list"]);
     $router->get("/api/products/detail", [ProductController::class, "detail"]);
+    $router->get("/api/products/filters", [ProductController::class, "filters"]);
     $router->get("/api/product-categories", [ProductController::class, "categories"]);
     $router->get("/api/admin/products", [ProductController::class, "adminList"]);
     $router->get("/api/admin/products/detail", [ProductController::class, "adminDetail"]);
     $router->post("/api/admin/products/save", [ProductController::class, "adminSave"]);
     $router->post("/api/admin/products/toggle-active", [ProductController::class, "adminToggleActive"]);
+    $router->post("/api/admin/products/reclassify", [ProductController::class, "adminReclassify"]);
 
     // Shopee OAuth Sandbox Routes
     $router->get("/api/admin/shopee/auth-url", [ShopeeAuthController::class, "getAuthUrl"]);
@@ -145,8 +166,18 @@ try {
 
 } catch (\Throwable $e) {
     // Fallback JSON error boundary to prevent leaking raw PHP logs
-    Response::json([
-        "success" => false,
-        "message" => "Internal Server Error: " . $e->getMessage()
-    ], 500);
+    $debug = (getenv('APP_DEBUG') === 'true' || getenv('APP_DEBUG') === '1');
+    if ($debug) {
+        Response::json([
+            "success" => false,
+            "message" => "Internal Server Error: " . $e->getMessage(),
+            "trace" => $e->getTraceAsString()
+        ], 500);
+    } else {
+        error_log("Exception in index.php: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+        Response::json([
+            "success" => false,
+            "message" => "Internal server error"
+        ], 500);
+    }
 }

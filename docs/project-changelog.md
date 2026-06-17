@@ -2,6 +2,19 @@
 
 ## [2026-06-17]
 ### Added
+- Phân tích và triển khai toàn bộ luồng mua hàng cho 3F Store từ trang chủ đến hoàn tất đơn hàng và tích điểm 3F Club:
+  - Thiết kế và triển khai cơ sở dữ liệu `orders_schema.sql` cho đơn hàng (`orders`, `order_items`, `order_status_logs`, `order_payment_proofs`).
+  - Viết các models backend PHP: `Customer.php`, `Order.php`, `OrderItem.php` quản lý trạng thái, lịch sử logs và thông tin khách hàng giao hàng.
+  - Xây dựng `InventoryService.php` thực hiện các cơ chế khóa dòng (`FOR UPDATE`) để giữ chỗ tồn kho khi tạo đơn (`reserve_order`), giải phóng khi hủy đơn (`release_order`), và trừ kho thật khi hoàn tất đơn (`fulfill_order`).
+  - Tích hợp tính năng tích lũy điểm thưởng 3F Club tự động dựa trên quy tắc cấu hình động khi admin chuyển đơn hàng sang trạng thái `completed`. Đảm bảo tính idempotent tránh cộng điểm lặp.
+  - Viết script tự động kiểm thử toàn bộ vòng đời đơn hàng, tồn kho và điểm thưởng `scripts/test-order-flow.php` chạy thành công.
+  - Cập nhật frontend `src/api/productsApi.ts` với các API khách hàng (`createOrder`, `getOrderDetails`, `checkOrdersByPhone`).
+  - Nâng cấp `ProductDetail.tsx` hỗ trợ chọn phân loại sản phẩm, cảnh báo chọn phân loại, cập nhật giá/SKU/ảnh/tồn kho động và disable các nút khi hết hàng.
+  - Kết nối giỏ hàng và trang thanh toán `CartCheckout.tsx` gọi trực tiếp API `createOrder` của backend, xóa sạch giỏ hàng khi thành công và chuyển hướng.
+  - Xây dựng trang `OrderSuccess.tsx` hiển thị mã đơn, thông tin nhận hàng, và hỗ trợ quét mã VietQR tự động điền thông tin chuyển khoản ngân hàng nếu chọn Bank Transfer.
+  - Phát triển trang `OrderTracking.tsx` (/orders/:orderCode và /order-check) hiển thị timeline trạng thái đơn hàng và điểm thưởng tích lũy dự kiến/thực tế.
+  - Cấu hình lại thanh điều hướng header `Header.tsx` liên kết trang Tra cứu đơn hàng và trang thành viên 3F Club.
+  - Xây dựng trang quản lý đơn hàng Admin (`/admin/orders`) hỗ trợ tìm kiếm, lọc theo trạng thái/thanh toán, xem chi tiết và thực hiện chuyển đổi trạng thái (xác nhận, đóng gói, giao hàng, hoàn tất, hủy) và duyệt thanh toán chuyển khoản ngân hàng.
 - Di chuyển toàn bộ dữ liệu danh mục sản phẩm từ file tĩnh `data/products.json` sang cơ sở dữ liệu MySQL thật:
   - Khởi tạo database schema `product_catalog_schema.sql` gồm các bảng `product_categories`, `products`, `product_variants`, `product_images`, `product_import_batches`, `product_import_rows`, và `inventory_transactions`.
   - Sửa lỗi độ dài khóa index (max key length 3072 bytes) trong MySQL bằng cách prefix index trường `image_url` thành `image_url(255)`.

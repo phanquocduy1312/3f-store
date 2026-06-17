@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, ShoppingBag } from "lucide-react";
 import { getCart, updateQuantity, removeFromCart, clearCart, getCartTotal, formatPrice } from "@/lib/cartHelper";
 import { CartItemsList } from "@/components/CartCheckout/CartItemsList";
@@ -8,8 +8,10 @@ import { OrderSummary } from "@/components/CartCheckout/OrderSummary";
 import { VietQRModal } from "@/components/CartCheckout/VietQRModal";
 import { Image } from "@/components/Image";
 import type { CartItem } from "@/lib/cartHelper";
+import { createOrder } from "@/src/api/productsApi";
 
 export function CartCheckout() {
+  const navigate = useNavigate();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -51,7 +53,7 @@ export function CartCheckout() {
     }
   };
 
-  const handlePlaceOrder = (e: React.FormEvent) => {
+  const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone || !province || !district || !detailedAddress) {
       alert("Vui lòng điền đầy đủ các thông tin giao hàng có dấu (*)");
@@ -59,18 +61,43 @@ export function CartCheckout() {
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      const generatedId = `3F-${Math.floor(100000 + Math.random() * 900000)}`;
-      setOrderId(generatedId);
-      setPlacedAmount(finalTotal);
-      setIsSubmitting(false);
-      setOrderPlaced(true);
-      clearCart();
+    try {
+      const payload = {
+        customer: {
+          name: fullName,
+          phone: phone,
+          email: email || undefined,
+          zalo: undefined,
+        },
+        shipping: {
+          receiverName: fullName,
+          phone: phone,
+          province: province,
+          district: district,
+          ward: "",
+          addressLine: detailedAddress,
+          note: note || undefined,
+        },
+        items: cart.map(item => ({
+          productId: Number(item.productId) || 0,
+          variantId: item.variantId ? Number(item.variantId) : null,
+          quantity: item.quantity,
+        })),
+        paymentMethod: (paymentMethod === "vietqr" ? "bank_transfer" : "cod") as "cod" | "bank_transfer",
+      };
 
-      if (paymentMethod === "vietqr") {
-        setShowQRModal(true);
+      const res = await createOrder(payload);
+      if (res.success && res.data) {
+        clearCart();
+        navigate(`/order-success/${res.data.order_code}`);
+      } else {
+        alert("Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.");
       }
-    }, 1500);
+    } catch (err: any) {
+      alert(err.message || "Tạo đơn hàng thất bại.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (orderPlaced) {

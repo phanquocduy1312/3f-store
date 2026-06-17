@@ -98,18 +98,20 @@ function ProductCard({
           </div>
 
           <div className="flex gap-1.5 sm:gap-2">
-            <button
+            <Link
+              to={`/product/${product.id || product.name}`}
               className="flex h-8 w-8 sm:h-9 sm:w-10 shrink-0 items-center justify-center rounded-lg border border-forest sm:border-[1.5px] bg-white text-forest transition-all active:scale-95 hover:bg-forest/5"
               aria-label={`Thêm ${product.name} vào giỏ hàng`}
             >
               <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
-            </button>
-            <button
+            </Link>
+            <Link
+              to={`/product/${product.id || product.name}`}
               className="flex h-8 sm:h-9 flex-1 items-center justify-center rounded-lg bg-forest px-2 font-bold text-white transition-all active:scale-95 hover:bg-[rgb(var(--color-primary-dark))]"
               aria-label={`Mua ngay ${product.name}`}
             >
               <span className="text-[11px] sm:text-xs whitespace-nowrap">Mua ngay</span>
-            </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -226,25 +228,31 @@ export function PetFoodSection() {
             </div>
 
             {/* Cat Products Grid - 12 products */}
-            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {catProducts.slice(0, 12).map((product) => (
-                <ProductCard
-                  key={product.id || product.name}
-                  product={product}
-                  petType="cat"
-                  accentClass="text-forest"
-                  accentSoftClass="bg-forest/5"
-                  hoverBorderClass="border-forest/5 hover:border-forest/20"
-                  imageBgClass="bg-cream/30 group-hover:bg-cream/50"
-                  hoverTitleClass="group-hover:text-forest"
-                />
-              ))}
-            </div>
+            {catProducts.length > 0 ? (
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {catProducts.slice(0, 12).map((product) => (
+                  <ProductCard
+                    key={product.id || product.name}
+                    product={product}
+                    petType="cat"
+                    accentClass="text-forest"
+                    accentSoftClass="bg-forest/5"
+                    hoverBorderClass="border-forest/5 hover:border-forest/20"
+                    imageBgClass="bg-cream/30 group-hover:bg-cream/50"
+                    hoverTitleClass="group-hover:text-forest"
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-sm font-semibold text-gray-500">
+                Chưa có sản phẩm phù hợp.
+              </div>
+            )}
 
             {/* View More Button */}
             <div className="flex justify-center pt-2">
               <Link 
-                to="/products?category=Thức ăn cho mèo" 
+                to="/products?petType=cat" 
                 className="inline-flex items-center gap-2 rounded-full bg-[rgb(var(--color-primary))] px-6 py-3 sm:px-8 sm:py-3.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95"
               >
                 <span>Xem tất cả sản phẩm cho mèo</span>
@@ -331,25 +339,31 @@ export function PetFoodSection() {
             </div>
 
             {/* Dog Products Grid - 12 products */}
-            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {dogProducts.slice(0, 12).map((product) => (
-                <ProductCard
-                  key={product.id || product.name}
-                  product={product}
-                  petType="dog"
-                  accentClass="text-forest"
-                  accentSoftClass="bg-forest/5"
-                  hoverBorderClass="border-forest/5 hover:border-forest/20"
-                  imageBgClass="bg-cream/30 group-hover:bg-cream/50"
-                  hoverTitleClass="group-hover:text-forest"
-                />
-              ))}
-            </div>
+            {dogProducts.length > 0 ? (
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {dogProducts.slice(0, 12).map((product) => (
+                  <ProductCard
+                    key={product.id || product.name}
+                    product={product}
+                    petType="dog"
+                    accentClass="text-forest"
+                    accentSoftClass="bg-forest/5"
+                    hoverBorderClass="border-forest/5 hover:border-forest/20"
+                    imageBgClass="bg-cream/30 group-hover:bg-cream/50"
+                    hoverTitleClass="group-hover:text-forest"
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-sm font-semibold text-gray-500">
+                Chưa có sản phẩm phù hợp.
+              </div>
+            )}
 
             {/* View More Button */}
             <div className="flex justify-center pt-2">
               <Link 
-                to="/products?category=Thức ăn cho chó" 
+                to="/products?petType=dog" 
                 className="inline-flex items-center gap-2 rounded-full bg-[rgb(var(--color-primary))] px-6 py-3 sm:px-8 sm:py-3.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95"
               >
                 <span>Xem tất cả sản phẩm cho chó</span>

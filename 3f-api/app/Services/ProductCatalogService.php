@@ -16,6 +16,10 @@ class ProductCatalogService {
         return $result;
     }
 
+    public function listProductFilters() {
+        return $this->model->listProductFilters();
+    }
+
     public function listCategories() {
         return array_map(function ($row) {
             return [

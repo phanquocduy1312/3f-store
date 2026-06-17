@@ -85,7 +85,11 @@ class Router {
                 'admin.loyalty.analytics'     => '/api/admin/loyalty/analytics',
                 'admin.customers.loyalty'     => '/api/admin/customers/loyalty',
                 'customer.tier'               => '/api/customer/tier',
-                'customer.rewards_history'    => '/api/customer/rewards/history'
+                'customer.rewards_history'    => '/api/customer/rewards/history',
+                'admin.auth.login'            => '/api/admin/auth/login',
+                'admin.auth.logout'           => '/api/admin/auth/logout',
+                'admin.auth.me'               => '/api/admin/auth/me',
+                'admin.auth.bootstrap'        => '/api/admin/auth/bootstrap'
             ];
             $path = isset($mapping[$routeQuery]) ? $mapping[$routeQuery] : '';
         } else {
@@ -104,6 +108,17 @@ class Router {
 
             // Normalize path for consistent matching
             $path = $this->normalizePath($path);
+        }
+
+        // Enforce admin auth middleware on all /api/admin/... routes (except login and bootstrap)
+        if (strpos($path, '/api/admin/') === 0) {
+            $excluded = [
+                '/api/admin/auth/login',
+                '/api/admin/auth/bootstrap'
+            ];
+            if (!in_array($path, $excluded, true)) {
+                \App\Helpers\AuthMiddleware::requireAdmin();
+            }
         }
 
         if (!isset($this->routes[$method][$path])) {

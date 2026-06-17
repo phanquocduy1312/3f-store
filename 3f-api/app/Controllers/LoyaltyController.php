@@ -7,6 +7,8 @@ use App\Models\LoyaltyPointRuleModel;
 use App\Models\LoyaltyProductionModel;
 use App\Services\LoyaltyPointService;
 use App\Services\UploadService;
+use App\Models\AuditLog;
+use App\Helpers\AuthMiddleware;
 use Exception;
 
 class LoyaltyController {
@@ -661,6 +663,15 @@ class LoyaltyController {
 
             $dbConnection->commit();
 
+            // Write Audit Log
+            $currentAdmin = AuthMiddleware::getCurrentAdmin();
+            $adminId = $currentAdmin ? $currentAdmin['id'] : null;
+            AuditLog::write($adminId, 'approve_loyalty_redemption', 'loyalty_reward_redemptions', $id, [
+                'phone' => $redemption['customer_phone'],
+                'reward_name' => $redemption['reward_name'],
+                'points_spent' => $redemption['points_spent']
+            ]);
+
             Response::json([
                 "success" => true,
                 "message" => "Redemption approved successfully",
@@ -759,6 +770,16 @@ class LoyaltyController {
 
             $dbConnection->commit();
 
+            // Write Audit Log
+            $currentAdmin = AuthMiddleware::getCurrentAdmin();
+            $adminId = $currentAdmin ? $currentAdmin['id'] : null;
+            AuditLog::write($adminId, 'reject_loyalty_redemption', 'loyalty_reward_redemptions', $id, [
+                'phone' => $redemption['customer_phone'],
+                'reward_name' => $redemption['reward_name'],
+                'points_spent' => $redemption['points_spent'],
+                'reason' => $reason
+            ]);
+
             Response::json([
                 "success" => true,
                 "message" => "Redemption rejected successfully",
@@ -827,6 +848,15 @@ class LoyaltyController {
             $model->updateStatus($id, 'fulfilled', $processedBy, $note);
 
             $dbConnection->commit();
+
+            // Write Audit Log
+            $currentAdmin = AuthMiddleware::getCurrentAdmin();
+            $adminId = $currentAdmin ? $currentAdmin['id'] : null;
+            AuditLog::write($adminId, 'fulfill_loyalty_redemption', 'loyalty_reward_redemptions', $id, [
+                'phone' => $redemption['customer_phone'],
+                'reward_name' => $redemption['reward_name'],
+                'points_spent' => $redemption['points_spent']
+            ]);
 
             Response::json([
                 "success" => true,

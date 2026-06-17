@@ -47,9 +47,7 @@ export function ProductDetail() {
 
   // Real variants from product data
   const productVariants = product.variants ?? [];
-  const [selectedVariantId, setSelectedVariantId] = useState(
-    productVariants.length > 0 ? productVariants[0].id : null
-  );
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const selectedVariant = productVariants.find(v => v.id === selectedVariantId) ?? null;
 
   const [showToast, setShowToast] = useState(false);
@@ -165,6 +163,16 @@ export function ProductDetail() {
   const hasDiscount = oldPriceValue > currentPriceValue;
   const discountPercent = hasDiscount ? Math.round((1 - currentPriceValue / oldPriceValue) * 100) : 0;
   const isNew = (product as any).sold ? (product as any).sold < 500 : true;
+
+  const hasVariants = productVariants.length > 0;
+  const isVariantSelected = selectedVariantId !== null;
+  const availableStock = hasVariants
+    ? (selectedVariant ? (selectedVariant.stock ?? 0) : 0)
+    : (product.stock ?? 0);
+  const isOutOfStock = hasVariants
+    ? (isVariantSelected && availableStock <= 0)
+    : (availableStock <= 0);
+  const isButtonDisabled = isOutOfStock || (hasVariants && !isVariantSelected);
 
   const formattedTotalPrice = (currentPriceValue * quantity).toLocaleString("vi-VN") + "đ";
   const formattedOldPrice = oldPriceValue > 0 ? (oldPriceValue * quantity).toLocaleString("vi-VN") + "đ" : null;
@@ -360,12 +368,25 @@ export function ProductDetail() {
                     );
                   })}
                 </div>
-                {cartMessage && (
-                  <p className="mt-3 text-sm font-bold text-red-600">{cartMessage}</p>
+                {(!isVariantSelected) ? (
+                  <p className="mt-3 text-sm font-semibold text-amber-600">
+                    ⚠️ Vui lòng chọn phân loại sản phẩm.
+                  </p>
+                ) : (
+                  <p className="mt-3 text-sm font-semibold text-gray-600">
+                    Kho hàng: <span className="font-bold text-[rgb(var(--color-ink))]">{availableStock}</span> sản phẩm sẵn có
+                  </p>
                 )}
               </div>
             )}
 
+            {!hasVariants && (
+              <div className="mb-6">
+                <p className="text-sm font-semibold text-gray-600">
+                  Kho hàng: <span className="font-bold text-[rgb(var(--color-ink))]">{availableStock}</span> sản phẩm sẵn có
+                </p>
+              </div>
+            )}
             {/* Quantity & CTA */}
             <div className="mb-8">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -385,25 +406,38 @@ export function ProductDetail() {
                   </button>
                 </div>
 
-                {true ? (
+                {isOutOfStock ? (
+                  <button 
+                    disabled 
+                    className="flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] bg-gray-200 px-6 text-[17px] font-black text-gray-400 cursor-not-allowed border border-gray-300"
+                  >
+                    Hết hàng
+                  </button>
+                ) : (
                   <>
                     <button 
                       onClick={() => handleAddToCart(false)}
-                      className="flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] bg-[rgb(var(--color-primary-soft))] px-6 text-[17px] font-black text-[rgb(var(--color-primary))] py-4 shadow-lg transition hover:bg-[rgb(var(--color-primary-muted))] hover:shadow-xl"
+                      disabled={isButtonDisabled}
+                      className={`flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] px-6 text-[17px] font-black py-4 transition ${
+                        isButtonDisabled
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 shadow-none"
+                          : "bg-[rgb(var(--color-primary-soft))] text-[rgb(var(--color-primary))] shadow-lg hover:bg-[rgb(var(--color-primary-muted))] hover:shadow-xl"
+                      }`}
                     >
                       <ShoppingCart size={22} strokeWidth={2.5}/> Thêm vào giỏ 
                     </button>
                     <button 
                       onClick={() => handleAddToCart(true)}
-                      className="flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] bg-[rgb(var(--color-primary))] px-6 text-[17px] font-black text-white shadow-lg py-4 shadow-[rgb(var(--color-primary))]/30 transition hover:bg-[rgb(var(--color-primary-dark))] hover:shadow-xl"
+                      disabled={isButtonDisabled}
+                      className={`flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] px-6 text-[17px] font-black text-white py-4 transition ${
+                        isButtonDisabled
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300 shadow-none"
+                          : "bg-[rgb(var(--color-primary))] shadow-lg shadow-[rgb(var(--color-primary))]/30 hover:bg-[rgb(var(--color-primary-dark))] hover:shadow-xl"
+                      }`}
                     >
                       Mua ngay
                     </button>
                   </>
-                ) : (
-                  <button className="flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] bg-[rgb(var(--color-primary))] px-6 text-[17px] font-black text-white shadow-lg shadow-[rgb(var(--color-primary))]/30 transition hover:bg-[rgb(var(--color-primary-dark))] hover:shadow-xl">
-                    <BellRing size={20} strokeWidth={2.5}/> Thông báo khi có hàng
-                  </button>
                 )}
               </div>
               
@@ -416,7 +450,6 @@ export function ProductDetail() {
               </div>
             </div>
 
-            {/* Coupons */}
             <div className="mb-8 rounded-[20px] bg-[#fff7ed] p-5">
               <h3 className="mb-4 flex items-center gap-2 font-black text-[#ea580c]"><Ticket size={18}/> Ưu đãi dành cho bạn</h3>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

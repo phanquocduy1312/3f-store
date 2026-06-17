@@ -29,27 +29,11 @@ const navigationData: MenuItem[] = [
     label: "Sản phẩm",
     href: "/products",
     subItems: [
-      {
-        label: "Thức ăn dành cho chó",
-        href: "/products?category=Thức ăn cho chó",
-        subItems: [
-          { label: "Thức ăn khô cho chó", href: "/products?category=Thức ăn khô cho chó" },
-          { label: "Thức ăn ướt cho chó", href: "/products?category=Thức ăn ướt cho chó" },
-        ],
-      },
-      {
-        label: "Thức ăn dành cho mèo",
-        href: "/products?category=Thức ăn cho mèo",
-        subItems: [
-          { label: "Thức ăn khô dành cho mèo", href: "/products?category=Thức ăn khô dành cho Mèo" },
-          { label: "Thức ăn ướt cho mèo", href: "/products?category=Thức ăn ướt cho Mèo" },
-        ],
-      },
-      { label: "Phụ kiện cho thú cưng", href: "/products?category=Phụ kiện & Đồ chơi" },
-      { label: "Chăm sóc sức khỏe", href: "/products" },
-      { label: "Vệ sinh cho thú cưng", href: "/products?category=Vệ sinh cho thú cưng" },
-      { label: "Pate & Snack", href: "/products?category=Pate & Snack" },
-      { label: "4PAWS", href: "/products" },
+      { label: "Tất cả sản phẩm", href: "/products" },
+      { label: "Sản phẩm cho mèo", href: "/products?petType=cat" },
+      { label: "Sản phẩm cho chó", href: "/products?petType=dog" },
+      { label: "Pate & Snack", href: "/products?category=pate-snack" },
+      { label: "Cát vệ sinh", href: "/products?productType=litter" },
     ],
   },
   {
@@ -60,8 +44,8 @@ const navigationData: MenuItem[] = [
       { label: "Liên hệ", href: "#" },
     ],
   },
-  { label: "Tin tức", href: "#" },
-  { label: "Kiểm tra đơn hàng", href: "#" },
+  { label: "Kiểm tra đơn hàng", href: "/order-check" },
+  { label: "3F Club", href: "/3f-club/rewards" },
 ];
 
 const SubMenuItem = ({ item }: { item: MenuItem }) => {

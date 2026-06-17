@@ -9,6 +9,8 @@ use App\Services\PointService;
 use App\Models\ShopeePointRequest;
 use App\Models\UploadedOrderImage;
 use App\Models\OrderImageScan;
+use App\Models\AuditLog;
+use App\Helpers\AuthMiddleware;
 use Exception;
 
 class ShopeePointRequestController {
@@ -325,6 +327,15 @@ class ShopeePointRequestController {
 
             $dbConnection->commit();
 
+            // Write Audit Log
+            $currentAdmin = AuthMiddleware::getCurrentAdmin();
+            $adminId = $currentAdmin ? $currentAdmin['id'] : null;
+            AuditLog::write($adminId, 'approve_shopee_request', 'shopee_point_requests', $requestId, [
+                'shopee_order_code' => $request['shopee_order_code'],
+                'phone' => $request['phone'],
+                'approved_points' => $approvedPoints
+            ]);
+
             Response::json([
                 "success"        => true,
                 "message"        => "Đã duyệt yêu cầu và cộng điểm.",
@@ -377,6 +388,15 @@ class ShopeePointRequestController {
             $requestModel->reject($requestId, $reason);
 
             $dbConnection->commit();
+
+            // Write Audit Log
+            $currentAdmin = AuthMiddleware::getCurrentAdmin();
+            $adminId = $currentAdmin ? $currentAdmin['id'] : null;
+            AuditLog::write($adminId, 'reject_shopee_request', 'shopee_point_requests', $requestId, [
+                'shopee_order_code' => $request['shopee_order_code'],
+                'phone' => $request['phone'],
+                'reason' => $reason
+            ]);
 
             Response::json(["success" => true, "message" => "Đã từ chối yêu cầu tích điểm."], 200);
 

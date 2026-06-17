@@ -3,9 +3,34 @@
  * CORS handling helper
  */
 
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+$allowedOrigins = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173'
+];
+
+// Add production public URL from config if set
+$configPath = dirname(__DIR__, 2) . '/config/config.php';
+if (file_exists($configPath)) {
+    $config = require $configPath;
+    if (!empty($config['app']['public_url'])) {
+        $allowedOrigins[] = rtrim($config['app']['public_url'], '/');
+    }
+}
+
+$httpOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$allowedOrigin = '';
+
+if (in_array(rtrim($httpOrigin, '/'), $allowedOrigins, true)) {
+    $allowedOrigin = $httpOrigin;
+}
+
+if ($allowedOrigin) {
+    header("Access-Control-Allow-Origin: {$allowedOrigin}");
+    header('Access-Control-Allow-Credentials: true');
+}
+
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);

@@ -130,7 +130,13 @@ export function ProductSlider() {
             
             <div className="mt-8 flex justify-center lg:mt-10">
               <Link
-                to={`/products?category=${activeCategory === "all" ? "" : activeCategory}`}
+                to={
+                  activeCategory === "food" ? "/products?productType=dry_food" :
+                  activeCategory === "care" ? "/products?category=ve-sinh-thu-cung" :
+                  activeCategory === "accessories" ? "/products?category=phu-kien-do-choi" :
+                  activeCategory === "toys" ? "/products?category=phu-kien-do-choi" :
+                  "/products"
+                }
                 className="group inline-flex items-center gap-2 rounded-full border-2 border-[rgb(var(--color-primary))] bg-white px-6 py-2.5 text-sm font-bold uppercase tracking-wider text-[rgb(var(--color-primary))] transition-all hover:bg-[rgb(var(--color-primary))] hover:text-white sm:px-8 sm:py-3"
               >
                 Xem thêm

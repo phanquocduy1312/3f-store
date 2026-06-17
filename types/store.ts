@@ -43,6 +43,8 @@ export type Product = {
   source?: "shopee" | "tiktok-shop" | string;
   sellerId?: string;
   currency?: string;
+  /** Available stock for non-variant products */
+  stock?: number;
   /** Purchasable variants (size, flavor, color, etc.) */
   variants?: ProductVariant[];
 };

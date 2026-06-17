@@ -20,6 +20,7 @@ import { ToastContainer, useToast } from "@/components/ui/toast-notification";
 
 const typeLabels = {
   earn_shopee_order: "Cộng điểm Shopee",
+  earn_web_order: "Cộng điểm đơn web",
   spend_reward: "Đổi quà",
   refund_reward: "Hoàn điểm",
   adjust_manual: "Điều chỉnh thủ công"

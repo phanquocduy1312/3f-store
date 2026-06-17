@@ -183,32 +183,51 @@ class Product {
             $where = "1=1";
         }
 
-        if (!empty($filters['q'])) {
+        if (isset($filters['q']) && $filters['q'] !== '') {
             $where .= " AND (p.name LIKE :q OR p.brand LIKE :q OR p.description LIKE :q)";
             $params[':q'] = '%' . trim($filters['q']) . '%';
         }
 
-        if (!empty($filters['category'])) {
+        if (isset($filters['category']) && $filters['category'] !== '') {
             $where .= " AND (c.slug = :category OR c.name = :category OR p.product_type = :category)";
             $params[':category'] = trim($filters['category']);
         }
 
-        if (!empty($filters['petType'])) {
-            $where .= " AND p.pet_type = :pet_type";
-            $params[':pet_type'] = trim($filters['petType']);
+        if (isset($filters['categorySlug']) && $filters['categorySlug'] !== '') {
+            $where .= " AND c.slug = :category_slug";
+            $params[':category_slug'] = trim($filters['categorySlug']);
         }
 
-        if (!empty($filters['productType'])) {
+        if (isset($filters['brand']) && $filters['brand'] !== '') {
+            $where .= " AND p.brand = :brand";
+            $params[':brand'] = trim($filters['brand']);
+        }
+
+        if (isset($filters['petType']) && $filters['petType'] !== '') {
+            $petType = trim($filters['petType']);
+            if ($petType === 'cat') {
+                $where .= " AND p.pet_type IN ('cat', 'both')";
+            } elseif ($petType === 'dog') {
+                $where .= " AND p.pet_type IN ('dog', 'both')";
+            } elseif ($petType === 'both') {
+                $where .= " AND p.pet_type = 'both'";
+            } else {
+                $where .= " AND p.pet_type = :pet_type";
+                $params[':pet_type'] = $petType;
+            }
+        }
+
+        if (isset($filters['productType']) && $filters['productType'] !== '') {
             $where .= " AND p.product_type = :product_type";
             $params[':product_type'] = trim($filters['productType']);
         }
 
-        if ($filters['minPrice'] !== null && $filters['minPrice'] !== '') {
+        if (isset($filters['minPrice']) && $filters['minPrice'] !== null && $filters['minPrice'] !== '') {
             $where .= " AND p.min_price >= :min_price";
             $params[':min_price'] = (float)$filters['minPrice'];
         }
 
-        if ($filters['maxPrice'] !== null && $filters['maxPrice'] !== '') {
+        if (isset($filters['maxPrice']) && $filters['maxPrice'] !== null && $filters['maxPrice'] !== '') {
             $where .= " AND p.min_price <= :max_price";
             $params[':max_price'] = (float)$filters['maxPrice'];
         }
@@ -250,5 +269,115 @@ class Product {
             $mapped[$map[$key] ?? $key] = $value;
         }
         return $mapped;
+    }
+
+    public function listProductFilters() {
+        // 1. Categories (only counts active products in active categories)
+        $catSql = "
+            SELECT c.slug, c.name, COUNT(p.id) AS count
+            FROM product_categories c
+            LEFT JOIN products p ON p.category_id = c.id AND p.is_active = 1
+            WHERE c.is_active = 1
+            GROUP BY c.id, c.slug, c.name
+            ORDER BY c.sort_order ASC
+        ";
+        $categories = $this->db->query($catSql)->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($categories as &$c) {
+            $c['count'] = (int)$c['count'];
+        }
+
+        // 2. Pet Types (calculated suitabilities)
+        $petSql = "
+            SELECT 
+                SUM(CASE WHEN pet_type IN ('cat', 'both') THEN 1 ELSE 0 END) as cat_count,
+                SUM(CASE WHEN pet_type IN ('dog', 'both') THEN 1 ELSE 0 END) as dog_count,
+                SUM(CASE WHEN pet_type = 'both' THEN 1 ELSE 0 END) as both_count
+            FROM products 
+            WHERE is_active = 1
+        ";
+        $petRow = $this->db->query($petSql)->fetch(PDO::FETCH_ASSOC);
+        $petTypes = [
+            [
+                'value' => 'cat',
+                'label' => 'Cho mèo',
+                'count' => (int)($petRow['cat_count'] ?? 0)
+            ],
+            [
+                'value' => 'dog',
+                'label' => 'Cho chó',
+                'count' => (int)($petRow['dog_count'] ?? 0)
+            ],
+            [
+                'value' => 'both',
+                'label' => 'Chó & mèo',
+                'count' => (int)($petRow['both_count'] ?? 0)
+            ]
+        ];
+
+        // 3. Product Types
+        $typeSql = "
+            SELECT product_type, COUNT(*) as count
+            FROM products
+            WHERE is_active = 1 AND product_type IS NOT NULL AND product_type != ''
+            GROUP BY product_type
+            ORDER BY count DESC
+        ";
+        $typesRows = $this->db->query($typeSql)->fetchAll(PDO::FETCH_ASSOC);
+        $productTypeLabels = [
+            'dry_food' => 'Thức ăn hạt',
+            'wet_food' => 'Pate / thức ăn ướt',
+            'treat' => 'Snack / thưởng',
+            'litter' => 'Cát vệ sinh',
+            'supplement' => 'Sữa & dinh dưỡng',
+            'accessory' => 'Phụ kiện',
+            'hygiene' => 'Chăm sóc / vệ sinh',
+            'other' => 'Khác'
+        ];
+        $productTypes = [];
+        foreach ($typesRows as $row) {
+            $val = $row['product_type'];
+            $productTypes[] = [
+                'value' => $val,
+                'label' => $productTypeLabels[$val] ?? ucfirst(str_replace('_', ' ', $val)),
+                'count' => (int)$row['count']
+            ];
+        }
+
+        // 4. Brands
+        $brandSql = "
+            SELECT brand, COUNT(*) as count
+            FROM products
+            WHERE is_active = 1 AND brand IS NOT NULL AND brand != ''
+            GROUP BY brand
+            ORDER BY count DESC, brand ASC
+        ";
+        $brandRows = $this->db->query($brandSql)->fetchAll(PDO::FETCH_ASSOC);
+        $brands = [];
+        foreach ($brandRows as $row) {
+            $brands[] = [
+                'value' => $row['brand'],
+                'label' => $row['brand'],
+                'count' => (int)$row['count']
+            ];
+        }
+
+        // 5. Price Range
+        $priceSql = "
+            SELECT MIN(min_price) as min_price, MAX(max_price) as max_price
+            FROM products
+            WHERE is_active = 1
+        ";
+        $priceRow = $this->db->query($priceSql)->fetch(PDO::FETCH_ASSOC);
+
+        return [
+            'categories' => $categories,
+            'petTypes' => $petTypes,
+            'productTypes' => $productTypes,
+            'brands' => $brands,
+            'priceRange' => [
+                'min' => $priceRow['min_price'] !== null ? (float)$priceRow['min_price'] : 0,
+                'max' => $priceRow['max_price'] !== null ? (float)$priceRow['max_price'] : 0
+            ]
+        ];
     }
 }
