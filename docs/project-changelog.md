@@ -19,6 +19,7 @@
   - Đồng bộ hiển thị đầy đủ mã giảm giá, giảm giá, tạm tính, phí vận chuyển và tổng tiền sau giảm tại trang Success, Theo dõi đơn hàng (Tracking), và trang Admin Orders (bảng danh sách và chi tiết Drawer).
 
 ### Fixed
+- Sửa lỗi import components recruiter (`@/components/recruiter/...`) tại trang `RecruiterProfileReputation.tsx` bằng cách chuyển thành `@/src/components/recruiter/...` để phù hợp với alias `@` trỏ vào project root.
 - Loại bỏ hoàn toàn section chọn Phương thức vận chuyển, hardcode phí ship = 0đ cả ở frontend và backend.
 - Chuyển widget chọn phương thức thanh toán (COD / VietQR) từ form địa chỉ sang cột Summary bên phải trên trang Checkout.
 - Đồng bộ số tiền VietQR tự động quét mã bằng tổng tiền thực tế sau khi trừ giảm giá của coupon.

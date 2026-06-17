@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, ShoppingBag } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ShoppingBag, MapPin } from "lucide-react";
 import { getCart, updateQuantity, removeFromCart, clearCart, getCartTotal } from "@/lib/cartHelper";
 import { CartItemsList } from "@/components/CartCheckout/CartItemsList";
 import { DeliveryForm } from "@/components/CartCheckout/DeliveryForm";
@@ -10,9 +10,12 @@ import type { CartItem } from "@/lib/cartHelper";
 import { createOrder, validateCoupon } from "@/src/api/productsApi";
 import type { CreateOrderPayload } from "@/src/api/productsApi";
 import { toast } from "sonner";
+import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
+import { listAddressesApi, type AddressData } from "@/src/api/customerAddressesApi";
 
 export function CartCheckout() {
   const navigate = useNavigate();
+  const { customer, isLoggedIn } = useCustomerAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -30,6 +33,45 @@ export function CartCheckout() {
   const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; discountAmount: number; description?: string } | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Customer addresses state
+  const [addresses, setAddresses] = useState<AddressData[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+
+  const handleSelectAddress = (addr: AddressData) => {
+    setSelectedAddressId(addr.id || null);
+    setFullName(addr.receiverName);
+    setPhone(addr.receiverPhone);
+    setProvinceCode(addr.provinceCode);
+    setProvinceName(addr.provinceName);
+    setWardCode(addr.wardCode);
+    setWardName(addr.wardName);
+    setDetailedAddress(addr.addressLine);
+  };
+
+  useEffect(() => {
+    if (isLoggedIn && customer) {
+      setFullName(customer.fullName || "");
+      setPhone(customer.phone || "");
+      setEmail(customer.email || "");
+
+      const fetchAddresses = async () => {
+        try {
+          const res = await listAddressesApi();
+          if (res.success && res.data && res.data.length > 0) {
+            setAddresses(res.data);
+            const defAddr = res.data.find(a => a.isDefault) || res.data[0];
+            if (defAddr) {
+              handleSelectAddress(defAddr);
+            }
+          }
+        } catch {
+          // ignore
+        }
+      };
+      fetchAddresses();
+    }
+  }, [isLoggedIn, customer]);
 
   useEffect(() => {
     setCart(getCart());
@@ -156,6 +198,37 @@ export function CartCheckout() {
                 onRemove={removeFromCart}
               />
             </div>
+
+            {isLoggedIn && addresses.length > 0 && (
+              <div className="rounded-2xl border border-forest/10 bg-white p-4 sm:p-5 shadow-sm space-y-3">
+                <h3 className="text-sm sm:text-[15px] font-black text-forest flex items-center gap-2">
+                  <MapPin size={16} /> Chọn địa chỉ nhận hàng đã lưu
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {addresses.map((addr) => (
+                    <button
+                      key={addr.id}
+                      type="button"
+                      onClick={() => handleSelectAddress(addr)}
+                      className={`text-left rounded-xl border p-3.5 space-y-1.5 transition-all outline-none ${
+                        selectedAddressId === addr.id
+                          ? "border-forest bg-forest/5 ring-1 ring-forest"
+                          : "border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-ink">{addr.receiverName}</span>
+                        {addr.isDefault && (
+                          <span className="rounded-full bg-forest/10 px-2 py-0.5 text-[9px] font-bold text-forest">Mặc định</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] font-semibold text-gray-500">{addr.receiverPhone}</p>
+                      <p className="text-[10px] font-semibold text-gray-400 line-clamp-2">{addr.addressLine}, {addr.wardName}, {addr.provinceName}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             
             <DeliveryForm
               fullName={fullName} setFullName={setFullName}

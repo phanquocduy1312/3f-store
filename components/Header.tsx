@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronRight, Menu, Search, ShoppingCart, User, Heart, TrendingUp, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronRight, Menu, ShoppingCart, User, Heart, Sparkles, LogOut, Package, Award, Phone as PhoneIcon, Ticket } from "lucide-react";
 import { Image } from "@/components/Image";
 import { getCartCount } from "@/lib/cartHelper";
 import { MobileNavigationDrawer } from "./mobile-navigation-drawer";
 import { ProductSearchBox } from "@/src/components/ProductSearchBox";
+import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
 
 type Product = {
   id: string;
@@ -53,40 +54,22 @@ const SubMenuItem = ({ item }: { item: MenuItem }) => {
   const hasSubItems = Boolean(item.subItems?.length);
 
   return (
-    <div
-      className="relative"
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
-    >
-      <Link
-        to={item.href}
-        className="flex w-full items-center justify-between px-5 py-3 text-[0.92rem] font-medium text-ink/80 transition-colors duration-200 hover:bg-forest/5 hover:text-forest"
-      >
+    <div className="relative" onMouseEnter={() => setIsOpen(true)} onMouseLeave={() => setIsOpen(false)}>
+      <Link to={item.href}
+        className="flex w-full items-center justify-between px-5 py-3 text-[0.92rem] font-medium text-ink/80 transition-colors duration-200 hover:bg-forest/5 hover:text-forest">
         <span className={hasSubItems && isOpen ? "font-bold text-forest" : ""}>{item.label}</span>
         {hasSubItems ? (
-          <ChevronRight
-            size={14}
-            className={`transition-transform duration-200 ${isOpen ? "translate-x-1 text-forest" : "text-forest/40"}`}
-          />
+          <ChevronRight size={14} className={`transition-transform duration-200 ${isOpen ? "translate-x-1 text-forest" : "text-forest/40"}`} />
         ) : null}
       </Link>
-
       <AnimatePresence>
         {isOpen && hasSubItems ? (
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -5 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute left-full top-0 pl-1"
-          >
+          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -5 }}
+            transition={{ duration: 0.2, ease: "easeOut" }} className="absolute left-full top-0 pl-1">
             <div className="w-56 overflow-hidden rounded-xl border border-forest/10 bg-white py-2 shadow-[0_15px_35px_rgba(0,0,0,0.08)]">
               {item.subItems!.map((child) => (
-                <Link
-                  key={child.label}
-                  to={child.href}
-                  className="block px-5 py-3 text-[0.9rem] font-medium text-ink/80 transition-colors hover:bg-forest/5 hover:text-forest"
-                >
+                <Link key={child.label} to={child.href}
+                  className="block px-5 py-3 text-[0.9rem] font-medium text-ink/80 transition-colors hover:bg-forest/5 hover:text-forest">
                   {child.label}
                 </Link>
               ))}
@@ -103,37 +86,21 @@ const NavItem = ({ item }: { item: MenuItem }) => {
   const hasSubItems = Boolean(item.subItems?.length);
 
   return (
-    <div
-      className="flex h-full items-center"
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
-    >
-      <Link
-        to={item.href}
-        className={`flex items-center gap-1.5 transition-colors duration-200 ${isOpen ? "text-forest" : "hover:text-forest"}`}
-      >
+    <div className="flex h-full items-center" onMouseEnter={() => setIsOpen(true)} onMouseLeave={() => setIsOpen(false)}>
+      <Link to={item.href}
+        className={`flex items-center gap-1.5 transition-colors duration-200 ${isOpen ? "text-forest" : "hover:text-forest"}`}>
         {item.label}
         {hasSubItems ? (
-          <ChevronDown
-            size={14}
-            className={`transition-transform duration-300 ${isOpen ? "-rotate-180 text-forest" : "text-forest/60"}`}
-          />
+          <ChevronDown size={14} className={`transition-transform duration-300 ${isOpen ? "-rotate-180 text-forest" : "text-forest/60"}`} />
         ) : null}
       </Link>
-
       <AnimatePresence>
         {isOpen && hasSubItems ? (
-          <motion.div
-            initial={{ opacity: 0, y: 15, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.96 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute top-full mt-[-10px] pt-4"
-          >
+          <motion.div initial={{ opacity: 0, y: 15, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.96 }} transition={{ duration: 0.2, ease: "easeOut" }}
+            className="absolute top-full mt-[-10px] pt-4">
             <div className="w-64 rounded-[1.25rem] border border-forest/10 bg-white py-2 shadow-[0_20px_40px_rgba(41,76,38,0.08)]">
-              {item.subItems!.map((sub) => (
-                <SubMenuItem key={sub.label} item={sub} />
-              ))}
+              {item.subItems!.map((sub) => (<SubMenuItem key={sub.label} item={sub} />))}
             </div>
           </motion.div>
         ) : null}
@@ -142,10 +109,103 @@ const NavItem = ({ item }: { item: MenuItem }) => {
   );
 };
 
+/**
+ * Account dropdown menu for logged-in customers.
+ */
+function AccountMenu() {
+  const { customer, logout } = useCustomerAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setIsOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    setIsOpen(false);
+    navigate("/");
+  };
+
+  const displayName = customer?.fullName || customer?.email || customer?.phone || "Tài khoản";
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button onClick={() => setIsOpen(!isOpen)}
+        className="flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3">
+        <div className="relative">
+          <div className="h-6 w-6 rounded-full bg-forest/15 flex items-center justify-center">
+            <User size={16} strokeWidth={2.5} className="text-forest" />
+          </div>
+          <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5 rounded-full bg-forest ring-2 ring-cream" />
+        </div>
+        <span className="hidden text-[0.72rem] font-bold text-forest/90 sm:block max-w-[60px] truncate">{displayName.split(" ").pop()}</span>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div initial={{ opacity: 0, y: 8, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 5, scale: 0.95 }} transition={{ duration: 0.15 }}
+            className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-forest/10 bg-white py-2 shadow-[0_20px_40px_rgba(41,76,38,0.12)] z-50">
+
+            {/* Greeting */}
+            <div className="px-4 py-3 border-b border-forest/8">
+              <p className="text-sm font-black text-ink truncate">Xin chào, {displayName}!</p>
+              <p className="text-[11px] font-semibold text-ink/50 truncate">{customer?.email || customer?.phone}</p>
+            </div>
+
+            {/* Phone warning */}
+            {!customer?.phone && (
+              <Link to="/account" onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 px-4 py-2.5 bg-honey/10 text-honey-dark text-xs font-bold hover:bg-honey/20 transition">
+                <PhoneIcon size={14} />
+                <span>Bổ sung SĐT để tích điểm 3F Club</span>
+              </Link>
+            )}
+
+            {/* Menu items */}
+            <div className="py-1">
+              <Link to="/account" onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink/80 hover:bg-forest/5 hover:text-forest transition">
+                <User size={16} /> Tài khoản của tôi
+              </Link>
+              <Link to="/account/orders" onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink/80 hover:bg-forest/5 hover:text-forest transition">
+                <Package size={16} /> Đơn hàng của tôi
+              </Link>
+              <Link to="/account/club" onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink/80 hover:bg-forest/5 hover:text-forest transition">
+                <Award size={16} /> Điểm 3F Club
+              </Link>
+              <Link to="/account/vouchers" onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink/80 hover:bg-forest/5 hover:text-forest transition">
+                <Ticket size={16} /> Voucher của tôi
+              </Link>
+            </div>
+
+            {/* Logout */}
+            <div className="border-t border-forest/8 pt-1">
+              <button onClick={handleLogout}
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50 transition rounded-b-2xl">
+                <LogOut size={16} /> Đăng xuất
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function Header() {
   const [cartCount, setCartCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
+  const { isLoggedIn } = useCustomerAuth();
 
   useEffect(() => {
     setCartCount(getCartCount());
@@ -166,13 +226,8 @@ export function Header() {
           <div className="flex h-16 items-center gap-3 lg:h-[70px] lg:gap-4">
             {/* Logo */}
             <Link to="/" className="shrink-0" aria-label="3F Store - Trang chủ">
-              <Image
-                src="/assets/logo/logo.webp"
-                alt="3F Store logo"
-                width={100}
-                height={100}
-                className="h-auto w-[85px] object-contain sm:w-[100px]"
-              />
+              <Image src="/assets/logo/logo.webp" alt="3F Store logo" width={100} height={100}
+                className="h-auto w-[85px] object-contain sm:w-[100px]" />
             </Link>
 
             {/* Search Bar - Desktop */}
@@ -180,11 +235,9 @@ export function Header() {
 
             {/* Right Icons */}
             <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
-              <button
-                onClick={() => window.dispatchEvent(new CustomEvent("open-pet-advisor"))}
+              <button onClick={() => window.dispatchEvent(new CustomEvent("open-pet-advisor"))}
                 className="flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3"
-                aria-label="Tư vấn AI"
-              >
+                aria-label="Tư vấn AI">
                 <div className="relative">
                   <Sparkles size={24} strokeWidth={2} className="text-blue-500" />
                   <span className="absolute -right-1 -top-1 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-blue-500 ring-2 ring-white animate-pulse"></span>
@@ -192,20 +245,16 @@ export function Header() {
                 <span className="hidden text-[0.72rem] font-bold text-forest/90 sm:block">Tư vấn AI</span>
               </button>
 
-              <Link
-                to="/wishlist"
+              <Link to="/wishlist"
                 className="flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3"
-                aria-label="Yêu thích"
-              >
+                aria-label="Yêu thích">
                 <Heart size={24} strokeWidth={2} />
                 <span className="hidden text-[0.72rem] font-bold text-forest/90 sm:block">Yêu thích</span>
               </Link>
 
-              <Link
-                to="/cart"
+              <Link to="/cart"
                 className="relative flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3"
-                aria-label="Giỏ hàng"
-              >
+                aria-label="Giỏ hàng">
                 <div className="relative">
                   <ShoppingCart size={24} strokeWidth={2} />
                   {cartCount > 0 ? (
@@ -217,20 +266,21 @@ export function Header() {
                 <span className="hidden text-[0.72rem] font-bold text-forest/90 sm:block">Giỏ hàng</span>
               </Link>
 
-              <Link
-                to="/login"
-                className="flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3"
-                aria-label="Tài khoản"
-              >
-                <User size={24} strokeWidth={2} />
-                <span className="hidden text-[0.72rem] font-bold text-forest/90 sm:block">Tài khoản</span>
-              </Link>
+              {/* Account: dynamic based on login state */}
+              {isLoggedIn ? (
+                <AccountMenu />
+              ) : (
+                <Link to="/login"
+                  className="flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3"
+                  aria-label="Tài khoản">
+                  <User size={24} strokeWidth={2} />
+                  <span className="hidden text-[0.72rem] font-bold text-forest/90 sm:block">Tài khoản</span>
+                </Link>
+              )}
 
-              <button
-                onClick={() => setIsMobileMenuOpen(true)}
+              <button onClick={() => setIsMobileMenuOpen(true)}
                 className="grid h-10 w-10 place-items-center rounded-full bg-white text-forest shadow-md lg:hidden"
-                aria-label="Mở menu"
-              >
+                aria-label="Mở menu">
                 <Menu size={20} />
               </button>
             </div>
@@ -244,9 +294,7 @@ export function Header() {
           {/* Navigation Menu */}
           <div className="hidden border-t border-forest/10 lg:block">
             <nav className="relative flex h-[54px] items-center gap-8 text-[0.92rem] font-bold text-ink/85">
-              {navigationData.map((item) => (
-                <NavItem key={item.label} item={item} />
-              ))}
+              {navigationData.map((item) => (<NavItem key={item.label} item={item} />))}
             </nav>
           </div>
         </div>
@@ -254,12 +302,8 @@ export function Header() {
 
       <AnimatePresence>
         {isMobileMenuOpen ? (
-          <MobileNavigationDrawer
-            isOpen={isMobileMenuOpen}
-            onClose={() => setIsMobileMenuOpen(false)}
-            navigationData={navigationData}
-            cartCount={cartCount}
-          />
+          <MobileNavigationDrawer isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)}
+            navigationData={navigationData} cartCount={cartCount} />
         ) : null}
       </AnimatePresence>
     </>

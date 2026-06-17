@@ -97,12 +97,15 @@ export type ProductDetailResponse = {
 };
 
 async function apiJson<T>(path: string, options?: RequestInit): Promise<T> {
-  const token = localStorage.getItem("admin_token");
+  const adminToken = localStorage.getItem("admin_token");
+  const customerToken = localStorage.getItem("customer_token");
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  if (adminToken) {
+    headers["Authorization"] = `Bearer ${adminToken}`;
+  } else if (customerToken) {
+    headers["Authorization"] = `Bearer ${customerToken}`;
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {

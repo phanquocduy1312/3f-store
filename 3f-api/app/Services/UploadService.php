@@ -138,4 +138,46 @@ class UploadService {
             "file_size"         => (int)$file['size']
         ];
     }
+
+    /**
+     * Handles customer avatar image upload and returns a public URL.
+     */
+    public static function uploadAvatarImage($file) {
+        [$mimeType, $extension] = self::validateImageFile($file, 2); // 2MB max
+
+        $rootDir = dirname(__DIR__, 2);
+        $storageDir = $rootDir . '/storage/uploads/avatars/';
+        $publicDir = $rootDir . '/public/uploads/avatars/';
+
+        foreach ([$storageDir, $publicDir] as $dir) {
+            if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+                throw new Exception("Khong the tao thu muc luu tru anh.");
+            }
+        }
+
+        $timestamp = time();
+        try {
+            $random = bin2hex(random_bytes(4));
+        } catch (Exception $e) {
+            $random = mt_rand(10000000, 99999999);
+        }
+
+        $storedFilename = "avatar_{$timestamp}_{$random}.{$extension}";
+        $storagePath = $storageDir . $storedFilename;
+        $publicPath = $publicDir . $storedFilename;
+
+        if (!move_uploaded_file($file['tmp_name'], $storagePath)) {
+            throw new Exception("Khong the luu file anh.");
+        }
+
+        if (!copy($storagePath, $publicPath)) {
+            @unlink($storagePath);
+            throw new Exception("Khong the luu public avatar.");
+        }
+
+        $relativeUrl = "/uploads/avatars/" . $storedFilename;
+        return [
+            "image_url" => $relativeUrl
+        ];
+    }
 }

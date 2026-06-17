@@ -27,7 +27,7 @@ class Request {
      */
     public static function input($key, $default = null) {
         $method = self::method();
-        if ($method === 'POST' || $method === 'PUT') {
+        if ($method === 'POST' || $method === 'PUT' || $method === 'PATCH' || $method === 'DELETE') {
             $contentType = isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : '';
             if (stripos($contentType, 'application/json') !== false) {
                 $json = self::json();

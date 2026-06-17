@@ -5,9 +5,12 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Models\AdminSession;
 use App\Models\AdminUser;
+use App\Models\CustomerSession;
+use App\Models\Customer;
 
 class AuthMiddleware {
     private static $currentAdmin = null;
+    private static $currentCustomer = null;
 
     /**
      * Robust helper to retrieve all HTTP headers.
@@ -136,4 +139,93 @@ class AuthMiddleware {
     public static function getCurrentAdmin() {
         return self::$currentAdmin;
     }
+
+    /**
+     * Extract Bearer token from request headers.
+     */
+    public static function extractBearerToken() {
+        $headers = self::getHeaders();
+        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+
+        if (empty($authHeader) && isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
+        }
+        if (empty($authHeader) && isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+            $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+        }
+
+        if (!empty($authHeader) && preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
+            return trim($matches[1]);
+        }
+
+        // Fallback to X-Customer-Token
+        $customToken = $headers['X-Customer-Token'] ?? $headers['x-customer-token'] ?? '';
+        if (!empty($customToken)) return trim($customToken);
+        if (isset($_SERVER['HTTP_X_CUSTOMER_TOKEN'])) return trim($_SERVER['HTTP_X_CUSTOMER_TOKEN']);
+
+        return null;
+    }
+
+    /**
+     * Enforce customer authentication.
+     */
+    public static function requireCustomer() {
+        if (self::$currentCustomer !== null) {
+            return self::$currentCustomer;
+        }
+
+        $token = self::extractBearerToken();
+
+        if (empty($token)) {
+            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập.'], 401);
+        }
+
+        $sessionModel = new CustomerSession();
+        $customerId = $sessionModel->validateToken($token);
+
+        if (!$customerId) {
+            Response::json(['success' => false, 'message' => 'Phiên đăng nhập đã hết hạn.'], 401);
+        }
+
+        $customerModel = new Customer();
+        $customer = $customerModel->findById($customerId);
+
+        if (!$customer) {
+            Response::json(['success' => false, 'message' => 'Tài khoản không tồn tại.'], 401);
+        }
+
+        if ($customer['status'] === 'blocked') {
+            Response::json(['success' => false, 'message' => 'Tài khoản đã bị khóa.'], 403);
+        }
+
+        self::$currentCustomer = $customer;
+        return $customer;
+    }
+
+    /**
+     * Get currently authenticated customer, if any.
+     */
+    public static function getCurrentCustomer() {
+        return self::$currentCustomer;
+    }
+
+    /**
+     * Optionally get customer if token present, or null.
+     */
+    public static function getCustomerOptional() {
+        $token = self::extractBearerToken();
+        if (empty($token)) return null;
+
+        try {
+            $sessionModel = new CustomerSession();
+            $customerId = $sessionModel->validateToken($token);
+            if (!$customerId) return null;
+
+            $customerModel = new Customer();
+            return $customerModel->findById($customerId);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
 }
+

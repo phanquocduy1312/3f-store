@@ -64,9 +64,17 @@ use App\Controllers\ProductController;
 use App\Controllers\OrderController;
 use App\Controllers\AdminAuthController;
 use App\Controllers\CouponController;
+use App\Controllers\CustomerAuthController;
+use App\Controllers\CustomerProfileController;
+use App\Controllers\CustomerAddressController;
+use App\Controllers\CustomerOrderController;
+use App\Controllers\CustomerClubController;
+use App\Controllers\CustomerSecurityController;
+use App\Controllers\CustomerPetController;
 
 try {
     // 0. Pre-instantiate models to run database migrations outside of transactions
+    new \App\Models\Customer();
     new \App\Models\ShopeePointRequest();
     new \App\Models\LoyaltyPointRuleModel();
     new \App\Models\LoyaltyRewardModel();
@@ -80,6 +88,8 @@ try {
     new \App\Models\AdminSession();
     new \App\Models\AuditLog();
     new \App\Models\ShopeeTokenModel();
+    new \App\Models\CustomerSession();
+    new \App\Models\CustomerOtp();
 
     // 3. Initialize Router
     $router = new Router();
@@ -89,6 +99,56 @@ try {
     $router->post("/api/admin/auth/logout", [AdminAuthController::class, "logout"]);
     $router->get("/api/admin/auth/me", [AdminAuthController::class, "me"]);
     $router->post("/api/admin/auth/bootstrap", [AdminAuthController::class, "bootstrap"]);
+
+    // Customer Auth Routes
+    $router->post("/api/customer/auth/register-email", [CustomerAuthController::class, "registerEmail"]);
+    $router->post("/api/customer/auth/login-password", [CustomerAuthController::class, "loginPassword"]);
+    $router->post("/api/customer/auth/request-otp", [CustomerAuthController::class, "requestOtp"]);
+    $router->post("/api/customer/auth/verify-otp", [CustomerAuthController::class, "verifyOtp"]);
+    $router->post("/api/customer/auth/complete-phone-register", [CustomerAuthController::class, "completePhoneRegister"]);
+    $router->get("/api/customer/auth/me", [CustomerAuthController::class, "me"]);
+    $router->post("/api/customer/auth/logout", [CustomerAuthController::class, "logout"]);
+    $router->post("/api/customer/auth/add-phone", [CustomerAuthController::class, "addPhone"]);
+    $router->post("/api/customer/auth/verify-add-phone", [CustomerAuthController::class, "verifyAddPhone"]);
+
+    // Customer Profile & Account Center Routes
+    $router->get("/api/customer/profile", [CustomerProfileController::class, "getProfile"]);
+    $router->patch("/api/customer/profile", [CustomerProfileController::class, "patchProfile"]);
+    $router->post("/api/customer/profile/request-phone-change", [CustomerProfileController::class, "requestPhoneChange"]);
+    $router->post("/api/customer/profile/verify-phone-change", [CustomerProfileController::class, "verifyPhoneChange"]);
+    $router->post("/api/customer/profile/upload-avatar", [CustomerProfileController::class, "uploadAvatar"]);
+
+    // Customer Address Book Routes
+    $router->get("/api/customer/addresses", [CustomerAddressController::class, "list"]);
+    $router->post("/api/customer/addresses", [CustomerAddressController::class, "create"]);
+    $router->patch("/api/customer/addresses/:id", [CustomerAddressController::class, "update"]);
+    $router->delete("/api/customer/addresses/:id", [CustomerAddressController::class, "delete"]);
+    $router->post("/api/customer/addresses/:id/default", [CustomerAddressController::class, "setDefault"]);
+
+    // Customer Orders Routes
+    $router->get("/api/customer/orders", [CustomerOrderController::class, "list"]);
+    $router->get("/api/customer/orders/:orderCode", [CustomerOrderController::class, "detail"]);
+    $router->post("/api/customer/orders/:orderCode/cancel", [CustomerOrderController::class, "cancel"]);
+    $router->post("/api/customer/orders/:orderCode/reorder", [CustomerOrderController::class, "reorder"]);
+
+    // Customer Club Loyalty & Vouchers Routes
+    $router->get("/api/customer/club/summary", [CustomerClubController::class, "summary"]);
+    $router->get("/api/customer/club/transactions", [CustomerClubController::class, "transactions"]);
+    $router->get("/api/customer/club/shopee-requests", [CustomerClubController::class, "shopeeRequests"]);
+    $router->post("/api/customer/club/shopee-requests", [CustomerClubController::class, "createShopeeRequest"]);
+    $router->get("/api/customer/vouchers", [CustomerClubController::class, "vouchers"]);
+
+    // Customer Security Routes
+    $router->post("/api/customer/security/change-password", [CustomerSecurityController::class, "changePassword"]);
+    $router->get("/api/customer/security/sessions", [CustomerSecurityController::class, "sessions"]);
+    $router->delete("/api/customer/security/sessions/:id", [CustomerSecurityController::class, "revokeSession"]);
+    $router->post("/api/customer/security/logout-all", [CustomerSecurityController::class, "logoutAll"]);
+
+    // Customer Pets Routes
+    $router->get("/api/customer/pets", [CustomerPetController::class, "list"]);
+    $router->post("/api/customer/pets", [CustomerPetController::class, "create"]);
+    $router->patch("/api/customer/pets/:id", [CustomerPetController::class, "update"]);
+    $router->delete("/api/customer/pets/:id", [CustomerPetController::class, "delete"]);
 
     $router->post("/api/shopee/order-scan", [ShopeeOrderScanController::class, "scan"]);
     $router->post("/api/shopee/requests", [ShopeePointRequestController::class, "create"]);

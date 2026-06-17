@@ -58,8 +58,8 @@ export function DeliveryForm({
     fetchProvinces();
   }, []);
 
-  // Handle province change: reset ward and load wards for new province
-  const handleProvinceChange = async (codeStr: string) => {
+  // Handle province selection from dropdown
+  const handleProvinceSelect = (codeStr: string) => {
     setProvinceCode(codeStr);
     setWardCode("");
     setWardName("");
@@ -70,18 +70,28 @@ export function DeliveryForm({
     }
     const selected = provinces.find(p => String(p.code) === codeStr);
     setProvinceName(selected ? selected.name : "");
-
-    setIsLoadingWards(true);
-    setErrorMsg("");
-    try {
-      const detail = await getProvinceDetail(codeStr);
-      setWards(detail.wards || []);
-    } catch (err: any) {
-      setErrorMsg("Không thể tải danh sách phường/xã. Vui lòng thử lại.");
-    } finally {
-      setIsLoadingWards(false);
-    }
   };
+
+  // Reactively fetch wards when provinceCode changes
+  useEffect(() => {
+    if (!provinceCode) {
+      setWards([]);
+      return;
+    }
+    const fetchWards = async () => {
+      setIsLoadingWards(true);
+      setErrorMsg("");
+      try {
+        const detail = await getProvinceDetail(provinceCode);
+        setWards(detail.wards || []);
+      } catch (err: any) {
+        setErrorMsg("Không thể tải danh sách phường/xã. Vui lòng thử lại.");
+      } finally {
+        setIsLoadingWards(false);
+      }
+    };
+    fetchWards();
+  }, [provinceCode]);
 
   const handleWardChange = (codeStr: string) => {
     setWardCode(codeStr);
@@ -153,7 +163,7 @@ export function DeliveryForm({
             <label className="mb-1 block text-[11px] sm:text-xs font-bold text-ink/70">Tỉnh / Thành phố *</label>
             <select
               value={provinceCode}
-              onChange={(e) => handleProvinceChange(e.target.value)}
+              onChange={(e) => handleProvinceSelect(e.target.value)}
               disabled={isLoadingProvinces}
               className="w-full rounded-xl border border-forest/15 bg-white px-3 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30 disabled:opacity-55"
               required

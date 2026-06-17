@@ -1,28 +1,31 @@
 import { useState, FormEvent } from "react";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { loginPassword } from "@/src/api/customerAuthApi";
+import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
 
 interface LoginFormProps {
   onSuccess?: () => void;
 }
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
-  const [email, setEmail] = useState("");
+  const { login } = useCustomerAuth();
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const validate = () => {
-    const newErrors: { email?: string; password?: string } = {};
-    if (!email) {
-      newErrors.email = "Vui lòng nhập Email hoặc Số điện thoại";
+    const newErrors: { identifier?: string; password?: string } = {};
+    if (!identifier) {
+      newErrors.identifier = "Vui lòng nhập Email hoặc Số điện thoại";
     } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
-      !/^(0[3|5|7|8|9])+([0-9]{8})$/.test(email)
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier) &&
+      !/^(0[3|5|7|8|9])+([0-9]{8})$/.test(identifier)
     ) {
-      newErrors.email = "Email hoặc Số điện thoại không đúng định dạng";
+      newErrors.identifier = "Email hoặc Số điện thoại không đúng định dạng";
     }
 
     if (!password) {
@@ -35,17 +38,28 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
     setIsLoading(true);
-    // Simulate API calling
-    setTimeout(() => {
+    try {
+      const res = await loginPassword({ identifier, password });
+      if (res.success && res.data) {
+        login(res.data.token, res.data.customer);
+        toast.success("Đăng nhập thành công!");
+        if (onSuccess) onSuccess();
+      } else {
+        toast.error(res.message || "Đăng nhập thất bại.");
+        if (res.message) {
+          setErrors({ identifier: res.message });
+        }
+      }
+    } catch {
+      toast.error("Lỗi kết nối. Vui lòng thử lại.");
+    } finally {
       setIsLoading(false);
-      toast.success("Đăng nhập thành công! (Dữ liệu mô phỏng)");
-      if (onSuccess) onSuccess();
-    }, 1200);
+    }
   };
 
   return (
@@ -58,17 +72,17 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           </span>
           <input
             type="text"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             className={`w-full pl-10 pr-4 py-3 rounded-xl border bg-white/50 text-[0.95rem] outline-none transition duration-200 ${
-              errors.email
+              errors.identifier
                 ? "border-red-500 focus:border-red-500 ring-2 ring-red-100"
                 : "border-forest/20 focus:border-forest focus:bg-white focus:ring-4 focus:ring-forest/10"
             }`}
             placeholder="example@gmail.com hoặc 09xxxx"
           />
         </div>
-        {errors.email && <p className="text-red-500 text-xs font-semibold mt-1.5">{errors.email}</p>}
+        {errors.identifier && <p className="text-red-500 text-xs font-semibold mt-1.5">{errors.identifier}</p>}
       </div>
 
       <div>
