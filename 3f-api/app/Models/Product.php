@@ -43,11 +43,7 @@ class Product {
     public function listProducts($filters = []) {
         $params = [];
         $where = $this->buildWhere($filters, $params);
-        $sort = $this->buildSort($filters['sort'] ?? 'newest');
-        $page = max(1, (int)($filters['page'] ?? 1));
-        $limit = min(60, max(1, (int)($filters['limit'] ?? 24)));
-        $offset = ($page - 1) * $limit;
-
+        
         $countSql = "
             SELECT COUNT(*) AS total
             FROM products p
@@ -57,6 +53,13 @@ class Product {
         $stmt = $this->db->prepare($countSql);
         $stmt->execute($params);
         $total = (int)($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+
+        // Build sort after count query to avoid adding startsWith/contains parameters to count query
+        $sort = $this->buildSort($filters['sort'] ?? 'newest', $filters['q'] ?? null, $params);
+
+        $page = max(1, (int)($filters['page'] ?? 1));
+        $limit = min(60, max(1, (int)($filters['limit'] ?? 24)));
+        $offset = ($page - 1) * $limit;
 
         $sql = "
             SELECT
@@ -184,8 +187,32 @@ class Product {
         }
 
         if (isset($filters['q']) && $filters['q'] !== '') {
-            $where .= " AND (p.name LIKE :q OR p.brand LIKE :q OR p.description LIKE :q)";
-            $params[':q'] = '%' . trim($filters['q']) . '%';
+            $q = trim((string)$filters['q']);
+            $q = preg_replace('/\s+/', ' ', $q);
+            if (mb_strlen($q, 'UTF-8') >= 2) {
+                $where .= " AND (
+                    p.name LIKE :q1 
+                    OR p.brand LIKE :q2 
+                    OR p.description LIKE :q3 
+                    OR p.slug LIKE :q4 
+                    OR EXISTS (
+                        SELECT 1 FROM product_variants pv 
+                        WHERE pv.product_id = p.id 
+                        AND pv.is_active = 1
+                        AND (
+                            pv.sku LIKE :q5 
+                            OR pv.variant_name LIKE :q6
+                        )
+                    )
+                )";
+                $qVal = '%' . $q . '%';
+                $params[':q1'] = $qVal;
+                $params[':q2'] = $qVal;
+                $params[':q3'] = $qVal;
+                $params[':q4'] = $qVal;
+                $params[':q5'] = $qVal;
+                $params[':q6'] = $qVal;
+            }
         }
 
         if (isset($filters['category']) && $filters['category'] !== '') {
@@ -235,7 +262,26 @@ class Product {
         return $where;
     }
 
-    private function buildSort($sort) {
+    private function buildSort($sort, $q = null, &$params = []) {
+        if ($q !== null && $q !== '') {
+            $qClean = trim((string)$q);
+            $qClean = preg_replace('/\s+/', ' ', $qClean);
+            if (mb_strlen($qClean, 'UTF-8') >= 2 && !in_array($sort, ['price_asc', 'price_desc', 'popular'], true)) {
+                $params[':startsWith'] = $qClean . '%';
+                $params[':contains1'] = '%' . $qClean . '%';
+                $params[':contains2'] = '%' . $qClean . '%';
+                return "ORDER BY
+                    CASE
+                        WHEN p.name LIKE :startsWith THEN 1
+                        WHEN p.name LIKE :contains1 THEN 2
+                        WHEN p.brand LIKE :contains2 THEN 3
+                        ELSE 4
+                    END,
+                    p.sold_count DESC,
+                    p.id DESC";
+            }
+        }
+
         switch ($sort) {
             case 'price_asc':
                 return "ORDER BY p.min_price ASC, p.id DESC";

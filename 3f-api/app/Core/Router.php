@@ -27,6 +27,27 @@ class Router {
     }
 
     /**
+     * Registers a PATCH route.
+     */
+    public function patch($path, $handler) {
+        $this->routes['PATCH'][$this->normalizePath($path)] = $handler;
+    }
+
+    /**
+     * Registers a DELETE route.
+     */
+    public function delete($path, $handler) {
+        $this->routes['DELETE'][$this->normalizePath($path)] = $handler;
+    }
+
+    /**
+     * Registers a PUT route.
+     */
+    public function put($path, $handler) {
+        $this->routes['PUT'][$this->normalizePath($path)] = $handler;
+    }
+
+    /**
      * Resolves the request and runs the corresponding handler.
      */
     public function dispatch() {
@@ -91,7 +112,8 @@ class Router {
                 'admin.auth.login'            => '/api/admin/auth/login',
                 'admin.auth.logout'           => '/api/admin/auth/logout',
                 'admin.auth.me'               => '/api/admin/auth/me',
-                'admin.auth.bootstrap'        => '/api/admin/auth/bootstrap'
+                'admin.auth.bootstrap'        => '/api/admin/auth/bootstrap',
+                'coupons.validate'            => '/api/coupons/validate'
             ];
             $path = isset($mapping[$routeQuery]) ? $mapping[$routeQuery] : '';
         } else {
@@ -125,13 +147,39 @@ class Router {
         }
         */
 
-        if (!isset($this->routes[$method][$path])) {
+        $matchedHandler = null;
+
+        if (isset($this->routes[$method][$path])) {
+            $matchedHandler = $this->routes[$method][$path];
+        } else {
+            // Try matching dynamic routes with placeholders (e.g. :id, :orderCode)
+            if (isset($this->routes[$method])) {
+                foreach ($this->routes[$method] as $routePath => $handler) {
+                    if (strpos($routePath, ':') !== false) {
+                        // Convert /api/customer/addresses/:id to a regex pattern
+                        $pattern = preg_replace('/:[a-zA-Z0-9_]+/', '([^/]+)', $routePath);
+                        $pattern = '#^' . $pattern . '$#';
+                        if (preg_match($pattern, $path, $matches)) {
+                            // Extract parameter names
+                            preg_match_all('/:([a-zA-Z0-9_]+)/', $routePath, $paramNames);
+                            foreach ($paramNames[1] as $index => $name) {
+                                $_GET[$name] = $matches[$index + 1];
+                                $_REQUEST[$name] = $matches[$index + 1];
+                            }
+                            $matchedHandler = $handler;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!$matchedHandler) {
             Response::json(["success" => false, "message" => "Route not found: {$method} {$path}"], 404);
         }
 
-        $handler = $this->routes[$method][$path];
-        $controllerClass = $handler[0];
-        $action = $handler[1];
+        $controllerClass = $matchedHandler[0];
+        $action = $matchedHandler[1];
 
         if (!class_exists($controllerClass)) {
             Response::json(["success" => false, "message" => "Controller class {$controllerClass} not found"], 500);

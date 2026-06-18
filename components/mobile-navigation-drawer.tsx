@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { X, ChevronDown, Search, ShoppingCart, User, PawPrint } from "lucide-react";
 import { motion } from "framer-motion";
 import { Image } from "@/components/Image";
+import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
 
 type MenuItem = {
   label: string;
@@ -25,6 +26,7 @@ export function MobileNavigationDrawer({
   navigationData,
   cartCount,
 }: MobileNavigationDrawerProps) {
+  const { isLoggedIn } = useCustomerAuth();
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (label: string) => {
@@ -209,7 +211,7 @@ export function MobileNavigationDrawer({
             </Link>
             
             <Link
-              to="/login"
+              to={isLoggedIn ? "/account" : "/login"}
               onClick={onClose}
               className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-forest/15 bg-white text-xs font-black text-forest hover:bg-forest/5"
             >

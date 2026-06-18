@@ -131,6 +131,9 @@ export function ProductListing() {
 
   // Derive active title based on searchParams
   const activeTitleName = useMemo(() => {
+    if (queryParam) {
+      return `Kết quả tìm kiếm cho "${queryParam}"`;
+    }
     const categoryParam = searchParams.get("category");
     if (categoryParam) {
       const match = filtersData?.categories.find(c => c.slug === categoryParam);
@@ -152,7 +155,7 @@ export function ProductListing() {
       return `Thương hiệu: ${brandParam}`;
     }
     return "Tất cả sản phẩm";
-  }, [searchParams, filtersData]);
+  }, [searchParams, queryParam, filtersData]);
 
   const sortBy = searchParams.get("sort") || "popular";
   const currentPage = parseInt(searchParams.get("page") || "1", 10);

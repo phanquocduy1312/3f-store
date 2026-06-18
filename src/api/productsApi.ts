@@ -97,12 +97,15 @@ export type ProductDetailResponse = {
 };
 
 async function apiJson<T>(path: string, options?: RequestInit): Promise<T> {
-  const token = localStorage.getItem("admin_token");
+  const adminToken = localStorage.getItem("admin_token");
+  const customerToken = localStorage.getItem("customer_token");
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  if (adminToken) {
+    headers["Authorization"] = `Bearer ${adminToken}`;
+  } else if (customerToken) {
+    headers["Authorization"] = `Bearer ${customerToken}`;
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -213,6 +216,16 @@ export async function getProducts(params: ProductListParams = {}) {
   };
 }
 
+export async function searchProducts(keyword: string, limit = 8, signal?: AbortSignal) {
+  const params = new URLSearchParams();
+  params.set("q", keyword);
+  params.set("limit", String(limit));
+
+  return apiJson<ProductListResponse>(`/api/products?${params.toString()}`, {
+    signal,
+  });
+}
+
 export async function getProductDetail(identifier: string) {
   const key = /^\d{10,}$/.test(identifier) ? "sourceProductId" : /^\d+$/.test(identifier) ? "id" : "slug";
   const response = await apiJson<ProductDetailResponse>(
@@ -287,9 +300,10 @@ export type CreateOrderPayload = {
   shipping: {
     receiverName: string;
     phone: string;
-    province: string;
-    district: string;
-    ward: string;
+    provinceCode: string;
+    provinceName: string;
+    wardCode: string;
+    wardName: string;
     addressLine: string;
     note?: string;
   };
@@ -299,6 +313,7 @@ export type CreateOrderPayload = {
     quantity: number;
   }>;
   paymentMethod: "cod" | "bank_transfer";
+  couponCode?: string;
 };
 
 export type OrderItemDetail = {
@@ -351,6 +366,8 @@ export type OrderDetail = {
   status_logs?: OrderStatusLog[];
   customer_name?: string;
   customer_phone?: string;
+  coupon_code?: string | null;
+  couponCode?: string | null;
   customer_email?: string | null;
 };
 
@@ -368,6 +385,33 @@ export type OrderCheckResponse = {
   success: boolean;
   data: OrderDetail[];
 };
+
+export type ValidateCouponPayload = {
+  code: string;
+  subtotal: number;
+  customerPhone?: string;
+};
+
+export type ValidateCouponResponse = {
+  success: boolean;
+  message?: string;
+  data?: {
+    id: number;
+    code: string;
+    name: string;
+    description: string;
+    discountType: "fixed" | "percent";
+    discountValue: number;
+    discountAmount: number;
+  };
+};
+
+export async function validateCoupon(payload: ValidateCouponPayload): Promise<ValidateCouponResponse> {
+  return apiJson<ValidateCouponResponse>("/api/coupons/validate", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
 
 export async function createOrder(payload: CreateOrderPayload): Promise<CreateOrderResponse> {
   return apiJson<CreateOrderResponse>("/api/orders/create", {

@@ -82,6 +82,7 @@ export function AdminOrdersPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   // Selected Order Detail Modal
   const [selectedOrder, setSelectedOrder] = useState<OrderDetail | null>(null);
@@ -106,7 +107,7 @@ export function AdminOrdersPage() {
     setIsLoading(true);
     const params: AdminOrderListParams = {
       page: currentPage,
-      limit: 20,
+      limit: pageSize,
     };
     if (searchQuery.trim()) params.q = searchQuery.trim();
     if (statusFilter) params.order_status = statusFilter;
@@ -141,7 +142,7 @@ export function AdminOrdersPage() {
 
   useEffect(() => {
     fetchOrdersData();
-  }, [currentPage, statusFilter, paymentFilter, startDate, endDate]);
+  }, [currentPage, pageSize, statusFilter, paymentFilter, startDate, endDate]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,6 +172,68 @@ export function AdminOrdersPage() {
     } finally {
       setIsUpdatingStatus(false);
     }
+  };
+
+  const renderPageNumbers = () => {
+    const pages = [];
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(pagination.totalPages, currentPage + 2);
+
+    if (startPage > 1) {
+      pages.push(
+        <button
+          key={1}
+          onClick={() => setCurrentPage(1)}
+          className={`px-3 py-1.5 text-xs font-bold rounded-xl transition border ${
+            currentPage === 1
+              ? "bg-[#0057E7] text-white border-[#0057E7]"
+              : "bg-white text-gray-650 hover:bg-slate-50 border-[#DCEBFF]"
+          }`}
+        >
+          1
+        </button>
+      );
+      if (startPage > 2) {
+        pages.push(<span key="dots-start" className="px-1 text-gray-400">...</span>);
+      }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => setCurrentPage(i)}
+          className={`px-3 py-1.5 text-xs font-bold rounded-xl transition border ${
+            currentPage === i
+              ? "bg-[#0057E7] text-white border-[#0057E7]"
+              : "bg-white text-gray-650 hover:bg-slate-50 border-[#DCEBFF]"
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    if (endPage < pagination.totalPages) {
+      if (endPage < pagination.totalPages - 1) {
+        pages.push(<span key="dots-end" className="px-1 text-gray-400">...</span>);
+      }
+      pages.push(
+        <button
+          key={pagination.totalPages}
+          onClick={() => setCurrentPage(pagination.totalPages)}
+          className={`px-3 py-1.5 text-xs font-bold rounded-xl transition border ${
+            currentPage === pagination.totalPages
+              ? "bg-[#0057E7] text-white border-[#0057E7]"
+              : "bg-white text-gray-650 hover:bg-slate-50 border-[#DCEBFF]"
+          }`}
+        >
+          {pagination.totalPages}
+        </button>
+      );
+    }
+
+    return pages;
   };
 
   return (
@@ -405,7 +468,12 @@ export function AdminOrdersPage() {
                             {PAYMENT_METHOD_MAP[order.payment_method] || order.payment_method}
                           </td>
                           <td className="px-6 py-4 font-black text-[#0B1F3A]">
-                            {(parseFloat(order.total)).toLocaleString("vi-VN")}đ
+                            <div>{(parseFloat(order.total)).toLocaleString("vi-VN")}đ</div>
+                            {(order.coupon_code || order.couponCode) && (
+                              <div className="text-[10px] text-green-600 font-bold bg-green-50 px-1.5 py-0.5 rounded border border-green-200 mt-1 inline-block" title={`Đã áp dụng mã ${order.coupon_code || order.couponCode}`}>
+                                Mã: {order.coupon_code || order.couponCode}
+                              </div>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <span className={`inline-flex px-2.5 py-0.5 rounded-full border text-[11px] font-black ${stat.bg} ${stat.text}`}>
@@ -575,27 +643,55 @@ export function AdminOrdersPage() {
             </div>
 
             {/* Pagination footer */}
-            {pagination.totalPages > 1 && (
-              <div className="bg-white border-t border-[#EEF6FF] px-6 py-4 flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-400">
-                  Hiển thị {(pagination.page - 1) * pagination.limit + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} trong tổng số {pagination.total} đơn
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    disabled={currentPage <= 1}
-                    onClick={() => setCurrentPage(p => p - 1)}
-                    className="px-4 py-2 border rounded-xl text-xs font-bold bg-[#F6FAFF] hover:bg-white transition disabled:opacity-50"
-                  >
-                    Trước
-                  </button>
-                  <button
-                    disabled={currentPage >= pagination.totalPages}
-                    onClick={() => setCurrentPage(p => p + 1)}
-                    className="px-4 py-2 border rounded-xl text-xs font-bold bg-[#F6FAFF] hover:bg-white transition disabled:opacity-50"
-                  >
-                    Sau
-                  </button>
+            {pagination.total > 0 && (
+              <div className="bg-white border-t border-[#EEF6FF] px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-4">
+                  <span className="text-xs font-bold text-[#64748B]">
+                    Hiển thị {pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} trong tổng số {pagination.total} đơn
+                  </span>
+                  
+                  {/* Page size selector */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-400">Số đơn mỗi trang:</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="rounded-lg border border-[#DCEBFF] bg-[#F6FAFF] px-2 py-1 text-xs font-bold text-[#0B1F3A] focus:border-[#0057E7] focus:outline-none"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
                 </div>
+
+                {pagination.totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={currentPage <= 1}
+                      onClick={() => setCurrentPage(p => p - 1)}
+                      className="px-3 py-1.5 border border-[#DCEBFF] rounded-xl text-xs font-bold bg-[#F6FAFF] hover:bg-white text-gray-600 transition disabled:opacity-50"
+                    >
+                      Trước
+                    </button>
+                    
+                    <div className="flex items-center gap-1.5">
+                      {renderPageNumbers()}
+                    </div>
+
+                    <button
+                      disabled={currentPage >= pagination.totalPages}
+                      onClick={() => setCurrentPage(p => p + 1)}
+                      className="px-3 py-1.5 border border-[#DCEBFF] rounded-xl text-xs font-bold bg-[#F6FAFF] hover:bg-white text-gray-600 transition disabled:opacity-50"
+                    >
+                      Sau
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -888,6 +984,12 @@ export function AdminOrdersPage() {
                       <span>{(parseFloat(selectedOrder.shipping_fee)).toLocaleString("vi-VN")}đ</span>
                     </div>
                     <div className="flex justify-between text-gray-500 font-medium">
+                      <span>Mã giảm giá:</span>
+                      <span className="font-bold text-[#0b1f3a]">
+                        {selectedOrder.coupon_code || selectedOrder.couponCode || "Không áp dụng"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-gray-500 font-medium">
                       <span>Giảm giá:</span>
                       <span>-{(parseFloat(selectedOrder.discount)).toLocaleString("vi-VN")}đ</span>
                     </div>
@@ -920,7 +1022,7 @@ export function AdminOrdersPage() {
                         });
                         setConfirmText("");
                       }}
-                      className="px-4 py-2.5 rounded-xl text-xs font-black bg-red-650 hover:bg-red-700 text-white shadow-sm flex items-center gap-1.5 transition animate-pulse-once"
+                      className="px-4 py-2.5 rounded-xl text-xs font-black bg-red-600 hover:bg-red-700 text-white shadow-sm flex items-center gap-1.5 transition animate-pulse-once"
                     >
                       <X size={14} /> Hủy đơn
                     </button>
@@ -960,7 +1062,7 @@ export function AdminOrdersPage() {
                       });
                       setConfirmText("");
                     }}
-                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-indigo-650 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-1.5 transition"
+                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-1.5 transition"
                   >
                     <Package size={14} /> Chuyển sang chuẩn bị hàng
                   </button>
@@ -981,7 +1083,7 @@ export function AdminOrdersPage() {
                       });
                       setConfirmText("");
                     }}
-                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-purple-650 hover:bg-purple-700 text-white shadow-sm flex items-center gap-1.5 transition"
+                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-purple-600 hover:bg-purple-700 text-white shadow-sm flex items-center gap-1.5 transition"
                   >
                     <Truck size={14} /> Bắt đầu giao hàng
                   </button>
@@ -1002,7 +1104,7 @@ export function AdminOrdersPage() {
                       });
                       setConfirmText("");
                     }}
-                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-green-650 hover:bg-green-700 text-white shadow-sm flex items-center gap-1.5 transition"
+                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-green-600 hover:bg-green-700 text-white shadow-sm flex items-center gap-1.5 transition"
                   >
                     <CheckCircle size={14} /> Hoàn tất đơn
                   </button>
@@ -1011,7 +1113,7 @@ export function AdminOrdersPage() {
                 {(selectedOrder.order_status === "completed" || selectedOrder.order_status === "cancelled") && (
                   <button
                     onClick={() => setSelectedOrder(null)}
-                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-slate-650 hover:bg-slate-700 text-white shadow-sm transition"
+                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-slate-600 hover:bg-slate-700 text-white shadow-sm transition"
                   >
                     Đóng
                   </button>

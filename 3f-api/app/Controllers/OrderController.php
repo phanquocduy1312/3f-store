@@ -38,14 +38,14 @@ class OrderController {
             $shippingInfo = $input['shipping'] ?? [];
             $receiverName = trim($shippingInfo['receiverName'] ?? '');
             $receiverPhone = trim($shippingInfo['phone'] ?? '');
-            $province = trim($shippingInfo['province'] ?? '');
+            $province = trim($shippingInfo['provinceName'] ?? $shippingInfo['province'] ?? '');
             $district = trim($shippingInfo['district'] ?? '');
-            $ward = trim($shippingInfo['ward'] ?? '');
+            $ward = trim($shippingInfo['wardName'] ?? $shippingInfo['ward'] ?? '');
             $addressLine = trim($shippingInfo['addressLine'] ?? '');
             $shippingNote = trim($shippingInfo['note'] ?? '');
 
-            if ($receiverName === '' || $receiverPhone === '' || $addressLine === '') {
-                Response::json(["success" => false, "message" => "Thiếu thông tin nhận hàng (tên người nhận, điện thoại và địa chỉ cụ thể là bắt buộc)."], 400);
+            if ($receiverName === '' || $receiverPhone === '' || $addressLine === '' || $province === '' || $ward === '') {
+                Response::json(["success" => false, "message" => "Thiếu thông tin nhận hàng (họ tên, số điện thoại, tỉnh/thành, phường/xã và địa chỉ cụ thể là bắt buộc)."], 400);
             }
 
             // Validate Items
@@ -159,10 +159,24 @@ class OrderController {
                 $subtotal += ($price * $quantity);
             }
 
+            // Extract couponCode
+            $couponCode = isset($input['couponCode']) ? trim((string)$input['couponCode']) : '';
+            $discount = 0.00;
+            $couponId = null;
+
+            if ($couponCode !== '') {
+                $couponModel = new \App\Models\Coupon();
+                $couponRes = $couponModel->validateCoupon($couponCode, $subtotal, $customerPhone);
+                if (!$couponRes['success']) {
+                    Response::json(["success" => false, "message" => "Mã giảm giá không còn hợp lệ. Vui lòng kiểm tra lại."], 400);
+                }
+                $discount = (float)$couponRes['data']['discountAmount'];
+                $couponId = (int)$couponRes['data']['id'];
+            }
+
             // Pricing totals
-            $shippingFee = 0.00; // standard MVP
-            $discount = 0.00;    // standard MVP
-            $total = $subtotal + $shippingFee - $discount;
+            $shippingFee = 0.00;
+            $total = max(0.00, $subtotal + $shippingFee - $discount);
 
             // Generate Order Code
             $orderCode = '3F-' . str_pad(mt_rand(100000, 999999), 6, '0', STR_PAD_LEFT);
@@ -189,18 +203,18 @@ class OrderController {
                 'address_line' => $addressLine,
                 'note' => $shippingNote,
                 'payment_method' => $paymentMethod,
-                'payment_status' => 'unpaid',
+                'payment_status' => $paymentMethod === 'bank_transfer' ? 'pending' : 'unpaid',
                 'order_status' => 'pending',
                 'subtotal' => $subtotal,
                 'shipping_fee' => $shippingFee,
                 'discount' => $discount,
+                'coupon_code' => $couponCode !== '' ? $couponCode : null,
                 'total' => $total
             ];
 
             // 3. Save order and atomically reserve stock in a transaction
             $orderModel = new Order();
             
-            // Wait, createOrder handles transaction itself. But since we need to reserve stock, let's execute reserveStock inside createOrder or explicitly run a transaction coordinate block!
             // Let's use the DB connection to coordinate:
             $db->beginTransaction();
             try {
@@ -209,6 +223,12 @@ class OrderController {
 
                 // Reserve inventory stock
                 InventoryService::reserveStock($db, $resolvedItems, $orderCode);
+
+                // Record coupon usage
+                if ($couponId !== null) {
+                    $couponModel = new \App\Models\Coupon();
+                    $couponModel->recordUsage($couponId, $orderId, $customerPhone, $discount);
+                }
 
                 $db->commit();
             } catch (Exception $txEx) {
