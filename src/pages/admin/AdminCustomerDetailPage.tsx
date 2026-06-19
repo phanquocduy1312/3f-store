@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Activity,
@@ -273,7 +273,7 @@ export function AdminCustomerDetailPage() {
             <section className="min-w-0 flex-1 rounded-2xl border border-[#DCEBFF] bg-white p-4 shadow-sm md:p-6">
               {activeTab === "overview" && <CustomerOverviewTab customer={customer} />}
               {activeTab === "orders" && <CustomerOrdersTab customerId={customer.id} />}
-              {activeTab === "club" && <CustomerPointsTab customerId={customer.id} />}
+              {activeTab === "club" && <CustomerPointsTab customerId={customer.id} customerPhone={customer.phone} />}
               {activeTab === "notes" && <CustomerNotesTab customerId={Number(id)} />}
               {activeTab === "timeline" && <CustomerTimelineTab customerId={Number(id)} />}
               {activeTab === "addresses" && <CustomerAddressesTab customerId={customer.id} />}

@@ -267,6 +267,10 @@ class AdminCustomerController {
             Response::json(["success" => false, "message" => "Không tìm thấy khách hàng"], 404);
         }
 
+        if (empty($customer['phone'])) {
+            Response::json(["success" => false, "message" => "Khách hàng chưa có số điện thoại. Vui lòng cập nhật số điện thoại trước khi cộng điểm."], 400);
+        }
+
         $ptModel = new \App\Models\CustomerPointTransactionModel();
         $currentBalance = $ptModel->getBalance($customer['phone']);
         

@@ -7,7 +7,7 @@ const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 };
 
-export function CustomerPointsTab({ customerId }: { customerId: number }) {
+export function CustomerPointsTab({ customerId, customerPhone }: { customerId: number, customerPhone?: string | null }) {
   const [pointsList, setPointsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -85,7 +85,13 @@ export function CustomerPointsTab({ customerId }: { customerId: number }) {
             Tổng điểm: {formatCurrency(totalPoints).replace('đ', '')}
           </div>
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              if (!customerPhone) {
+                toast.error("Khách hàng chưa có số điện thoại. Vui lòng cập nhật số điện thoại trước khi cộng điểm.");
+                return;
+              }
+              setIsModalOpen(true);
+            }}
             className="flex items-center gap-2 px-4 py-1.5 bg-[#0B1F3A] text-white font-bold rounded-lg hover:bg-slate-800 transition-colors text-sm"
           >
             <PlusCircle size={16} /> Điều chỉnh
