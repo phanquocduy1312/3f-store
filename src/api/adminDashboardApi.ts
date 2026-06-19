@@ -57,8 +57,8 @@ async function fetchWithAuth(url: string, method = 'GET', body?: any) {
 }
 
 export const adminDashboardApi = {
-  async getStats(): Promise<DashboardStatsResponse> {
-    const url = buildApiUrl('/api/admin/dashboard/stats');
+  async getStats(filter: string = 'today'): Promise<DashboardStatsResponse> {
+    const url = buildApiUrl(`/api/admin/dashboard/stats?filter=${filter}`);
     return fetchWithAuth(url);
   },
 

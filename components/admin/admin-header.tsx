@@ -20,8 +20,16 @@ export function AdminHeader({
 }: AdminHeaderProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   
+  const getTodayLabel = () => {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+    return `Hôm nay: ${dd}/${mm}/${yyyy}`;
+  };
+
   const dates = [
-    { label: "Hôm nay: 12/06/2026", value: "today" },
+    { label: getTodayLabel(), value: "today" },
     { label: "Tuần này", value: "this_week" },
     { label: "Tháng này", value: "this_month" },
     { label: "Năm nay", value: "this_year" },
@@ -64,7 +72,7 @@ export function AdminHeader({
               className="flex items-center gap-1.5 sm:gap-2 border border-[#DCEBFF] bg-white px-2.5 sm:px-4 h-11 text-[#0B1F3A] font-semibold rounded-2xl shadow-sm hover:bg-[#F6FAFF] transition-colors duration-150"
             >
               <Calendar size={16} className="text-[#0057E7] shrink-0" />
-              <span className="hidden text-[13px] min-[1800px]:inline">{currentLabel}</span>
+              <span className="text-[13px] text-[#0B1F3A] font-semibold">{currentLabel}</span>
               <ChevronDown size={14} className={`transition-transform duration-200 text-[#64748B] shrink-0 ${showDatePicker ? "rotate-180" : ""}`} />
             </button>
             

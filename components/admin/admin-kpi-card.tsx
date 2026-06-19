@@ -9,9 +9,10 @@ interface AdminKpiCardProps {
   trend: "up" | "down";
   iconName: string;
   formula?: string;
+  comparisonLabel?: string;
 }
 
-export function AdminKpiCard({ title, value, change, trend, iconName, formula }: AdminKpiCardProps) {
+export function AdminKpiCard({ title, value, change, trend, iconName, formula, comparisonLabel }: AdminKpiCardProps) {
   // Map icon strings to Lucide components
   const iconMap: Record<string, any> = {
     "wallet": LucideIcons.Wallet,
@@ -63,13 +64,15 @@ export function AdminKpiCard({ title, value, change, trend, iconName, formula }:
         <h4 className="mt-0.5 sm:mt-1 lg:mt-0.5 xl:mt-1 text-[20px] sm:text-[26px] lg:text-[16px] xl:text-[20px] 2xl:text-[24px] font-black text-[#0B1F3A] leading-none tracking-tighter truncate">{value}</h4>
         
         {/* Trend badge */}
-        <div className="mt-1 sm:mt-2 lg:mt-1.5 xl:mt-2 text-[10px] sm:text-xs lg:text-[9px] xl:text-[10px] 2xl:text-xs font-bold flex flex-wrap items-center gap-x-1 gap-y-0.5">
-          <span className={`flex items-center gap-0.5 ${isUp ? "text-[#16A34A]" : "text-[#EF4444]"}`}>
-            <span>{isUp ? "▲" : "▼"}</span>
-            <span>{change.replace("-", "").replace("+", "").trim()}</span>
-          </span>
-          <span className="text-[#64748B] font-medium">so với hôm qua</span>
-        </div>
+        {comparisonLabel !== "" && (
+          <div className="mt-1 sm:mt-2 lg:mt-1.5 xl:mt-2 text-[10px] sm:text-xs lg:text-[9px] xl:text-[10px] 2xl:text-xs font-bold flex flex-wrap items-center gap-x-1 gap-y-0.5">
+            <span className={`flex items-center gap-0.5 ${isUp ? "text-[#16A34A]" : "text-[#EF4444]"}`}>
+              <span>{isUp ? "▲" : "▼"}</span>
+              <span>{change.replace("-", "").replace("+", "").trim()}</span>
+            </span>
+            <span className="text-[#64748B] font-medium">{comparisonLabel || "so với hôm qua"}</span>
+          </div>
+        )}
       </div>
     </div>
   );

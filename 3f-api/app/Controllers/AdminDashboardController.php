@@ -12,94 +12,106 @@ class AdminDashboardController {
         AuthMiddleware::requireAdmin();
         $db = Database::getInstance()->getConnection();
 
-        // 1. Doanh thu hôm nay vs hôm qua
-        $revToday = (float)$db->query("
-            SELECT SUM(total) 
-            FROM orders 
-            WHERE order_status IN ('confirmed', 'packing', 'shipping', 'completed') 
-              AND DATE(created_at) = CURDATE()
-        ")->fetchColumn();
+        $filter = Request::input('filter', 'today');
 
-        $revYesterday = (float)$db->query("
-            SELECT SUM(total) 
-            FROM orders 
-            WHERE order_status IN ('confirmed', 'packing', 'shipping', 'completed') 
-              AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-        ")->fetchColumn();
+        switch ($filter) {
+            case 'this_week':
+                // Monday of this week to end of today
+                $currentStart = date('Y-m-d 00:00:00', strtotime('monday this week'));
+                $currentEnd = date('Y-m-d 23:59:59');
+                
+                // Monday of last week to Sunday of last week
+                $previousStart = date('Y-m-d 00:00:00', strtotime('monday last week'));
+                $previousEnd = date('Y-m-d 23:59:59', strtotime('sunday last week'));
+                break;
 
-        // 2. Số đơn hôm nay vs hôm qua
-        $ordersToday = (int)$db->query("
-            SELECT COUNT(*) 
-            FROM orders 
-            WHERE order_status != 'cancelled' 
-              AND DATE(created_at) = CURDATE()
-        ")->fetchColumn();
+            case 'this_month':
+                // First day of this month to end of today
+                $currentStart = date('Y-m-01 00:00:00');
+                $currentEnd = date('Y-m-d 23:59:59');
+                
+                // First day of last month to last day of last month
+                $previousStart = date('Y-m-01 00:00:00', strtotime('last month'));
+                $previousEnd = date('Y-m-t 23:59:59', strtotime('last month'));
+                break;
 
-        $ordersYesterday = (int)$db->query("
-            SELECT COUNT(*) 
-            FROM orders 
-            WHERE order_status != 'cancelled' 
-              AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-        ")->fetchColumn();
+            case 'this_year':
+                // Jan 1st of this year to end of today
+                $currentStart = date('Y-01-01 00:00:00');
+                $currentEnd = date('Y-m-d 23:59:59');
+                
+                // Jan 1st of last year to Dec 31st of last year
+                $previousStart = date('Y-01-01 00:00:00', strtotime('-1 year'));
+                $previousEnd = date('Y-12-31 23:59:59', strtotime('-1 year'));
+                break;
 
-        // 3. Đơn chờ xác nhận (pending) hôm nay vs hôm qua
-        $pendingToday = (int)$db->query("
-            SELECT COUNT(*) 
-            FROM orders 
-            WHERE order_status = 'pending'
-        ")->fetchColumn();
+            case 'all_time':
+                $currentStart = '1970-01-01 00:00:00';
+                $currentEnd = date('Y-m-d 23:59:59');
+                
+                $previousStart = '1970-01-01 00:00:00';
+                $previousEnd = '1970-01-01 00:00:00';
+                break;
 
-        $pendingYesterday = (int)$db->query("
-            SELECT COUNT(*) 
-            FROM orders 
-            WHERE order_status = 'pending' 
-              AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-        ")->fetchColumn();
+            case 'today':
+            default:
+                $currentStart = date('Y-m-d 00:00:00');
+                $currentEnd = date('Y-m-d 23:59:59');
+                
+                $previousStart = date('Y-m-d 00:00:00', strtotime('-1 day'));
+                $previousEnd = date('Y-m-d 23:59:59', strtotime('-1 day'));
+                break;
+        }
 
-        // 4. Đơn đang giao (shipping) hôm nay vs hôm qua
-        $shippingToday = (int)$db->query("
-            SELECT COUNT(*) 
-            FROM orders 
-            WHERE order_status = 'shipping'
-        ")->fetchColumn();
+        $getSum = function($sql, $start, $end) use ($db) {
+            $stmt = $db->prepare($sql);
+            $stmt->bindValue(':start', $start);
+            $stmt->bindValue(':end', $end);
+            $stmt->execute();
+            return (float)$stmt->fetchColumn();
+        };
 
-        $shippingYesterday = (int)$db->query("
-            SELECT COUNT(*) 
-            FROM orders 
-            WHERE order_status = 'shipping' 
-              AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-        ")->fetchColumn();
+        $getCount = function($sql, $start, $end) use ($db) {
+            $stmt = $db->prepare($sql);
+            $stmt->bindValue(':start', $start);
+            $stmt->bindValue(':end', $end);
+            $stmt->execute();
+            return (int)$stmt->fetchColumn();
+        };
 
-        // 5. Khách hàng mới hôm nay vs hôm qua
-        $customersToday = (int)$db->query("
-            SELECT COUNT(*) 
-            FROM customers 
-            WHERE DATE(created_at) = CURDATE()
-        ")->fetchColumn();
+        // Queries
+        $sqlRev = "SELECT SUM(total) FROM orders WHERE order_status IN ('confirmed', 'packing', 'shipping', 'completed') AND created_at BETWEEN :start AND :end";
+        $sqlOrd = "SELECT COUNT(*) FROM orders WHERE order_status != 'cancelled' AND created_at BETWEEN :start AND :end";
+        $sqlPending = "SELECT COUNT(*) FROM orders WHERE order_status = 'pending' AND created_at BETWEEN :start AND :end";
+        $sqlShipping = "SELECT COUNT(*) FROM orders WHERE order_status = 'shipping' AND created_at BETWEEN :start AND :end";
+        $sqlCust = "SELECT COUNT(*) FROM customers WHERE created_at BETWEEN :start AND :end";
+        $sqlPoints = "SELECT SUM(points) FROM customer_point_transactions WHERE points > 0 AND created_at BETWEEN :start AND :end";
 
-        $customersYesterday = (int)$db->query("
-            SELECT COUNT(*) 
-            FROM customers 
-            WHERE DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-        ")->fetchColumn();
+        // Current period values
+        $revToday = $getSum($sqlRev, $currentStart, $currentEnd);
+        $ordersToday = $getCount($sqlOrd, $currentStart, $currentEnd);
+        $pendingToday = $getCount($sqlPending, $currentStart, $currentEnd);
+        $shippingToday = $getCount($sqlShipping, $currentStart, $currentEnd);
+        $customersToday = $getCount($sqlCust, $currentStart, $currentEnd);
+        $pointsToday = $getSum($sqlPoints, $currentStart, $currentEnd);
 
-        // 6. Điểm 3F Club đã cộng hôm nay vs hôm qua
-        $pointsToday = (int)$db->query("
-            SELECT SUM(points) 
-            FROM customer_point_transactions 
-            WHERE points > 0 
-              AND DATE(created_at) = CURDATE()
-        ")->fetchColumn();
+        // Previous period values (for change calculations)
+        $revYesterday = $getSum($sqlRev, $previousStart, $previousEnd);
+        $ordersYesterday = $getCount($sqlOrd, $previousStart, $previousEnd);
+        $pendingYesterday = $getCount($sqlPending, $previousStart, $previousEnd);
+        $shippingYesterday = $getCount($sqlShipping, $previousStart, $previousEnd);
+        $customersYesterday = $getCount($sqlCust, $previousStart, $previousEnd);
+        $pointsYesterday = $getSum($sqlPoints, $previousStart, $previousEnd);
 
-        $pointsYesterday = (int)$db->query("
-            SELECT SUM(points) 
-            FROM customer_point_transactions 
-            WHERE points > 0 
-              AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-        ")->fetchColumn();
-
-        // Helper function for percentage change string
-        $pctChange = function($today, $yesterday) {
+        // Percentage/Absolute trend strings
+        $changeStr = function($today, $yesterday, $isAbsolute = false) use ($filter) {
+            if ($filter === 'all_time') {
+                return "0%";
+            }
+            if ($isAbsolute) {
+                $diff = $today - $yesterday;
+                return ($diff >= 0 ? "+" : "") . $diff;
+            }
             if ($yesterday == 0) {
                 return $today > 0 ? "+100%" : "0%";
             }
@@ -111,7 +123,6 @@ class AdminDashboardController {
             return ($today >= $yesterday) ? "up" : "down";
         };
 
-        // Format values
         $formatMoney = function($val) {
             return number_format($val, 0, ',', '.') . 'đ';
         };
@@ -119,32 +130,32 @@ class AdminDashboardController {
         $data = [
             'revenue' => [
                 'value' => $formatMoney($revToday),
-                'change' => $pctChange($revToday, $revYesterday),
+                'change' => $changeStr($revToday, $revYesterday),
                 'trend' => $pctTrend($revToday, $revYesterday)
             ],
             'orders' => [
                 'value' => (string)$ordersToday,
-                'change' => $pctChange($ordersToday, $ordersYesterday),
+                'change' => $changeStr($ordersToday, $ordersYesterday),
                 'trend' => $pctTrend($ordersToday, $ordersYesterday)
             ],
             'pending' => [
                 'value' => (string)$pendingToday,
-                'change' => ($pendingToday - $pendingYesterday >= 0 ? "+" : "") . ($pendingToday - $pendingYesterday),
+                'change' => $changeStr($pendingToday, $pendingYesterday, true),
                 'trend' => $pctTrend($pendingToday, $pendingYesterday)
             ],
             'shipping' => [
                 'value' => (string)$shippingToday,
-                'change' => $pctChange($shippingToday, $shippingYesterday),
+                'change' => $changeStr($shippingToday, $shippingYesterday),
                 'trend' => $pctTrend($shippingToday, $shippingYesterday)
             ],
             'newCustomers' => [
                 'value' => (string)$customersToday,
-                'change' => $pctChange($customersToday, $customersYesterday),
+                'change' => $changeStr($customersToday, $customersYesterday),
                 'trend' => $pctTrend($customersToday, $customersYesterday)
             ],
             'points' => [
                 'value' => number_format($pointsToday, 0, ',', '.'),
-                'change' => $pctChange($pointsToday, $pointsYesterday),
+                'change' => $changeStr($pointsToday, $pointsYesterday),
                 'trend' => $pctTrend($pointsToday, $pointsYesterday)
             ]
         ];

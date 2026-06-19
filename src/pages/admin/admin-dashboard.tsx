@@ -49,7 +49,7 @@ export function AdminDashboard() {
     let isMounted = true;
     setLoading(true);
 
-    adminDashboardApi.getStats()
+    adminDashboardApi.getStats(selectedDate)
       .then(res => {
         if (!isMounted) return;
         setStats(res);
@@ -63,24 +63,48 @@ export function AdminDashboard() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [selectedDate]);
+
+  const getPeriodSuffix = () => {
+    switch (selectedDate) {
+      case "this_week": return "tuần này";
+      case "this_month": return "tháng này";
+      case "this_year": return "năm nay";
+      case "all_time": return "tất cả thời gian";
+      case "today":
+      default:
+        return "hôm nay";
+    }
+  };
+
+  const getComparisonLabel = () => {
+    switch (selectedDate) {
+      case "this_week": return "so với tuần trước";
+      case "this_month": return "so với tháng trước";
+      case "this_year": return "so với năm trước";
+      case "all_time": return "";
+      case "today":
+      default:
+        return "so với hôm qua";
+    }
+  };
 
   const kpis: KpiData[] = [
     {
-      title: "Doanh thu hôm nay",
+      title: `Doanh thu ${getPeriodSuffix()}`,
       value: stats?.revenue.value ?? "0đ",
       change: stats?.revenue.change ?? "0%",
       trend: stats?.revenue.trend ?? "up",
       icon: "wallet",
-      formula: "Tổng doanh thu bán hàng thực tế trong ngày sau khi đã trừ giảm giá."
+      formula: "Tổng doanh thu bán hàng thực tế trong kỳ sau khi đã trừ giảm giá."
     },
     {
-      title: "Số đơn hôm nay",
+      title: `Số đơn ${getPeriodSuffix()}`,
       value: stats?.orders.value ?? "0",
       change: stats?.orders.change ?? "0%",
       trend: stats?.orders.trend ?? "up",
       icon: "cart",
-      formula: "Số đơn hàng website được tạo trong ngày."
+      formula: "Số đơn hàng website được tạo trong kỳ."
     },
     {
       title: "Đơn chờ xác nhận",
@@ -99,20 +123,20 @@ export function AdminDashboard() {
       formula: "Số đơn hàng đang được đối tác vận chuyển giao tới khách hàng."
     },
     {
-      title: "Khách hàng mới",
+      title: `Khách hàng mới ${getPeriodSuffix()}`,
       value: stats?.newCustomers.value ?? "0",
       change: stats?.newCustomers.change ?? "0%",
       trend: stats?.newCustomers.trend ?? "up",
       icon: "users",
-      formula: "Số tài khoản khách hàng mới đăng ký trong ngày."
+      formula: "Số tài khoản khách hàng mới đăng ký trong kỳ."
     },
     {
-      title: "Điểm 3F Club đã cộng",
+      title: `Điểm 3F Club đã cộng ${getPeriodSuffix()}`,
       value: stats?.points.value ?? "0",
       change: stats?.points.change ?? "0%",
       trend: stats?.points.trend ?? "up",
       icon: "gift",
-      formula: "Tổng điểm earn đã được duyệt và cộng vào tài khoản 3F Club trong ngày."
+      formula: "Tổng điểm earn đã được duyệt và cộng vào tài khoản 3F Club trong kỳ."
     }
   ];
 
@@ -155,7 +179,7 @@ export function AdminDashboard() {
             <div>
               <h1 className="text-[24px] sm:text-[26px] font-black text-[#0B1F3A]">Dashboard</h1>
               <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-[#64748B]">
-                Tổng quan vận hành 3F Store hôm nay
+                Tổng quan vận hành 3F Store {getPeriodSuffix()}
               </p>
             </div>
           </div>
@@ -171,6 +195,7 @@ export function AdminDashboard() {
                 trend={kpi.trend}
                 iconName={kpi.icon}
                 formula={kpi.formula}
+                comparisonLabel={getComparisonLabel()}
               />
             ))}
           </section>
