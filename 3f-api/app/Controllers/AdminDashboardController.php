@@ -170,50 +170,223 @@ class AdminDashboardController {
         AuthMiddleware::requireAdmin();
         $db = Database::getInstance()->getConnection();
 
-        $days = (int)Request::input('days', 7);
-        if ($days <= 0 || $days > 90) {
-            $days = 7;
-        }
+        $filter = Request::input('filter', 'this_week');
 
-        // Initialize empty calendar days
-        $chartData = [];
-        for ($i = $days - 1; $i >= 0; $i--) {
-            $dateStr = date('Y-m-d', strtotime("-$i days"));
-            $displayDate = date('d/m', strtotime("-$i days"));
-            $chartData[$dateStr] = [
-                'name' => $displayDate,
-                'Doanh thu' => 0,
-                'Đơn hàng' => 0
-            ];
-        }
+        $currentData = [];
+        $previousData = [];
 
-        // Fetch actual stats grouped by day
-        $stmt = $db->prepare("
-            SELECT 
-                DATE(created_at) as order_date,
-                SUM(total) as daily_revenue,
-                COUNT(*) as daily_orders
-            FROM orders
-            WHERE order_status IN ('confirmed', 'packing', 'shipping', 'completed')
-              AND created_at >= DATE_SUB(CURDATE(), INTERVAL :days DAY)
-            GROUP BY DATE(created_at)
-            ORDER BY DATE(created_at) ASC
-        ");
-        $stmt->bindValue(':days', $days - 1, PDO::PARAM_INT);
-        $stmt->execute();
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        switch ($filter) {
+            case 'today':
+                for ($h = 0; $h < 24; $h++) {
+                    $lbl = sprintf("%02d:00", $h);
+                    $currentData[$h] = ['name' => $lbl, 'Doanh thu' => 0, 'Đơn hàng' => 0];
+                    $previousData[$h] = ['name' => $lbl, 'Doanh thu' => 0, 'Đơn hàng' => 0];
+                }
 
-        foreach ($rows as $row) {
-            $dateStr = $row['order_date'];
-            if (isset($chartData[$dateStr])) {
-                $chartData[$dateStr]['Doanh thu'] = (float)$row['daily_revenue'];
-                $chartData[$dateStr]['Đơn hàng'] = (int)$row['daily_orders'];
-            }
+                $sqlCur = "SELECT HOUR(created_at) as hr, SUM(total) as rev, COUNT(*) as ord FROM orders WHERE order_status IN ('confirmed', 'packing', 'shipping', 'completed') AND created_at BETWEEN :start AND :end GROUP BY HOUR(created_at)";
+                $curStart = date('Y-m-d 00:00:00');
+                $curEnd = date('Y-m-d 23:59:59');
+
+                $prevStart = date('Y-m-d 00:00:00', strtotime('-1 day'));
+                $prevEnd = date('Y-m-d 23:59:59', strtotime('-1 day'));
+
+                $stmt = $db->prepare($sqlCur);
+                $stmt->execute([':start' => $curStart, ':end' => $curEnd]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $hr = (int)$row['hr'];
+                    if (isset($currentData[$hr])) {
+                        $currentData[$hr]['Doanh thu'] = (float)$row['rev'];
+                        $currentData[$hr]['Đơn hàng'] = (int)$row['ord'];
+                    }
+                }
+
+                $stmt = $db->prepare($sqlCur);
+                $stmt->execute([':start' => $prevStart, ':end' => $prevEnd]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $hr = (int)$row['hr'];
+                    if (isset($previousData[$hr])) {
+                        $previousData[$hr]['Doanh thu'] = (float)$row['rev'];
+                        $previousData[$hr]['Đơn hàng'] = (int)$row['ord'];
+                    }
+                }
+                break;
+
+            case 'this_week':
+                $monThisWeek = strtotime('monday this week');
+                $monLastWeek = strtotime('monday last week');
+
+                for ($i = 0; $i < 7; $i++) {
+                    $curDate = date('Y-m-d', strtotime("+$i days", $monThisWeek));
+                    $prevDate = date('Y-m-d', strtotime("+$i days", $monLastWeek));
+                    $displayCur = date('d/m', strtotime("+$i days", $monThisWeek));
+                    $displayPrev = date('d/m', strtotime("+$i days", $monLastWeek));
+
+                    $currentData[$curDate] = ['name' => $displayCur, 'Doanh thu' => 0, 'Đơn hàng' => 0];
+                    $previousData[$prevDate] = ['name' => $displayPrev, 'Doanh thu' => 0, 'Đơn hàng' => 0];
+                }
+
+                $sqlCur = "SELECT DATE(created_at) as dt, SUM(total) as rev, COUNT(*) as ord FROM orders WHERE order_status IN ('confirmed', 'packing', 'shipping', 'completed') AND created_at BETWEEN :start AND :end GROUP BY DATE(created_at)";
+                $curStart = date('Y-m-d 00:00:00', $monThisWeek);
+                $curEnd = date('Y-m-d 23:59:59', strtotime('+6 days', $monThisWeek));
+
+                $prevStart = date('Y-m-d 00:00:00', $monLastWeek);
+                $prevEnd = date('Y-m-d 23:59:59', strtotime('+6 days', $monLastWeek));
+
+                $stmt = $db->prepare($sqlCur);
+                $stmt->execute([':start' => $curStart, ':end' => $curEnd]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $dt = $row['dt'];
+                    if (isset($currentData[$dt])) {
+                        $currentData[$dt]['Doanh thu'] = (float)$row['rev'];
+                        $currentData[$dt]['Đơn hàng'] = (int)$row['ord'];
+                    }
+                }
+
+                $stmt = $db->prepare($sqlCur);
+                $stmt->execute([':start' => $prevStart, ':end' => $prevEnd]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $dt = $row['dt'];
+                    if (isset($previousData[$dt])) {
+                        $previousData[$dt]['Doanh thu'] = (float)$row['rev'];
+                        $previousData[$dt]['Đơn hàng'] = (int)$row['ord'];
+                    }
+                }
+                break;
+
+            case 'this_month':
+                $numDaysThisMonth = (int)date('t');
+                $numDaysLastMonth = (int)date('t', strtotime('last month'));
+
+                $firstOfThisMonth = strtotime(date('Y-m-01'));
+                $firstOfLastMonth = strtotime(date('Y-m-01', strtotime('last month')));
+
+                for ($i = 0; $i < $numDaysThisMonth; $i++) {
+                    $curDate = date('Y-m-d', strtotime("+$i days", $firstOfThisMonth));
+                    $displayCur = date('d/m', strtotime("+$i days", $firstOfThisMonth));
+                    $currentData[$curDate] = ['name' => $displayCur, 'Doanh thu' => 0, 'Đơn hàng' => 0];
+                }
+
+                for ($i = 0; $i < $numDaysLastMonth; $i++) {
+                    $prevDate = date('Y-m-d', strtotime("+$i days", $firstOfLastMonth));
+                    $displayPrev = date('d/m', strtotime("+$i days", $firstOfLastMonth));
+                    $previousData[$prevDate] = ['name' => $displayPrev, 'Doanh thu' => 0, 'Đơn hàng' => 0];
+                }
+
+                $sqlCur = "SELECT DATE(created_at) as dt, SUM(total) as rev, COUNT(*) as ord FROM orders WHERE order_status IN ('confirmed', 'packing', 'shipping', 'completed') AND created_at BETWEEN :start AND :end GROUP BY DATE(created_at)";
+                
+                $curStart = date('Y-m-01 00:00:00');
+                $curEnd = date('Y-m-t 23:59:59');
+
+                $prevStart = date('Y-m-01 00:00:00', strtotime('last month'));
+                $prevEnd = date('Y-m-t 23:59:59', strtotime('last month'));
+
+                $stmt = $db->prepare($sqlCur);
+                $stmt->execute([':start' => $curStart, ':end' => $curEnd]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $dt = $row['dt'];
+                    if (isset($currentData[$dt])) {
+                        $currentData[$dt]['Doanh thu'] = (float)$row['rev'];
+                        $currentData[$dt]['Đơn hàng'] = (int)$row['ord'];
+                    }
+                }
+
+                $stmt = $db->prepare($sqlCur);
+                $stmt->execute([':start' => $prevStart, ':end' => $prevEnd]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $dt = $row['dt'];
+                    if (isset($previousData[$dt])) {
+                        $previousData[$dt]['Doanh thu'] = (float)$row['rev'];
+                        $previousData[$dt]['Đơn hàng'] = (int)$row['ord'];
+                    }
+                }
+                break;
+
+            case 'this_year':
+                for ($m = 1; $m <= 12; $m++) {
+                    $lbl = "Thg " . $m;
+                    $currentData[$m] = ['name' => $lbl, 'Doanh thu' => 0, 'Đơn hàng' => 0];
+                    $previousData[$m] = ['name' => $lbl, 'Doanh thu' => 0, 'Đơn hàng' => 0];
+                }
+
+                $sqlCur = "SELECT MONTH(created_at) as mnth, SUM(total) as rev, COUNT(*) as ord FROM orders WHERE order_status IN ('confirmed', 'packing', 'shipping', 'completed') AND created_at BETWEEN :start AND :end GROUP BY MONTH(created_at)";
+                
+                $curStart = date('Y-01-01 00:00:00');
+                $curEnd = date('Y-12-31 23:59:59');
+
+                $prevStart = date('Y-01-01 00:00:00', strtotime('-1 year'));
+                $prevEnd = date('Y-12-31 23:59:59', strtotime('-1 year'));
+
+                $stmt = $db->prepare($sqlCur);
+                $stmt->execute([':start' => $curStart, ':end' => $curEnd]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $m = (int)$row['mnth'];
+                    if (isset($currentData[$m])) {
+                        $currentData[$m]['Doanh thu'] = (float)$row['rev'];
+                        $currentData[$m]['Đơn hàng'] = (int)$row['ord'];
+                    }
+                }
+
+                $stmt = $db->prepare($sqlCur);
+                $stmt->execute([':start' => $prevStart, ':end' => $prevEnd]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $m = (int)$row['mnth'];
+                    if (isset($previousData[$m])) {
+                        $previousData[$m]['Doanh thu'] = (float)$row['rev'];
+                        $previousData[$m]['Đơn hàng'] = (int)$row['ord'];
+                    }
+                }
+                break;
+
+            case 'all_time':
+            default:
+                for ($i = 11; $i >= 0; $i--) {
+                    $ts = strtotime("-$i months");
+                    $dateKey = date('Y-m', $ts);
+                    $displayVal = date('m/Y', $ts);
+                    $currentData[$dateKey] = ['name' => $displayVal, 'Doanh thu' => 0, 'Đơn hàng' => 0];
+
+                    $prevTs = strtotime("-" . ($i + 12) . " months");
+                    $prevDateKey = date('Y-m', $prevTs);
+                    $prevDisplayVal = date('m/Y', $prevTs);
+                    $previousData[$prevDateKey] = ['name' => $prevDisplayVal, 'Doanh thu' => 0, 'Đơn hàng' => 0];
+                }
+
+                $sqlCur = "SELECT DATE_FORMAT(created_at, '%Y-%m') as ym, SUM(total) as rev, COUNT(*) as ord FROM orders WHERE order_status IN ('confirmed', 'packing', 'shipping', 'completed') AND created_at BETWEEN :start AND :end GROUP BY DATE_FORMAT(created_at, '%Y-%m')";
+
+                $curStart = date('Y-m-01 00:00:00', strtotime('-11 months'));
+                $curEnd = date('Y-m-d 23:59:59');
+
+                $prevStart = date('Y-m-01 00:00:00', strtotime('-23 months'));
+                $prevEnd = date('Y-m-t 23:59:59', strtotime('-12 months'));
+
+                $stmt = $db->prepare($sqlCur);
+                $stmt->execute([':start' => $curStart, ':end' => $curEnd]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $ym = $row['ym'];
+                    if (isset($currentData[$ym])) {
+                        $currentData[$ym]['Doanh thu'] = (float)$row['rev'];
+                        $currentData[$ym]['Đơn hàng'] = (int)$row['ord'];
+                    }
+                }
+
+                $stmt = $db->prepare($sqlCur);
+                $stmt->execute([':start' => $prevStart, ':end' => $prevEnd]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $ym = $row['ym'];
+                    if (isset($previousData[$ym])) {
+                        $previousData[$ym]['Doanh thu'] = (float)$row['rev'];
+                        $previousData[$ym]['Đơn hàng'] = (int)$row['ord'];
+                    }
+                }
+                break;
         }
 
         Response::json([
             'success' => true,
-            'data' => array_values($chartData)
+            'data' => [
+                'current' => array_values($currentData),
+                'previous' => array_values($previousData)
+            ]
         ]);
     }
 

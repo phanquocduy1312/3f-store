@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { ChevronDown, Loader2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 import { AdminCard } from "./admin-card";
 import { adminDashboardApi } from "@/src/api/adminDashboardApi";
 
@@ -9,10 +9,12 @@ interface RevenuePoint {
   orders: number;
 }
 
-export function AdminRevenueChart() {
+interface AdminRevenueChartProps {
+  filter?: string;
+}
+
+export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-  const [days, setDays] = useState<7 | 30>(7);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<RevenuePoint[]>([]);
 
@@ -32,53 +34,83 @@ export function AdminRevenueChart() {
     avgOrdersIsUp: true
   });
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
-      }
+  const getDivisorAndSuffix = (currentLen: number) => {
+    switch (filter) {
+      case "today":
+        return { divisor: 24, suffix: "đơn/giờ" };
+      case "this_year":
+      case "all_time":
+        return { divisor: currentLen || 12, suffix: "đơn/tháng" };
+      case "this_week":
+      case "this_month":
+      default:
+        return { divisor: currentLen || 7, suffix: "đơn/ngày" };
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  };
+
+  const getAvgOrdersLabel = () => {
+    switch (filter) {
+      case "today": return "Đơn hàng TB / giờ";
+      case "this_year":
+      case "all_time":
+        return "Đơn hàng TB / tháng";
+      case "this_week":
+      case "this_month":
+      default:
+        return "Đơn hàng TB / ngày";
+    }
+  };
+
+  const getChartTitle = () => {
+    switch (filter) {
+      case "today": return "Doanh thu hôm nay";
+      case "this_week": return "Doanh thu tuần này";
+      case "this_month": return "Doanh thu tháng này";
+      case "this_year": return "Doanh thu năm nay";
+      case "all_time": return "Doanh thu tất cả thời gian";
+      default:
+        return "Doanh thu";
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
 
-    // Fetch double the period size to compare with the preceding period
-    adminDashboardApi.getRevenueChart(days * 2)
-      .then((res) => {
+    adminDashboardApi.getRevenueChart(filter)
+      .then((res: any) => {
         if (!isMounted) return;
 
-        // Split data into current and previous periods
-        const currentPeriod = res.slice(days);
-        const previousPeriod = res.slice(0, days);
+        const currentPeriod = res.current || [];
+        const previousPeriod = res.previous || [];
 
-        const currentPoints = currentPeriod.map(item => ({
+        const currentPoints = currentPeriod.map((item: any) => ({
           date: item.name,
-          revenue: item['Doanh thu'],
-          orders: item['Đơn hàng']
+          revenue: item['Doanh thu'] || 0,
+          orders: item['Đơn hàng'] || 0
         }));
 
         setData(currentPoints);
 
         // Calculate current statistics
-        const curRev = currentPoints.reduce((sum, d) => sum + d.revenue, 0);
-        const curOrd = currentPoints.reduce((sum, d) => sum + d.orders, 0);
+        const curRev = currentPoints.reduce((sum: number, d: any) => sum + d.revenue, 0);
+        const curOrd = currentPoints.reduce((sum: number, d: any) => sum + d.orders, 0);
         const curAov = curOrd > 0 ? curRev / curOrd : 0;
-        const curAvgOrd = curOrd / days;
+        
+        const { divisor } = getDivisorAndSuffix(currentPoints.length);
+        const curAvgOrd = curOrd / divisor;
 
         // Calculate previous statistics
-        const prevRev = previousPeriod.reduce((sum, d) => sum + d['Doanh thu'], 0);
-        const prevOrd = previousPeriod.reduce((sum, d) => sum + d['Đơn hàng'], 0);
+        const prevRev = previousPeriod.reduce((sum: number, d: any) => sum + (d['Doanh thu'] || 0), 0);
+        const prevOrd = previousPeriod.reduce((sum: number, d: any) => sum + (d['Đơn hàng'] || 0), 0);
         const prevAov = prevOrd > 0 ? prevRev / prevOrd : 0;
-        const prevAvgOrd = prevOrd / days;
+        const prevAvgOrd = prevOrd / divisor;
 
         // Helper to calculate percentage change
         const getPctChange = (cur: number, prev: number) => {
+          if (filter === 'all_time') {
+            return { pct: "0%", isUp: true };
+          }
           if (prev === 0) {
             return cur > 0 ? { pct: "+100%", isUp: true } : { pct: "0%", isUp: true };
           }
@@ -119,7 +151,7 @@ export function AdminRevenueChart() {
     return () => {
       isMounted = false;
     };
-  }, [days]);
+  }, [filter]);
 
   const formatVnd = (num: number) => {
     return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(num).replace("₫", "đ");
@@ -150,8 +182,8 @@ export function AdminRevenueChart() {
   const maxVal = data.length > 0 ? Math.max(...data.map(d => d.revenue), 10000000) : 10000000;
 
   // Compute coordinates for bars
-  const slotWidth = chartWidth / data.length;
-  const barWidth = Math.max(8, Math.min(32, slotWidth * 0.6));
+  const slotWidth = chartWidth / (data.length || 1);
+  const barWidth = Math.max(4, Math.min(32, slotWidth * 0.6));
 
   const points = data.map((d, i) => {
     const x = padLeft + (i + 0.5) * slotWidth;
@@ -165,38 +197,14 @@ export function AdminRevenueChart() {
   // Generate 5 grid steps dynamically
   const gridSteps = [0, maxVal * 0.25, maxVal * 0.5, maxVal * 0.75, maxVal];
 
+  // Helper for divisor and suffix for average orders / day
+  const { suffix: avgOrdersSuffix } = getDivisorAndSuffix(data.length);
+
   return (
     <AdminCard 
-      title={`Doanh thu ${days} ngày qua`} 
+      title={getChartTitle()} 
       subtitle="Doanh số bán hàng thực tế" 
-      action={
-        <div className="relative" ref={dropdownRef}>
-          <button 
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-1.5 bg-[#F6FAFF] border border-[#DCEBFF] text-[#062B5F] text-[12px] font-bold px-3 py-1.5 rounded-xl transition duration-150 hover:bg-[#EEF6FF]"
-          >
-            <span>{days} ngày qua</span>
-            <ChevronDown size={14} />
-          </button>
-          
-          {dropdownOpen && (
-            <div className="absolute right-0 mt-1 w-32 bg-white border border-[#DCEBFF] rounded-xl shadow-lg z-50 overflow-hidden">
-              <button 
-                onClick={() => { setDays(7); setDropdownOpen(false); }}
-                className={`w-full text-left px-4 py-2 text-xs font-bold transition ${days === 7 ? "bg-[#EEF6FF] text-[#0057E7]" : "hover:bg-[#F6FAFF] text-[#0B1F3A]"}`}
-              >
-                7 ngày qua
-              </button>
-              <button 
-                onClick={() => { setDays(30); setDropdownOpen(false); }}
-                className={`w-full text-left px-4 py-2 text-xs font-bold transition ${days === 30 ? "bg-[#EEF6FF] text-[#0057E7]" : "hover:bg-[#F6FAFF] text-[#0B1F3A]"}`}
-              >
-                30 ngày qua
-              </button>
-            </div>
-          )}
-        </div>
-      }
+      action={null}
       className="h-[430px] flex flex-col"
     >
       <div className="relative flex-1 min-h-[160px] mt-2 flex flex-col justify-center">
@@ -268,8 +276,9 @@ export function AdminRevenueChart() {
               {/* Bars */}
               {points.map((p, i) => {
                 const yBottom = svgHeight - padBottom;
-                const barHeight = Math.max(0, yBottom - p.y);
+                const barHeight = p.revenue > 0 ? Math.max(4, yBottom - p.y) : 0;
                 const isHovered = hoveredIdx === i;
+                const showLabel = data.length <= 10 ? true : (i % (Math.ceil(data.length / 8)) === 0 || i === data.length - 1);
 
                 return (
                   <g key={i}>
@@ -286,15 +295,17 @@ export function AdminRevenueChart() {
                     />
 
                     {/* Visual Bar */}
-                    <rect
-                      x={p.x - barWidth / 2}
-                      y={p.y}
-                      width={barWidth}
-                      height={barHeight}
-                      rx={Math.max(2, barWidth / 6)}
-                      fill={isHovered ? "url(#barHoverGrad)" : "url(#barGrad)"}
-                      className="transition-all duration-150 cursor-pointer pointer-events-none"
-                    />
+                    {barHeight > 0 && (
+                      <rect
+                        x={p.x - barWidth / 2}
+                        y={yBottom - barHeight}
+                        width={barWidth}
+                        height={barHeight}
+                        rx={Math.min(barHeight / 2, barWidth / 4)}
+                        fill={isHovered ? "url(#barHoverGrad)" : "url(#barGrad)"}
+                        className="transition-all duration-150 cursor-pointer pointer-events-none"
+                      />
+                    )}
 
                     {/* Top value badge label for hovered bar or last bar */}
                     {(isHovered || (hoveredIdx === null && i === points.length - 1)) && p.revenue > 0 && (
@@ -306,15 +317,17 @@ export function AdminRevenueChart() {
                       </g>
                     )}
 
-                    {/* X Axis Labels */}
-                    <text 
-                      x={p.x} 
-                      y={svgHeight - 4} 
-                      textAnchor="middle" 
-                      className="text-[9px] font-bold fill-[#64748B]"
-                    >
-                      {p.date}
-                    </text>
+                    {/* X Axis Labels (conditional to prevent overlap) */}
+                    {showLabel && (
+                      <text 
+                        x={p.x} 
+                        y={svgHeight - 4} 
+                        textAnchor="middle" 
+                        className="text-[9px] font-bold fill-[#64748B]"
+                      >
+                        {p.date}
+                      </text>
+                    )}
                   </g>
                 );
               })}
@@ -329,7 +342,7 @@ export function AdminRevenueChart() {
           { label: "Tổng doanh thu", val: formatVnd(stats.totalRevenue), pct: stats.totalRevenueChange, isUp: stats.totalRevenueIsUp },
           { label: "Tổng đơn hàng", val: stats.totalOrders.toLocaleString("vi-VN"), pct: stats.totalOrdersChange, isUp: stats.totalOrdersIsUp },
           { label: "Giá trị đơn TB", val: formatVnd(stats.aov), pct: stats.aovChange, isUp: stats.aovIsUp },
-          { label: "Đơn hàng TB / ngày", val: `${stats.avgOrders.toFixed(2)} đơn/ngày`, pct: stats.avgOrdersChange, isUp: stats.avgOrdersIsUp }
+          { label: getAvgOrdersLabel(), val: `${stats.avgOrders.toFixed(2)} ${avgOrdersSuffix}`, pct: stats.avgOrdersChange, isUp: stats.avgOrdersIsUp }
         ].map((item, idx) => (
           <div 
             key={idx} 

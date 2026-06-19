@@ -206,7 +206,7 @@ export function AdminDashboard() {
               <AdminTaskQueue />
             </div>
             <div className="lg:col-span-8 h-full">
-              <AdminRevenueChart />
+              <AdminRevenueChart filter={selectedDate} />
             </div>
           </section>
 

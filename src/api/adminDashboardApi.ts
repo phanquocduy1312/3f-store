@@ -62,8 +62,8 @@ export const adminDashboardApi = {
     return fetchWithAuth(url);
   },
 
-  async getRevenueChart(days: number = 7): Promise<RevenueChartItem[]> {
-    const url = buildApiUrl(`/api/admin/dashboard/revenue-chart?days=${days}`);
+  async getRevenueChart(filter: string = 'this_week'): Promise<any> {
+    const url = buildApiUrl(`/api/admin/dashboard/revenue-chart?filter=${filter}`);
     return fetchWithAuth(url);
   },
 
