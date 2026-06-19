@@ -12,20 +12,7 @@ use PDO;
 class CustomerSecurityController {
     
     public function __construct() {
-        // Self-healing migration for user_agent and ip_address
-        $db = Database::getInstance()->getConnection();
-        try {
-            $checkCol = $db->query("SHOW COLUMNS FROM customer_sessions LIKE 'ip_address'")->fetch();
-            if (!$checkCol) {
-                $db->exec("ALTER TABLE customer_sessions ADD COLUMN ip_address VARCHAR(45) NULL");
-            }
-            $checkAgent = $db->query("SHOW COLUMNS FROM customer_sessions LIKE 'user_agent'")->fetch();
-            if (!$checkAgent) {
-                $db->exec("ALTER TABLE customer_sessions ADD COLUMN user_agent VARCHAR(255) NULL");
-            }
-        } catch (\PDOException $e) {
-            // Ignore
-        }
+        // Migration moved to CustomerSession.php
     }
 
     /**

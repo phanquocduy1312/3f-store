@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { adminCustomersApi, AdminCustomerListParams } from "../../api/adminCustomersApi";
-import { Search, Filter, ShieldAlert, CheckCircle2, XCircle, Eye, ShieldOff, SearchX } from "lucide-react";
+import { Search, Filter, ShieldAlert, CheckCircle2, XCircle, Eye, ShieldOff, SearchX, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -63,6 +63,31 @@ export function AdminCustomersPage() {
     setPage(1);
   }, [searchValue, statusFilter, tierFilter, phoneVerifiedFilter, hasOrdersFilter]);
 
+  const handleExportCsv = async () => {
+    try {
+      const params: AdminCustomerListParams = {
+        q: searchValue,
+        status: statusFilter,
+        tier: tierFilter,
+        phoneVerified: phoneVerifiedFilter,
+        hasOrders: hasOrdersFilter
+      };
+      const toastId = toast.loading("Đang chuẩn bị file CSV...");
+      const blob = await adminCustomersApi.exportCsvBlob(params);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `customers_export_${new Date().getTime()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      toast.success("Xuất CSV thành công", { id: toastId });
+    } catch (err: any) {
+      toast.error(err.message || "Lỗi khi xuất CSV");
+    }
+  };
+
   const handleToggleStatus = async (id: number, currentStatus: string) => {
     if (currentStatus === "active") {
       setConfirmBlockId(id);
@@ -116,12 +141,19 @@ export function AdminCustomersPage() {
               <h1 className="text-2xl font-black text-[#0B1F3A]">Quản lý khách hàng</h1>
               <p className="text-sm text-[#64748B]">Tìm kiếm và quản lý thông tin khách hàng, hạng thẻ 3F Club</p>
             </div>
-            {/* Stats Cards (Basic) */}
-            <div className="flex gap-4">
+            {/* Stats Cards & Actions */}
+            <div className="flex items-center gap-4">
               <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-[#DCEBFF]">
                 <p className="text-xs text-slate-500 font-semibold">Tổng khách hàng</p>
                 <p className="text-lg font-black text-[#0B1F3A]">{total}</p>
               </div>
+              <button 
+                onClick={handleExportCsv}
+                className="flex items-center gap-2 px-4 py-3 bg-[#0B1F3A] text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm"
+              >
+                <Download size={18} />
+                <span className="hidden sm:inline">Xuất CSV</span>
+              </button>
             </div>
           </div>
 
@@ -272,21 +304,45 @@ export function AdminCustomersPage() {
             </div>
 
             {/* Pagination */}
-            {!loading && totalPages > 1 && (
-              <div className="p-4 border-t border-[#DCEBFF] flex justify-between items-center bg-slate-50/50">
-                <span className="text-sm text-slate-500">Trang {page} / {totalPages} (Tổng {total})</span>
-                <div className="flex gap-2">
+            {!loading && (
+              <div className="p-4 border-t border-[#DCEBFF] flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
+                <span className="text-sm text-slate-500 font-medium">
+                  Hiển thị <span className="font-bold text-[#0B1F3A]">{customers.length}</span> trên tổng số <span className="font-bold text-[#0B1F3A]">{total}</span> khách hàng (Trang {page}/{totalPages})
+                </span>
+                <div className="flex gap-1.5">
                   <button 
-                    disabled={page === 1}
-                    onClick={() => setPage(p => p - 1)}
-                    className="px-3 py-1.5 bg-white border border-[#DCEBFF] rounded-lg text-sm disabled:opacity-50"
+                    disabled={page <= 1}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    className="px-3 py-1.5 bg-white border border-[#DCEBFF] text-[#0B1F3A] rounded-lg text-sm font-semibold hover:bg-[#F6FAFF] disabled:opacity-50 disabled:hover:bg-white transition-colors"
                   >
                     Trước
                   </button>
+                  
+                  {/* Page numbers */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                    .map((p, i, arr) => (
+                      <React.Fragment key={p}>
+                        {i > 0 && arr[i - 1] !== p - 1 && (
+                          <span className="px-2 py-1.5 text-slate-400">...</span>
+                        )}
+                        <button
+                          onClick={() => setPage(p)}
+                          className={`min-w-[32px] px-2 py-1.5 rounded-lg text-sm font-bold transition-colors ${
+                            page === p 
+                              ? "bg-[#0057E7] text-white shadow-md shadow-blue-500/20 border border-[#0057E7]" 
+                              : "bg-white border border-[#DCEBFF] text-[#0B1F3A] hover:bg-[#F6FAFF]"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      </React.Fragment>
+                  ))}
+
                   <button 
-                    disabled={page === totalPages}
-                    onClick={() => setPage(p => p + 1)}
-                    className="px-3 py-1.5 bg-white border border-[#DCEBFF] rounded-lg text-sm disabled:opacity-50"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    className="px-3 py-1.5 bg-white border border-[#DCEBFF] text-[#0B1F3A] rounded-lg text-sm font-semibold hover:bg-[#F6FAFF] disabled:opacity-50 disabled:hover:bg-white transition-colors"
                   >
                     Sau
                   </button>

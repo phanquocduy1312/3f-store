@@ -16,6 +16,20 @@ class CustomerSession {
         if (!self::$migrated) {
             self::$migrated = true;
             // Migration handled by Customer model loading customer-auth-schema.sql
+            
+            // Self-healing migration for user_agent and ip_address
+            try {
+                $checkCol = $this->db->query("SHOW COLUMNS FROM customer_sessions LIKE 'ip_address'")->fetch();
+                if (!$checkCol) {
+                    $this->db->exec("ALTER TABLE customer_sessions ADD COLUMN ip_address VARCHAR(45) NULL");
+                }
+                $checkAgent = $this->db->query("SHOW COLUMNS FROM customer_sessions LIKE 'user_agent'")->fetch();
+                if (!$checkAgent) {
+                    $this->db->exec("ALTER TABLE customer_sessions ADD COLUMN user_agent VARCHAR(255) NULL");
+                }
+            } catch (\Exception $e) {
+                // Ignore
+            }
         }
     }
 
@@ -42,6 +56,19 @@ class CustomerSession {
             ':user_agent' => $ua,
         ]);
         return $token;
+    }
+
+    /**
+     * Revoke all active sessions for a customer
+     */
+    public function revokeAllForCustomer($customerId) {
+        $stmt = $this->db->prepare("
+            UPDATE customer_sessions 
+            SET revoked_at = NOW() 
+            WHERE customer_id = :customer_id AND revoked_at IS NULL AND expires_at > NOW()
+        ");
+        $stmt->execute([':customer_id' => (int)$customerId]);
+        return $stmt->rowCount();
     }
 
     /**
@@ -76,14 +103,5 @@ class CustomerSession {
         return $stmt->execute([':token_hash' => $tokenHash]);
     }
 
-    /**
-     * Revoke all sessions for a customer.
-     */
-    public function revokeAllForCustomer($customerId) {
-        $stmt = $this->db->prepare("
-            UPDATE customer_sessions SET revoked_at = NOW()
-            WHERE customer_id = :cid AND revoked_at IS NULL
-        ");
-        return $stmt->execute([':cid' => (int)$customerId]);
-    }
+
 }

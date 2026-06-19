@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, ShoppingBag, MapPin } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ShoppingBag, MapPin, Truck } from "lucide-react";
 import { getCart, updateQuantity, removeFromCart, clearCart, getCartTotal } from "@/lib/cartHelper";
 import { CartItemsList } from "@/components/CartCheckout/CartItemsList";
 import { DeliveryForm } from "@/components/CartCheckout/DeliveryForm";
@@ -30,6 +30,7 @@ export function CartCheckout() {
   const [note, setNote] = useState("");
   
   const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [deliveryMethod, setDeliveryMethod] = useState("express");
   const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; discountAmount: number; description?: string } | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -132,6 +133,7 @@ export function CartCheckout() {
           wardName: wardName,
           addressLine: detailedAddress,
           note: note || undefined,
+          shippingMethod: deliveryMethod,
         },
         items: cart.map(item => ({
           productId: Number(item.productId) || 0,
@@ -190,14 +192,6 @@ export function CartCheckout() {
         <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-12">
           {/* Left Column: Cart items list & Customer Info & Delivery Address */}
           <div className="lg:col-span-7 space-y-4 sm:space-y-6">
-            <div className="rounded-2xl border border-forest/10 bg-white p-4 sm:p-5 shadow-sm">
-              <h3 className="mb-3 sm:mb-4 text-sm sm:text-[15px] font-black text-forest">Sản phẩm trong giỏ hàng</h3>
-              <CartItemsList
-                items={cart}
-                onUpdateQuantity={updateQuantity}
-                onRemove={removeFromCart}
-              />
-            </div>
 
             {isLoggedIn && addresses.length > 0 && (
               <div className="rounded-2xl border border-forest/10 bg-white p-4 sm:p-5 shadow-sm space-y-3">
@@ -241,11 +235,91 @@ export function CartCheckout() {
               detailedAddress={detailedAddress} setDetailedAddress={setDetailedAddress}
               note={note} setNote={setNote}
             />
+
+            {/* Delivery Method */}
+            <div className="rounded-2xl border border-forest/10 bg-white p-4 sm:p-5 shadow-sm">
+              <h3 className="mb-4 flex items-center gap-2 text-sm sm:text-[15px] font-black text-forest">
+                <Truck size={16} className="sm:w-[18px] sm:h-[18px]" /> Phương thức giao hàng
+              </h3>
+              <div className="space-y-2.5 sm:space-y-3">
+                {/* Option 1: Hỏa tốc */}
+                <label className={`flex cursor-pointer items-start sm:items-center justify-between rounded-xl border-2 p-2.5 sm:p-3 transition active:scale-[0.98] ${deliveryMethod === "express" ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
+                  <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 mr-2">
+                    <input
+                      type="radio"
+                      name="deliveryMethod"
+                      value="express"
+                      checked={deliveryMethod === "express"}
+                      onChange={() => setDeliveryMethod("express")}
+                      className="accent-forest mt-0.5 sm:mt-0 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs sm:text-sm font-bold text-ink">Giao hàng hỏa tốc</div>
+                      <div className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-2">Nhận hàng trong 2 giờ. Chỉ áp dụng khu vực TP.HCM</div>
+                    </div>
+                  </div>
+                  <div className="text-xs sm:text-sm font-bold text-forest shrink-0">Miễn phí</div>
+                </label>
+
+                {/* Option 2: Trong ngày */}
+                <label className={`flex cursor-pointer items-start sm:items-center justify-between rounded-xl border-2 p-2.5 sm:p-3 transition active:scale-[0.98] ${deliveryMethod === "sameday" ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
+                  <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 mr-2">
+                    <input
+                      type="radio"
+                      name="deliveryMethod"
+                      value="sameday"
+                      checked={deliveryMethod === "sameday"}
+                      onChange={() => setDeliveryMethod("sameday")}
+                      className="accent-forest mt-0.5 sm:mt-0 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs sm:text-sm font-bold text-ink">Giao hàng trong ngày</div>
+                      <div className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-2">Nhận hàng hôm nay. Chỉ áp dụng khu vực TP.HCM</div>
+                    </div>
+                  </div>
+                  <div className="text-xs sm:text-sm font-bold text-forest shrink-0">Miễn phí</div>
+                </label>
+
+                {/* Option 3: Nhanh */}
+                <label className={`flex cursor-pointer items-start sm:items-center justify-between rounded-xl border-2 p-2.5 sm:p-3 transition active:scale-[0.98] ${deliveryMethod === "fast" ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
+                  <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 mr-2">
+                    <input
+                      type="radio"
+                      name="deliveryMethod"
+                      value="fast"
+                      checked={deliveryMethod === "fast"}
+                      onChange={() => setDeliveryMethod("fast")}
+                      className="accent-forest mt-0.5 sm:mt-0 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs sm:text-sm font-bold text-ink">Giao hàng nhanh</div>
+                      <div className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-2">Nhận hàng trong 2-5 ngày làm việc</div>
+                    </div>
+                  </div>
+                  <div className="text-xs sm:text-sm font-bold text-forest shrink-0">Miễn phí</div>
+                </label>
+              </div>
+            </div>
           </div>
 
-          {/* Right Column: Coupons, Payment options, Summary & Submit button */}
+          {/* Right Column: Cart Items, Coupons, Payment options, Summary & Submit button */}
           <div className="lg:col-span-5">
-            <div className="lg:sticky lg:top-24">
+            <div className="lg:sticky lg:top-24 space-y-4 sm:space-y-6">
+              {/* Cart Items Summary */}
+              <div className="rounded-2xl border border-forest/10 bg-white p-4 sm:p-5 shadow-sm">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-sm sm:text-[15px] font-black text-forest">Sản phẩm trong giỏ hàng</h3>
+                  <span className="text-[10px] sm:text-xs font-bold text-forest bg-forest/5 px-2 py-1 rounded-full">{cart.reduce((total, item) => total + item.quantity, 0)} sản phẩm</span>
+                </div>
+                <div className="max-h-[350px] overflow-y-auto pr-1.5 custom-scrollbar">
+                  <CartItemsList
+                    items={cart}
+                    onUpdateQuantity={updateQuantity}
+                    onRemove={removeFromCart}
+                  />
+                </div>
+              </div>
+
               <OrderSummary
                 subtotal={subtotal}
                 appliedVoucher={appliedVoucher}

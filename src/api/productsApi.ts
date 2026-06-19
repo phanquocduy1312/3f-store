@@ -377,6 +377,7 @@ export type CreateOrderPayload = {
     wardName: string;
     addressLine: string;
     note?: string;
+    shippingMethod?: string;
   };
   items: Array<{
     productId: number;
@@ -424,6 +425,7 @@ export type OrderDetail = {
   address_line: string;
   note: string | null;
   payment_method: "cod" | "bank_transfer";
+  shipping_method?: string;
   payment_status: string;
   order_status: string;
   subtotal: string;

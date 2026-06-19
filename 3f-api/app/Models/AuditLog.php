@@ -28,6 +28,20 @@ class AuditLog {
                 $this->db->exec($statement);
             }
         }
+
+        // Self-healing migration for ip_address and user_agent
+        try {
+            $checkIpCol = $this->db->query("SHOW COLUMNS FROM admin_audit_logs LIKE 'ip_address'")->fetch();
+            if (!$checkIpCol) {
+                $this->db->exec("ALTER TABLE admin_audit_logs ADD COLUMN ip_address VARCHAR(100) NULL AFTER entity_id");
+            }
+            $checkAgentCol = $this->db->query("SHOW COLUMNS FROM admin_audit_logs LIKE 'user_agent'")->fetch();
+            if (!$checkAgentCol) {
+                $this->db->exec("ALTER TABLE admin_audit_logs ADD COLUMN user_agent TEXT NULL AFTER ip_address");
+            }
+        } catch (\Exception $e) {
+            // Ignore error if table doesn't exist yet or other issues during setup
+        }
     }
 
     /**

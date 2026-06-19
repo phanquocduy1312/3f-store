@@ -181,6 +181,9 @@ class CustomerAuthController {
             $customerModel = new Customer();
             $customer = $customerModel->findByPhone($phone);
             if ($customer) {
+                if ($customer['status'] === 'blocked') {
+                    Response::json(['success' => false, 'message' => 'Tài khoản đã bị khóa.'], 403);
+                }
                 $sessionModel = new CustomerSession();
                 $token = $sessionModel->createSession($customer['id']);
                 $customerModel->updateLastLogin($customer['id']);
