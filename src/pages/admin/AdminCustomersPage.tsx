@@ -213,10 +213,10 @@ export function AdminCustomersPage() {
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-1 text-xs">
                             <span className={`flex items-center gap-1 ${c.phone_verified_at ? 'text-green-600' : 'text-slate-400'}`}>
-                              <CheckCircle2 size={12} /> SĐT
+                              {c.phone_verified_at ? <CheckCircle2 size={12} /> : <XCircle size={12} />} SĐT
                             </span>
                             <span className={`flex items-center gap-1 ${c.email_verified_at ? 'text-green-600' : 'text-slate-400'}`}>
-                              <CheckCircle2 size={12} /> Email
+                              {c.email_verified_at ? <CheckCircle2 size={12} /> : <XCircle size={12} />} Email
                             </span>
                           </div>
                         </td>
