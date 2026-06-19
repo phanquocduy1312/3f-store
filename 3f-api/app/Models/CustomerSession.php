@@ -16,6 +16,20 @@ class CustomerSession {
         if (!self::$migrated) {
             self::$migrated = true;
             // Migration handled by Customer model loading customer-auth-schema.sql
+            
+            // Self-healing migration for user_agent and ip_address
+            try {
+                $checkCol = $this->db->query("SHOW COLUMNS FROM customer_sessions LIKE 'ip_address'")->fetch();
+                if (!$checkCol) {
+                    $this->db->exec("ALTER TABLE customer_sessions ADD COLUMN ip_address VARCHAR(45) NULL");
+                }
+                $checkAgent = $this->db->query("SHOW COLUMNS FROM customer_sessions LIKE 'user_agent'")->fetch();
+                if (!$checkAgent) {
+                    $this->db->exec("ALTER TABLE customer_sessions ADD COLUMN user_agent VARCHAR(255) NULL");
+                }
+            } catch (\Exception $e) {
+                // Ignore
+            }
         }
     }
 
