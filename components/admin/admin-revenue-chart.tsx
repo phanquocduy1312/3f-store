@@ -38,13 +38,18 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
     switch (filter) {
       case "today":
         return { divisor: 24, suffix: "đơn/giờ" };
-      case "this_year":
-      case "all_time":
-        return { divisor: currentLen || 12, suffix: "đơn/tháng" };
       case "this_week":
-      case "this_month":
+        return { divisor: 7, suffix: "đơn/ngày" };
+      case "this_month": {
+        const now = new Date();
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        return { divisor: daysInMonth, suffix: "đơn/ngày" };
+      }
+      case "this_year":
+        return { divisor: 12, suffix: "đơn/tháng" };
+      case "all_time":
       default:
-        return { divisor: currentLen || 7, suffix: "đơn/ngày" };
+        return { divisor: currentLen || 30, suffix: "đơn/ngày" };
     }
   };
 
@@ -278,7 +283,18 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
                 const yBottom = svgHeight - padBottom;
                 const barHeight = p.revenue > 0 ? Math.max(4, yBottom - p.y) : 0;
                 const isHovered = hoveredIdx === i;
-                const showLabel = data.length <= 10 ? true : (i % (Math.ceil(data.length / 8)) === 0 || i === data.length - 1);
+                let showLabel = false;
+                if (filter === "today") {
+                  showLabel = i % 4 === 0; // Show every 4 hours
+                } else if (filter === "this_week") {
+                  showLabel = true; // Show all 7 days
+                } else if (filter === "this_month") {
+                  showLabel = i % 5 === 0; // Show every 5 days (e.g. 1st, 6th, 11th, 16th, 21st, 26th, 31st)
+                } else if (filter === "this_year") {
+                  showLabel = true; // Show all 12 months
+                } else {
+                  showLabel = data.length <= 10 ? true : (i % (Math.ceil(data.length / 8)) === 0 || i === data.length - 1);
+                }
 
                 return (
                   <g key={i}>

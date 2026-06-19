@@ -183,7 +183,7 @@ class AdminDashboardController {
                     $previousData[$h] = ['name' => $lbl, 'Doanh thu' => 0, 'Đơn hàng' => 0];
                 }
 
-                $sqlCur = "SELECT HOUR(created_at) as hr, SUM(total) as rev, COUNT(*) as ord FROM orders WHERE order_status IN ('confirmed', 'packing', 'shipping', 'completed') AND created_at BETWEEN :start AND :end GROUP BY HOUR(created_at)";
+                $sqlCur = "SELECT HOUR(created_at) as hr, SUM(CASE WHEN order_status IN ('confirmed', 'packing', 'shipping', 'completed') THEN total ELSE 0 END) as rev, SUM(CASE WHEN order_status != 'cancelled' THEN 1 ELSE 0 END) as ord FROM orders WHERE created_at BETWEEN :start AND :end GROUP BY HOUR(created_at)";
                 $curStart = date('Y-m-d 00:00:00');
                 $curEnd = date('Y-m-d 23:59:59');
 
@@ -225,7 +225,7 @@ class AdminDashboardController {
                     $previousData[$prevDate] = ['name' => $displayPrev, 'Doanh thu' => 0, 'Đơn hàng' => 0];
                 }
 
-                $sqlCur = "SELECT DATE(created_at) as dt, SUM(total) as rev, COUNT(*) as ord FROM orders WHERE order_status IN ('confirmed', 'packing', 'shipping', 'completed') AND created_at BETWEEN :start AND :end GROUP BY DATE(created_at)";
+                $sqlCur = "SELECT DATE(created_at) as dt, SUM(CASE WHEN order_status IN ('confirmed', 'packing', 'shipping', 'completed') THEN total ELSE 0 END) as rev, SUM(CASE WHEN order_status != 'cancelled' THEN 1 ELSE 0 END) as ord FROM orders WHERE created_at BETWEEN :start AND :end GROUP BY DATE(created_at)";
                 $curStart = date('Y-m-d 00:00:00', $monThisWeek);
                 $curEnd = date('Y-m-d 23:59:59', strtotime('+6 days', $monThisWeek));
 
@@ -272,7 +272,7 @@ class AdminDashboardController {
                     $previousData[$prevDate] = ['name' => $displayPrev, 'Doanh thu' => 0, 'Đơn hàng' => 0];
                 }
 
-                $sqlCur = "SELECT DATE(created_at) as dt, SUM(total) as rev, COUNT(*) as ord FROM orders WHERE order_status IN ('confirmed', 'packing', 'shipping', 'completed') AND created_at BETWEEN :start AND :end GROUP BY DATE(created_at)";
+                $sqlCur = "SELECT DATE(created_at) as dt, SUM(CASE WHEN order_status IN ('confirmed', 'packing', 'shipping', 'completed') THEN total ELSE 0 END) as rev, SUM(CASE WHEN order_status != 'cancelled' THEN 1 ELSE 0 END) as ord FROM orders WHERE created_at BETWEEN :start AND :end GROUP BY DATE(created_at)";
                 
                 $curStart = date('Y-m-01 00:00:00');
                 $curEnd = date('Y-m-t 23:59:59');
@@ -308,7 +308,7 @@ class AdminDashboardController {
                     $previousData[$m] = ['name' => $lbl, 'Doanh thu' => 0, 'Đơn hàng' => 0];
                 }
 
-                $sqlCur = "SELECT MONTH(created_at) as mnth, SUM(total) as rev, COUNT(*) as ord FROM orders WHERE order_status IN ('confirmed', 'packing', 'shipping', 'completed') AND created_at BETWEEN :start AND :end GROUP BY MONTH(created_at)";
+                $sqlCur = "SELECT MONTH(created_at) as mnth, SUM(CASE WHEN order_status IN ('confirmed', 'packing', 'shipping', 'completed') THEN total ELSE 0 END) as rev, SUM(CASE WHEN order_status != 'cancelled' THEN 1 ELSE 0 END) as ord FROM orders WHERE created_at BETWEEN :start AND :end GROUP BY MONTH(created_at)";
                 
                 $curStart = date('Y-01-01 00:00:00');
                 $curEnd = date('Y-12-31 23:59:59');
@@ -351,7 +351,7 @@ class AdminDashboardController {
                     $previousData[$prevDateKey] = ['name' => $prevDisplayVal, 'Doanh thu' => 0, 'Đơn hàng' => 0];
                 }
 
-                $sqlCur = "SELECT DATE_FORMAT(created_at, '%Y-%m') as ym, SUM(total) as rev, COUNT(*) as ord FROM orders WHERE order_status IN ('confirmed', 'packing', 'shipping', 'completed') AND created_at BETWEEN :start AND :end GROUP BY DATE_FORMAT(created_at, '%Y-%m')";
+                $sqlCur = "SELECT DATE_FORMAT(created_at, '%Y-%m') as ym, SUM(CASE WHEN order_status IN ('confirmed', 'packing', 'shipping', 'completed') THEN total ELSE 0 END) as rev, SUM(CASE WHEN order_status != 'cancelled' THEN 1 ELSE 0 END) as ord FROM orders WHERE created_at BETWEEN :start AND :end GROUP BY DATE_FORMAT(created_at, '%Y-%m')";
 
                 $curStart = date('Y-m-01 00:00:00', strtotime('-11 months'));
                 $curEnd = date('Y-m-d 23:59:59');
