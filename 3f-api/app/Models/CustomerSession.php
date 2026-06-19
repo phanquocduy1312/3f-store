@@ -103,14 +103,5 @@ class CustomerSession {
         return $stmt->execute([':token_hash' => $tokenHash]);
     }
 
-    /**
-     * Revoke all sessions for a customer.
-     */
-    public function revokeAllForCustomer($customerId) {
-        $stmt = $this->db->prepare("
-            UPDATE customer_sessions SET revoked_at = NOW()
-            WHERE customer_id = :cid AND revoked_at IS NULL
-        ");
-        return $stmt->execute([':cid' => (int)$customerId]);
-    }
+
 }
