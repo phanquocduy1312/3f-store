@@ -149,29 +149,21 @@ export function AdminRevenueChart() {
   // Calculate dynamic max value (floor of 10M)
   const maxVal = data.length > 0 ? Math.max(...data.map(d => d.revenue), 10000000) : 10000000;
 
-  // Compute coordinates
+  // Compute coordinates for bars
+  const slotWidth = chartWidth / data.length;
+  const barWidth = Math.max(8, Math.min(32, slotWidth * 0.6));
+
   const points = data.map((d, i) => {
-    const x = padLeft + (data.length > 1 ? (i / (data.length - 1)) * chartWidth : chartWidth / 2);
+    const x = padLeft + (i + 0.5) * slotWidth;
     const y = padTop + (1 - d.revenue / maxVal) * chartHeight;
     return { x, y, ...d };
   });
-
-  // Create path description line
-  const linePath = points.reduce((path, p, i) => {
-    return i === 0 ? `M ${p.x} ${p.y}` : `${path} L ${p.x} ${p.y}`;
-  }, "");
-
-  // Create shaded area path
-  const areaPath = linePath && points.length > 0 ? `${linePath} L ${points[points.length - 1].x} ${svgHeight - padBottom} L ${points[0].x} ${svgHeight - padBottom} Z` : "";
 
   // Grid line Y coordinate helper
   const gridY = (val: number) => padTop + (1 - val / maxVal) * chartHeight;
 
   // Generate 5 grid steps dynamically
   const gridSteps = [0, maxVal * 0.25, maxVal * 0.5, maxVal * 0.75, maxVal];
-
-  // Helper for last item value formatted
-  const lastPointFormatted = data.length > 0 ? formatM(data[data.length - 1].revenue) : "0M";
 
   return (
     <AdminCard 
@@ -236,10 +228,15 @@ export function AdminRevenueChart() {
 
             <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-full overflow-visible">
               <defs>
-                {/* Shading area gradient */}
-                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0057E7" stopOpacity="0.22" />
-                  <stop offset="100%" stopColor="#0057E7" stopOpacity="0.00" />
+                {/* Bar gradient */}
+                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0057E7" />
+                  <stop offset="100%" stopColor="#3B82F6" />
+                </linearGradient>
+                {/* Hover bar gradient */}
+                <linearGradient id="barHoverGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#2563EB" />
+                  <stop offset="100%" stopColor="#60A5FA" />
                 </linearGradient>
               </defs>
 
@@ -268,62 +265,59 @@ export function AdminRevenueChart() {
                 );
               })}
 
-              {/* Area Fill */}
-              {areaPath && <path d={areaPath} fill="url(#areaGrad)" />}
+              {/* Bars */}
+              {points.map((p, i) => {
+                const yBottom = svgHeight - padBottom;
+                const barHeight = Math.max(0, yBottom - p.y);
+                const isHovered = hoveredIdx === i;
 
-              {/* Line Path */}
-              {linePath && (
-                <path 
-                  d={linePath} 
-                  fill="none" 
-                  stroke="#0057E7" 
-                  strokeWidth="4" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                />
-              )}
+                return (
+                  <g key={i}>
+                    {/* Interactive background rect for easier hovering */}
+                    <rect
+                      x={p.x - slotWidth / 2}
+                      y={padTop}
+                      width={slotWidth}
+                      height={chartHeight}
+                      fill="transparent"
+                      className="cursor-pointer"
+                      onMouseEnter={() => setHoveredIdx(i)}
+                      onMouseLeave={() => setHoveredIdx(null)}
+                    />
 
-              {/* Interactive circles and label text */}
-              {points.map((p, i) => (
-                <g key={i}>
-                  {/* Highlight background active circle */}
-                  {hoveredIdx === i && (
-                    <circle cx={p.x} cy={p.y} r="9" fill="#0057E7" fillOpacity="0.15" />
-                  )}
-                  {/* Main dot circle */}
-                  <circle 
-                    cx={p.x} 
-                    cy={p.y} 
-                    r="5.5" 
-                    fill={hoveredIdx === i ? "#0057E7" : "white"} 
-                    stroke="#0057E7" 
-                    strokeWidth="3" 
-                    className="cursor-pointer transition-all duration-150"
-                    onMouseEnter={() => setHoveredIdx(i)}
-                    onMouseLeave={() => setHoveredIdx(null)}
-                  />
-                  
-                  {/* Top value badge label for endpoint */}
-                  {i === points.length - 1 && (
-                    <g transform={`translate(${p.x - 20}, ${p.y - 15})`}>
-                      <rect width="40" height="14" rx="4" fill="#0057E7" />
-                      <text x="20" y="9.5" textAnchor="middle" className="text-[8px] font-black fill-white">
-                        {lastPointFormatted}
-                      </text>
-                    </g>
-                  )}
+                    {/* Visual Bar */}
+                    <rect
+                      x={p.x - barWidth / 2}
+                      y={p.y}
+                      width={barWidth}
+                      height={barHeight}
+                      rx={Math.max(2, barWidth / 6)}
+                      fill={isHovered ? "url(#barHoverGrad)" : "url(#barGrad)"}
+                      className="transition-all duration-150 cursor-pointer pointer-events-none"
+                    />
 
-                  {/* X Axis Labels */}
-                  <text 
-                    x={p.x} 
-                    y={svgHeight - 4} 
-                    textAnchor="middle" 
-                    className="text-[9px] font-bold fill-[#64748B]"
-                  >
-                    {p.date}
-                  </text>
-                </g>
-              ))}
+                    {/* Top value badge label for hovered bar or last bar */}
+                    {(isHovered || (hoveredIdx === null && i === points.length - 1)) && p.revenue > 0 && (
+                      <g transform={`translate(${p.x - 20}, ${p.y - 18})`} className="pointer-events-none">
+                        <rect width="40" height="14" rx="4" fill="#021B3A" />
+                        <text x="20" y="9.5" textAnchor="middle" className="text-[8px] font-black fill-white">
+                          {formatM(p.revenue)}
+                        </text>
+                      </g>
+                    )}
+
+                    {/* X Axis Labels */}
+                    <text 
+                      x={p.x} 
+                      y={svgHeight - 4} 
+                      textAnchor="middle" 
+                      className="text-[9px] font-bold fill-[#64748B]"
+                    >
+                      {p.date}
+                    </text>
+                  </g>
+                );
+              })}
             </svg>
           </>
         )}
@@ -335,7 +329,7 @@ export function AdminRevenueChart() {
           { label: "Tổng doanh thu", val: formatVnd(stats.totalRevenue), pct: stats.totalRevenueChange, isUp: stats.totalRevenueIsUp },
           { label: "Tổng đơn hàng", val: stats.totalOrders.toLocaleString("vi-VN"), pct: stats.totalOrdersChange, isUp: stats.totalOrdersIsUp },
           { label: "Giá trị đơn TB", val: formatVnd(stats.aov), pct: stats.aovChange, isUp: stats.aovIsUp },
-          { label: "Đơn hàng TB / ngày", val: `${stats.avgOrders.toFixed(1)} đơn/ngày`, pct: stats.avgOrdersChange, isUp: stats.avgOrdersIsUp }
+          { label: "Đơn hàng TB / ngày", val: `${stats.avgOrders.toFixed(2)} đơn/ngày`, pct: stats.avgOrdersChange, isUp: stats.avgOrdersIsUp }
         ].map((item, idx) => (
           <div 
             key={idx} 
