@@ -22,6 +22,13 @@ const OrderSuccess = lazy(() => import("./pages/OrderSuccess").then(m => ({ defa
 const OrderTracking = lazy(() => import("./pages/OrderTracking").then(m => ({ default: m.OrderTracking })));
 const AdminOrdersPage = lazy(() => import("./pages/admin/AdminOrdersPage").then(m => ({ default: m.AdminOrdersPage })));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin").then(m => ({ default: m.AdminLogin })));
+const AdminCustomersPage = lazy(() => import("./pages/admin/AdminCustomersPage").then(m => ({ default: m.AdminCustomersPage })));
+const AdminCustomerDetailPage = lazy(() => import("./pages/admin/AdminCustomerDetailPage").then(m => ({ default: m.AdminCustomerDetailPage })));
+
+// Admin Product Pages
+const AdminProductsPage = lazy(() => import("./pages/admin/AdminProductsPage").then(m => ({ default: m.AdminProductsPage })));
+const AdminProductForm = lazy(() => import("./pages/admin/AdminProductForm").then(m => ({ default: m.AdminProductForm })));
+const AdminCategoriesPage = lazy(() => import("./pages/admin/AdminCategoriesPage").then(m => ({ default: m.AdminCategoriesPage })));
 
 function AdminRouteGuard() {
   // Temporary bypass for active development. Comment in to restore auth guarding.
@@ -75,7 +82,15 @@ export function App() {
             <Route path="/admin/shopee-requests" element={<ShopeeRequestsPage />} />
             <Route path="/admin/loyalty-settings" element={<LoyaltySettingsPage />} />
             <Route path="/admin/3f-club" element={<ThreeFClubPage />} />
+            <Route path="/admin/customers" element={<AdminCustomersPage />} />
+            <Route path="/admin/customers/:id" element={<AdminCustomerDetailPage />} />
             <Route path="/admin/customers/:id/loyalty" element={<CustomerLoyaltyPage />} />
+            
+            {/* Products Management Routes */}
+            <Route path="/admin/products" element={<AdminProductsPage />} />
+            <Route path="/admin/products/create" element={<AdminProductForm />} />
+            <Route path="/admin/products/:id" element={<AdminProductForm />} />
+            <Route path="/admin/categories" element={<AdminCategoriesPage />} />
           </Route>
 
           <Route path="/3f-club/rewards" element={<CustomerRewardsPage />} />

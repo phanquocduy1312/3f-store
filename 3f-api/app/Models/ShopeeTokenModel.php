@@ -74,6 +74,11 @@ class ShopeeTokenModel {
                 if (!in_array('is_active', $columns)) {
                     $this->db->exec("ALTER TABLE `shopee_tokens` ADD COLUMN `is_active` TINYINT(1) DEFAULT 1 AFTER `refresh_token_expire_at`");
                 }
+                if (!in_array('environment', $columns)) {
+                    $this->db->exec("ALTER TABLE `shopee_tokens` ADD COLUMN `environment` VARCHAR(20) DEFAULT 'sandbox' AFTER `shop_name`");
+                    // Disable all legacy tokens when migrating to new environment-aware schema
+                    $this->db->exec("UPDATE `shopee_tokens` SET `is_active` = 0 WHERE `environment` = 'sandbox'");
+                }
 
                 // Migrate data from token_expired_at column to access_token_expire_at if present
                 if (in_array('token_expired_at', $columns)) {
@@ -135,27 +140,29 @@ class ShopeeTokenModel {
     }
 
     /**
-     * Gets the latest active token.
+     * Gets the latest active token matching the environment.
      *
+     * @param string|null $environment Defaults to SHOPEE_ENV or 'sandbox'
      * @return array|null
      */
-    public function getLatestToken() {
-        $stmt = $this->db->prepare("SELECT * FROM shopee_tokens WHERE is_active = 1 ORDER BY updated_at DESC, id DESC LIMIT 1");
-        $stmt->execute();
+    public function getLatestToken($environment = null) {
+        if ($environment === null) {
+            $environment = getenv('SHOPEE_ENV') ?: 'sandbox';
+        }
+        
+        $stmt = $this->db->prepare("SELECT * FROM shopee_tokens WHERE is_active = 1 AND environment = :environment ORDER BY updated_at DESC, id DESC LIMIT 1");
+        $stmt->execute([':environment' => $environment]);
         return $stmt->fetch() ?: null;
     }
 
-    /**
-     * Inserts new token or updates on duplicate shop_id key.
-     *
-     * @param array $data
-     * @return bool
-     */
     public function upsertToken($data) {
+        $env = isset($data['environment']) ? $data['environment'] : (getenv('SHOPEE_ENV') ?: 'sandbox');
+        
         $sql = "
             INSERT INTO shopee_tokens (
                 shop_id, 
                 shop_name, 
+                environment,
                 access_token, 
                 refresh_token, 
                 access_token_expire_at, 
@@ -164,6 +171,7 @@ class ShopeeTokenModel {
             ) VALUES (
                 :shop_id, 
                 :shop_name, 
+                :environment,
                 :access_token, 
                 :refresh_token, 
                 :access_token_expire_at, 
@@ -172,6 +180,7 @@ class ShopeeTokenModel {
             )
             ON DUPLICATE KEY UPDATE
                 shop_name = VALUES(shop_name),
+                environment = VALUES(environment),
                 access_token = VALUES(access_token),
                 refresh_token = VALUES(refresh_token),
                 access_token_expire_at = VALUES(access_token_expire_at),
@@ -184,6 +193,7 @@ class ShopeeTokenModel {
         return $stmt->execute([
             ':shop_id'                 => $data['shop_id'],
             ':shop_name'               => $data['shop_name'] ?? null,
+            ':environment'             => $env,
             ':access_token'            => $data['access_token'],
             ':refresh_token'           => $data['refresh_token'],
             ':access_token_expire_at'  => $data['access_token_expire_at'],
@@ -205,6 +215,7 @@ class ShopeeTokenModel {
 
         $allowedKeys = [
             'shop_name', 
+            'environment',
             'access_token', 
             'refresh_token', 
             'access_token_expire_at', 

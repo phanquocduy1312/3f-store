@@ -112,7 +112,12 @@ export function ShopeeRequestTable({
                         </p>
                       </td>
                       <td className="px-4 py-3 align-middle">
-                        <p className="line-clamp-2 font-bold">{request.customerName || "Khách chưa rõ tên"}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="line-clamp-2 font-bold">{request.customerName || "Khách chưa rõ tên"}</p>
+                          {request.source === "guest" && (
+                            <span className="inline-block rounded border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[9px] font-bold text-gray-500 uppercase tracking-wide">Guest</span>
+                          )}
+                        </div>
                         <p className="mt-1 text-[12px] text-[#64748B]">{request.phone}</p>
                       </td>
                       <td className="px-4 py-3 align-middle font-bold">{formatCurrency(request.customerInputAmount)}</td>

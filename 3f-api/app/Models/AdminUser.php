@@ -82,4 +82,53 @@ class AdminUser {
         $stmt = $this->db->prepare("UPDATE admin_users SET last_login_at = NOW() WHERE id = :id");
         $stmt->execute([':id' => (int)$id]);
     }
+
+    // ─── Admin Management ───
+
+    public function getPaginatedList($page = 1, $limit = 10, $search = null) {
+        $offset = ($page - 1) * $limit;
+        $where = ["1=1"];
+        $params = [];
+        if ($search) {
+            $where[] = "(name LIKE :search OR email LIKE :search)";
+            $params[':search'] = "%{$search}%";
+        }
+        $whereSql = implode(' AND ', $where);
+        
+        $countStmt = $this->db->prepare("SELECT COUNT(*) as total FROM admin_users WHERE $whereSql");
+        $countStmt->execute($params);
+        $total = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+        
+        $sql = "SELECT id, name, email, role, is_active, last_login_at, created_at, updated_at 
+                FROM admin_users 
+                WHERE $whereSql 
+                ORDER BY id DESC 
+                LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        
+        return [
+            'items' => $stmt->fetchAll(PDO::FETCH_ASSOC),
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+            'totalPages' => ceil($total / $limit)
+        ];
+    }
+    
+    public function updateStatus($id, $isActive) {
+        $stmt = $this->db->prepare("UPDATE admin_users SET is_active = :is_active, updated_at = NOW() WHERE id = :id");
+        return $stmt->execute([':is_active' => (int)$isActive, ':id' => (int)$id]);
+    }
+    
+    public function updateRole($id, $role) {
+        $stmt = $this->db->prepare("UPDATE admin_users SET role = :role, updated_at = NOW() WHERE id = :id");
+        return $stmt->execute([':role' => $role, ':id' => (int)$id]);
+    }
+    
+    public function updatePassword($id, $password) {
+        $passwordHash = password_hash($password, PASSWORD_BCRYPT);
+        $stmt = $this->db->prepare("UPDATE admin_users SET password_hash = :hash, updated_at = NOW() WHERE id = :id");
+        return $stmt->execute([':hash' => $passwordHash, ':id' => (int)$id]);
+    }
 }

@@ -134,13 +134,13 @@ export function AdminDashboard() {
           ? "w-full lg:pl-20"
           : "w-full lg:pl-[220px]"
       }`}>
-        {/* Sticky Header */}
         <AdminHeader 
           onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
           searchValue={searchValue}
           onSearchChange={setSearchValue}
           selectedDate={selectedDate}
           onDateChange={setSelectedDate}
+          showDateFilter={true}
         />
 
         {/* Dashboard Grid Content */}

@@ -152,4 +152,136 @@ class Customer {
     public function getCustomerByPhone($phone) {
         return $this->findByPhone($phone);
     }
+
+    // ─── Phase 1 Admin Management ───
+
+    public function adminPaginateCustomers($filters) {
+        $page = isset($filters['page']) ? max(1, (int)$filters['page']) : 1;
+        $limit = isset($filters['limit']) ? min(100, max(1, (int)$filters['limit'])) : 10;
+        $offset = ($page - 1) * $limit;
+        
+        $where = ["1=1"];
+        $params = [];
+        
+        if (!empty($filters['q'])) {
+            $where[] = "(c.full_name LIKE :search OR c.name LIKE :search OR c.email LIKE :search OR c.phone LIKE :search)";
+            $params[':search'] = "%{$filters['q']}%";
+        }
+        
+        if (!empty($filters['status']) && $filters['status'] !== 'all') {
+            $where[] = "c.status = :status";
+            $params[':status'] = $filters['status'];
+        }
+        
+        if (!empty($filters['phoneVerified']) && $filters['phoneVerified'] !== 'all') {
+            if ($filters['phoneVerified'] === 'yes') {
+                $where[] = "c.phone_verified_at IS NOT NULL";
+            } else {
+                $where[] = "c.phone_verified_at IS NULL";
+            }
+        }
+        
+        $whereSql = implode(' AND ', $where);
+        $baseSql = "FROM customers c WHERE $whereSql";
+        
+        if (!empty($filters['hasOrders']) && $filters['hasOrders'] !== 'all') {
+            if ($filters['hasOrders'] === 'yes') {
+                $baseSql .= " AND EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id AND o.order_status != 'cancelled')";
+            } else {
+                $baseSql .= " AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id AND o.order_status != 'cancelled')";
+            }
+        }
+        
+        $pointsSql = "(
+            (SELECT COALESCE(SUM(pt.points), 0) FROM customer_point_transactions pt WHERE pt.customer_phone = c.phone) 
+            + 
+            CASE WHEN NOT EXISTS (SELECT 1 FROM customer_point_transactions pt2 WHERE pt2.customer_phone = c.phone) THEN
+                (SELECT COALESCE(SUM(spr.approved_points), 0) FROM shopee_point_requests spr WHERE spr.phone = c.phone AND spr.processing_status = 'approved')
+            ELSE 0 END
+        )";
+
+        if (!empty($filters['tier']) && $filters['tier'] !== 'all') {
+            $tierMap = [
+                'Silver' => [0, 4999],
+                'Gold' => [5000, 14999],
+                'Platinum' => [15000, 999999999]
+            ];
+            if (isset($tierMap[$filters['tier']])) {
+                $min = $tierMap[$filters['tier']][0];
+                $max = $tierMap[$filters['tier']][1];
+                $baseSql .= " AND $pointsSql BETWEEN $min AND $max";
+            }
+        }
+
+        // Count total
+        $countStmt = $this->db->prepare("SELECT COUNT(*) as total $baseSql");
+        $countStmt->execute($params);
+        $total = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+        
+        // Get items
+        $sql = "SELECT c.id, c.full_name, c.email, c.phone, c.status, c.created_at, c.phone_verified_at, c.email_verified_at, c.last_login_at,
+                       (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.id AND o.order_status != 'cancelled') as total_orders,
+                       (SELECT COALESCE(SUM(total), 0) FROM orders o WHERE o.customer_id = c.id AND o.order_status = 'completed') as total_spent,
+                       (SELECT MAX(created_at) FROM orders o WHERE o.customer_id = c.id AND o.order_status != 'cancelled') as last_order_date,
+                       $pointsSql as total_points
+                $baseSql
+                ORDER BY c.created_at DESC 
+                LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
+                
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($items as &$item) {
+            $pts = (int)$item['total_points'];
+            $item['tier'] = 'Silver';
+            if ($pts >= 15000) $item['tier'] = 'Platinum';
+            elseif ($pts >= 5000) $item['tier'] = 'Gold';
+        }
+        
+        return [
+            'items' => $items,
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+            'totalPages' => ceil($total / $limit)
+        ];
+    }
+
+    public function adminGetCustomerDetail($id) {
+        $customer = $this->findById($id);
+        if (!$customer) return null;
+        
+        // Sessions
+        $stmtSession = $this->db->prepare("SELECT id, created_at, expires_at, revoked_at FROM customer_sessions WHERE customer_id = :id ORDER BY id DESC LIMIT 10");
+        $stmtSession->execute([':id' => $id]);
+        $customer['sessions'] = $stmtSession->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Ensure not to leak sensitive hashes
+        unset($customer['password_hash']);
+        
+        return $customer;
+    }
+
+    public function adminUpdateStatus($id, $status, $reason, $adminId) {
+        $stmt = $this->db->prepare("UPDATE customers SET status = :status WHERE id = :id");
+        $success = $stmt->execute([':status' => $status, ':id' => (int)$id]);
+        if ($success && $status === 'blocked') {
+            // Revoke all sessions
+            $stmtRevoke = $this->db->prepare("UPDATE customer_sessions SET revoked_at = NOW() WHERE customer_id = :id AND revoked_at IS NULL");
+            $stmtRevoke->execute([':id' => (int)$id]);
+        }
+        return $success;
+    }
+
+    public function adminGetCustomerOrders($id) {
+        $stmt = $this->db->prepare("SELECT * FROM orders WHERE customer_id = :id ORDER BY id DESC LIMIT 50");
+        $stmt->execute([':id' => (int)$id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function adminGetCustomerPoints($phone) {
+        $pointModel = new CustomerPointTransactionModel();
+        return $pointModel->getCustomerTransactions($phone);
+    }
 }

@@ -49,7 +49,7 @@ export default function ThreeFClubPage() {
     return false;
   });
   const [searchValue, setSearchValue] = useState("");
-  const [selectedDate, setSelectedDate] = useState("today");
+  const [selectedDate, setSelectedDate] = useState("all_time");
   const [activeTab, setActiveTab] = useState<MainTab>("shopee");
   const [rewardsSubTab, setRewardsSubTab] = useState<RewardsSubTab>("catalog");
 

@@ -88,7 +88,7 @@ class ShopeeVerifyController {
                     case 'not_found':
                         $notFound++;
                         break;
-                    case 'mismatch':
+                    case 'amount_mismatch':
                         $mismatch++;
                         break;
                     case 'duplicate':
@@ -97,7 +97,7 @@ class ShopeeVerifyController {
                     case 'invalid_order_status':
                         $invalidStatus++;
                         break;
-                    case 'manual_review':
+                    case 'api_error':
                     default:
                         $manualReview++;
                         break;
@@ -185,10 +185,9 @@ class ShopeeVerifyController {
                 return 'invalid_order_status';
             }
             
-            // Check amount discrepancy (allow +/- 100 VND)
             if (abs($inputAmount - $shopeeAmountInt) > 100) {
                 $data = [
-                    'verification_status'     => 'mismatch',
+                    'verification_status'     => 'amount_mismatch',
                     'matched_shopee_order_id' => $shopeeOrder['order_sn'],
                     'shopee_api_status'       => $shopeeStatus,
                     'shopee_api_order_amount' => $shopeeAmountInt,
@@ -196,7 +195,7 @@ class ShopeeVerifyController {
                     'verification_note'       => 'Lệch tổng tiền: Khách nhập ' . number_format($inputAmount) . ' VND, Shopee trả ' . number_format($shopeeAmountInt) . ' VND.'
                 ];
                 $this->requestModel->updateVerification($id, $data);
-                return 'mismatch';
+                return 'amount_mismatch';
             }
             
             // Valid
@@ -213,11 +212,11 @@ class ShopeeVerifyController {
             
         } catch (Exception $e) {
             $data = [
-                'verification_status' => 'manual_review',
+                'verification_status' => 'api_error',
                 'verification_note'   => 'Lỗi API Shopee: ' . $e->getMessage()
             ];
             $this->requestModel->updateVerification($id, $data);
-            return 'manual_review';
+            return 'api_error';
         }
     }
 }

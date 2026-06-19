@@ -140,6 +140,63 @@ class UploadService {
     }
 
     /**
+     * Handles product image upload and returns a public URL.
+     * Stores in storage/uploads/products/ and exposes via public/uploads/products/.
+     */
+    public static function uploadProductImage($file) {
+        [$mimeType, $extension] = self::validateImageFile($file, 8); // 8MB max for product images
+
+        $rootDir = dirname(__DIR__, 2);
+        $storageDir = $rootDir . '/storage/uploads/products/';
+        $publicDir  = $rootDir . '/public/uploads/products/';
+
+        foreach ([$storageDir, $publicDir] as $dir) {
+            if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+                throw new Exception("Khong the tao thu muc luu tru anh san pham.");
+            }
+        }
+
+        $timestamp = time();
+        try {
+            $random = bin2hex(random_bytes(6));
+        } catch (Exception $e) {
+            $random = mt_rand(100000, 999999);
+        }
+
+        $storedFilename = "product_{$timestamp}_{$random}.{$extension}";
+        $storagePath = $storageDir . $storedFilename;
+        $publicPath  = $publicDir  . $storedFilename;
+
+        if (!move_uploaded_file($file['tmp_name'], $storagePath)) {
+            throw new Exception("Khong the luu file anh san pham da upload.");
+        }
+
+        if (!copy($storagePath, $publicPath)) {
+            @unlink($storagePath);
+            throw new Exception("Khong the tao file anh public cho san pham.");
+        }
+
+        $config = require dirname(__DIR__, 2) . '/config/config.php';
+        $publicBaseUrl = rtrim($config['app']['public_url'] ?? '', '/');
+        $relativeUrl = "/uploads/products/" . $storedFilename;
+        $publicUrl = $publicBaseUrl ? $publicBaseUrl . $relativeUrl : $relativeUrl;
+        $dimensions = @getimagesize($publicPath);
+
+        return [
+            "original_filename" => $file['name'],
+            "stored_filename"   => $storedFilename,
+            "file_path"         => $storagePath,
+            "public_path"       => $publicPath,
+            "image_url"         => $publicUrl,
+            "url"               => $publicUrl,
+            "mime_type"         => $mimeType,
+            "file_size"         => (int)$file['size'],
+            "width"             => is_array($dimensions) ? (int)$dimensions[0] : null,
+            "height"            => is_array($dimensions) ? (int)$dimensions[1] : null
+        ];
+    }
+
+    /**
      * Handles customer avatar image upload and returns a public URL.
      */
     public static function uploadAvatarImage($file) {

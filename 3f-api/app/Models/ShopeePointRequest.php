@@ -34,7 +34,8 @@ class ShopeePointRequest {
                 scan_id, 
                 processing_status, 
                 verification_status, 
-                source
+                source,
+                customer_id
             ) VALUES (
                 :customer_name, 
                 :phone, 
@@ -48,7 +49,8 @@ class ShopeePointRequest {
                 :scan_id, 
                 'pending', 
                 'not_checked', 
-                :source
+                :source,
+                :customer_id
             )
         ";
         $params = [
@@ -61,7 +63,8 @@ class ShopeePointRequest {
             ':expected_points'   => (int)$data['expected_points'],
             ':image_id'          => isset($data['image_id']) ? $data['image_id'] : null,
             ':scan_id'           => isset($data['scan_id']) ? $data['scan_id'] : null,
-            ':source'            => isset($data['source']) ? $data['source'] : 'customer_form'
+            ':source'            => isset($data['source']) ? $data['source'] : 'customer_form',
+            ':customer_id'       => isset($data['customer_id']) ? $data['customer_id'] : null
         ];
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
@@ -82,14 +85,30 @@ class ShopeePointRequest {
      * Finds if order code exists and is not rejected.
      */
     public function findDuplicateActiveOrderCode($orderCode) {
-        $stmt = $this->db->prepare("
-            SELECT id FROM shopee_point_requests 
-            WHERE shopee_order_code = :code 
-              AND processing_status != 'rejected' 
+        // 1. Check if it's already awarded
+        $stmtAward = $this->db->prepare("
+            SELECT id FROM shopee_point_awards 
+            WHERE shopee_order_code = :code
             LIMIT 1
         ");
-        $stmt->execute([':code' => $orderCode]);
-        return $stmt->fetch() ?: null;
+        $stmtAward->execute([':code' => $orderCode]);
+        if ($stmtAward->fetch()) {
+            return true;
+        }
+
+        // 2. Check if it's pending/valid in requests
+        $stmtReq = $this->db->prepare("
+            SELECT id FROM shopee_point_requests 
+            WHERE shopee_order_code = :code 
+              AND processing_status = 'pending' 
+            LIMIT 1
+        ");
+        $stmtReq->execute([':code' => $orderCode]);
+        if ($stmtReq->fetch()) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -211,18 +230,20 @@ class ShopeePointRequest {
     /**
      * Rejects point request.
      */
-    public function reject($id, $reason) {
+    public function reject($id, $reasonCode, $reasonText) {
         $sql = "
             UPDATE shopee_point_requests 
             SET processing_status = 'rejected',
+                reject_reason_code = :reject_reason_code,
                 rejected_reason = :rejected_reason,
                 rejected_at = NOW()
             WHERE id = :id
         ";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            ':rejected_reason' => $reason,
-            ':id'              => $id
+            ':reject_reason_code' => $reasonCode,
+            ':rejected_reason'    => $reasonText,
+            ':id'                 => $id
         ]);
     }
 
@@ -260,6 +281,7 @@ class ShopeePointRequest {
      */
     public function checkAndMigrate() {
         try {
+            // Check existing shopee_point_requests migrations
             $stmt = $this->db->query("SHOW COLUMNS FROM `shopee_point_requests` LIKE 'matched_shopee_order_id'");
             $column = $stmt->fetch();
             
@@ -271,8 +293,71 @@ class ShopeePointRequest {
                 $this->db->exec("ALTER TABLE `shopee_point_requests` ADD COLUMN `verified_at` DATETIME NULL AFTER `shopee_api_raw_json`");
                 $this->db->exec("ALTER TABLE `shopee_point_requests` ADD COLUMN `verification_note` TEXT NULL AFTER `verified_at`");
             }
+
+            $stmtCustomer = $this->db->query("SHOW COLUMNS FROM `shopee_point_requests` LIKE 'customer_id'");
+            if (!$stmtCustomer->fetch()) {
+                $this->db->exec("ALTER TABLE `shopee_point_requests` ADD COLUMN `customer_id` INT NULL AFTER `id`");
+            }
+
+            $stmtRejectCode = $this->db->query("SHOW COLUMNS FROM `shopee_point_requests` LIKE 'reject_reason_code'");
+            if (!$stmtRejectCode->fetch()) {
+                $this->db->exec("ALTER TABLE `shopee_point_requests` ADD COLUMN `reject_reason_code` VARCHAR(50) NULL AFTER `rejected_reason`");
+            }
+
+            // Create shopee_point_awards table
+            $stmtTable = $this->db->query("SHOW TABLES LIKE 'shopee_point_awards'");
+            if ($stmtTable->rowCount() == 0) {
+                $sql = "
+                    CREATE TABLE `shopee_point_awards` (
+                        `id` INT AUTO_INCREMENT PRIMARY KEY,
+                        `request_id` INT NOT NULL,
+                        `shopee_order_code` VARCHAR(255) NOT NULL UNIQUE,
+                        `customer_id` INT NULL,
+                        `phone` VARCHAR(30) NOT NULL,
+                        `verified_amount` INT NOT NULL,
+                        `points_awarded` INT NOT NULL,
+                        `point_transaction_id` INT NULL,
+                        `approved_by_admin_id` INT NULL,
+                        `environment` VARCHAR(20) DEFAULT 'live',
+                        `shop_id` BIGINT NULL,
+                        `is_legacy` TINYINT(1) DEFAULT 0,
+                        `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_request_id (request_id),
+                        INDEX idx_customer_id (customer_id),
+                        INDEX idx_created_at (created_at)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ";
+                $this->db->exec($sql);
+
+                // Backfill existing approved requests
+                $this->backfillAwards();
+            }
+
         } catch (\Exception $e) {
             error_log("Database migration check failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Backfill existing approved requests into shopee_point_awards.
+     */
+    private function backfillAwards() {
+        try {
+            $sql = "
+                INSERT IGNORE INTO shopee_point_awards (
+                    request_id, shopee_order_code, customer_id, phone, 
+                    verified_amount, points_awarded, is_legacy
+                )
+                SELECT 
+                    id, shopee_order_code, customer_id, phone, 
+                    COALESCE(shopee_api_order_amount, order_amount, 0), 
+                    approved_points, 1
+                FROM shopee_point_requests 
+                WHERE processing_status = 'approved'
+            ";
+            $this->db->exec($sql);
+        } catch (\Exception $e) {
+            error_log("Backfill shopee_point_awards failed: " . $e->getMessage());
         }
     }
 

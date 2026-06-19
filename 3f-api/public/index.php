@@ -59,10 +59,12 @@ use App\Controllers\ShopeePointRequestController;
 use App\Controllers\CustomerPointController;
 use App\Controllers\ShopeeAuthController;
 use App\Controllers\ShopeeVerifyController;
+use App\Controllers\ShopeeGuestController;
 use App\Controllers\LoyaltyController;
 use App\Controllers\ProductController;
 use App\Controllers\OrderController;
 use App\Controllers\AdminAuthController;
+use App\Controllers\AdminCustomerController;
 use App\Controllers\CouponController;
 use App\Controllers\CustomerAuthController;
 use App\Controllers\CustomerProfileController;
@@ -99,6 +101,13 @@ try {
     $router->post("/api/admin/auth/logout", [AdminAuthController::class, "logout"]);
     $router->get("/api/admin/auth/me", [AdminAuthController::class, "me"]);
     $router->post("/api/admin/auth/bootstrap", [AdminAuthController::class, "bootstrap"]);
+
+    // Admin Customer Management Routes
+    $router->get("/api/admin/customers", [AdminCustomerController::class, "list"]);
+    $router->get("/api/admin/customers/:id", [AdminCustomerController::class, "getDetail"]);
+    $router->put("/api/admin/customers/:id/status", [AdminCustomerController::class, "updateStatus"]);
+    $router->get("/api/admin/customers/:id/orders", [AdminCustomerController::class, "getOrders"]);
+    $router->get("/api/admin/customers/:id/points", [AdminCustomerController::class, "getPoints"]);
 
     // Customer Auth Routes
     $router->post("/api/customer/auth/register-email", [CustomerAuthController::class, "registerEmail"]);
@@ -151,6 +160,8 @@ try {
     $router->delete("/api/customer/pets/:id", [CustomerPetController::class, "delete"]);
 
     $router->post("/api/shopee/order-scan", [ShopeeOrderScanController::class, "scan"]);
+    $router->post("/api/shopee/guest/request-otp", [ShopeeGuestController::class, "requestOtp"]);
+    $router->post("/api/shopee/guest/verify-otp", [ShopeeGuestController::class, "verifyOtp"]);
     $router->post("/api/shopee/requests", [ShopeePointRequestController::class, "create"]);
     $router->get("/api/admin/shopee/requests", [ShopeePointRequestController::class, "list"]);
     $router->get("/api/admin/shopee/requests/detail", [ShopeePointRequestController::class, "detail"]);
@@ -177,8 +188,16 @@ try {
     $router->get("/api/admin/products", [ProductController::class, "adminList"]);
     $router->get("/api/admin/products/detail", [ProductController::class, "adminDetail"]);
     $router->post("/api/admin/products/save", [ProductController::class, "adminSave"]);
+    $router->delete("/api/admin/products/:id", [ProductController::class, "adminDelete"]);
     $router->post("/api/admin/products/toggle-active", [ProductController::class, "adminToggleActive"]);
+    $router->post("/api/admin/products/upload-image", [ProductController::class, "adminUploadImage"]);
     $router->post("/api/admin/products/reclassify", [ProductController::class, "adminReclassify"]);
+
+    // Admin Category Routes
+    $router->get("/api/admin/categories", [ProductController::class, "adminCategoryList"]);
+    $router->post("/api/admin/categories/save", [ProductController::class, "adminCategorySave"]);
+    $router->post("/api/admin/categories/toggle-active", [ProductController::class, "adminCategoryToggleActive"]);
+    $router->delete("/api/admin/categories/:id", [ProductController::class, "adminCategoryDelete"]);
 
     // Shopee OAuth Sandbox Routes
     $router->get("/api/admin/shopee/auth-url", [ShopeeAuthController::class, "getAuthUrl"]);
@@ -243,7 +262,8 @@ try {
         error_log("Exception in index.php: " . $e->getMessage() . "\n" . $e->getTraceAsString());
         Response::json([
             "success" => false,
-            "message" => "Internal server error"
+            "message" => "Internal server error: " . $e->getMessage(),
+            "trace" => $e->getTraceAsString()
         ], 500);
     }
 }

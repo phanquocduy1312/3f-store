@@ -9,7 +9,7 @@ export default function ShopeeRequestsPage() {
     return false;
   });
   const [searchValue, setSearchValue] = useState("");
-  const [selectedDate, setSelectedDate] = useState("today");
+  const [selectedDate, setSelectedDate] = useState("all_time");
 
   return (
     <div className="min-h-screen bg-[#F6FAFF]">

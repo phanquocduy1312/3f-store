@@ -43,6 +43,8 @@ export type Product = {
   category?: string;
   brand?: string;
   description?: string;
+  ingredients?: string;
+  guide?: string;
   shopeeUrl?: string;
   productUrl?: string;
   tiktokUrl?: string;
