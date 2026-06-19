@@ -183,8 +183,18 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
   const chartWidth = svgWidth - padLeft - padRight;
   const chartHeight = svgHeight - padTop - padBottom;
 
-  // Calculate dynamic max value (floor of 10M)
-  const maxVal = data.length > 0 ? Math.max(...data.map(d => d.revenue), 10000000) : 10000000;
+  // Determine if there is any revenue or orders
+  const hasRevenue = data.some(d => d.revenue > 0);
+  const hasOrders = data.some(d => d.orders > 0);
+
+  let maxVal = 10000;
+  if (hasRevenue) {
+    maxVal = Math.max(...data.map(d => d.revenue), 10000);
+  } else if (hasOrders) {
+    maxVal = Math.max(...data.map(d => d.orders), 1);
+  } else {
+    maxVal = 10000;
+  }
 
   // Compute coordinates for bars
   const slotWidth = chartWidth / (data.length || 1);
@@ -192,7 +202,12 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
 
   const points = data.map((d, i) => {
     const x = padLeft + (i + 0.5) * slotWidth;
-    const y = padTop + (1 - d.revenue / maxVal) * chartHeight;
+    let y = padTop + chartHeight;
+    if (hasRevenue) {
+      y = padTop + (1 - d.revenue / maxVal) * chartHeight;
+    } else if (hasOrders) {
+      y = padTop + (1 - d.orders / maxVal) * chartHeight;
+    }
     return { x, y, ...d };
   });
 
@@ -272,7 +287,7 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
                       textAnchor="end" 
                       className="text-[9px] font-bold fill-[#64748B]"
                     >
-                      {formatM(val)}
+                      {hasRevenue ? formatM(val) : Math.round(val)}
                     </text>
                   </g>
                 );
@@ -281,7 +296,12 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
               {/* Bars */}
               {points.map((p, i) => {
                 const yBottom = svgHeight - padBottom;
-                const barHeight = p.revenue > 0 ? Math.max(4, yBottom - p.y) : 0;
+                let barHeight = 0;
+                if (hasRevenue) {
+                  barHeight = p.revenue > 0 ? Math.max(6, yBottom - p.y) : (p.orders > 0 ? 6 : 0);
+                } else if (hasOrders) {
+                  barHeight = p.orders > 0 ? Math.max(6, yBottom - p.y) : 0;
+                }
                 const isHovered = hoveredIdx === i;
                 let showLabel = false;
                 if (filter === "today") {
@@ -318,17 +338,17 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
                         width={barWidth}
                         height={barHeight}
                         rx={Math.min(barHeight / 2, barWidth / 4)}
-                        fill={isHovered ? "url(#barHoverGrad)" : "url(#barGrad)"}
+                        fill={isHovered ? "#2563EB" : "#0057E7"}
                         className="transition-all duration-150 cursor-pointer pointer-events-none"
                       />
                     )}
 
                     {/* Top value badge label for hovered bar or last bar */}
-                    {(isHovered || (hoveredIdx === null && i === points.length - 1)) && p.revenue > 0 && (
+                    {(isHovered || (hoveredIdx === null && i === points.length - 1)) && (hasRevenue ? p.revenue > 0 : p.orders > 0) && (
                       <g transform={`translate(${p.x - 20}, ${p.y - 18})`} className="pointer-events-none">
                         <rect width="40" height="14" rx="4" fill="#021B3A" />
                         <text x="20" y="9.5" textAnchor="middle" className="text-[8px] font-black fill-white">
-                          {formatM(p.revenue)}
+                          {hasRevenue ? formatM(p.revenue) : `${p.orders} đơn`}
                         </text>
                       </g>
                     )}
