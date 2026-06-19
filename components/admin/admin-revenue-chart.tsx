@@ -191,14 +191,16 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
   if (hasRevenue) {
     maxVal = Math.max(...data.map(d => d.revenue), 10000);
   } else if (hasOrders) {
-    maxVal = Math.max(...data.map(d => d.orders), 1);
+    const peakOrders = Math.max(...data.map(d => d.orders));
+    // Ceil to a multiple of 4 (min 4) to ensure grid lines show clean integer ticks
+    maxVal = Math.max(4, Math.ceil(peakOrders / 4) * 4);
   } else {
     maxVal = 10000;
   }
 
   // Compute coordinates for bars
   const slotWidth = chartWidth / (data.length || 1);
-  const barWidth = Math.max(4, Math.min(32, slotWidth * 0.6));
+  const barWidth = Math.max(6, Math.min(24, slotWidth * 0.45));
 
   const points = data.map((d, i) => {
     const x = padLeft + (i + 0.5) * slotWidth;
@@ -238,54 +240,43 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
           </div>
         ) : (
           <>
-            {/* Tooltip Overlay */}
+            {/* Premium Glassmorphism Tooltip Overlay */}
             {hoveredIdx !== null && points[hoveredIdx] && (
               <div 
-                className="absolute bg-[#021B3A] text-white text-[11px] font-bold p-2.5 rounded-xl shadow-lg border border-white/10 pointer-events-none z-10 transition-all duration-150"
+                className="absolute bg-white/95 backdrop-blur-md text-slate-800 text-[11px] font-bold p-3 rounded-2xl shadow-xl border border-slate-100/80 pointer-events-none z-25 transition-all duration-150 flex flex-col gap-1.5 min-w-[125px]"
                 style={{ 
                   left: `${(points[hoveredIdx].x / svgWidth) * 100}%`,
-                  top: `${(points[hoveredIdx].y / svgHeight) * 100 - 10}%`,
+                  top: `${(points[hoveredIdx].y / svgHeight) * 100 - 12}%`,
                   transform: "translate(-50%, -100%)"
                 }}
               >
-                <p className="text-[9px] text-blue-200/70">{points[hoveredIdx].date}</p>
-                <p>{formatVnd(points[hoveredIdx].revenue)}</p>
-                <p className="text-[10px] text-slate-300 font-medium">Đơn hàng: {points[hoveredIdx].orders}</p>
+                <span className="text-[10px] text-slate-400 font-semibold">{points[hoveredIdx].date}</span>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[13px] text-slate-900 font-black">{formatVnd(points[hoveredIdx].revenue)}</span>
+                  <span className="text-[10px] text-blue-600 font-extrabold mt-0.5">Đơn hàng: {points[hoveredIdx].orders}</span>
+                </div>
               </div>
             )}
 
             <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-full overflow-visible">
-              <defs>
-                {/* Bar gradient */}
-                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0057E7" />
-                  <stop offset="100%" stopColor="#3B82F6" />
-                </linearGradient>
-                {/* Hover bar gradient */}
-                <linearGradient id="barHoverGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2563EB" />
-                  <stop offset="100%" stopColor="#60A5FA" />
-                </linearGradient>
-              </defs>
-
               {/* Grid lines */}
               {gridSteps.map((val, idx) => {
                 const y = gridY(val);
                 return (
-                  <g key={idx} className="opacity-30">
+                  <g key={idx}>
                     <line 
                       x1={padLeft} 
                       y1={y} 
                       x2={svgWidth - padRight} 
                       y2={y} 
-                      stroke="#DCEBFF" 
-                      strokeDasharray="4 4"
+                      stroke="#F1F5F9" 
+                      strokeWidth={1}
                     />
                     <text 
                       x={padLeft - 8} 
                       y={y + 3} 
                       textAnchor="end" 
-                      className="text-[9px] font-bold fill-[#64748B]"
+                      className="text-[9px] font-bold fill-[#94A3B8]"
                     >
                       {hasRevenue ? formatM(val) : Math.round(val)}
                     </text>
@@ -303,6 +294,7 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
                   barHeight = p.orders > 0 ? Math.max(6, yBottom - p.y) : 0;
                 }
                 const isHovered = hoveredIdx === i;
+                const trackWidth = Math.min(36, slotWidth - 4);
                 let showLabel = false;
                 if (filter === "today") {
                   showLabel = i % 4 === 0; // Show every 4 hours
@@ -318,6 +310,19 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
 
                 return (
                   <g key={i}>
+                    {/* Hover column background guide track */}
+                    {isHovered && (
+                      <rect
+                        x={p.x - trackWidth / 2}
+                        y={padTop}
+                        width={trackWidth}
+                        height={chartHeight}
+                        fill="#F8FAFC"
+                        rx="6"
+                        className="pointer-events-none"
+                      />
+                    )}
+
                     {/* Interactive background rect for easier hovering */}
                     <rect
                       x={p.x - slotWidth / 2}
@@ -337,8 +342,8 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
                         y={yBottom - barHeight}
                         width={barWidth}
                         height={barHeight}
-                        rx={Math.min(barHeight / 2, barWidth / 4)}
-                        fill={isHovered ? "#2563EB" : "#0057E7"}
+                        rx={barWidth / 2}
+                        fill={isHovered ? "#2563EB" : "#3B82F6"}
                         className="transition-all duration-150 cursor-pointer pointer-events-none"
                       />
                     )}
@@ -359,7 +364,7 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
                         x={p.x} 
                         y={svgHeight - 4} 
                         textAnchor="middle" 
-                        className="text-[9px] font-bold fill-[#64748B]"
+                        className="text-[9px] font-bold fill-[#94A3B8]"
                       >
                         {p.date}
                       </text>
