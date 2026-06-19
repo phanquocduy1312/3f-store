@@ -67,7 +67,7 @@ export type ShopeePointRequest = {
   verificationNote?: string;
   adminNote?: string;
   rejectedReason?: string;
-  source?: "customer_form" | "manual_admin";
+  source?: "customer_form" | "manual_admin" | "guest";
   receivedFrom?: "zalo" | "facebook" | "hotline" | "internal" | "other";
   createdAt: string;
   updatedAt?: string;

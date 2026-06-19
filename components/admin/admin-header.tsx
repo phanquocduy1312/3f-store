@@ -3,18 +3,20 @@ import { Menu, Search, Bell, Calendar, ChevronDown } from "lucide-react";
 
 interface AdminHeaderProps {
   onToggleSidebar: () => void;
-  searchValue: string;
-  onSearchChange: (val: string) => void;
-  selectedDate: string;
-  onDateChange: (val: string) => void;
+  searchValue?: string;
+  onSearchChange?: (val: string) => void;
+  selectedDate?: string;
+  onDateChange?: (val: string) => void;
+  showDateFilter?: boolean;
 }
 
 export function AdminHeader({
   onToggleSidebar,
-  searchValue,
-  onSearchChange,
-  selectedDate,
-  onDateChange
+  searchValue = "",
+  onSearchChange = () => {},
+  selectedDate = "today",
+  onDateChange = () => {},
+  showDateFilter = false
 }: AdminHeaderProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   
@@ -55,40 +57,42 @@ export function AdminHeader({
       {/* Right Area: Actions & Profile */}
       <div className="flex items-center gap-3 sm:gap-4 md:gap-6 shrink-0">
         {/* Date Filter Dropdown */}
-        <div className="relative">
-          <button 
-            onClick={() => setShowDatePicker(!showDatePicker)}
-            className="flex items-center gap-1.5 sm:gap-2 border border-[#DCEBFF] bg-white px-2.5 sm:px-4 h-11 text-[#0B1F3A] font-semibold rounded-2xl shadow-sm hover:bg-[#F6FAFF] transition-colors duration-150"
-          >
-            <Calendar size={16} className="text-[#0057E7] shrink-0" />
-            <span className="hidden text-[13px] min-[1800px]:inline">{currentLabel}</span>
-            <ChevronDown size={14} className={`transition-transform duration-200 text-[#64748B] shrink-0 ${showDatePicker ? "rotate-180" : ""}`} />
-          </button>
-          
-          {showDatePicker && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowDatePicker(false)} />
-              <div className="absolute right-0 mt-2 w-56 bg-white border border-[#DCEBFF] rounded-2xl shadow-xl z-50 overflow-hidden py-1">
-                {dates.map((date) => (
-                  <button
-                    key={date.value}
-                    onClick={() => {
-                      onDateChange(date.value);
-                      setShowDatePicker(false);
-                    }}
-                    className={`w-full text-left px-4 py-2.5 text-[13px] font-semibold transition-colors ${
-                      selectedDate === date.value 
-                        ? "bg-[#F6FAFF] text-[#0057E7]" 
-                        : "text-[#0B1F3A] hover:bg-slate-50"
-                    }`}
-                  >
-                    {date.label}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        {showDateFilter && (
+          <div className="relative">
+            <button 
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className="flex items-center gap-1.5 sm:gap-2 border border-[#DCEBFF] bg-white px-2.5 sm:px-4 h-11 text-[#0B1F3A] font-semibold rounded-2xl shadow-sm hover:bg-[#F6FAFF] transition-colors duration-150"
+            >
+              <Calendar size={16} className="text-[#0057E7] shrink-0" />
+              <span className="hidden text-[13px] min-[1800px]:inline">{currentLabel}</span>
+              <ChevronDown size={14} className={`transition-transform duration-200 text-[#64748B] shrink-0 ${showDatePicker ? "rotate-180" : ""}`} />
+            </button>
+            
+            {showDatePicker && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowDatePicker(false)} />
+                <div className="absolute right-0 mt-2 w-56 bg-white border border-[#DCEBFF] rounded-2xl shadow-xl z-50 overflow-hidden py-1">
+                  {dates.map((date) => (
+                    <button
+                      key={date.value}
+                      onClick={() => {
+                        onDateChange(date.value);
+                        setShowDatePicker(false);
+                      }}
+                      className={`w-full text-left px-4 py-2.5 text-[13px] font-semibold transition-colors ${
+                        selectedDate === date.value 
+                          ? "bg-[#F6FAFF] text-[#0057E7]" 
+                          : "text-[#0B1F3A] hover:bg-slate-50"
+                      }`}
+                    >
+                      {date.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Notifications - 44px (h-11) */}
         <button className="h-11 w-11 rounded-2xl border border-[#DCEBFF] bg-white shadow-sm relative flex items-center justify-center transition-colors text-[#062B5F] hover:bg-[#F6FAFF] shrink-0">

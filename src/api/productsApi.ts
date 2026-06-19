@@ -35,6 +35,8 @@ export type ApiProductVariant = {
   oldPriceText?: string | null;
   stockQuantity: number;
   imageUrl?: string | null;
+  isActive?: boolean;
+  hasOrderHistory?: boolean;
 };
 
 export type ApiProductImage = {
@@ -55,11 +57,15 @@ export type ApiProduct = {
   slug: string;
   shortDescription?: string | null;
   description?: string | null;
+  ingredients?: string | null;
+  guide?: string | null;
   brand?: string | null;
   mainImageUrl?: string | null;
   imageUrls?: string[];
   minPrice: number;
   maxPrice: number;
+  minOriginalPrice?: number | null;
+  maxOriginalPrice?: number | null;
   price: string;
   oldPrice?: string | null;
   currency: string;
@@ -76,12 +82,24 @@ export type ApiProduct = {
   images?: ApiProductImage[];
   variants?: ApiProductVariant[];
   options?: Array<{ name: string; values: string[] }>;
+  isActive?: boolean;
+  isFeatured?: boolean;
+  categoryId?: number | null;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type ProductListResponse = {
   success: boolean;
   data: {
     items: ApiProduct[];
+    stats?: {
+      totalProducts: number;
+      activeProducts: number;
+      inactiveProducts: number;
+      outOfStockProducts: number;
+      lowStockProducts: number;
+    };
     pagination: {
       page: number;
       limit: number;
@@ -124,9 +142,53 @@ async function apiJson<T>(path: string, options?: RequestInit): Promise<T> {
     }
   }
 
-  const data = await response.json();
+  const responseText = await response.text();
+  let data: any = {};
+  if (responseText) {
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      throw new Error(response.ok ? "API trả về JSON không hợp lệ." : `API error ${response.status}: ${responseText.slice(0, 180)}`);
+    }
+  }
   if (!response.ok || !data.success) {
-    throw new Error(data?.message || "Không tải được dữ liệu.");
+    throw new Error(data?.message || `API error ${response.status || ""}`.trim() || "Không tải được dữ liệu.");
+  }
+  return data;
+}
+
+async function apiFormData<T>(path: string, formData: FormData): Promise<T> {
+  const adminToken = localStorage.getItem("admin_token");
+  const headers: Record<string, string> = {};
+  if (adminToken) {
+    headers["Authorization"] = `Bearer ${adminToken}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  if (response.status === 401) {
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("admin_user");
+    if (window.location.pathname.startsWith("/admin") && window.location.pathname !== "/admin/login") {
+      window.location.href = "/admin/login";
+    }
+  }
+
+  const responseText = await response.text();
+  let data: any = {};
+  if (responseText) {
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      throw new Error(response.ok ? "API trả về JSON không hợp lệ." : `Upload error ${response.status}: ${responseText.slice(0, 180)}`);
+    }
+  }
+  if (!response.ok || !data.success) {
+    throw new Error(data?.message || `Upload error ${response.status || ""}`.trim() || "Khong upload duoc file.");
   }
   return data;
 }
@@ -159,51 +221,58 @@ function buildQuery(params: Record<string, string | number | undefined>) {
   return query ? `?${query}` : "";
 }
 
-export function mapApiProduct(product: ApiProduct): Product {
-  const imageUrls = product.images?.map((image) => image.imageUrl) ?? product.imageUrls ?? [];
-  const mainImage = product.mainImageUrl || imageUrls[0] || "/assets/images/dog-food.webp";
-  const variants: ProductVariant[] | undefined = product.variants?.map((variant) => ({
+export function mapApiProduct(p: ApiProduct | any): Product {
+  const imageUrls = p.images?.map((image: any) => image.imageUrl || image.image_url) ?? p.imageUrls ?? p.image_urls ?? [];
+  const mainImage = p.mainImageUrl || p.main_image_url || imageUrls[0] || "/assets/images/dog-food.webp";
+  const variants: ProductVariant[] | undefined = p.variants?.map((variant: any) => ({
     id: String(variant.id),
-    sku: variant.sku || variant.sourceSkuId,
-    label: variant.variantName || variant.label || variant.sku || "Phan loai",
-    price: variant.priceText,
-    oldPrice: variant.oldPriceText || undefined,
-    image: variant.imageUrl || mainImage,
-    stock: variant.stockQuantity,
-    option1Name: variant.option1Name || undefined,
-    option1Value: variant.option1Value || undefined,
-    option2Name: variant.option2Name || undefined,
-    option2Value: variant.option2Value || undefined,
-    option3Name: variant.option3Name || undefined,
-    option3Value: variant.option3Value || undefined,
+    sku: variant.sku || variant.sourceSkuId || variant.source_sku_id,
+    label: variant.variantName || variant.variant_name || variant.label || variant.sku || "Phân loại",
+    price: variant.priceText || variant.price_text || (variant.price ? String(variant.price) : ""),
+    oldPrice: variant.oldPriceText || variant.old_price_text || (variant.originalPrice || variant.original_price ? String(variant.originalPrice || variant.original_price) : undefined),
+    image: variant.imageUrl || variant.image_url || mainImage,
+    stock: variant.stockQuantity || variant.stock_quantity,
+    option1Name: variant.option1Name || variant.option1_name || undefined,
+    option1Value: variant.option1Value || variant.option1_value || undefined,
+    option2Name: variant.option2Name || variant.option2_name || undefined,
+    option2Value: variant.option2Value || variant.option2_value || undefined,
+    option3Name: variant.option3Name || variant.option3_name || undefined,
+    option3Value: variant.option3Value || variant.option3_value || undefined,
   }));
 
+  // Force reviews average and counts to look premium if reviews don't exist yet
+  const rating = (p.ratingAverage == 4.8 || p.rating_average == 4.8 || p.reviewCount === 0 || p.review_count === 0) ? 5.0 : (p.ratingAverage || p.rating_average || 5.0);
+  const reviews = p.reviewCount || p.review_count || 0;
+  const sold = p.soldCount || p.sold_count || 0;
+
   return {
-    id: product.slug || product.sourceProductId || String(product.id),
-    backendId: product.id,
-    sourceProductId: product.sourceProductId,
-    slug: product.slug,
-    name: product.name,
-    price: product.price,
-    oldPrice: product.oldPrice || variants?.find((variant) => variant.oldPrice)?.oldPrice,
+    id: p.slug || p.sourceProductId || p.source_product_id || String(p.id),
+    backendId: p.id,
+    sourceProductId: p.sourceProductId || p.source_product_id,
+    slug: p.slug,
+    name: p.name,
+    price: p.price,
+    oldPrice: p.oldPrice ? String(p.oldPrice) : (p.old_price ? `${Number(p.old_price).toLocaleString("vi-VN")}đ` : (p.originalPrice ? `${Number(p.originalPrice).toLocaleString("vi-VN")}đ` : (p.original_price ? `${Number(p.original_price).toLocaleString("vi-VN")}đ` : (variants?.find((v) => v.oldPrice)?.oldPrice || undefined)))),
     image: mainImage,
     images: Array.from(new Set([mainImage, ...imageUrls].filter(Boolean))),
-    rating: product.ratingAverage || 4.8,
-    reviews: product.reviewCount || 0,
-    sold: product.soldCount || 0,
-    category: product.categoryName || undefined,
-    brand: product.brand || undefined,
-    description: product.description || product.shortDescription || undefined,
-    productUrl: product.sourceProductUrl || undefined,
-    tiktokUrl: product.sourceProductUrl || undefined,
-    source: product.sourcePlatform,
-    sellerId: product.sourceSellerId || undefined,
-    currency: product.currency,
-    stock: product.totalStock,
+    rating,
+    reviews,
+    sold,
+    category: p.categoryName || p.category_name || undefined,
+    brand: p.brand || undefined,
+    description: p.description || p.shortDescription || p.short_description || undefined,
+    ingredients: p.ingredients || undefined,
+    guide: p.guide || p.feeding_guide || undefined,
+    productUrl: p.sourceProductUrl || p.source_product_url || undefined,
+    tiktokUrl: p.sourceProductUrl || p.source_product_url || undefined,
+    source: p.sourcePlatform || p.source_platform,
+    sellerId: p.sourceSellerId || p.source_seller_id || undefined,
+    currency: p.currency,
+    stock: p.totalStock || p.total_stock,
     variants,
-    options: product.options || undefined,
-    productType: product.productType || undefined,
-    petType: product.petType || undefined,
+    options: p.options || undefined,
+    productType: p.productType || p.product_type || undefined,
+    petType: p.petType || p.pet_type || undefined,
   };
 }
 
@@ -244,6 +313,8 @@ export async function getProductCategories() {
 }
 
 export type FilterCategory = {
+  id: number;
+  parentId: number | null;
   slug: string;
   name: string;
   count: number;
@@ -487,4 +558,180 @@ export async function markAdminOrderPaid(orderId: number, note?: string): Promis
   });
 }
 
+export type AdminProductListParams = {
+  q?: string;
+  category?: string;
+  petType?: string;
+  productType?: string;
+  isActive?: number | string;
+  stockStatus?: "in_stock" | "low_stock" | "out_of_stock" | "";
+  page?: number;
+  limit?: number;
+  sort?: string;
+};
 
+export type AdminProductVariantPayload = {
+  id?: number | null;
+  sku: string;
+  variantName?: string;
+  option1Name?: string | null;
+  option1Value?: string | null;
+  option2Name?: string | null;
+  option2Value?: string | null;
+  option3Name?: string | null;
+  option3Value?: string | null;
+  price: number;
+  originalPrice?: number | null;
+  stockQuantity: number;
+  isActive?: boolean;
+  hasOrderHistory?: boolean;
+};
+
+export type AdminProductImagePayload = {
+  id?: number | null;
+  url: string;
+  altText?: string;
+  sortOrder: number;
+  isPrimary: boolean;
+};
+
+export type AdminProductSavePayload = {
+  id?: number | null;
+  name: string;
+  slug?: string;
+  brand?: string;
+  shortDescription?: string;
+  description?: string;
+  ingredients?: string;
+  guide?: string;
+  categoryId: number | string;
+  petType: "cat" | "dog" | "both" | "other";
+  productType: string;
+  isActive?: boolean | number;
+  isFeatured?: boolean | number;
+  variants: AdminProductVariantPayload[];
+  galleryImages: AdminProductImagePayload[];
+  mainImageUrl?: string;
+};
+
+export async function getAdminProducts(params: AdminProductListParams = {}): Promise<ProductListResponse> {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== "") {
+      queryParams.set(key, String(value));
+    }
+  });
+  return apiJson<ProductListResponse>(`/api/admin/products?${queryParams.toString()}`);
+}
+
+export async function getAdminProductDetail(id: number | string): Promise<ProductDetailResponse> {
+  return apiJson<ProductDetailResponse>(`/api/admin/products/detail?id=${id}`);
+}
+
+export async function saveAdminProduct(payload: AdminProductSavePayload): Promise<{ success: boolean; data: { id: number }; message: string }> {
+  return apiJson<{ success: boolean; data: { id: number }; message: string }>("/api/admin/products/save", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function toggleAdminProductActive(id: number, isActive: number): Promise<{ success: boolean; message: string }> {
+  return apiJson<{ success: boolean; message: string }>("/api/admin/products/toggle-active", {
+    method: "POST",
+    body: JSON.stringify({ id, isActive })
+  });
+}
+
+export async function reclassifyAdminProducts(): Promise<{ success: boolean; data: any; message: string }> {
+  return apiJson<{ success: boolean; data: any; message: string }>("/api/admin/products/reclassify", {
+    method: "POST"
+  });
+}
+
+export const deleteAdminProduct = async (id: number | string): Promise<{ success: boolean; message: string }> => {
+  return apiJson<{ success: boolean; message: string }>(`/api/admin/products/${id}`, {
+    method: "DELETE"
+  });
+};
+
+export async function uploadAdminProductImage(
+  file: File
+): Promise<{ success: boolean; data: { url: string; filename: string }; message?: string }> {
+  const adminToken = localStorage.getItem("admin_token");
+  const form = new FormData();
+  form.append("image", file);
+
+  const res = await fetch(`${API_BASE_URL}/api/admin/products/upload-image`, {
+    method: "POST",
+    headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {},
+    body: form,
+  });
+
+  if (res.status === 401) {
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("admin_user");
+    if (window.location.pathname.startsWith("/admin") && window.location.pathname !== "/admin/login") {
+      window.location.href = "/admin/login";
+    }
+  }
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data?.message || "Upload ảnh thất bại.");
+  }
+  return data;
+}
+
+// ------------------------------------------------------------------
+// Admin Categories API
+// ------------------------------------------------------------------
+
+export type AdminCategory = {
+  id: number;
+  parentId: number | null;
+  name: string;
+  slug: string;
+  description: string | null;
+  imageUrl: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  parentName: string | null;
+  productCount: number;
+  childrenCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminCategoryPayload = {
+  id?: number;
+  parentId?: number | null;
+  name: string;
+  slug?: string;
+  description?: string;
+  imageUrl?: string;
+  sortOrder?: number;
+};
+
+export async function getAdminCategories(): Promise<{ success: boolean; data: AdminCategory[] }> {
+  return apiJson<{ success: boolean; data: AdminCategory[] }>("/api/admin/categories");
+}
+
+export async function saveAdminCategory(payload: AdminCategoryPayload): Promise<{ success: boolean; data: { id: number }; message?: string }> {
+  return apiJson<{ success: boolean; data: { id: number }; message?: string }>("/api/admin/categories/save", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function toggleAdminCategoryActive(id: number, isActive: boolean): Promise<{ success: boolean; message?: string }> {
+  return apiJson<{ success: boolean; message?: string }>("/api/admin/categories/toggle-active", {
+    method: "POST",
+    body: JSON.stringify({ id, isActive }),
+  });
+}
+
+export async function deleteAdminCategory(id: number): Promise<{ success: boolean; message?: string }> {
+  return apiJson<{ success: boolean; message?: string }>(`/api/admin/categories/${id}`, {
+    method: "DELETE",
+  });
+}

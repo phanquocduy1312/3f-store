@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getProductDetail, getProducts } from "@/src/api/productsApi";
 import { toast } from "sonner";
+import DOMPurify from "dompurify";
 import { addToCart, parsePriceString } from "@/lib/cartHelper";
 import { Image } from "@/components/Image";
 import { SaleBadge } from "@/components/SaleBadge";
@@ -15,11 +16,24 @@ import {
 } from "lucide-react";
 import type { Product } from "@/types/store";
 
-function getDescriptionLines(description?: string) {
-  return String(description ?? "")
-    .split(/<br\s*\/?>|\n/gi)
-    .map((line) => line.replace(/<[^>]+>/g, "").trim())
-    .filter(Boolean);
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function getDescriptionHtml(description?: string) {
+  const raw = String(description ?? "").trim();
+  if (!raw) return "";
+  if (/<[a-z][\s\S]*>/i.test(raw)) return raw;
+
+  return raw
+    .split(/\n{2,}/)
+    .map((block) => `<p>${escapeHtml(block.trim()).replace(/\n/g, "<br />")}</p>`)
+    .join("");
 }
 
 const EMPTY_PRODUCT: Product = {
@@ -193,7 +207,7 @@ export function ProductDetail() {
   const formattedTotalPrice = (currentPriceValue * quantity).toLocaleString("vi-VN") + "đ";
   const formattedOldPrice = oldPriceValue > 0 ? (oldPriceValue * quantity).toLocaleString("vi-VN") + "đ" : null;
 
-  const descriptionLines = getDescriptionLines(product.description);
+  const descriptionHtml = getDescriptionHtml(product.description);
 
   if (isLoadingProduct) {
     return <div className="py-20 text-center font-bold text-xl">Đang tải sản phẩm...</div>;
@@ -204,7 +218,7 @@ export function ProductDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--color-surface))] pb-32">
+    <div className="min-h-screen bg-white pb-32">
       {/* Màn hình hiển thị chi tiết */}
       <div className="mx-auto max-w-[1280px] px-4 pt-6 sm:px-6 lg:px-8">
         
@@ -518,12 +532,11 @@ export function ProductDetail() {
               {activeTab === "description" && (
                 <div className="prose prose-sm max-w-none text-[rgb(var(--color-ink))] prose-headings:text-[rgb(var(--color-ink))] prose-a:text-[rgb(var(--color-primary))]">
                   <h2 className="text-xl font-black mb-4">{product.name}</h2>
-                  {descriptionLines.length > 0 ? (
-                    <div className="mb-4 space-y-3 leading-relaxed">
-                      {descriptionLines.map((line, index) => (
-                        <p key={index}>{line}</p>
-                      ))}
-                    </div>
+                  {descriptionHtml ? (
+                    <div
+                      className="mb-4 leading-relaxed [&_a]:font-bold [&_a]:text-[rgb(var(--color-primary))] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgb(var(--color-primary))] [&_blockquote]:bg-[rgb(var(--color-primary-soft))] [&_blockquote]:px-4 [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-black [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-extrabold [&_img]:my-5 [&_img]:max-h-[420px] [&_img]:rounded-3xl [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-6"
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(descriptionHtml) }}
+                    />
                   ) : (
                     <p className="mb-4 leading-relaxed">Sản phẩm <strong>{product.name}</strong> được làm từ nguyên liệu tươi ngon và chọn lọc kỹ lưỡng. Chúng tôi cam kết mang lại nguồn dinh dưỡng tốt nhất, cân bằng và đầy đủ để thú cưng của bạn phát triển khỏe mạnh mỗi ngày.</p>
                   )}
@@ -596,23 +609,37 @@ export function ProductDetail() {
               )}
 
               {activeTab === "ingredients" && (
-                <div className="prose prose-sm max-w-none text-[rgb(var(--color-ink))]">
-                  <h3 className="text-lg font-bold text-[rgb(var(--color-ink))] mb-3">Thành phần & Nguyên liệu:</h3>
-                  <p className="leading-relaxed">
-                    Sản phẩm {product.name} chứa các thành phần tự nhiên chất lượng cao, giàu vitamin và khoáng chất bổ sung cho cơ thể thú cưng. Vui lòng tham khảo chi tiết bảng thành phần chi tiết và tỷ lệ phần trăm được in trực tiếp trên bao bì sản phẩm của thương hiệu {product.brand || "nhà sản xuất"}.
-                  </p>
+                <div className="prose prose-sm max-w-none text-[rgb(var(--color-ink))] prose-headings:text-[rgb(var(--color-ink))] prose-a:text-[rgb(var(--color-primary))]">
+                  <h3 className="text-xl font-black mb-4">Thành phần & Nguyên liệu</h3>
+                  {product.ingredients ? (
+                    <div
+                      className="mb-4 leading-relaxed [&_a]:font-bold [&_a]:text-[rgb(var(--color-primary))] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgb(var(--color-primary))] [&_blockquote]:bg-[rgb(var(--color-primary-soft))] [&_blockquote]:px-4 [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-black [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-extrabold [&_img]:my-5 [&_img]:max-h-[420px] [&_img]:rounded-3xl [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-6"
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.ingredients) }}
+                    />
+                  ) : (
+                    <p className="leading-relaxed">
+                      Sản phẩm <strong>{product.name}</strong> chứa các thành phần tự nhiên chất lượng cao, giàu vitamin và khoáng chất bổ sung cho cơ thể thú cưng. Vui lòng tham khảo chi tiết bảng thành phần chi tiết và tỷ lệ phần trăm được in trực tiếp trên bao bì sản phẩm của thương hiệu {product.brand || "nhà sản xuất"}.
+                    </p>
+                  )}
                 </div>
               )}
 
               {activeTab === "guide" && (
-                <div className="prose prose-sm max-w-none text-[rgb(var(--color-ink))]">
-                  <h3 className="text-lg font-bold text-[rgb(var(--color-ink))] mb-3">Hướng dẫn cho ăn & Bảo quản:</h3>
-                  <ul className="space-y-2 list-disc pl-5">
-                    <li>Cho ăn trực tiếp hoặc trộn cùng hạt dinh dưỡng để tăng độ hấp dẫn.</li>
-                    <li>Khẩu phần ăn cụ thể phụ thuộc vào cân nặng, độ tuổi và thể trạng của thú cưng. Vui lòng xem bảng khuyến nghị in trên bao bì.</li>
-                    <li>Luôn chuẩn bị sẵn nước uống sạch cho thú cưng.</li>
-                    <li>Bảo quản nơi khô ráo, thoáng mát. Đối với thức ăn ướt, sau khi mở nắp cần bảo quản lạnh và sử dụng hết trong vòng 48 giờ.</li>
-                  </ul>
+                <div className="prose prose-sm max-w-none text-[rgb(var(--color-ink))] prose-headings:text-[rgb(var(--color-ink))] prose-a:text-[rgb(var(--color-primary))]">
+                  <h3 className="text-xl font-black mb-4">Hướng dẫn cho ăn & Bảo quản</h3>
+                  {product.guide ? (
+                    <div
+                      className="mb-4 leading-relaxed [&_a]:font-bold [&_a]:text-[rgb(var(--color-primary))] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgb(var(--color-primary))] [&_blockquote]:bg-[rgb(var(--color-primary-soft))] [&_blockquote]:px-4 [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-black [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-extrabold [&_img]:my-5 [&_img]:max-h-[420px] [&_img]:rounded-3xl [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-6"
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.guide) }}
+                    />
+                  ) : (
+                    <ul className="space-y-2 list-disc pl-5">
+                      <li>Cho ăn trực tiếp hoặc trộn cùng hạt dinh dưỡng để tăng độ hấp dẫn.</li>
+                      <li>Khẩu phần ăn cụ thể phụ thuộc vào cân nặng, độ tuổi và thể trạng của thú cưng. Vui lòng xem bảng khuyến nghị in trên bao bì.</li>
+                      <li>Luôn chuẩn bị sẵn nước uống sạch cho thú cưng.</li>
+                      <li>Bảo quản nơi khô ráo, thoáng mát. Đối với thức ăn ướt, sau khi mở nắp cần bảo quản lạnh và sử dụng hết trong vòng 48 giờ.</li>
+                    </ul>
+                  )}
                 </div>
               )}
 
@@ -678,13 +705,31 @@ export function ProductDetail() {
                    {product.productType && (
                      <div className="flex border-b border-[rgb(var(--color-surface-soft))] pb-2">
                        <span className="w-1/3 text-[rgb(var(--color-ink-soft))]">Loại sản phẩm</span>
-                       <span className="w-2/3 font-bold text-[rgb(var(--color-ink))]">{product.productType}</span>
+                       <span className="w-2/3 font-bold text-[rgb(var(--color-ink))]">
+                         {{
+                           "dry_food": "Thức ăn hạt",
+                           "wet_food": "Pate / thức ăn ướt",
+                           "treat": "Snack / thưởng",
+                           "litter": "Cát vệ sinh",
+                           "supplement": "Sữa & dinh dưỡng",
+                           "accessory": "Phụ kiện",
+                           "hygiene": "Chăm sóc / vệ sinh",
+                           "other": "Khác"
+                         }[product.productType] || product.productType}
+                       </span>
                      </div>
                    )}
                    {product.petType && (
                      <div className="flex border-b border-[rgb(var(--color-surface-soft))] pb-2">
                        <span className="w-1/3 text-[rgb(var(--color-ink-soft))]">Đối tượng</span>
-                       <span className="w-2/3 font-bold text-[rgb(var(--color-ink))]">{product.petType}</span>
+                       <span className="w-2/3 font-bold text-[rgb(var(--color-ink))]">
+                         {{
+                           "cat": "Mèo",
+                           "dog": "Chó",
+                           "both": "Cả chó & mèo",
+                           "other": "Khác"
+                         }[product.petType] || product.petType}
+                       </span>
                      </div>
                    )}
                    <div className="flex border-b border-[rgb(var(--color-surface-soft))] pb-2">
@@ -699,7 +744,9 @@ export function ProductDetail() {
                    </div>
                    <div className="flex">
                      <span className="w-1/3 text-[rgb(var(--color-ink-soft))]">Tình trạng</span>
-                     <span className="w-2/3 font-bold text-forest">Sẵn có ({product.stock ?? 0} sản phẩm)</span>
+                     <span className={`w-2/3 font-bold ${(product.stock ?? 0) > 0 ? "text-forest" : "text-red-500"}`}>
+                       {(product.stock ?? 0) > 0 ? "Còn hàng" : "Hết hàng"}
+                     </span>
                    </div>
                  </div>
                </div>
@@ -724,29 +771,11 @@ export function ProductDetail() {
                    onClick={(e) => {
                      e.preventDefault();
                      e.stopPropagation();
-                     const hasVariants = p.variants && p.variants.length > 1;
-                     if (hasVariants) {
-                       window.dispatchEvent(
-                         new CustomEvent("open-quick-add", {
-                           detail: { productId: p.id, intent: "add-to-cart" },
-                         })
-                       );
-                     } else {
-                       const defVar = p.variants?.[0];
-                       addToCart({
-                         id: defVar?.id ?? p.id,
-                         productId: String(p.backendId ?? p.sourceProductId ?? p.id),
-                         variantId: defVar?.id,
-                         sku: defVar?.sku,
-                         name: p.name,
-                         image: defVar?.image ?? p.image,
-                         price: parsePriceString(defVar?.price ?? p.price),
-                         originalPrice: (defVar?.oldPrice ?? p.oldPrice) ? parsePriceString(defVar?.oldPrice ?? p.oldPrice) : undefined,
-                         variantName: defVar?.label,
-                         variant: defVar?.label ?? "Mặc định",
-                       }, 1);
-                       toast.success(`Đã thêm "${p.name}" vào giỏ hàng!`);
-                     }
+                     window.dispatchEvent(
+                       new CustomEvent("open-quick-add", {
+                         detail: { productId: p.id, intent: "add-to-cart" },
+                       })
+                     );
                    }}
                    className="mt-3 w-full text-center rounded-xl bg-[rgb(var(--color-primary-soft))] py-2 text-[12px] font-bold text-[rgb(var(--color-primary))] transition group-hover:bg-[rgb(var(--color-primary))] group-hover:text-white cursor-pointer"
                  >

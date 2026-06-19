@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Core\Request;
 use App\Core\Response;
 use App\Services\ProductCatalogService;
+use App\Services\UploadService;
 use App\Models\AuditLog;
 use App\Helpers\AuthMiddleware;
 use Exception;
@@ -85,6 +86,11 @@ class ProductController {
 
     public function adminList() {
         try {
+            $admin = AuthMiddleware::requireAdmin();
+            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
+                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
+            }
+
             $service = new ProductCatalogService();
             $data = $service->listProducts([
                 'admin' => true,
@@ -106,13 +112,18 @@ class ProductController {
     }
 
     public function adminDetail() {
-        $id = trim((string)Request::query('id', ''));
-        $slug = trim((string)Request::query('slug', ''));
-        if ($id === '' && $slug === '') {
-            Response::json(["success" => false, "message" => "Missing product id."], 400);
-        }
-
         try {
+            $admin = AuthMiddleware::requireAdmin();
+            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
+                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
+            }
+
+            $id = trim((string)Request::query('id', ''));
+            $slug = trim((string)Request::query('slug', ''));
+            if ($id === '' && $slug === '') {
+                Response::json(["success" => false, "message" => "Missing product id."], 400);
+            }
+
             $service = new ProductCatalogService();
             $data = $id !== '' ? $service->adminDetail($id, 'id') : $service->adminDetail($slug, 'slug');
             if (!$data) {
@@ -125,46 +136,55 @@ class ProductController {
     }
 
     public function adminSave() {
-        $input = Request::json();
-        if (empty($input['id'])) {
-            Response::json(["success" => false, "message" => "Missing product id."], 400);
-        }
-
         try {
-            $success = (new ProductCatalogService())->save($input);
+            $admin = AuthMiddleware::requireAdmin();
+            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
+                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
+            }
+
+            $input = Request::json();
+            $adminId = $admin ? (int)$admin['id'] : null;
+            $productId = (new ProductCatalogService())->save($input, $adminId);
             
             // Write Audit Log
-            $currentAdmin = AuthMiddleware::getCurrentAdmin();
-            $adminId = $currentAdmin ? $currentAdmin['id'] : null;
-            AuditLog::write($adminId, 'save_product', 'products', (int)$input['id'], [
+            $action = empty($input['id']) ? 'product_create' : 'product_update';
+            AuditLog::write($adminId, $action, 'products', (int)$productId, [
                 'name' => $input['name'] ?? null,
                 'slug' => $input['slug'] ?? null
             ]);
 
             Response::json([
-                "success" => (bool)$success,
-                "message" => $success ? "Product saved." : "No product fields were updated."
+                "success" => true,
+                "message" => "Product saved.",
+                "data" => ["id" => (int)$productId]
             ], 200);
         } catch (Exception $e) {
+            if ($e->getCode() === 400 || strpos($e->getMessage(), 'SKU đã tồn tại') !== false) {
+                Response::json(["success" => false, "message" => $e->getMessage()], 400);
+            }
             Response::json(["success" => false, "message" => "Admin product save error: " . $e->getMessage()], 500);
         }
     }
 
     public function adminToggleActive() {
-        $input = Request::json();
-        $id = isset($input['id']) ? (int)$input['id'] : 0;
-        if ($id <= 0) {
-            Response::json(["success" => false, "message" => "Missing product id."], 400);
-        }
-
-        $isActive = isset($input['isActive']) ? (int)$input['isActive'] : 0;
         try {
+            $admin = AuthMiddleware::requireAdmin();
+            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
+                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
+            }
+
+            $input = Request::json();
+            $id = isset($input['id']) ? (int)$input['id'] : 0;
+            if ($id <= 0) {
+                Response::json(["success" => false, "message" => "Missing product id."], 400);
+            }
+
+            $isActive = isset($input['isActive']) ? (int)$input['isActive'] : 0;
             $success = (new ProductCatalogService())->toggleActive($id, $isActive);
             
             // Write Audit Log
-            $currentAdmin = AuthMiddleware::getCurrentAdmin();
-            $adminId = $currentAdmin ? $currentAdmin['id'] : null;
-            AuditLog::write($adminId, 'toggle_product_active', 'products', $id, [
+            $adminId = $admin ? $admin['id'] : null;
+            AuditLog::write($adminId, 'product_toggle_active', 'products', $id, [
                 'isActive' => $isActive
             ]);
 
@@ -174,6 +194,39 @@ class ProductController {
             ], 200);
         } catch (Exception $e) {
             Response::json(["success" => false, "message" => "Admin product toggle error: " . $e->getMessage()], 500);
+        }
+    }
+
+    public function adminUploadImage() {
+        try {
+            $admin = AuthMiddleware::requireAdmin();
+            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
+                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
+            }
+
+            if (!isset($_FILES['image'])) {
+                Response::json([
+                    "success" => false,
+                    "message" => "Vui long chon file anh san pham de upload."
+                ], 400);
+            }
+
+            $upload = UploadService::uploadProductImage($_FILES['image']);
+
+            Response::json([
+                "success" => true,
+                "data" => [
+                    "url" => $upload['image_url'],
+                    "filename" => $upload['stored_filename'],
+                    "width" => $upload['width'],
+                    "height" => $upload['height']
+                ]
+            ], 200);
+        } catch (Exception $e) {
+            Response::json([
+                "success" => false,
+                "message" => $e->getMessage()
+            ], 400);
         }
     }
 
@@ -189,6 +242,11 @@ class ProductController {
 
     public function adminReclassify() {
         try {
+            $admin = AuthMiddleware::requireAdmin();
+            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
+                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
+            }
+
             $db = \App\Core\Database::getInstance()->getConnection();
 
             // Seed/Update default categories
@@ -272,9 +330,8 @@ class ProductController {
             }
 
             // Write Audit Log
-            $currentAdmin = AuthMiddleware::getCurrentAdmin();
-            $adminId = $currentAdmin ? $currentAdmin['id'] : null;
-            AuditLog::write($adminId, 'reclassify_products', 'products', null, [
+            $adminId = $admin ? $admin['id'] : null;
+            AuditLog::write($adminId, 'product_reclassify', 'products', null, [
                 'total' => $total,
                 'petTypeCounts' => $petTypeCounts,
                 'productTypeCounts' => $productTypeCounts,
@@ -292,6 +349,116 @@ class ProductController {
             ], 200);
         } catch (Exception $e) {
             Response::json(["success" => false, "message" => "Admin reclassify error: " . $e->getMessage()], 500);
+        }
+    }
+
+    public function adminDelete() {
+        try {
+            $admin = AuthMiddleware::requireAdmin();
+            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
+                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
+            }
+
+            $id = trim((string)\App\Core\Request::query('id', ''));
+            if (!$id) {
+                Response::json(["success" => false, "message" => "Missing product id."], 400);
+            }
+
+            $model = new \App\Models\Product();
+            $model->deleteProduct($id);
+            
+            // Write Audit Log
+            $adminId = $admin ? $admin['id'] : null;
+            AuditLog::write($adminId, 'product_delete', 'products', $id, []);
+
+            Response::json([
+                "success" => true,
+                "message" => "Xóa sản phẩm thành công"
+            ], 200);
+        } catch (\Throwable $e) {
+            $status = $e->getCode() === 400 ? 400 : 500;
+            Response::json(["success" => false, "message" => $e->getMessage()], $status);
+        }
+    }
+
+    public function adminCategoryList() {
+        try {
+            $admin = AuthMiddleware::requireAdmin();
+            $service = new ProductCatalogService();
+            $data = $service->adminListCategories();
+            Response::json(["success" => true, "data" => $data], 200);
+        } catch (\Throwable $e) {
+            Response::json(["success" => false, "message" => $e->getMessage()], 500);
+        }
+    }
+
+    public function adminCategorySave() {
+        try {
+            $admin = AuthMiddleware::requireAdmin();
+            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
+                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
+            }
+
+            $payload = Request::json();
+            $service = new ProductCatalogService();
+            $categoryId = $service->adminSaveCategory($payload, $admin['id']);
+            
+            AuditLog::write($admin['id'], empty($payload['id']) ? 'category_create' : 'category_update', 'product_categories', $categoryId, $payload);
+
+            Response::json(["success" => true, "data" => ["id" => $categoryId]], 200);
+        } catch (\Throwable $e) {
+            $status = $e->getCode() === 400 ? 400 : 500;
+            Response::json(["success" => false, "message" => $e->getMessage()], $status);
+        }
+    }
+
+    public function adminCategoryToggleActive() {
+        try {
+            $admin = AuthMiddleware::requireAdmin();
+            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
+                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
+            }
+
+            $payload = Request::json();
+            $id = $payload['id'] ?? null;
+            $isActive = isset($payload['isActive']) ? (bool)$payload['isActive'] : true;
+
+            if (!$id) {
+                Response::json(["success" => false, "message" => "Missing category id"], 400);
+            }
+
+            $service = new ProductCatalogService();
+            $service->adminToggleCategoryActive($id, $isActive, $admin['id']);
+            
+            AuditLog::write($admin['id'], 'category_toggle_active', 'product_categories', $id, ['isActive' => $isActive]);
+
+            Response::json(["success" => true], 200);
+        } catch (\Throwable $e) {
+            Response::json(["success" => false, "message" => $e->getMessage()], 500);
+        }
+    }
+
+    public function adminCategoryDelete() {
+        try {
+            $admin = AuthMiddleware::requireAdmin();
+            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
+                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
+            }
+
+            $id = trim((string)\App\Core\Request::query('id', ''));
+            if (!$id) {
+                Response::json(["success" => false, "message" => "Missing category id."], 400);
+            }
+
+            $service = new ProductCatalogService();
+            $service->adminDeleteCategory($id, $admin['id']);
+            
+            AuditLog::write($admin['id'], 'category_delete', 'product_categories', $id, []);
+
+            Response::json(["success" => true, "message" => "Xóa danh mục thành công"], 200);
+        } catch (\Throwable $e) {
+            $status = $e->getCode() === 400 ? 400 : 500;
+            Response::json(["success" => false, "message" => $e->getMessage()], $status);
         }
     }
 }

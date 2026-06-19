@@ -72,6 +72,7 @@ class Router {
                 'admin.products_detail'       => '/api/admin/products/detail',
                 'admin.products_save'         => '/api/admin/products/save',
                 'admin.products_toggle_active'=> '/api/admin/products/toggle-active',
+                'admin.products_upload_image' => '/api/admin/products/upload-image',
                 'admin.shopee.auth_url'       => '/api/admin/shopee/auth-url',
                 'admin.shopee.connect'        => '/api/admin/shopee/connect',
                 'shopee.callback'             => '/api/shopee/callback',

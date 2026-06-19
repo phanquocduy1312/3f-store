@@ -98,53 +98,9 @@ class CustomerClubController {
      * POST /api/customer/club/shopee-requests
      */
     public function createShopeeRequest() {
-        $customer = AuthMiddleware::requireCustomer();
-        if (empty($customer['phone'])) {
-            Response::json(['success' => false, 'message' => 'Vui lòng liên kết số điện thoại để tích điểm Shopee.'], 400);
-        }
-
-        $shopeeOrderCode = ValidationService::sanitizeText(Request::input('shopeeOrderCode', ''));
-        $orderAmountRaw = Request::input('orderAmount', 0);
-        $imageId = Request::input('imageId') ? (int)Request::input('imageId') : null;
-        $note = ValidationService::sanitizeText(Request::input('note', ''));
-
-        if (empty($shopeeOrderCode)) {
-            Response::json(['success' => false, 'message' => 'Mã đơn Shopee không được để trống.'], 400);
-        }
-
-        $amount = ValidationService::normalizeMoney($orderAmountRaw);
-        if ($amount <= 0) {
-            Response::json(['success' => false, 'message' => 'Số tiền đơn hàng phải lớn hơn 0.'], 400);
-        }
-
-        $requestModel = new ShopeePointRequest();
-        if ($requestModel->findDuplicateActiveOrderCode($shopeeOrderCode)) {
-            Response::json(['success' => false, 'message' => 'Mã đơn Shopee này đã gửi yêu cầu tích điểm.', 'code' => 'DUPLICATE_ORDER_CODE'], 400);
-        }
-
-        $expectedPoints = PointService::calculateShopeePoints($amount);
-
-        $requestId = $requestModel->create([
-            "customer_name" => $customer['full_name'] ?? $customer['name'],
-            "phone" => $customer['phone'],
-            "email" => $customer['email'],
-            "zalo" => $customer['zalo'] ?? null,
-            "shopee_order_code" => $shopeeOrderCode,
-            "order_amount" => $amount,
-            "expected_points" => $expectedPoints,
-            "image_id" => $imageId,
-            "scan_id" => null,
-            "source" => "customer_form"
-        ]);
-
-        Response::json([
-            'success' => true,
-            'message' => 'Gửi yêu cầu tích điểm Shopee thành công!',
-            'data' => [
-                'requestId' => $requestId,
-                'expectedPoints' => $expectedPoints
-            ]
-        ]);
+        // Forward the logic directly to ShopeePointRequestController to prevent logic duplication
+        $controller = new \App\Controllers\ShopeePointRequestController();
+        return $controller->create();
     }
 
     /**

@@ -11,7 +11,11 @@ class ProductCatalogService {
     }
 
     public function listProducts($filters = []) {
-        $result = $this->model->listProducts($filters);
+        if (!empty($filters['admin'])) {
+            $result = $this->model->getAdminProducts($filters);
+        } else {
+            $result = $this->model->listProducts($filters);
+        }
         $result['items'] = array_map([$this, 'mapProductItem'], $result['items']);
         return $result;
     }
@@ -36,18 +40,50 @@ class ProductCatalogService {
         }, $this->model->listCategories(true));
     }
 
+    public function adminListCategories() {
+        return array_map(function ($row) {
+            return [
+                'id' => (int)$row['id'],
+                'parentId' => $row['parent_id'] !== null ? (int)$row['parent_id'] : null,
+                'name' => $row['name'],
+                'slug' => $row['slug'],
+                'description' => $row['description'],
+                'imageUrl' => $row['image_url'],
+                'sortOrder' => (int)$row['sort_order'],
+                'isActive' => (int)$row['is_active'] === 1,
+                'parentName' => $row['parent_name'] ?? null,
+                'productCount' => (int)$row['product_count'],
+                'childrenCount' => (int)$row['children_count'],
+                'createdAt' => $row['created_at'],
+                'updatedAt' => $row['updated_at']
+            ];
+        }, $this->model->getAdminCategories());
+    }
+
+    public function adminSaveCategory($payload, $adminUserId = null) {
+        return $this->model->adminSaveCategory($payload);
+    }
+
+    public function adminToggleCategoryActive($id, $isActive, $adminUserId = null) {
+        return $this->model->adminToggleCategoryActive($id, $isActive);
+    }
+
+    public function adminDeleteCategory($id, $adminUserId = null) {
+        return $this->model->adminDeleteCategory($id);
+    }
+
     public function detail($identifier, $field = 'slug') {
         $row = $this->model->getProductDetail($identifier, $field);
         return $row ? $this->mapProductDetail($row) : null;
     }
 
     public function adminDetail($identifier, $field = 'id') {
-        $row = $this->model->getProductDetail($identifier, $field);
+        $row = $this->model->getAdminProductDetail((int)$identifier);
         return $row ? $this->mapProductDetail($row, true) : null;
     }
 
-    public function save($payload) {
-        return $this->model->saveProduct($payload);
+    public function save($payload, $adminUserId = null) {
+        return $this->model->saveProduct($payload, $adminUserId);
     }
 
     public function toggleActive($id, $isActive) {
@@ -69,8 +105,10 @@ class ProductCatalogService {
             'imageUrls' => $this->decodeJsonArray($row['image_urls_json']),
             'minPrice' => (float)$row['min_price'],
             'maxPrice' => (float)$row['max_price'],
+            'minOriginalPrice' => isset($row['min_original_price']) && $row['min_original_price'] !== null ? (float)$row['min_original_price'] : null,
+            'maxOriginalPrice' => isset($row['max_original_price']) && $row['max_original_price'] !== null ? (float)$row['max_original_price'] : null,
             'price' => $this->formatPrice((float)$row['min_price']),
-            'oldPrice' => null,
+            'oldPrice' => isset($row['max_original_price']) && $row['max_original_price'] !== null ? $this->formatPrice((float)$row['max_original_price']) : null,
             'currency' => $row['currency'],
             'totalStock' => (int)$row['total_stock'],
             'soldCount' => (int)$row['sold_count'],
@@ -135,7 +173,8 @@ class ProductCatalogService {
             'warehouseId' => $row['warehouse_id'],
             'imageUrl' => $row['image_url'],
             'variantImageStatus' => $row['variant_image_status'],
-            'isActive' => (int)$row['is_active'] === 1
+            'isActive' => (int)$row['is_active'] === 1,
+            'hasOrderHistory' => isset($row['hasOrderHistory']) ? (bool)$row['hasOrderHistory'] : false
         ];
     }
 

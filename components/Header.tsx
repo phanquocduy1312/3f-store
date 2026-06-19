@@ -9,6 +9,7 @@ import { getCartCount } from "@/lib/cartHelper";
 import { MobileNavigationDrawer } from "./mobile-navigation-drawer";
 import { ProductSearchBox } from "@/src/components/ProductSearchBox";
 import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
+import { getProductCategories } from "@/src/api/productsApi";
 
 type Product = {
   id: string;
@@ -206,11 +207,64 @@ export function Header() {
   const [cartCount, setCartCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isLoggedIn } = useCustomerAuth();
+  const [navData, setNavData] = useState<MenuItem[]>(navigationData);
 
   useEffect(() => {
     setCartCount(getCartCount());
     const handleCartUpdate = () => setCartCount(getCartCount());
     window.addEventListener("cart-updated", handleCartUpdate);
+    
+    const loadCategories = async () => {
+      try {
+        const res = await getProductCategories();
+        if (res.success && res.data) {
+          const map = new Map<number, MenuItem>();
+          const roots: MenuItem[] = [];
+          
+          res.data.forEach((c) => {
+             map.set(c.id, { label: c.name, href: `/products?category=${c.slug}`, subItems: [] });
+          });
+          
+          res.data.forEach((c) => {
+             const menuItem = map.get(c.id)!;
+             if (c.parentId && map.has(c.parentId)) {
+                 map.get(c.parentId)!.subItems!.push(menuItem);
+             } else {
+                 roots.push(menuItem);
+             }
+          });
+          
+          const cleanSubItems = (items: MenuItem[]) => {
+              items.forEach(item => {
+                 if (item.subItems && item.subItems.length === 0) {
+                     delete item.subItems;
+                 } else if (item.subItems) {
+                     cleanSubItems(item.subItems);
+                 }
+              });
+          };
+          cleanSubItems(roots);
+          
+          setNavData(prev => prev.map(item => {
+             if (item.label === "Sản phẩm") {
+                return {
+                   ...item,
+                   subItems: [
+                     { label: "Tất cả sản phẩm", href: "/products" },
+                     ...roots
+                   ]
+                };
+             }
+             return item;
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    };
+    
+    loadCategories();
+
     return () => window.removeEventListener("cart-updated", handleCartUpdate);
   }, []);
 
@@ -294,7 +348,7 @@ export function Header() {
           {/* Navigation Menu */}
           <div className="hidden border-t border-forest/10 lg:block">
             <nav className="relative flex h-[54px] items-center gap-8 text-[0.92rem] font-bold text-ink/85">
-              {navigationData.map((item) => (<NavItem key={item.label} item={item} />))}
+              {navData.map((item) => (<NavItem key={item.label} item={item} />))}
             </nav>
           </div>
         </div>
@@ -303,7 +357,7 @@ export function Header() {
       <AnimatePresence>
         {isMobileMenuOpen ? (
           <MobileNavigationDrawer isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)}
-            navigationData={navigationData} cartCount={cartCount} />
+            navigationData={navData} cartCount={cartCount} />
         ) : null}
       </AnimatePresence>
     </>

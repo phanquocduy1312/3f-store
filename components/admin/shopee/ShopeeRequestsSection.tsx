@@ -130,6 +130,7 @@ function mapApiRowToRequest(row: any): ShopeePointRequest {
     matchedShopeeOrderId: row.matchedShopeeOrderId || undefined,
     verifiedAt: row.verifiedAt || undefined,
     verificationNote: row.verificationNote || undefined,
+    source: row.source || undefined,
   };
 }
 

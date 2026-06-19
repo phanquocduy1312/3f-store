@@ -25,7 +25,7 @@ function getProductMeta(product: Product, petType: "cat" | "dog") {
   const typeLabel = isWetFood ? "Thức ăn ướt" : "Thức ăn khô";
   const ageLabel = isYoung ? (petType === "cat" ? "Mèo con" : "Chó con") : "Mọi lứa tuổi";
   const featureLabel = hasSeafood ? "Da lông khỏe" : hasChicken ? "Giàu đạm" : "Dễ tiêu hóa";
-  const soldLabel = product.sold > 1000 ? `${(product.sold / 1000).toFixed(1)}k+` : `${Math.max(product.sold, 120)}+`;
+  const soldLabel = product.sold > 1000 ? `${(product.sold / 1000).toFixed(1)}k` : `${product.sold}`;
 
   return { typeLabel, ageLabel, featureLabel, soldLabel };
 }
@@ -105,30 +105,11 @@ function ProductCard({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const hasVariants = product.variants && product.variants.length > 1;
-                if (hasVariants) {
-                  window.dispatchEvent(
-                    new CustomEvent("open-quick-add", {
-                      detail: { productId: product.id, intent: "add-to-cart" },
-                    })
-                  );
-                } else {
-                  const defVar = product.variants?.[0];
-                  addToCart({
-                    id: defVar?.id ?? product.id,
-                    productId: String(product.backendId ?? product.sourceProductId ?? product.id),
-                    variantId: defVar?.id,
-                    sku: defVar?.sku,
-                    name: product.name,
-                    image: defVar?.image ?? product.image,
-                    price: parsePriceString(defVar?.price ?? product.price),
-                    originalPrice: (defVar?.oldPrice ?? product.oldPrice) ? parsePriceString(defVar?.oldPrice ?? product.oldPrice) : undefined,
-                    variantName: defVar?.label,
-                    variant: defVar?.label ?? "Mặc định",
-                  }, 1);
-
-                  toast.success(`Đã thêm "${product.name}" vào giỏ hàng!`);
-                }
+                window.dispatchEvent(
+                  new CustomEvent("open-quick-add", {
+                    detail: { productId: product.id, intent: "add-to-cart" },
+                  })
+                );
               }}
               className="flex h-8 w-8 sm:h-9 sm:w-10 shrink-0 items-center justify-center rounded-lg border border-forest sm:border-[1.5px] bg-white text-forest transition-all active:scale-95 hover:bg-forest/5"
               aria-label={`Thêm ${product.name} vào giỏ hàng`}

@@ -24,7 +24,8 @@ export type ShopeeOrderScanResponse = {
 };
 
 export type CreateShopeePointRequestPayload = {
-  phone: string;
+  phone?: string;
+  verificationToken?: string;
   email?: string;
   customerName?: string;
   zalo?: string;
@@ -65,6 +66,48 @@ export async function scanShopeeOrderImage(file: File): Promise<ShopeeOrderScanR
 }
 
 /**
+ * Requests an OTP for a guest phone number to verify identity before creating a point request.
+ */
+export async function requestGuestOtpApi(phone: string): Promise<{ success: boolean; message: string; devOtp?: string }> {
+  const res = await fetch(`${API_BASE_URL}/api/shopee/guest/request-otp`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ phone }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || !data.success) {
+    throw new Error(data?.message || "Không gửi được mã xác nhận");
+  }
+
+  return data;
+}
+
+/**
+ * Verifies the OTP for a guest phone number and returns a verification token.
+ */
+export async function verifyGuestOtpApi(phone: string, otp: string): Promise<{ success: boolean; message?: string; data?: { verificationToken: string; expiresIn: number } }> {
+  const res = await fetch(`${API_BASE_URL}/api/shopee/guest/verify-otp`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ phone, otp }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || !data.success) {
+    throw new Error(data?.message || "Xác thực mã OTP thất bại");
+  }
+
+  return data;
+}
+
+/**
  * Sends a Shopee point request creation payload.
  */
 export async function createShopeePointRequest(
@@ -74,6 +117,9 @@ export async function createShopeePointRequest(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...(localStorage.getItem("customer_token") 
+          ? { "Authorization": `Bearer ${localStorage.getItem("customer_token")}` } 
+          : {})
     },
     body: JSON.stringify(payload),
   });

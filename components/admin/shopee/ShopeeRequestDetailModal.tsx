@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   X,
   XCircle,
+  ImageOff,
 } from "lucide-react";
 import {
   formatCurrency,
@@ -165,6 +166,7 @@ export function ShopeeRequestDetailModal({
   onReconcile,
 }: ShopeeRequestDetailModalProps) {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [showOverrideConfirm, setShowOverrideConfirm] = useState(false);
 
   const timeline = useMemo(() => {
     if (!request) {
@@ -326,6 +328,9 @@ export function ShopeeRequestDetailModal({
               <h2 className="text-[24px] font-black text-[#0B1F3A]">Chi tiết yêu cầu Shopee</h2>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="text-lg font-black text-[#003B7A]">#{request.shopeeOrderCode}</span>
+                {request.source === "guest" && (
+                  <span className="inline-block rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide">Guest</span>
+                )}
                 <ShopeeStatusBadge status={processingStatus} />
                 <ShopeeApiBadge status={verificationStatus} compact />
                 {approvedManually && (
@@ -361,10 +366,18 @@ export function ShopeeRequestDetailModal({
               <div className="space-y-5 xl:col-span-5">
                 <DetailCard title="Thông tin khách hàng">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <DetailField label="Tên khách" value={request.customerName || "Khách chưa rõ tên"} />
-                    <DetailField label="SĐT" value={request.phone} />
+                    <DetailField 
+                      label="Người dùng" 
+                      value={request.source === "guest" ? "Khách (Guest)" : (request.customerName || "Khách chưa rõ tên")} 
+                    />
+                    <DetailField label="SĐT nhận điểm" value={request.phone} />
                     <DetailField label="Email" value={request.email || "Chưa cập nhật"} />
                     <DetailField label="Zalo" value={request.zalo || request.phone} />
+                    {request.source === "guest" && (
+                      <div className="md:col-span-2 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 font-medium">
+                        Yêu cầu này được gửi từ khách vãng lai, số điện thoại đã được xác thực qua mã OTP.
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-4 rounded-[20px] border border-[#DCEBFF] bg-[#F6FAFF] p-4">
@@ -400,22 +413,30 @@ export function ShopeeRequestDetailModal({
                       <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.03em] text-[#64748B]">
                         Ảnh đơn hàng
                       </p>
-                      <div className="h-[180px] overflow-hidden rounded-2xl border border-[#DCEBFF] bg-[#F6FAFF]">
-                        <img
-                          src={request.orderImageUrl ? buildImageUrl(request.orderImageUrl) : "/assets/images/demodonhang.png"}
-                          alt={`Đơn Shopee ${request.shopeeOrderCode}`}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
+                      {request.orderImageUrl ? (
+                        <>
+                          <div className="h-[180px] overflow-hidden rounded-2xl border border-[#DCEBFF] bg-[#F6FAFF]">
+                            <img
+                              src={buildImageUrl(request.orderImageUrl)}
+                              alt={`Đơn Shopee ${request.shopeeOrderCode}`}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewImage(buildImageUrl(request.orderImageUrl!))}
+                            className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl border border-[#DCEBFF] bg-white px-4 text-[14px] font-bold text-[#0057E7] transition hover:bg-[#F6FAFF]"
+                          >
+                            Xem ảnh lớn <ExternalLink className="h-4 w-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="flex h-[180px] flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 text-gray-400">
+                          <ImageOff className="mb-2 h-8 w-8 opacity-50" />
+                          <span className="text-[13px] font-medium">Không có ảnh đính kèm</span>
+                        </div>
+                      )}
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setPreviewImage(request.orderImageUrl ? buildImageUrl(request.orderImageUrl) : "/assets/images/demodonhang.png")}
-                      className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#DCEBFF] bg-white px-4 text-[14px] font-bold text-[#0057E7] transition hover:bg-[#F6FAFF]"
-                    >
-                      Xem ảnh lớn <ExternalLink className="h-4 w-4" />
-                    </button>
                   </div>
                 </DetailCard>
 
@@ -653,16 +674,19 @@ export function ShopeeRequestDetailModal({
                   type="button"
                   onClick={() => {
                     if (verificationStatus !== "valid") {
-                      const confirmApprove = window.confirm(
-                        "Yêu cầu này chưa được Shopee API xác minh hợp lệ. Bạn vẫn muốn duyệt thủ công?"
-                      );
-                      if (!confirmApprove) return;
+                      setShowOverrideConfirm(true);
+                    } else {
+                      onApprove();
                     }
-                    onApprove();
                   }}
-                  className="h-11 rounded-2xl bg-[#0057E7] px-6 text-[14px] font-black text-white shadow-[0_8px_18px_rgba(0,87,231,0.22)] transition hover:bg-[#003B7A]"
+                  className={cn(
+                    "h-11 rounded-2xl px-6 text-[14px] font-black text-white transition",
+                    verificationStatus === "valid" 
+                      ? "bg-[#0057E7] shadow-[0_8px_18px_rgba(0,87,231,0.22)] hover:bg-[#003B7A]" 
+                      : "bg-amber-500 shadow-[0_8px_18px_rgba(245,158,11,0.22)] hover:bg-amber-600"
+                  )}
                 >
-                  Duyệt & cộng điểm
+                  {verificationStatus !== "valid" ? "Duyệt bắt buộc" : "Duyệt & cộng điểm"}
                 </button>
               </div>
             )}
@@ -689,8 +713,43 @@ export function ShopeeRequestDetailModal({
             <img
               src={previewImage}
               alt="Ảnh đơn Shopee"
-              className="max-h-[80vh] w-full rounded-[20px] object-contain"
+              className="block max-h-[85vh] w-auto max-w-full rounded-xl object-contain"
             />
+          </div>
+        </div>
+      )}
+
+      {showOverrideConfirm && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#082B5F]/55 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-[24px] bg-white shadow-[0_24px_80px_rgba(6,43,95,0.22)]">
+            <div className="p-6">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <h3 className="mb-2 text-center text-lg font-bold text-[#0B1F3A]">Duyệt bắt buộc (Cảnh báo)</h3>
+              <p className="mb-6 text-center text-[14px] leading-relaxed text-[#64748B]">
+                Yêu cầu này <strong>CHƯA</strong> được Shopee API xác nhận là hợp lệ. Bạn có chắc chắn muốn duyệt và cộng điểm cho đơn hàng này không? Việc này là không thể hoàn tác.
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => setShowOverrideConfirm(false)}
+                  className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-3 text-[14px] font-bold text-gray-700 transition hover:bg-gray-50"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowOverrideConfirm(false);
+                    onApprove();
+                  }}
+                  className="flex-1 rounded-xl bg-amber-500 px-4 py-3 text-[14px] font-bold text-white transition hover:bg-amber-600 shadow-[0_4px_12px_rgba(245,158,11,0.25)]"
+                >
+                  Vẫn duyệt & cộng điểm
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

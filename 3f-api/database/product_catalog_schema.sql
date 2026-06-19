@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS products (
   slug VARCHAR(600) NOT NULL,
   short_description TEXT NULL,
   description LONGTEXT NULL,
+  ingredients LONGTEXT NULL,
+  feeding_guide LONGTEXT NULL,
   brand VARCHAR(255) NULL,
   pet_type VARCHAR(50) NULL,
   product_type VARCHAR(100) NULL,

@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { 
-  Coins, 
-  Gift, 
-  HelpCircle, 
-  Loader2, 
-  Phone, 
-  Search, 
   Award,
   Clock,
-  CheckCircle,
-  XCircle,
-  RefreshCw
+  Coins,
+  Gift,
+  Loader2,
+  RefreshCw,
+  Search,
+  ShieldAlert,
 } from "lucide-react";
 import { getClientLoyaltyRewards, redeemLoyaltyReward, type LoyaltyReward } from "@/src/services/loyaltyRewardsApi";
 import { getClientLoyaltyTransactions, type CustomerPointTransaction } from "@/src/services/loyaltyTransactionsApi";
 import { getAdminLoyaltyRedemptions, type LoyaltyRedemption } from "@/src/services/loyaltyRedemptionsApi";
 import { getCustomerPoints } from "@/src/services/shopeePointApi";
 import { ToastContainer, useToast } from "@/components/ui/toast-notification";
+import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
+import { useNavigate } from "react-router-dom";
+import { ShopeeRequestModal } from "@/src/components/Account/ShopeeRequestModal";
 
 const typeLabels = {
   earn_shopee_order: "Cộng điểm Shopee",
@@ -43,8 +43,9 @@ const rewardTypeLabels = {
 };
 
 export default function CustomerRewardsPage() {
-  const [phoneInput, setPhoneInput] = useState("");
-  const [activePhone, setActivePhone] = useState("");
+  const { customer, isLoading: isAuthLoading } = useCustomerAuth();
+  const navigate = useNavigate();
+  const activePhone = customer?.phone || "";
   
   // User Data State
   const [isQueryingPoints, setIsQueryingPoints] = useState(false);
@@ -62,6 +63,7 @@ export default function CustomerRewardsPage() {
   const [rewards, setRewards] = useState<LoyaltyReward[]>([]);
   const [isLoadingRewards, setIsLoadingRewards] = useState(false);
   const [isRedeemingId, setIsRedeemingId] = useState<number | null>(null);
+  const [isGuestShopeeModalOpen, setIsGuestShopeeModalOpen] = useState(false);
 
   const { toasts, toast, removeToast } = useToast();
 
@@ -82,39 +84,9 @@ export default function CustomerRewardsPage() {
     loadActiveRewards();
   }, []);
 
-  const handleQueryPoints = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const phone = phoneInput.trim();
-    if (!phone) return toast.warning("Vui lòng nhập số điện thoại.");
-    
-    setIsQueryingPoints(true);
-    setPointsData(null);
-    try {
-      const pointsRes = await getCustomerPoints(phone);
-      setPointsData({
-        availablePoints: pointsRes.availablePoints,
-        lifetimePoints: pointsRes.lifetimePoints,
-        memberTier: pointsRes.memberTier
-      });
-      setActivePhone(phone);
-      
-      // Load History
-      const transRes = await getClientLoyaltyTransactions(phone);
-      setTransactions(transRes.data || []);
-
-      const redRes = await getAdminLoyaltyRedemptions({ phone });
-      setRedemptions(redRes.data || []);
-
-      toast.success("Tra cứu điểm thành công!");
-    } catch (err: any) {
-      toast.error(err.message || "Không tìm thấy thông tin điểm của số điện thoại này.");
-    } finally {
-      setIsQueryingPoints(false);
-    }
-  };
-
-  const refreshUserData = async () => {
+  const fetchCustomerData = async () => {
     if (!activePhone) return;
+    setIsQueryingPoints(true);
     try {
       const pointsRes = await getCustomerPoints(activePhone);
       setPointsData({
@@ -128,8 +100,16 @@ export default function CustomerRewardsPage() {
       setRedemptions(redRes.data || []);
     } catch (err) {
       console.error("Refresh error:", err);
+    } finally {
+      setIsQueryingPoints(false);
     }
   };
+
+  useEffect(() => {
+    if (customer && customer.phone) {
+      fetchCustomerData();
+    }
+  }, [customer]);
 
   const handleRedeem = async (reward: LoyaltyReward) => {
     if (!activePhone || !pointsData) {
@@ -153,7 +133,7 @@ export default function CustomerRewardsPage() {
         rewardId: reward.id
       });
       toast.success(res.message || "Đổi quà thành công! Đang chờ duyệt.");
-      await refreshUserData();
+      await fetchCustomerData();
       await loadActiveRewards(); // Refresh stocks
     } catch (err: any) {
       toast.error(err.message || "Đổi quà thất bại.");
@@ -177,6 +157,47 @@ export default function CustomerRewardsPage() {
           </p>
         </div>
 
+        {isAuthLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-[#0057E7]" />
+          </div>
+        ) : !customer ? (
+          <div className="rounded-[24px] border border-[#DCEBFF] bg-white p-12 text-center shadow-[0_8px_24px_rgba(6,43,95,0.04)] space-y-6">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-[#0057E7]"><ShieldAlert size={24} /></div>
+            <div>
+              <h3 className="text-sm font-black text-ink">Vui lòng đăng nhập</h3>
+              <p className="text-xs text-gray-400 font-semibold mt-1">Bạn cần đăng nhập để tham gia 3F Club và đổi quà.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button 
+                onClick={() => navigate('/login?redirect=/3f-club/rewards')}
+                className="rounded-full bg-[#0057E7] px-6 py-2.5 text-xs font-bold text-white shadow-soft hover:bg-[#003B7A] w-full sm:w-auto"
+              >
+                Đăng nhập ngay
+              </button>
+              <button 
+                onClick={() => setIsGuestShopeeModalOpen(true)}
+                className="rounded-full bg-white border border-[#0057E7] px-6 py-2.5 text-xs font-bold text-[#0057E7] hover:bg-blue-50 w-full sm:w-auto"
+              >
+                Chỉ gửi yêu cầu Shopee
+              </button>
+            </div>
+          </div>
+        ) : !customer.phone ? (
+          <div className="rounded-[24px] border border-[#DCEBFF] bg-white p-12 text-center shadow-[0_8px_24px_rgba(6,43,95,0.04)] space-y-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-600"><ShieldAlert size={24} /></div>
+            <div>
+              <h3 className="text-sm font-black text-ink">Chưa liên kết số điện thoại</h3>
+              <p className="text-xs text-gray-400 font-semibold mt-1">Liên kết số điện thoại trong hồ sơ để tích lũy và sử dụng điểm thưởng.</p>
+            </div>
+            <button 
+              onClick={() => navigate('/account/profile')}
+              className="mt-4 rounded-full bg-amber-600 px-6 py-2.5 text-xs font-bold text-white shadow-soft hover:bg-amber-700"
+            >
+              Cập nhật hồ sơ
+            </button>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* Left panel: Query Points & History */}
@@ -185,37 +206,14 @@ export default function CustomerRewardsPage() {
             {/* Tra cứu điểm */}
             <div className="rounded-[24px] border border-[#DCEBFF] bg-white p-6 shadow-[0_8px_24px_rgba(6,43,95,0.04)] space-y-4">
               <h2 className="text-[16px] font-black text-[#0B1F3A] flex items-center gap-2">
-                <Phone className="h-4.5 w-4.5 text-[#0057E7]" /> Tra cứu thành viên
+                <Award className="h-4.5 w-4.5 text-[#0057E7]" /> Điểm 3F Club của bạn
               </h2>
-              <form onSubmit={handleQueryPoints} className="space-y-3">
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.03em] text-[#64748B]">Số điện thoại</label>
-                  <div className="relative mt-1.5">
-                    <input
-                      type="tel"
-                      required
-                      placeholder="Nhập SĐT tích điểm..."
-                      value={phoneInput}
-                      onChange={(e) => setPhoneInput(e.target.value)}
-                      className="w-full rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] py-2.5 pl-10 pr-4 text-[13px] font-bold text-[#0B1F3A] focus:border-[#0057E7] focus:bg-white focus:outline-none"
-                    />
-                    <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-[#94A3B8]" />
-                  </div>
+              
+              {isQueryingPoints ? (
+                <div className="flex justify-center items-center py-6">
+                  <Loader2 className="h-6 w-6 animate-spin text-[#0057E7]" />
                 </div>
-                <button
-                  type="submit"
-                  disabled={isQueryingPoints}
-                  className="w-full inline-flex h-10.5 items-center justify-center gap-2 rounded-xl bg-[#0057E7] text-[13px] font-bold text-white transition hover:bg-[#003B7A] disabled:opacity-60"
-                >
-                  {isQueryingPoints ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Đang tra cứu...</>
-                  ) : (
-                    "Kiểm tra điểm"
-                  )}
-                </button>
-              </form>
-
-              {pointsData && (
+              ) : pointsData ? (
                 <div className="pt-4 border-t border-[#EEF6FF] space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-[13px] font-semibold text-[#64748B]">Hạng thành viên:</span>
@@ -240,6 +238,10 @@ export default function CustomerRewardsPage() {
                     </div>
                   </div>
                 </div>
+              ) : (
+                <div className="text-center py-6 text-sm text-gray-500">
+                  Không tìm thấy dữ liệu điểm của bạn.
+                </div>
               )}
             </div>
 
@@ -250,7 +252,7 @@ export default function CustomerRewardsPage() {
                   <h2 className="text-[15px] font-black text-[#0B1F3A] flex items-center gap-2">
                     <Clock className="h-4.5 w-4.5 text-[#0057E7]" /> Lịch sử hoạt động
                   </h2>
-                  <button onClick={refreshUserData} className="text-[#0057E7] hover:rotate-180 transition-all duration-300">
+                  <button onClick={fetchCustomerData} className="text-[#0057E7] hover:rotate-180 transition-all duration-300">
                     <RefreshCw className="h-4 w-4" />
                   </button>
                 </div>
@@ -400,9 +402,16 @@ export default function CustomerRewardsPage() {
           </div>
 
         </div>
+        )}
 
       </div>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+      {isGuestShopeeModalOpen && (
+        <ShopeeRequestModal 
+          onClose={() => setIsGuestShopeeModalOpen(false)} 
+          onSuccess={() => {}} 
+        />
+      )}
     </div>
   );
 }

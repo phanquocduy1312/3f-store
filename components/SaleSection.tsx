@@ -55,10 +55,10 @@ function SaleProductCard({ product, index }: { product: Product; index: number }
   const oldValue = product.oldPrice ? getPriceValue(product.oldPrice) : 0;
   const currentValue = getPriceValue(product.price);
   const hasDiscount = !!product.oldPrice && oldValue > currentValue;
-  const discount = hasDiscount ? Math.round((1 - currentValue / oldValue) * 100) : [24, 18, 20, 22][index % 4];
-  const saving = hasDiscount ? oldValue - currentValue : 30000 + index * 7000;
-  const soldProgress = [65, 72, 58, 63][index % 4];
-  const soldText = product.sold > 0 ? `${product.sold}` : ["1.2k", "980", "1.6k", "760"][index % 4];
+  const discount = hasDiscount ? Math.round((1 - currentValue / oldValue) * 100) : 0;
+  const saving = hasDiscount ? oldValue - currentValue : 0;
+  const soldProgress = product.sold > 0 ? Math.min((product.sold / 100) * 100, 100) : 0; // Or whatever calculation makes sense, but the user said use real data. Let's just use 0 if sold is 0.
+  const soldText = `${product.sold}`;
   const category = categoryLabels[index % categoryLabels.length];
 
   return (
@@ -69,9 +69,11 @@ function SaleProductCard({ product, index }: { product: Product; index: number }
       transition={{ type: "spring", stiffness: 300, damping: 24 }}
     >
       <div className="relative h-[232px] overflow-hidden rounded-[1.1rem] bg-[#F7F9F2]">
-        <div className="absolute left-2 top-2 z-20 origin-top-left scale-[0.25] sm:scale-[0.28] pointer-events-none">
-          <SaleBadge discount={discount} />
-        </div>
+        {hasDiscount && (
+          <div className="absolute left-2 top-2 z-20 origin-top-left scale-[0.25] sm:scale-[0.28] pointer-events-none">
+            <SaleBadge discount={discount} />
+          </div>
+        )}
 
         <div className="absolute right-0 top-0 z-20 rounded-bl-[0.95rem] rounded-tr-[1.1rem] bg-[#EF4444] px-3 py-2 text-sm font-black leading-none text-white shadow-[0_10px_22px_rgba(239,68,68,0.28)]">
           <span className="whitespace-nowrap">FLASH SALE</span>
@@ -166,30 +168,11 @@ function SaleProductCard({ product, index }: { product: Product; index: number }
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              const hasVariants = product.variants && product.variants.length > 1;
-              if (hasVariants) {
-                window.dispatchEvent(
-                  new CustomEvent("open-quick-add", {
-                    detail: { productId: product.id, intent: "add-to-cart" },
-                  })
-                );
-              } else {
-                const defVar = product.variants?.[0];
-                addToCart({
-                  id: defVar?.id ?? product.id,
-                  productId: String(product.backendId ?? product.sourceProductId ?? product.id),
-                  variantId: defVar?.id,
-                  sku: defVar?.sku,
-                  name: product.name,
-                  image: defVar?.image ?? product.image,
-                  price: parsePriceString(defVar?.price ?? product.price),
-                  originalPrice: (defVar?.oldPrice ?? product.oldPrice) ? parsePriceString(defVar?.oldPrice ?? product.oldPrice) : undefined,
-                  variantName: defVar?.label,
-                  variant: defVar?.label ?? "Mặc định",
-                }, 1);
-
-                toast.success(`Đã thêm "${product.name}" vào giỏ hàng!`);
-              }
+              window.dispatchEvent(
+                new CustomEvent("open-quick-add", {
+                  detail: { productId: product.id, intent: "add-to-cart" },
+                })
+              );
             }}
             className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#2F8A11] px-2.5 text-sm font-black text-white shadow-[0_10px_24px_rgba(47,138,17,0.28)] transition hover:bg-[#246B0D]"
           >

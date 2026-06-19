@@ -185,7 +185,7 @@ export function ProductListing() {
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-10 items-start">
 
           {/* SIDEBAR */}
-          <aside className="hidden lg:flex flex-col gap-8 sticky top-6">
+          <aside className="hidden lg:block sticky top-24 h-[calc(100vh-6rem)] overflow-y-auto custom-scrollbar pr-2 pb-2">
             <ProductFilters
               filtersData={filtersData}
               searchParams={searchParams}
@@ -335,30 +335,11 @@ export function ProductListing() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                const hasVariants = product.variants && product.variants.length > 1;
-                                if (hasVariants) {
-                                  window.dispatchEvent(
-                                    new CustomEvent("open-quick-add", {
-                                      detail: { productId: product.id, intent: "add-to-cart" },
-                                    })
-                                  );
-                                } else {
-                                  const defVar = product.variants?.[0];
-                                  addToCart({
-                                    id: defVar?.id ?? product.id,
-                                    productId: String(product.backendId ?? product.sourceProductId ?? product.id),
-                                    variantId: defVar?.id,
-                                    sku: defVar?.sku,
-                                    name: product.name,
-                                    image: defVar?.image ?? product.image,
-                                    price: parsePriceString(defVar?.price ?? product.price),
-                                    originalPrice: (defVar?.oldPrice ?? product.oldPrice) ? parsePriceString(defVar?.oldPrice ?? product.oldPrice) : undefined,
-                                    variantName: defVar?.label,
-                                    variant: defVar?.label ?? "Mặc định",
-                                  }, 1);
-
-                                  toast.success(`Đã thêm "${product.name}" vào giỏ hàng!`);
-                                }
+                                window.dispatchEvent(
+                                  new CustomEvent("open-quick-add", {
+                                    detail: { productId: product.id, intent: "add-to-cart" },
+                                  })
+                                );
                               }}
                               title="Thêm vào giỏ"
                               className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-[rgb(var(--color-primary-soft))] text-[rgb(var(--color-primary))] shadow-sm transition-all hover:scale-105 hover:bg-[rgb(var(--color-primary))] hover:text-white active:scale-95"
@@ -443,21 +424,21 @@ export function ProductListing() {
             />
             {/* Drawer */}
             <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="absolute bottom-0 left-0 right-0 max-h-[85vh] rounded-t-[2.5rem] bg-[rgb(var(--color-surface))] p-6 shadow-2xl flex flex-col border-t border-forest/10"
+              className="absolute top-0 bottom-0 left-0 w-[85vw] max-w-[360px] bg-[rgb(var(--color-surface))] shadow-2xl flex flex-col border-r border-forest/10"
             >
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-[rgb(var(--color-border))] pb-4 mb-4">
+              <div className="flex items-center justify-between border-b border-[rgb(var(--color-border))] p-4 shrink-0">
                 <h3 className="text-lg font-black text-[rgb(var(--color-ink))] flex items-center gap-2">
                   <Filter size={18} className="text-[rgb(var(--color-primary))]" />
                   Bộ lọc sản phẩm
                 </h3>
                 <button
                   onClick={() => setIsMobileFilterOpen(false)}
-                  className="grid h-8 w-8 place-items-center rounded-full bg-black/5 text-ink hover:bg-black/10 active:scale-95"
+                  className="grid h-8 w-8 place-items-center rounded-full bg-black/5 text-[rgb(var(--color-ink))] hover:bg-black/10 active:scale-95"
                   aria-label="Đóng bộ lọc"
                 >
                   <X size={18} />
@@ -465,7 +446,7 @@ export function ProductListing() {
               </div>
 
               {/* Scrollable Filters */}
-              <div className="flex-1 overflow-y-auto pr-1 pb-6 scrollbar-hide">
+              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar relative">
                 <ProductFilters
                   filtersData={filtersData}
                   searchParams={searchParams}

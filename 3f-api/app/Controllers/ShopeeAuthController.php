@@ -122,6 +122,7 @@ class ShopeeAuthController {
             $this->tokenModel->upsertToken([
                 'shop_id'                 => $shopId,
                 'shop_name'               => $shopName,
+                'environment'             => getenv('SHOPEE_ENV') ?: 'sandbox',
                 'access_token'            => $data['access_token'],
                 'refresh_token'           => $data['refresh_token'],
                 'access_token_expire_at'  => $accessTokenExpireAt,
@@ -168,6 +169,7 @@ class ShopeeAuthController {
                         "connected"      => true,
                         "shopId"         => $latest['shop_id'],
                         "shopName"       => $latest['shop_name'],
+                        "environment"    => $latest['environment'] ?? 'sandbox',
                         "tokenExpiredAt" => $latest['access_token_expire_at']
                     ]
                 ], 200);

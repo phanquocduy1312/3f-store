@@ -11,6 +11,7 @@ use App\Models\UploadedOrderImage;
 use App\Models\OrderImageScan;
 use App\Models\AuditLog;
 use App\Helpers\AuthMiddleware;
+use App\Services\OtpService;
 use Exception;
 
 class ShopeePointRequestController {
@@ -20,23 +21,58 @@ class ShopeePointRequestController {
     public function create() {
         $input = Request::json();
         
-        $phoneRaw = isset($input['phone']) ? $input['phone'] : '';
-        $phone = ValidationService::normalizePhone($phoneRaw);
+        $token = AuthMiddleware::extractBearerToken();
+        
+        $phone = null;
+        $customerId = null;
+        $source = "guest";
+        $customerName = ValidationService::sanitizeText(isset($input['customerName']) ? $input['customerName'] : '');
+        
+        if (!empty($token)) {
+            // Logged-in Customer Flow
+            $customer = AuthMiddleware::requireCustomer();
+            
+            $phoneRaw = isset($input['phone']) ? $input['phone'] : '';
+            $phone = !empty($customer['phone']) ? $customer['phone'] : ValidationService::normalizePhone($phoneRaw);
+            
+            if (empty($phone)) {
+                Response::json(["success" => false, "message" => "Vui lòng cung cấp số điện thoại"], 400);
+            }
+
+            $customerId = $customer['id'];
+            $source = "customer";
+            // Use customer's name from profile
+            $customerName = $customer['full_name'] ?? $customer['name'] ?? $customerName;
+        } else {
+            // Guest Flow
+            $phoneRaw = isset($input['phone']) ? $input['phone'] : '';
+            $verificationToken = isset($input['verificationToken']) ? $input['verificationToken'] : '';
+            
+            if (empty($phoneRaw) || empty($verificationToken)) {
+                Response::json(["success" => false, "message" => "Số điện thoại chưa được xác thực (Thiếu token)."], 401);
+            }
+            
+            $phone = ValidationService::normalizePhone($phoneRaw);
+            $otpService = new OtpService();
+            $isValid = $otpService->validateVerificationToken($phone, $verificationToken, 'shopee_point_guest');
+            
+            if (!$isValid) {
+                Response::json(["success" => false, "message" => "Xác thực không hợp lệ hoặc đã hết hạn. Vui lòng xác minh lại số điện thoại."], 401);
+            }
+            
+            $source = "guest";
+            $customerId = null;
+        }
         
         $email = ValidationService::sanitizeText(isset($input['email']) ? $input['email'] : '');
-        $customerName = ValidationService::sanitizeText(isset($input['customerName']) ? $input['customerName'] : '');
         $zalo = ValidationService::sanitizeText(isset($input['zalo']) ? $input['zalo'] : '');
         $shopeeOrderCode = ValidationService::sanitizeText(isset($input['shopeeOrderCode']) ? $input['shopeeOrderCode'] : '');
+        $shopeeOrderCode = strtoupper(trim($shopeeOrderCode));
         $orderAmountRaw = isset($input['orderAmount']) ? $input['orderAmount'] : 0;
         $imageId = !empty($input['imageId']) ? (int)$input['imageId'] : null;
         $scanId = !empty($input['scanId']) ? (int)$input['scanId'] : null;
 
-        // Validation
-        if (empty($phoneRaw) || !ValidationService::isValidVietnamPhone($phoneRaw)) {
-            Response::json(["success" => false, "message" => "Số điện thoại không hợp lệ. Phải bắt đầu bằng số 0 và có từ 9 đến 11 chữ số."], 400);
-        }
-
-        if (!ValidationService::isValidEmailOptional($email)) {
+        if (!empty($email) && !ValidationService::isValidEmailOptional($email)) {
             Response::json(["success" => false, "message" => "Email không đúng định dạng."], 400);
         }
 
@@ -67,15 +103,16 @@ class ShopeePointRequestController {
             // Create Request
             $requestId = $requestModel->create([
                 "customer_name"     => $customerName,
-                "phone"              => $phone,
-                "email"              => $email,
-                "zalo"               => $zalo,
+                "phone"             => $phone,
+                "customer_id"       => $customerId,
+                "email"             => $email,
+                "zalo"              => $zalo,
                 "shopee_order_code" => $shopeeOrderCode,
                 "order_amount"      => $amount,
                 "expected_points"   => $expectedPoints,
-                "image_id"           => $imageId,
-                "scan_id"            => $scanId,
-                "source"             => "customer_form"
+                "image_id"          => $imageId,
+                "scan_id"           => $scanId,
+                "source"            => $source
             ]);
 
             Response::json([
@@ -122,6 +159,7 @@ class ShopeePointRequestController {
             foreach ($rows as $row) {
                 $data[] = [
                     "id"                 => (int)$row['id'],
+                    "customerId"         => $row['customer_id'] ?? null,
                     "customerName"       => $row['customer_name'] ?? null,
                     "phone"              => $row['phone'] ?? null,
                     "email"              => $row['email'] ?? null,
@@ -137,6 +175,7 @@ class ShopeePointRequestController {
                     "shopeeApiOrderAmount" => isset($row['shopee_api_order_amount']) ? (int)$row['shopee_api_order_amount'] : null,
                     "verifiedAt"           => $row['verified_at'] ?? null,
                     "verificationNote"     => $row['verification_note'] ?? null,
+                    "source"             => $row['source'] ?? null,
                     "imageUrl"           => $row['imageUrl'] ?? null,
                     "createdAt"          => $row['created_at'] ?? null
                 ];
@@ -270,8 +309,10 @@ class ShopeePointRequestController {
         try {
             $dbConnection->beginTransaction();
 
-            $requestModel = new ShopeePointRequest();
-            $request = $requestModel->findById($requestId);
+            // Lock request row FOR UPDATE
+            $stmt = $dbConnection->prepare("SELECT * FROM shopee_point_requests WHERE id = :id FOR UPDATE");
+            $stmt->execute([':id' => $requestId]);
+            $request = $stmt->fetch();
 
             if (!$request) {
                 $dbConnection->rollBack();
@@ -280,7 +321,7 @@ class ShopeePointRequestController {
 
             if ($request['processing_status'] === 'approved') {
                 $dbConnection->rollBack();
-                Response::json(["success" => false, "message" => "Yêu cầu này đã được duyệt trước đó"], 400);
+                Response::json(["success" => true, "message" => "Yêu cầu đã được duyệt trước đó"], 200);
             }
 
             if ($request['processing_status'] === 'rejected') {
@@ -288,25 +329,33 @@ class ShopeePointRequestController {
                 Response::json(["success" => false, "message" => "Không thể duyệt yêu cầu đã bị từ chối"], 400);
             }
 
-            // Check approved duplicate
-            $approvedDuplicate = $requestModel->hasApprovedOrderCode($request['shopee_order_code']);
-            if ($approvedDuplicate && $approvedDuplicate['id'] != $requestId) {
-                $dbConnection->rollBack();
-                Response::json(["success" => false, "message" => "Mã đơn Shopee này đã được duyệt ở yêu cầu khác."], 400);
-            }
-
+            // Check if valid
             $verificationStatus = $request['verification_status'];
-            if ($verificationStatus === 'not_checked') {
-                $verificationStatus = 'valid';
+            if ($verificationStatus !== 'valid') {
+                $dbConnection->rollBack();
+                Response::json(["success" => false, "message" => "Chỉ có thể duyệt những yêu cầu đã được xác thực (valid)."], 400);
             }
 
-            // Calculate points dynamically using LoyaltyPointService
-            $useApiAmount = (!empty($request['shopee_api_order_amount']) && $verificationStatus === 'valid');
-            $amountToUse = $useApiAmount ? (int)$request['shopee_api_order_amount'] : (int)$request['order_amount'];
-            
-            $pointPreview = \App\Services\LoyaltyPointService::previewPoints($amountToUse, $request['phone'], "shopee", true);
-            $approvedPoints = (int)$pointPreview['finalPoints'];
+            // Check shopee_point_awards duplicate to enforce global order code uniqueness
+            $stmtAwards = $dbConnection->prepare("SELECT id FROM shopee_point_awards WHERE shopee_order_code = :code LIMIT 1");
+            $stmtAwards->execute([':code' => $request['shopee_order_code']]);
+            if ($stmtAwards->fetch()) {
+                $dbConnection->rollBack();
+                Response::json(["success" => false, "message" => "Đơn Shopee này đã được cộng điểm."], 400);
+            }
 
+            // We only approve if valid, and calculation MUST use verified_amount
+            $verifiedAmount = isset($request['shopee_api_order_amount']) ? (int)$request['shopee_api_order_amount'] : 0;
+            if ($verifiedAmount <= 0) {
+                $dbConnection->rollBack();
+                Response::json(["success" => false, "message" => "Không tìm thấy số tiền được xác thực từ Shopee."], 400);
+            }
+
+            // Strict point calculation from verified_amount: FLOOR(verified_amount / 10000)
+            $approvedPoints = (int)floor($verifiedAmount / 10000);
+            $pointPreview = ['finalPoints' => $approvedPoints, 'note' => 'Strict FLOOR(verified_amount / 10000)'];
+
+            $requestModel = new ShopeePointRequest();
             $requestModel->approve($requestId, [
                 "verification_status" => $verificationStatus,
                 "approved_points"     => $approvedPoints,
@@ -315,7 +364,7 @@ class ShopeePointRequestController {
 
             // Ghi nhận transaction lịch sử điểm
             $transactionModel = new \App\Models\CustomerPointTransactionModel();
-            $transactionModel->addTransaction(
+            $transactionId = $transactionModel->addTransaction(
                 $request['phone'],
                 'earn_shopee_order',
                 $approvedPoints,
@@ -324,6 +373,33 @@ class ShopeePointRequestController {
                 $requestId,
                 'Tích điểm từ đơn Shopee #' . $request['shopee_order_code']
             );
+
+            // Insert into shopee_point_awards
+            $currentAdmin = AuthMiddleware::getCurrentAdmin();
+            $adminId = $currentAdmin ? $currentAdmin['id'] : null;
+
+            $stmtInsertAward = $dbConnection->prepare("
+                INSERT INTO shopee_point_awards (
+                    request_id, shopee_order_code, customer_id, phone, 
+                    verified_amount, points_awarded, point_transaction_id,
+                    approved_by_admin_id, environment, is_legacy
+                ) VALUES (
+                    :request_id, :code, :customer_id, :phone, 
+                    :verified_amount, :points_awarded, :point_tx_id,
+                    :admin_id, :environment, 0
+                )
+            ");
+            $stmtInsertAward->execute([
+                ':request_id'      => $requestId,
+                ':code'            => $request['shopee_order_code'],
+                ':customer_id'     => $request['customer_id'] ?? null,
+                ':phone'           => $request['phone'],
+                ':verified_amount' => $verifiedAmount,
+                ':points_awarded'  => $approvedPoints,
+                ':point_tx_id'     => $transactionId,
+                ':admin_id'        => $adminId,
+                ':environment'     => getenv('SHOPEE_ENV') ?: 'sandbox'
+            ]);
 
             $dbConnection->commit();
 
@@ -357,13 +433,14 @@ class ShopeePointRequestController {
     public function reject() {
         $input = Request::json();
         $requestId = isset($input['requestId']) ? (int)$input['requestId'] : 0;
-        $reason = ValidationService::sanitizeText(isset($input['reason']) ? $input['reason'] : '');
+        $reasonCode = ValidationService::sanitizeText(isset($input['reasonCode']) ? $input['reasonCode'] : 'other');
+        $reasonText = ValidationService::sanitizeText(isset($input['reason']) ? $input['reason'] : '');
 
         if ($requestId <= 0) {
             Response::json(["success" => false, "message" => "ID yêu cầu không hợp lệ"], 400);
         }
 
-        if (empty($reason)) {
+        if (empty($reasonText) || empty($reasonCode)) {
             Response::json(["success" => false, "message" => "Lý do từ chối không được để trống"], 400);
         }
 
@@ -385,7 +462,7 @@ class ShopeePointRequestController {
                 Response::json(["success" => false, "message" => "Không thể từ chối yêu cầu đã được duyệt"], 400);
             }
 
-            $requestModel->reject($requestId, $reason);
+            $requestModel->reject($requestId, $reasonCode, $reasonText);
 
             $dbConnection->commit();
 
@@ -395,7 +472,8 @@ class ShopeePointRequestController {
             AuditLog::write($adminId, 'reject_shopee_request', 'shopee_point_requests', $requestId, [
                 'shopee_order_code' => $request['shopee_order_code'],
                 'phone' => $request['phone'],
-                'reason' => $reason
+                'reason_code' => $reasonCode,
+                'reason' => $reasonText
             ]);
 
             Response::json(["success" => true, "message" => "Đã từ chối yêu cầu tích điểm."], 200);

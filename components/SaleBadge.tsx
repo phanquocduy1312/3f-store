@@ -44,8 +44,6 @@ export function SaleBadge({ discount = 30, className = '' }: SaleBadgeProps) {
           flexShrink: 0
         }}
       >
-        {/* We use an SVG to do the gradient fill, but if we use lucide-react we can just give it a solid color */}
-        {/* The design has a slightly darker red, inner shadow might be hard on a standard icon, so we use drop-shadow or a solid deep red */}
         <PawPrint 
           fill="#c9000a" 
           strokeWidth={0} 
