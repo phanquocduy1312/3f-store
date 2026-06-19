@@ -104,10 +104,26 @@ try {
 
     // Admin Customer Management Routes
     $router->get("/api/admin/customers", [AdminCustomerController::class, "list"]);
+    $router->get("/api/admin/customers/export-csv", [AdminCustomerController::class, "exportCsv"]);
     $router->get("/api/admin/customers/:id", [AdminCustomerController::class, "getDetail"]);
     $router->put("/api/admin/customers/:id/status", [AdminCustomerController::class, "updateStatus"]);
     $router->get("/api/admin/customers/:id/orders", [AdminCustomerController::class, "getOrders"]);
     $router->get("/api/admin/customers/:id/points", [AdminCustomerController::class, "getPoints"]);
+    $router->get("/api/admin/customers/:id/addresses", [AdminCustomerController::class, "getAddresses"]);
+    $router->get("/api/admin/customers/:id/vouchers", [AdminCustomerController::class, "getVouchers"]);
+    $router->get("/api/admin/customers/:id/pets", [AdminCustomerController::class, "getPets"]);
+    $router->get("/api/admin/customers/:id/sessions", [AdminCustomerController::class, "getSessions"]);
+    
+    // Admin Customer Care (Phase 1.2) Routes
+    $router->get("/api/admin/customers/:id/notes", [AdminCustomerController::class, "getNotes"]);
+    $router->post("/api/admin/customers/:id/notes", [AdminCustomerController::class, "createNote"]);
+    $router->delete("/api/admin/customers/:id/notes/:noteId", [AdminCustomerController::class, "deleteNote"]);
+    $router->get("/api/admin/customers/:id/tags", [AdminCustomerController::class, "getTags"]);
+    $router->post("/api/admin/customers/:id/tags", [AdminCustomerController::class, "assignTag"]);
+    $router->delete("/api/admin/customers/:id/tags/:tagId", [AdminCustomerController::class, "removeTag"]);
+    $router->post("/api/admin/customers/:id/adjust-points", [AdminCustomerController::class, "adjustPoints"]);
+    $router->post("/api/admin/customers/:id/revoke-sessions", [AdminCustomerController::class, "revokeAllSessions"]);
+    $router->get("/api/admin/customers/:id/timeline", [AdminCustomerController::class, "getTimeline"]);
 
     // Customer Auth Routes
     $router->post("/api/customer/auth/register-email", [CustomerAuthController::class, "registerEmail"]);

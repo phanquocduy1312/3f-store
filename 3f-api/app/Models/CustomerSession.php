@@ -59,6 +59,19 @@ class CustomerSession {
     }
 
     /**
+     * Revoke all active sessions for a customer
+     */
+    public function revokeAllForCustomer($customerId) {
+        $stmt = $this->db->prepare("
+            UPDATE customer_sessions 
+            SET revoked_at = NOW() 
+            WHERE customer_id = :customer_id AND revoked_at IS NULL AND expires_at > NOW()
+        ");
+        $stmt->execute([':customer_id' => (int)$customerId]);
+        return $stmt->rowCount();
+    }
+
+    /**
      * Validate token and return customer_id or null.
      */
     public function validateToken($token) {

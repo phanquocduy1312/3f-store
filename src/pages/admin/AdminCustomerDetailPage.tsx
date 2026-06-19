@@ -5,9 +5,20 @@ import { AdminHeader } from "@/components/admin/admin-header";
 import { adminCustomersApi } from "../../api/adminCustomersApi";
 import { 
   ArrowLeft, ShieldAlert, CheckCircle2, User, Phone, Mail, 
-  MapPin, ShoppingBag, Gift, Heart, Shield, FileText, XCircle
+  MapPin, ShoppingBag, Gift, Heart, Shield, FileText, XCircle, Ticket, Tag, Clock, StickyNote, Activity
 } from "lucide-react";
 import { toast } from "sonner";
+import { CustomerOverviewTab } from "@/components/admin/customers/tabs/CustomerOverviewTab";
+import { CustomerOrdersTab } from "@/components/admin/customers/tabs/CustomerOrdersTab";
+import { CustomerPointsTab } from "@/components/admin/customers/tabs/CustomerPointsTab";
+import { CustomerAddressesTab } from "@/components/admin/customers/tabs/CustomerAddressesTab";
+import { CustomerVouchersTab } from "@/components/admin/customers/tabs/CustomerVouchersTab";
+import { CustomerPetsTab } from "@/components/admin/customers/tabs/CustomerPetsTab";
+import { CustomerSessionsTab } from "@/components/admin/customers/tabs/CustomerSessionsTab";
+import { CustomerNotesTab } from "@/components/admin/customers/tabs/CustomerNotesTab";
+import { CustomerTimelineTab } from "@/components/admin/customers/tabs/CustomerTimelineTab";
+import { CustomerTagsModal } from "@/components/admin/customers/CustomerTagsModal";
+import { CustomerTagsList } from "@/components/admin/customers/CustomerTagsList";
 
 export function AdminCustomerDetailPage() {
   const { id } = useParams();
@@ -21,6 +32,8 @@ export function AdminCustomerDetailPage() {
 
   const [confirmBlockId, setConfirmBlockId] = useState<number | null>(null);
   const [blockReason, setBlockReason] = useState("");
+  const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
+  const [tagsKey, setTagsKey] = useState(0);
 
   const loadDetail = async () => {
     if (!id) return;
@@ -87,8 +100,11 @@ export function AdminCustomerDetailPage() {
     { id: "orders", label: "Đơn hàng", icon: ShoppingBag },
     { id: "club", label: "3F Club", icon: Gift },
     { id: "addresses", label: "Địa chỉ", icon: MapPin },
+    { id: "vouchers", label: "Kho Voucher", icon: Ticket },
     { id: "pets", label: "Thú cưng", icon: Heart },
-    { id: "security", label: "Bảo mật", icon: Shield },
+    { id: "sessions", label: "Bảo mật & Phiên", icon: Shield },
+    { id: "timeline", label: "Lịch sử hoạt động", icon: Activity },
+    { id: "notes", label: "Ghi chú CSKH", icon: StickyNote },
   ];
 
   return (
@@ -116,19 +132,25 @@ export function AdminCustomerDetailPage() {
                     <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] uppercase font-black rounded-full">Blocked</span>
                   )}
                 </h1>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <CustomerTagsList key={tagsKey} customerId={Number(id)} />
+                </div>
                 <p className="text-sm text-[#64748B]">ID: {customer.id} • Tham gia: {new Date(customer.created_at).toLocaleDateString("vi-VN")}</p>
               </div>
             </div>
-            <div>
+            <div className="flex items-center gap-4">
               {customer.status === "active" ? (
                 <button onClick={handleToggleStatus} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 font-bold rounded-xl transition-colors text-sm">
-                  <ShieldAlert size={16} /> Khóa tài khoản
+                  <ShieldAlert size={16} /> Khóa
                 </button>
               ) : (
                 <button onClick={handleToggleStatus} className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-600 hover:bg-green-100 font-bold rounded-xl transition-colors text-sm">
-                  <CheckCircle2 size={16} /> Mở khóa tài khoản
+                  <CheckCircle2 size={16} /> Mở khóa
                 </button>
               )}
+              <button onClick={() => setIsTagsModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-[#F6FAFF] border border-[#DCEBFF] text-[#0057E7] hover:bg-blue-50 font-bold rounded-xl transition-colors text-sm">
+                <Tag size={16} /> Nhãn
+              </button>
             </div>
           </div>
 
@@ -153,127 +175,26 @@ export function AdminCustomerDetailPage() {
 
             {/* Right Content */}
             <div className="flex-1 bg-white rounded-2xl shadow-sm border border-[#DCEBFF] p-6 min-h-[500px]">
-              {activeTab === "overview" && (
-                <div className="space-y-6">
-                  <h2 className="text-lg font-black text-[#0B1F3A] border-b border-slate-100 pb-4">Thông tin tổng quan</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                          <User size={20} />
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-500 font-semibold uppercase">Họ và tên</p>
-                          <p className="font-bold text-[#0B1F3A]">{customer.full_name || customer.name || "-"}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                          <Phone size={20} />
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-500 font-semibold uppercase">Số điện thoại</p>
-                          <div className="flex items-center gap-2">
-                            <p className="font-bold text-[#0B1F3A]">{customer.phone || "-"}</p>
-                            {customer.phone_verified_at && <span title="Đã xác minh"><CheckCircle2 size={14} className="text-green-500" /></span>}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                          <Mail size={20} />
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-500 font-semibold uppercase">Email</p>
-                          <div className="flex items-center gap-2">
-                            <p className="font-bold text-[#0B1F3A]">{customer.email || "-"}</p>
-                            {customer.email_verified_at && <span title="Đã xác minh"><CheckCircle2 size={14} className="text-green-500" /></span>}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-4">
-                      <div>
-                        <p className="text-xs text-slate-500 font-semibold uppercase mb-1">Đăng nhập lần cuối</p>
-                        <p className="font-bold text-[#0B1F3A]">{customer.last_login_at ? new Date(customer.last_login_at).toLocaleString("vi-VN") : "Chưa từng đăng nhập"}</p>
-                      </div>
-                      <div className="pt-4 border-t border-slate-200">
-                        <p className="text-xs text-slate-500 font-semibold uppercase mb-1">Cảnh báo hệ thống</p>
-                        {customer.status === "blocked" ? (
-                          <div className="flex items-start gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-lg">
-                            <XCircle size={16} className="mt-0.5 shrink-0" />
-                            <p>Tài khoản đã bị khóa bởi quản trị viên. Khách hàng không thể đăng nhập hoặc mua sắm.</p>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-slate-600">Không có cảnh báo nào.</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "orders" && (
-                <div className="space-y-6">
-                  <h2 className="text-lg font-black text-[#0B1F3A] border-b border-slate-100 pb-4">Lịch sử đơn hàng</h2>
-                  <p className="text-sm text-slate-500">Đang phát triển trong Phase 1.1...</p>
-                </div>
-              )}
-
-              {activeTab === "club" && (
-                <div className="space-y-6">
-                  <h2 className="text-lg font-black text-[#0B1F3A] border-b border-slate-100 pb-4">Thông tin 3F Club</h2>
-                  <p className="text-sm text-slate-500">Đang phát triển trong Phase 1.1...</p>
-                </div>
-              )}
-              
-              {activeTab === "addresses" && (
-                <div className="space-y-6">
-                  <h2 className="text-lg font-black text-[#0B1F3A] border-b border-slate-100 pb-4">Sổ địa chỉ</h2>
-                  <p className="text-sm text-slate-500">Đang phát triển trong Phase 1.1...</p>
-                </div>
-              )}
-
-              {activeTab === "pets" && (
-                <div className="space-y-6">
-                  <h2 className="text-lg font-black text-[#0B1F3A] border-b border-slate-100 pb-4">Hồ sơ thú cưng</h2>
-                  <p className="text-sm text-slate-500">Đang phát triển trong Phase 1.1...</p>
-                </div>
-              )}
-
-              {activeTab === "security" && (
-                <div className="space-y-6">
-                  <h2 className="text-lg font-black text-[#0B1F3A] border-b border-slate-100 pb-4">Phiên đăng nhập (Sessions)</h2>
-                  {customer.sessions && customer.sessions.length > 0 ? (
-                    <div className="space-y-3">
-                      {customer.sessions.map((sess: any) => (
-                        <div key={sess.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
-                          <div>
-                            <p className="font-bold text-[#0B1F3A] text-sm">Session #{sess.id}</p>
-                            <p className="text-xs text-slate-500">Tạo: {new Date(sess.created_at).toLocaleString("vi-VN")}</p>
-                          </div>
-                          <div>
-                            {sess.revoked_at ? (
-                              <span className="px-2 py-1 bg-red-100 text-red-700 text-[10px] uppercase font-black rounded-full">Đã thu hồi</span>
-                            ) : new Date(sess.expires_at) < new Date() ? (
-                              <span className="px-2 py-1 bg-slate-200 text-slate-600 text-[10px] uppercase font-black rounded-full">Hết hạn</span>
-                            ) : (
-                              <span className="px-2 py-1 bg-green-100 text-green-700 text-[10px] uppercase font-black rounded-full">Active</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-slate-500">Không có lịch sử đăng nhập nào.</p>
-                  )}
-                </div>
-              )}
+              {activeTab === "overview" && <CustomerOverviewTab customer={customer} />}
+              {activeTab === "orders" && <CustomerOrdersTab customerId={customer.id} />}
+              {activeTab === "club" && <CustomerPointsTab customerId={customer.id} />}
+              {activeTab === "addresses" && <CustomerAddressesTab customerId={customer.id} />}
+              {activeTab === "vouchers" && <CustomerVouchersTab customerId={customer.id} />}
+              {activeTab === "pets" && <CustomerPetsTab customerId={customer.id} />}
+              {activeTab === "sessions" && <CustomerSessionsTab customerId={Number(id)} />}
+              {activeTab === "timeline" && <CustomerTimelineTab customerId={Number(id)} />}
+              {activeTab === "notes" && <CustomerNotesTab customerId={Number(id)} />}
             </div>
           </div>
         </main>
       </div>
+
+      <CustomerTagsModal 
+        isOpen={isTagsModalOpen}
+        onClose={() => setIsTagsModalOpen(false)}
+        customerId={Number(id)}
+        onTagsUpdated={() => setTagsKey(k => k + 1)}
+      />
 
       {/* Block Confirm Modal */}
       {confirmBlockId && (

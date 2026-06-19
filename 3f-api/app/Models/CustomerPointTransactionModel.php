@@ -107,6 +107,56 @@ class CustomerPointTransactionModel {
         return (int)$this->db->lastInsertId();
     }
 
+    public function addManualAdjustment($customerId, $phone, $points, $reason, $note, $adminId) {
+        $balanceAfter = null;
+        $currentBalance = $this->getBalance($phone);
+        $balanceAfter = $currentBalance + $points;
+        
+        $sql = "
+            INSERT INTO customer_point_transactions (
+                customer_id, customer_phone, type, points, balance_after, 
+                description, note, created_by_admin_id
+            ) VALUES (
+                :customer_id, :customer_phone, 'manual_adjustment', :points, :balance_after, 
+                :description, :note, :admin_id
+            )
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':customer_id' => $customerId,
+            ':customer_phone' => $phone ?: '',
+            ':points' => (int)$points,
+            ':balance_after' => (int)$balanceAfter,
+            ':description' => $reason,
+            ':note' => $note,
+            ':admin_id' => (int)$adminId
+        ]);
+        
+        // Cập nhật lại membership tier dựa trên tổng điểm lịch sử nếu cộng điểm dương
+        if ($points > 0 && $phone) {
+            $stmtSum = $this->db->prepare("SELECT SUM(points) AS total FROM customer_point_transactions WHERE customer_phone = :phone AND points > 0");
+            $stmtSum->execute([':phone' => $phone]);
+            $sumRow = $stmtSum->fetch(PDO::FETCH_ASSOC);
+            $totalEarned = isset($sumRow['total']) ? (int)$sumRow['total'] : 0;
+            
+            // Tìm tier phù hợp
+            $stmtTier = $this->db->prepare("SELECT id FROM membership_tiers WHERE min_points <= :points ORDER BY min_points DESC LIMIT 1");
+            $stmtTier->execute([':points' => $totalEarned]);
+            $tierRow = $stmtTier->fetch(PDO::FETCH_ASSOC);
+            if ($tierRow) {
+                $stmtUpdateCust = $this->db->prepare("UPDATE customers SET current_tier_id = :tier_id WHERE id = :id");
+                $stmtUpdateCust->execute([':tier_id' => $tierRow['id'], ':id' => $customerId]);
+            }
+        }
+        
+        return [
+            'success' => true,
+            'transaction_id' => (int)$this->db->lastInsertId(),
+            'old_points' => $currentBalance,
+            'new_points' => $balanceAfter
+        ];
+    }
+
     public function listTransactions($filters = []) {
         $sql = "SELECT * FROM customer_point_transactions WHERE 1=1";
         $params = [];
@@ -164,6 +214,21 @@ class CustomerPointTransactionModel {
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             ";
             $this->db->exec($sql);
+            
+            // Self-healing: add customer_id and created_by_admin_id
+            $checkCustomerCol = $this->db->query("SHOW COLUMNS FROM customer_point_transactions LIKE 'customer_id'")->fetch();
+            if (!$checkCustomerCol) {
+                $this->db->exec("ALTER TABLE customer_point_transactions ADD COLUMN customer_id INT NULL AFTER id");
+                $this->db->exec("ALTER TABLE customer_point_transactions ADD INDEX idx_trans_customer_id (customer_id)");
+            }
+            $checkAdminCol = $this->db->query("SHOW COLUMNS FROM customer_point_transactions LIKE 'created_by_admin_id'")->fetch();
+            if (!$checkAdminCol) {
+                $this->db->exec("ALTER TABLE customer_point_transactions ADD COLUMN created_by_admin_id INT NULL");
+            }
+            $checkDescCol = $this->db->query("SHOW COLUMNS FROM customer_point_transactions LIKE 'description'")->fetch();
+            if (!$checkDescCol) {
+                $this->db->exec("ALTER TABLE customer_point_transactions ADD COLUMN description TEXT NULL");
+            }
         } catch (\Exception $e) {
             error_log("CustomerPointTransaction migration failed: " . $e->getMessage());
         }
