@@ -36,7 +36,7 @@ type MenuItem = {
 
 const menuItems: MenuItem[] = [
   { name: "Dashboard", icon: LayoutDashboard, path: "/admin" },
-  { name: "Đơn hàng", icon: ShoppingBag, hasChevron: true, path: "/admin/orders" },
+  { name: "Đơn hàng", icon: ShoppingBag, path: "/admin/orders" },
   { name: "Khách hàng", icon: Users, path: "/admin/customers" },
   { name: "Hồ sơ thú cưng", icon: Heart },
   { name: "AI Pet Advisor", icon: Sparkles, badge: "AI" },
