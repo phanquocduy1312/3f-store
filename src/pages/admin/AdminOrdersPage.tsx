@@ -47,6 +47,12 @@ const PAYMENT_METHOD_MAP: Record<string, string> = {
   bank_transfer: "Chuyển khoản",
 };
 
+const SHIPPING_METHOD_MAP: Record<string, string> = {
+  express: "Hỏa tốc",
+  fast: "Nhanh",
+  sameday: "Trong ngày",
+};
+
 export function AdminOrdersPage() {
   const [activeMenu, setActiveMenu] = useState("Đơn hàng");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -795,6 +801,10 @@ export function AdminOrdersPage() {
                             Ghi chú: {selectedOrder.note}
                           </div>
                         )}
+                        <div className="mt-2 text-xs font-semibold text-[#0057E7] bg-blue-50/50 p-2 rounded-lg border border-blue-100 flex items-center justify-between">
+                          <span>Phương thức:</span>
+                          <span className="font-black tracking-wide uppercase">{SHIPPING_METHOD_MAP[selectedOrder.shipping_method || "express"] || selectedOrder.shipping_method || "Hỏa tốc"}</span>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -62,7 +62,7 @@ export function CustomerPointsTab({ customerId }: { customerId: number }) {
   if (loading && pointsList.length === 0) return <div className="animate-pulse space-y-4"><div className="h-10 bg-slate-100 rounded-xl"></div><div className="h-32 bg-slate-100 rounded-xl"></div></div>;
   if (error) return <div className="text-red-500 bg-red-50 p-4 rounded-xl">{error}</div>;
 
-  const totalPoints = pointsList.reduce((acc, curr) => curr.status === 'completed' ? acc + curr.points_change : acc, 0);
+  const totalPoints = pointsList.reduce((acc, curr) => acc + curr.points, 0);
 
   const getTransactionTypeLabel = (type: string) => {
     switch (type) {
@@ -111,11 +111,11 @@ export function CustomerPointsTab({ customerId }: { customerId: number }) {
               {pointsList.map(p => (
                 <tr key={p.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
                   <td className="px-4 py-4 text-slate-600">{new Date(p.created_at).toLocaleString("vi-VN")}</td>
-                  <td className="px-4 py-4 font-semibold">{getTransactionTypeLabel(p.transaction_type)}</td>
-                  <td className="px-4 py-4 text-slate-600 truncate max-w-[200px]">{p.description}</td>
+                  <td className="px-4 py-4 font-semibold">{getTransactionTypeLabel(p.type)}</td>
+                  <td className="px-4 py-4 text-slate-600 truncate max-w-[200px]">{p.note}</td>
                   <td className="px-4 py-4 text-slate-500">{p.reference_id || "-"}</td>
-                  <td className={`px-4 py-4 font-bold ${p.points_change > 0 ? "text-green-600" : "text-red-600"}`}>
-                    {p.points_change > 0 ? "+" : ""}{p.points_change}
+                  <td className={`px-4 py-4 font-bold ${p.points > 0 ? "text-green-600" : "text-red-600"}`}>
+                    {p.points > 0 ? "+" : ""}{p.points}
                   </td>
                 </tr>
               ))}

@@ -43,6 +43,7 @@ class OrderController {
             $ward = trim($shippingInfo['wardName'] ?? $shippingInfo['ward'] ?? '');
             $addressLine = trim($shippingInfo['addressLine'] ?? '');
             $shippingNote = trim($shippingInfo['note'] ?? '');
+            $shippingMethod = trim($shippingInfo['shippingMethod'] ?? 'express');
 
             if ($receiverName === '' || $receiverPhone === '' || $addressLine === '' || $province === '' || $ward === '') {
                 Response::json(["success" => false, "message" => "Thiếu thông tin nhận hàng (họ tên, số điện thoại, tỉnh/thành, phường/xã và địa chỉ cụ thể là bắt buộc)."], 400);
@@ -183,7 +184,14 @@ class OrderController {
 
             // Upsert Customer
             $customerModel = new Customer();
-            $customerId = $customerModel->upsertCustomer($customerName, $customerPhone, $customerEmail, $customerZalo);
+            $currentCustomer = AuthMiddleware::getCustomerOptional();
+            $customerId = $customerModel->upsertCustomer(
+                $customerName,
+                $customerPhone,
+                $customerEmail,
+                $customerZalo,
+                $currentCustomer['id'] ?? null
+            );
 
             // Upsert Loyalty Profile
             $loyaltyModel = new LoyaltyProductionModel();
@@ -202,6 +210,7 @@ class OrderController {
                 'ward' => $ward,
                 'address_line' => $addressLine,
                 'note' => $shippingNote,
+                'shipping_method' => $shippingMethod,
                 'payment_method' => $paymentMethod,
                 'payment_status' => $paymentMethod === 'bank_transfer' ? 'pending' : 'unpaid',
                 'order_status' => 'pending',

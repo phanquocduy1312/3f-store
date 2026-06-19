@@ -82,7 +82,7 @@ class CustomerCareModel {
     // ==========================================
     public function getNotes($customerId) {
         $stmt = $this->db->prepare("
-            SELECT n.*, u.username as admin_name 
+            SELECT n.*, u.name as admin_name 
             FROM customer_notes n
             LEFT JOIN admin_users u ON n.admin_id = u.id
             WHERE n.customer_id = :customer_id AND n.deleted_at IS NULL
@@ -207,21 +207,21 @@ class CustomerCareModel {
         }
 
         // 2. Orders
-        $stmt = $this->db->prepare("SELECT id, status, total_amount, created_at FROM orders WHERE customer_id = :id ORDER BY created_at DESC LIMIT 20");
+        $stmt = $this->db->prepare("SELECT id, order_status as status, total as total_amount, created_at FROM orders WHERE customer_id = :id ORDER BY created_at DESC LIMIT 20");
         $stmt->execute([':id' => (int)$customerId]);
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($orders as $order) {
             $timeline[] = [
                 'type' => 'order_created',
                 'title' => 'Tạo đơn hàng #' . $order['id'],
-                'description' => 'Trạng thái: ' . $order['status'] . ' - Tổng tiền: ' . number_format($order['total_amount']) . 'đ',
+                'description' => 'Trạng thái: ' . $order['status'] . ' - Tổng tiền: ' . number_format((float)$order['total_amount']) . 'đ',
                 'created_at' => $order['created_at'],
                 'metadata' => ['order_id' => $order['id'], 'status' => $order['status']]
             ];
         }
 
         // 3. Points transactions
-        $stmt = $this->db->prepare("SELECT id, points_change, transaction_type, description, created_at FROM customer_point_transactions WHERE customer_id = :id ORDER BY created_at DESC LIMIT 20");
+        $stmt = $this->db->prepare("SELECT id, points as points_change, type as transaction_type, description, created_at FROM customer_point_transactions WHERE customer_id = :id ORDER BY created_at DESC LIMIT 20");
         $stmt->execute([':id' => (int)$customerId]);
         $points = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($points as $pt) {
@@ -235,14 +235,14 @@ class CustomerCareModel {
         }
 
         // 4. Sessions
-        $stmt = $this->db->prepare("SELECT id, user_agent, created_at, revoked_at FROM customer_sessions WHERE customer_id = :id ORDER BY created_at DESC LIMIT 20");
+        $stmt = $this->db->prepare("SELECT id, created_at, revoked_at FROM customer_sessions WHERE customer_id = :id ORDER BY created_at DESC LIMIT 20");
         $stmt->execute([':id' => (int)$customerId]);
         $sessions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($sessions as $sess) {
             $timeline[] = [
                 'type' => 'session_created',
                 'title' => 'Đăng nhập mới',
-                'description' => 'Thiết bị: ' . ($sess['user_agent'] ?: 'Không xác định'),
+                'description' => 'Đã đăng nhập vào hệ thống',
                 'created_at' => $sess['created_at'],
                 'metadata' => ['session_id' => $sess['id']]
             ];
@@ -272,16 +272,18 @@ class CustomerCareModel {
         }
 
         // 6. Audit Logs
-        $stmt = $this->db->prepare("SELECT action, description, created_at FROM audit_logs WHERE target_id = :id AND action IN ('customer_blocked', 'customer_unblocked') ORDER BY created_at DESC LIMIT 20");
+        $stmt = $this->db->prepare("SELECT action, metadata_json as description, created_at FROM admin_audit_logs WHERE entity_id = :id AND entity_type = 'customer' AND action IN ('customer_blocked', 'customer_unblocked') ORDER BY created_at DESC LIMIT 20");
         $stmt->execute([':id' => (int)$customerId]);
         $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($logs as $log) {
+            $metadata = json_decode($log['description'] ?? '{}', true) ?: [];
+            $reason = $metadata['reason'] ?? 'Không có lý do';
             $timeline[] = [
                 'type' => $log['action'],
                 'title' => $log['action'] === 'customer_blocked' ? 'Tài khoản bị khóa' : 'Tài khoản được mở khóa',
-                'description' => $log['description'],
+                'description' => 'Lý do: ' . $reason,
                 'created_at' => $log['created_at'],
-                'metadata' => []
+                'metadata' => $metadata
             ];
         }
 

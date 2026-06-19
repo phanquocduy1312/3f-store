@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS orders (
   address_line VARCHAR(255) NOT NULL,
   note TEXT NULL,
   payment_method VARCHAR(50) NOT NULL,
+  shipping_method VARCHAR(50) NOT NULL DEFAULT 'express',
   payment_status VARCHAR(50) NOT NULL DEFAULT 'unpaid',
   order_status VARCHAR(50) NOT NULL DEFAULT 'pending',
   subtotal DECIMAL(15,2) NOT NULL DEFAULT 0.00,

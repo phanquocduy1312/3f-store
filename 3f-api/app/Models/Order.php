@@ -45,6 +45,16 @@ class Order {
             // Ignore if already added
         }
 
+        // Alter orders table to add shipping_method if it doesn't exist
+        try {
+            $checkCol2 = $this->db->query("SHOW COLUMNS FROM orders LIKE 'shipping_method'")->fetch();
+            if (!$checkCol2) {
+                $this->db->exec("ALTER TABLE orders ADD COLUMN shipping_method VARCHAR(50) NOT NULL DEFAULT 'express' AFTER payment_method");
+            }
+        } catch (\PDOException $e) {
+            // Ignore if already added
+        }
+
         // Seed demo coupons
         try {
             $stmt = $this->db->prepare("SELECT id FROM coupons WHERE code = 'GIAM50K'");
@@ -69,12 +79,12 @@ class Order {
                 INSERT INTO orders (
                     order_code, customer_id, receiver_name, phone, email, zalo,
                     province, district, ward, address_line, note,
-                    payment_method, payment_status, order_status,
+                    payment_method, shipping_method, payment_status, order_status,
                     subtotal, shipping_fee, discount, coupon_code, total
                 ) VALUES (
                     :order_code, :customer_id, :receiver_name, :phone, :email, :zalo,
                     :province, :district, :ward, :address_line, :note,
-                    :payment_method, :payment_status, :order_status,
+                    :payment_method, :shipping_method, :payment_status, :order_status,
                     :subtotal, :shipping_fee, :discount, :coupon_code, :total
                 )
             ";
@@ -92,6 +102,7 @@ class Order {
                 ':address_line' => $orderData['address_line'],
                 ':note' => $orderData['note'] ?: null,
                 ':payment_method' => $orderData['payment_method'],
+                ':shipping_method' => $orderData['shipping_method'] ?? 'express',
                 ':payment_status' => $orderData['payment_status'] ?: 'unpaid',
                 ':order_status' => $orderData['order_status'] ?: 'pending',
                 ':subtotal' => (float)$orderData['subtotal'],

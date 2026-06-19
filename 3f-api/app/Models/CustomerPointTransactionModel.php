@@ -140,12 +140,16 @@ class CustomerPointTransactionModel {
             $totalEarned = isset($sumRow['total']) ? (int)$sumRow['total'] : 0;
             
             // Tìm tier phù hợp
-            $stmtTier = $this->db->prepare("SELECT id FROM membership_tiers WHERE min_points <= :points ORDER BY min_points DESC LIMIT 1");
-            $stmtTier->execute([':points' => $totalEarned]);
-            $tierRow = $stmtTier->fetch(PDO::FETCH_ASSOC);
-            if ($tierRow) {
-                $stmtUpdateCust = $this->db->prepare("UPDATE customers SET current_tier_id = :tier_id WHERE id = :id");
-                $stmtUpdateCust->execute([':tier_id' => $tierRow['id'], ':id' => $customerId]);
+            try {
+                $stmtTier = $this->db->prepare("SELECT id FROM membership_tiers WHERE min_points <= :points ORDER BY min_points DESC LIMIT 1");
+                $stmtTier->execute([':points' => $totalEarned]);
+                $tierRow = $stmtTier->fetch(PDO::FETCH_ASSOC);
+                if ($tierRow) {
+                    $stmtUpdateCust = $this->db->prepare("UPDATE customers SET current_tier_id = :tier_id WHERE id = :id");
+                    $stmtUpdateCust->execute([':tier_id' => $tierRow['id'], ':id' => $customerId]);
+                }
+            } catch (\Exception $e) {
+                // Ignore if membership_tiers or current_tier_id doesn't exist yet
             }
         }
         
