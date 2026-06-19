@@ -2,7 +2,7 @@
 
 ## Overview
 - Priority: High
-- Status: Planned
+- Status: Completed
 - Description: Align chart revenue and order count queries with the statistics KPI cards.
 
 ## Proposed Changes
@@ -14,6 +14,5 @@
 ## Related Code Files
 - [AdminDashboardController.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Controllers/AdminDashboardController.php)
 
-## Verification Plan
-- Deploy updated controller via `python scripts/deploy_ftp.py`.
-- Verify admin dashboard API `/api/admin/dashboard/revenue-chart` values.
+## Verification
+- Deployed updated controller via `python scripts/deploy_ftp.py` to production and verified.
