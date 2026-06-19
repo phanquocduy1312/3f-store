@@ -98,7 +98,7 @@ export function AdminLogin() {
                 <input
                   type="email"
                   required
-                  placeholder="admin@3fstore.vn"
+                  placeholder="Nhập email của bạn"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
@@ -119,7 +119,7 @@ export function AdminLogin() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
-                  placeholder="••••••••"
+                  placeholder="Nhập mật khẩu"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}

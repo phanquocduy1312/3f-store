@@ -31,11 +31,10 @@ const AdminProductForm = lazy(() => import("./pages/admin/AdminProductForm").the
 const AdminCategoriesPage = lazy(() => import("./pages/admin/AdminCategoriesPage").then(m => ({ default: m.AdminCategoriesPage })));
 
 function AdminRouteGuard() {
-  // Temporary bypass for active development. Comment in to restore auth guarding.
-  // const token = localStorage.getItem("admin_token");
-  // if (!token) {
-  //   return <Navigate to="/admin/login" replace />;
-  // }
+  const token = localStorage.getItem("admin_token");
+  if (!token) {
+    return <Navigate to="/admin/login" replace />;
+  }
   return <Outlet />;
 }
 

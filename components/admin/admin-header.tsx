@@ -106,13 +106,29 @@ export function AdminHeader({
         <div className="hidden h-8 w-[1px] bg-[#DCEBFF] min-[1800px]:block" />
 
         {/* User Profile */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="relative group flex items-center gap-2 sm:gap-3 cursor-pointer">
           <div className="hidden text-right min-[1800px]:block">
-            <h5 className="text-[14px] font-bold text-[#0B1F3A] leading-tight">Admin 3F</h5>
+            <h5 className="text-[14px] font-bold text-[#0B1F3A] leading-tight">
+              {JSON.parse(localStorage.getItem("admin_user") || "{}")?.name || "Admin 3F"}
+            </h5>
             <p className="text-[12px] text-[#64748B]">Quản trị viên</p>
           </div>
           <div className="h-10 w-10 rounded-full bg-[#0057E7] text-white font-black flex items-center justify-center shadow-md shrink-0">
-            AD
+            {JSON.parse(localStorage.getItem("admin_user") || "{}")?.name?.charAt(0).toUpperCase() || "AD"}
+          </div>
+
+          {/* Logout Dropdown on Hover */}
+          <div className="absolute right-0 top-full mt-2 hidden w-48 rounded-xl border border-[#DCEBFF] bg-white p-2 shadow-xl group-hover:block">
+            <button
+              onClick={() => {
+                localStorage.removeItem("admin_token");
+                localStorage.removeItem("admin_user");
+                window.location.href = "/admin/login";
+              }}
+              className="w-full rounded-lg px-4 py-2 text-left text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+            >
+              Đăng xuất
+            </button>
           </div>
         </div>
       </div>
