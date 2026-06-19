@@ -1,13 +1,10 @@
-import { useState } from "react";
 import { LoginForm } from "@/components/Auth/LoginForm";
 import { SocialLogins } from "@/components/Auth/SocialLogins";
-import { PhoneAuthForm } from "@/components/Auth/PhoneAuthForm";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
 
 export function Login() {
-  const [authMode, setAuthMode] = useState<"email" | "phone">("email");
   const navigate = useNavigate();
   const { isLoggedIn } = useCustomerAuth();
 
@@ -25,47 +22,28 @@ export function Login() {
       <div className="flex-1 lg:col-span-7 xl:col-span-6 flex flex-col justify-center px-4 sm:px-12 lg:px-20 xl:px-24 py-12">
         <div className="w-full max-w-[440px] mx-auto space-y-8">
           
-          {authMode === "email" ? (
-            <>
-              {/* Header */}
-              <div className="space-y-3">
-                <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-forest hover:text-forest-dark transition">
-                  <ArrowLeft size={14} /> Quay lại trang chủ
-                </Link>
-                <h1 className="text-3xl font-black text-ink tracking-tight">Đăng nhập tài khoản</h1>
-                <p className="text-sm font-semibold text-ink/50">
-                  Chào mừng bạn quay trở lại! Hãy đăng nhập để mua sắm.
-                </p>
-                <button onClick={() => setAuthMode("phone")}
-                  className="inline-flex items-center gap-1.5 text-sm font-bold text-forest hover:text-forest-dark transition pt-1">
-                  <Phone size={14} /> Đăng nhập bằng số điện thoại
-                </button>
-              </div>
+          <>
+            {/* Header */}
+            <div className="space-y-3">
+              <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-forest hover:text-forest-dark transition">
+                <ArrowLeft size={14} /> Quay lại trang chủ
+              </Link>
+              <h1 className="text-3xl font-black text-ink tracking-tight">Đăng nhập tài khoản</h1>
+              <p className="text-sm font-semibold text-ink/50">
+                Chào mừng bạn quay trở lại! Hãy đăng nhập để mua sắm.
+              </p>
+            </div>
 
-              <LoginForm onSuccess={handleSuccess} />
-              <SocialLogins label="Hoặc đăng nhập bằng" />
+            <LoginForm onSuccess={handleSuccess} />
+            <SocialLogins label="Hoặc đăng nhập bằng" />
 
-              <div className="text-center pt-2">
-                <p className="text-sm font-semibold text-ink/60">
-                  Bạn chưa có tài khoản?{" "}
-                  <Link to="/register" className="font-bold text-forest hover:underline transition">Đăng ký ngay</Link>
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="mb-0">
-                <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-forest hover:text-forest-dark transition">
-                  <ArrowLeft size={14} /> Quay lại trang chủ
-                </Link>
-              </div>
-              <PhoneAuthForm
-                context="login"
-                onSwitchToEmail={() => setAuthMode("email")}
-                onSuccess={handleSuccess}
-              />
-            </>
-          )}
+            <div className="text-center pt-2">
+              <p className="text-sm font-semibold text-ink/60">
+                Bạn chưa có tài khoản?{" "}
+                <Link to="/register" className="font-bold text-forest hover:underline transition">Đăng ký ngay</Link>
+              </p>
+            </div>
+          </>
 
         </div>
       </div>

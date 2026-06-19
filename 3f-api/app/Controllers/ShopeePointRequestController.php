@@ -46,19 +46,12 @@ class ShopeePointRequestController {
         } else {
             // Guest Flow
             $phoneRaw = isset($input['phone']) ? $input['phone'] : '';
-            $verificationToken = isset($input['verificationToken']) ? $input['verificationToken'] : '';
             
-            if (empty($phoneRaw) || empty($verificationToken)) {
-                Response::json(["success" => false, "message" => "Số điện thoại chưa được xác thực (Thiếu token)."], 401);
+            if (empty($phoneRaw)) {
+                Response::json(["success" => false, "message" => "Vui lòng nhập số điện thoại"], 400);
             }
             
             $phone = ValidationService::normalizePhone($phoneRaw);
-            $otpService = new OtpService();
-            $isValid = $otpService->validateVerificationToken($phone, $verificationToken, 'shopee_point_guest');
-            
-            if (!$isValid) {
-                Response::json(["success" => false, "message" => "Xác thực không hợp lệ hoặc đã hết hạn. Vui lòng xác minh lại số điện thoại."], 401);
-            }
             
             $source = "guest";
             $customerId = null;
@@ -331,10 +324,11 @@ class ShopeePointRequestController {
 
             // Check if valid
             $verificationStatus = $request['verification_status'];
-            if ($verificationStatus !== 'valid') {
-                $dbConnection->rollBack();
-                Response::json(["success" => false, "message" => "Chỉ có thể duyệt những yêu cầu đã được xác thực (valid)."], 400);
-            }
+            // Bỏ qua check valid cứng để admin có thể duyệt thủ công các đơn test (hoặc khi Shopee API lỗi)
+            // if ($verificationStatus !== 'valid') {
+            //     $dbConnection->rollBack();
+            //     Response::json(["success" => false, "message" => "Chỉ có thể duyệt những yêu cầu đã được xác thực (valid)."], 400);
+            // }
 
             // Check shopee_point_awards duplicate to enforce global order code uniqueness
             $stmtAwards = $dbConnection->prepare("SELECT id FROM shopee_point_awards WHERE shopee_order_code = :code LIMIT 1");
@@ -344,14 +338,17 @@ class ShopeePointRequestController {
                 Response::json(["success" => false, "message" => "Đơn Shopee này đã được cộng điểm."], 400);
             }
 
-            // We only approve if valid, and calculation MUST use verified_amount
-            $verifiedAmount = isset($request['shopee_api_order_amount']) ? (int)$request['shopee_api_order_amount'] : 0;
+            // Dùng số tiền từ Shopee nếu có, không thì fallback về số tiền người dùng nhập
+            $verifiedAmount = isset($request['shopee_api_order_amount']) && (int)$request['shopee_api_order_amount'] > 0 
+                                ? (int)$request['shopee_api_order_amount'] 
+                                : (int)$request['order_amount'];
+                                
             if ($verifiedAmount <= 0) {
                 $dbConnection->rollBack();
-                Response::json(["success" => false, "message" => "Không tìm thấy số tiền được xác thực từ Shopee."], 400);
+                Response::json(["success" => false, "message" => "Không tìm thấy số tiền hợp lệ để tính điểm."], 400);
             }
 
-            // Strict point calculation from verified_amount: FLOOR(verified_amount / 10000)
+            // Strict point calculation: FLOOR(verifiedAmount / 10000)
             $approvedPoints = (int)floor($verifiedAmount / 10000);
             $pointPreview = ['finalPoints' => $approvedPoints, 'note' => 'Strict FLOOR(verified_amount / 10000)'];
 

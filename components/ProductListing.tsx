@@ -9,6 +9,7 @@ import { NewBadge } from "@/components/NewBadge";
 import type { Product } from "@/types/store";
 import { addToCart, parsePriceString } from "@/lib/cartHelper";
 import { toast } from "sonner";
+import { useWishlist } from "@/src/context/WishlistContext";
 
 // Helper for image loading
 function Image({ src, alt, className }: { src: string, alt: string, className?: string }) {
@@ -22,6 +23,7 @@ function extractPrice(priceStr: string): number {
 
 export function ProductListing() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { toggleWishlist, isFavorite } = useWishlist();
   const queryParam = searchParams.get("q")?.trim() ?? "";
 
   const [viewMode] = useState<"grid" | "list">("grid");
@@ -260,6 +262,7 @@ export function ProductListing() {
                 const hasDiscount = !!product.oldPrice;
                 const isNew = product.sold < 50 && product.rating > 4.5;
                 const linkId = product.slug || product.id;
+                const isFav = isFavorite(product.id) || (product.backendId ? isFavorite(product.backendId) : false);
 
                 return (
                   <article key={product.id || idx} className="group relative flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-[24px] border border-[rgb(var(--color-border))] bg-white p-3 sm:p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(16,133,79,0.15)] hover:border-[rgb(var(--color-primary))]/30">
@@ -281,8 +284,21 @@ export function ProductListing() {
                     </div>
 
                     {/* Heart Icon */}
-                    <button className="absolute right-2 sm:right-3 top-2 sm:top-3 z-10 grid h-7 w-7 sm:h-8 sm:w-8 place-items-center rounded-full bg-white shadow-sm border border-[#F5F5F5] transition-colors hover:text-[#EF4444]">
-                      <Heart size={14} className="sm:w-4 sm:h-4 text-[rgb(var(--color-ink))]/30 transition-colors hover:fill-[#EF4444] hover:text-[#EF4444]" />
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleWishlist(product);
+                      }}
+                      className="absolute right-2 sm:right-3 top-2 sm:top-3 z-10 grid h-7 w-7 sm:h-8 sm:w-8 place-items-center rounded-full bg-white shadow-sm border border-[#F5F5F5] transition-all hover:scale-110 active:scale-95"
+                      aria-label={isFav ? "Xóa khỏi danh sách yêu thích" : "Thêm vào danh sách yêu thích"}
+                    >
+                      <Heart
+                        size={14}
+                        className={`sm:w-4 sm:h-4 transition-colors duration-200 ${
+                          isFav ? "fill-red-500 text-red-500" : "text-[rgb(var(--color-ink))]/30 hover:text-red-500"
+                        }`}
+                      />
                     </button>
 
                     <div className="flex flex-col h-full">

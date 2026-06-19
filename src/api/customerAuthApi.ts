@@ -59,14 +59,6 @@ interface OtpResponse {
   code?: string;
 }
 
-interface VerifyOtpResponse {
-  success: boolean;
-  message?: string;
-  action?: "logged_in" | "need_register" | "verified";
-  data?: { token: string; customer: CustomerData };
-  verificationToken?: string;
-}
-
 // ─── API Functions ───
 
 export async function registerEmail(body: {
@@ -89,48 +81,6 @@ export async function loginPassword(body: {
   password: string;
 }): Promise<AuthResponse> {
   const res = await fetch(buildApiUrl("/api/customer/auth/login-password"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  return res.json();
-}
-
-export async function requestOtp(body: {
-  phone: string;
-  purpose: string;
-}): Promise<OtpResponse> {
-  const res = await fetch(buildApiUrl("/api/customer/auth/request-otp"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  return res.json();
-}
-
-export async function verifyOtp(body: {
-  phone: string;
-  otp: string;
-  purpose: string;
-}): Promise<VerifyOtpResponse> {
-  const res = await fetch(buildApiUrl("/api/customer/auth/verify-otp"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  return res.json();
-}
-
-export async function completePhoneRegister(body: {
-  phone: string;
-  verificationToken: string;
-  fullName: string;
-  email?: string;
-  password?: string;
-  passwordConfirmation?: string;
-  acceptTerms: boolean;
-}): Promise<AuthResponse> {
-  const res = await fetch(buildApiUrl("/api/customer/auth/complete-phone-register"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

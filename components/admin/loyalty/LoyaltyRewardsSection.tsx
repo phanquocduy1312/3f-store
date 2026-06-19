@@ -454,17 +454,29 @@ export function LoyaltyRewardsSection() {
                     <tr key={reward.id} className="align-top hover:bg-[#F8FBFF]/60">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {reward.imageUrl ? (
-                            <img
-                              src={buildImageUrl(reward.imageUrl)}
-                              alt=""
-                              className="h-11 w-11 rounded-xl object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F3F7FD] text-[#8AA1C2]">
-                              <Gift className="h-5 w-5" />
-                            </div>
-                          )}
+                          {(() => {
+                            let imgUrl = reward.imageUrl ? buildImageUrl(reward.imageUrl) : "";
+                            if (!imgUrl) {
+                              if (reward.name.toLowerCase().includes("vận chuyển")) {
+                                imgUrl = "/assets/rewards/free_shipping.png";
+                              } else if (reward.name.toLowerCase().includes("petq") || reward.rewardType === "physical_gift") {
+                                imgUrl = "/assets/rewards/pet_soup.png";
+                              } else if (reward.rewardType === "voucher" || reward.name.toLowerCase().includes("voucher")) {
+                                imgUrl = "/assets/rewards/voucher_50k.png";
+                              }
+                            }
+                            return imgUrl ? (
+                              <img
+                                src={imgUrl}
+                                alt=""
+                                className="h-11 w-11 rounded-xl object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F3F7FD] text-[#8AA1C2]">
+                                <Gift className="h-5 w-5" />
+                              </div>
+                            );
+                          })()}
                           <div>
                             <div className="font-black text-[#0B1F3A]">{reward.name}</div>
                             <div className="mt-1 line-clamp-2 max-w-[260px] text-[12px] font-semibold text-[#64748B]">

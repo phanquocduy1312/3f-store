@@ -1,4 +1,4 @@
-﻿import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   Briefcase,
   Edit2,
@@ -20,13 +20,18 @@ import {
   type AddressData,
 } from "@/src/api/customerAddressesApi";
 
-type AddressForm = AddressData;
+type AddressForm = AddressData & {
+  districtCode?: string;
+  districtName?: string;
+};
 
 const emptyAddress: AddressForm = {
   receiverName: "",
   receiverPhone: "",
   provinceCode: "",
   provinceName: "",
+  districtCode: "",
+  districtName: "",
   wardCode: "",
   wardName: "",
   addressLine: "",
@@ -52,6 +57,11 @@ function normalizeLocationCode(value: string) {
 }
 
 function buildPayload(form: AddressForm, shouldForceDefault: boolean): AddressData {
+  let finalAddressLine = form.addressLine.trim();
+  if (form.districtName && !finalAddressLine.includes(form.districtName.trim())) {
+    finalAddressLine = finalAddressLine ? `${finalAddressLine}, ${form.districtName.trim()}` : form.districtName.trim();
+  }
+  
   return {
     ...form,
     receiverName: form.receiverName.trim(),
@@ -60,7 +70,7 @@ function buildPayload(form: AddressForm, shouldForceDefault: boolean): AddressDa
     provinceCode: form.provinceCode || normalizeLocationCode(form.provinceName),
     wardName: form.wardName.trim(),
     wardCode: form.wardCode || normalizeLocationCode(form.wardName),
-    addressLine: form.addressLine.trim(),
+    addressLine: finalAddressLine,
     note: form.note?.trim() || "",
     type: form.type || "home",
     isDefault: shouldForceDefault || Boolean(form.isDefault),
@@ -70,8 +80,9 @@ function buildPayload(form: AddressForm, shouldForceDefault: boolean): AddressDa
 function validateAddress(form: AddressForm) {
   if (!form.receiverName.trim()) return "Vui lòng nhập tên người nhận.";
   if (!/^(0|\+84)[0-9]{8,10}$/.test(form.receiverPhone.trim())) return "Số điện thoại chưa hợp lệ.";
-  if (!form.provinceName.trim()) return "Vui lòng nhập tỉnh/thành phố.";
-  if (!form.wardName.trim()) return "Vui lòng nhập phường/xã.";
+  if (!form.provinceName.trim()) return "Vui lòng chọn tỉnh/thành phố.";
+  if (!form.districtName?.trim()) return "Vui lòng chọn quận/huyện.";
+  if (!form.wardName.trim()) return "Vui lòng chọn phường/xã.";
   if (!form.addressLine.trim()) return "Vui lòng nhập địa chỉ cụ thể.";
   return "";
 }
@@ -88,6 +99,44 @@ export function AddressesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<AddressData | null>(null);
   const [form, setForm] = useState<AddressForm>(emptyAddress);
+
+  // Address API States
+  const [provinces, setProvinces] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [wards, setWards] = useState<any[]>([]);
+  
+  // Fetch initial provinces
+  useEffect(() => {
+    fetch("https://provinces.open-api.vn/api/p/")
+      .then((res) => res.json())
+      .then((data) => setProvinces(data))
+      .catch((err) => console.error("Failed to load provinces:", err));
+  }, []);
+
+  // Fetch districts when province changes
+  useEffect(() => {
+    if (form.provinceCode) {
+      fetch(`https://provinces.open-api.vn/api/p/${form.provinceCode}?depth=2`)
+        .then((res) => res.json())
+        .then((data) => setDistricts(data.districts || []))
+        .catch(console.error);
+    } else {
+      setDistricts([]);
+      setWards([]);
+    }
+  }, [form.provinceCode]);
+
+  // Fetch wards when district changes
+  useEffect(() => {
+    if (form.districtCode) {
+      fetch(`https://provinces.open-api.vn/api/d/${form.districtCode}?depth=2`)
+        .then((res) => res.json())
+        .then((data) => setWards(data.wards || []))
+        .catch(console.error);
+    } else {
+      setWards([]);
+    }
+  }, [form.districtCode]);
 
   const sortedAddresses = useMemo(
     () =>
@@ -126,7 +175,8 @@ export function AddressesPage() {
 
   const openEditModal = (address: AddressData) => {
     setEditingAddress(address);
-    setForm({ ...emptyAddress, ...address });
+    // Since district is not saved separately, we try to extract it from addressLine or just leave it empty for re-selection
+    setForm({ ...emptyAddress, ...address, districtCode: "", districtName: "" });
     setModalOpen(true);
   };
 
@@ -355,21 +405,79 @@ export function AddressesPage() {
               </label>
               <label className="space-y-2">
                 <span className="text-sm font-black text-[#0B1F3A]">Tỉnh/Thành phố</span>
-                <input
-                  value={form.provinceName}
-                  onChange={(event) => setForm((prev) => ({ ...prev, provinceName: event.target.value }))}
-                  className="h-12 w-full rounded-xl border border-[#DCEBFF] px-4 text-sm font-semibold outline-none transition focus:border-[#0057E7]"
-                  placeholder="TP. Hồ Chí Minh"
-                />
+                <select
+                  value={form.provinceCode}
+                  onChange={(e) => {
+                    const sel = provinces.find((p) => p.code == e.target.value);
+                    setForm((prev) => ({
+                      ...prev,
+                      provinceCode: sel?.code?.toString() || "",
+                      provinceName: sel?.name || "",
+                      districtCode: "",
+                      districtName: "",
+                      wardCode: "",
+                      wardName: "",
+                    }));
+                  }}
+                  className="h-12 w-full rounded-xl border border-[#DCEBFF] px-4 text-sm font-semibold outline-none transition focus:border-[#0057E7] bg-white"
+                >
+                  <option value="">Chọn Tỉnh/Thành phố</option>
+                  {provinces.map((p) => (
+                    <option key={p.code} value={p.code}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
               </label>
+              
+              <label className="space-y-2">
+                <span className="text-sm font-black text-[#0B1F3A]">Quận/Huyện</span>
+                <select
+                  value={form.districtCode}
+                  disabled={!form.provinceCode}
+                  onChange={(e) => {
+                    const sel = districts.find((d) => d.code == e.target.value);
+                    setForm((prev) => ({
+                      ...prev,
+                      districtCode: sel?.code?.toString() || "",
+                      districtName: sel?.name || "",
+                      wardCode: "",
+                      wardName: "",
+                    }));
+                  }}
+                  className="h-12 w-full rounded-xl border border-[#DCEBFF] px-4 text-sm font-semibold outline-none transition focus:border-[#0057E7] bg-white disabled:bg-slate-50 disabled:opacity-70"
+                >
+                  <option value="">Chọn Quận/Huyện</option>
+                  {districts.map((d) => (
+                    <option key={d.code} value={d.code}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
               <label className="space-y-2">
                 <span className="text-sm font-black text-[#0B1F3A]">Phường/Xã</span>
-                <input
-                  value={form.wardName}
-                  onChange={(event) => setForm((prev) => ({ ...prev, wardName: event.target.value }))}
-                  className="h-12 w-full rounded-xl border border-[#DCEBFF] px-4 text-sm font-semibold outline-none transition focus:border-[#0057E7]"
-                  placeholder="Phường Bến Nghé"
-                />
+                <select
+                  value={form.wardCode}
+                  disabled={!form.districtCode}
+                  onChange={(e) => {
+                    const sel = wards.find((w) => w.code == e.target.value);
+                    setForm((prev) => ({
+                      ...prev,
+                      wardCode: sel?.code?.toString() || "",
+                      wardName: sel?.name || "",
+                    }));
+                  }}
+                  className="h-12 w-full rounded-xl border border-[#DCEBFF] px-4 text-sm font-semibold outline-none transition focus:border-[#0057E7] bg-white disabled:bg-slate-50 disabled:opacity-70"
+                >
+                  <option value="">Chọn Phường/Xã</option>
+                  {wards.map((w) => (
+                    <option key={w.code} value={w.code}>
+                      {w.name}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="space-y-2 md:col-span-2">
                 <span className="text-sm font-black text-[#0B1F3A]">Địa chỉ cụ thể</span>

@@ -10,6 +10,7 @@ import { MobileNavigationDrawer } from "./mobile-navigation-drawer";
 import { ProductSearchBox } from "@/src/components/ProductSearchBox";
 import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
 import { getProductCategories } from "@/src/api/productsApi";
+import { useWishlist } from "@/src/context/WishlistContext";
 
 type Product = {
   id: string;
@@ -207,7 +208,10 @@ export function Header() {
   const [cartCount, setCartCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isLoggedIn } = useCustomerAuth();
+  const { wishlist } = useWishlist();
   const [navData, setNavData] = useState<MenuItem[]>(navigationData);
+  
+  const wishlistCount = wishlist.length;
 
   useEffect(() => {
     setCartCount(getCartCount());
@@ -300,9 +304,16 @@ export function Header() {
               </button>
 
               <Link to="/wishlist"
-                className="flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3"
+                className="relative flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3"
                 aria-label="Yêu thích">
-                <Heart size={24} strokeWidth={2} />
+                <div className="relative">
+                  <Heart size={24} strokeWidth={2} />
+                  {wishlistCount > 0 ? (
+                    <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#E11D48] text-[10px] font-black text-white ring-2 ring-white">
+                      {wishlistCount}
+                    </span>
+                  ) : null}
+                </div>
                 <span className="hidden text-[0.72rem] font-bold text-forest/90 sm:block">Yêu thích</span>
               </Link>
 

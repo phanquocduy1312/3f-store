@@ -1,5 +1,30 @@
 # Project Changelog
 
+## [2026-06-19]
+### Added
+- Triển khai tính năng Sản phẩm yêu thích (Wishlist) chuẩn nghiệp vụ:
+  - Thiết kế bảng cơ sở dữ liệu `customer_wishlists` liên kết `customer_id` và `product_id` có index và unique constraint.
+  - Viết Model `CustomerWishlist.php` và Controller `CustomerWishlistController.php` để lấy danh sách, toggle trạng thái yêu thích, và đồng bộ mảng ID từ local storage.
+  - Tích hợp `WishlistContext.tsx` quản lý offline local storage cho Khách vãng lai (Guest) và tự động gọi API đồng bộ lên MySQL ngay khi đăng ký/đăng nhập thành công.
+  - Tạo trang danh sách yêu thích `/wishlist` (`WishlistPage.tsx`) dạng lưới sản phẩm responsive, hỗ trợ trạng thái trống (Empty State) và kêu gọi hành động mua sắm.
+  - Cập nhật huy hiệu đếm số lượng (Badge Count) trên icon Yêu thích của Header (`Header.tsx`).
+  - Thêm nút Trái tim Toggle yêu thích có hiệu ứng scale và màu sắc bằng Framer Motion nổi bật trên ảnh `ProductCard.tsx` (ẩn trên desktop cho đến khi hover, hiện mặc định trên mobile) và trang chi tiết `ProductDetail.tsx`.
+  - Tích hợp nút Trái tim và hiển thị trạng thái màu đỏ đồng bộ cho danh sách sản phẩm trên trang danh mục Tất cả sản phẩm (`ProductListing.tsx`).
+  - Viết kịch bản kiểm thử API tích hợp `scratch/test-wishlist-api.js` chạy thành công.
+- Kết nối dữ liệu thời gian thực cho Admin Dashboard từ database MySQL:
+  - Cập nhật backend `AdminDashboardController.getRevenueChart` để trả về doanh thu VND thô dạng số thực thay vì chia sẵn 1.000.000.
+  - Tích hợp biểu đồ doanh thu `admin-revenue-chart.tsx` gọi API và hỗ trợ bộ lọc động 7 ngày / 30 ngày.
+  - Triển khai thuật toán vẽ biểu đồ đường SVG tự động điều chỉnh tỷ lệ trục Y theo doanh thu lớn nhất của chu kỳ.
+  - Tự động tính toán các chỉ số hộp tổng kết dưới biểu đồ (Tổng doanh thu, Tổng đơn hàng, Giá trị đơn trung bình, Đơn hàng TB/ngày) và so sánh phần trăm xu hướng tăng/giảm với kỳ trước đó.
+- Tinh chỉnh trang quản lý và Dashboard của Admin:
+  - Loại bỏ nút "Xuất CSV" và toàn bộ logic gọi API xuất file CSV khỏi trang Quản lý khách hàng (`AdminCustomersPage.tsx`).
+  - Loại bỏ các chỉ số "Tỷ lệ chuyển đổi", "Giá trị đơn trung bình", "Đơn hoàn tất" và "Sản phẩm sắp hết hàng" khỏi Dashboard.
+  - Thiết kế Dashboard KPI section nhỏ gọn, tinh tế và đẹp mắt với đúng 6 chỉ số còn lại (*Doanh thu hôm nay, Số đơn hôm nay, Đơn chờ xác nhận, Đơn đang giao, Khách hàng mới, Điểm 3F Club đã cộng*) nằm gọn trên một hàng ngang duy nhất ở màn hình desktop (`lg:grid-cols-6`).
+  - Cải tiến component `AdminKpiCard.tsx` hỗ trợ co giãn linh hoạt và tối ưu kích thước text/padding để đảm bảo hiển thị hoàn hảo, không bị tràn hay lỗi dòng trên mọi kích cỡ màn hình.
+  - Loại bỏ hai panel biểu đồ/danh sách *"Nguồn đơn hàng"* (donut chart) và *"Lead tư vấn mới nhất"* (AI leads list) khỏi Dashboard để tinh giản giao diện.
+  - Sắp xếp lại hàng dưới của Dashboard thành 3 cột cân đối (`lg:grid-cols-3`): *"Yêu cầu Shopee mới nhất"*, *"Top sản phẩm bán chạy"* và *"Top nhu cầu thú cưng"*. Cả 3 panel đều có chiều cao đồng bộ `h-[360px]` giúp giao diện đạt trạng thái cân bằng tuyệt đối.
+  - Sửa lỗi chính tả không có dấu tiếng Việt tại component *"Top sản phẩm bán chạy"* (`AdminTopProducts.tsx`): cập nhật tiêu đề thành *"Top sản phẩm bán chạy"*, phụ đề thành *"Sản phẩm có doanh số cao nhất"*, nút action thành *"7 ngày qua"*, nhãn số lượng thành *"Đã bán"*, và sửa định dạng đơn vị tiền tệ từ `"d"` thành ký hiệu chuẩn `"đ"`.
+
 ## [2026-06-17]
 ### Added
 - Triển khai tính năng Tìm kiếm Sản phẩm Real-time trên Production:

@@ -21,6 +21,7 @@ const LoyaltySettingsPage = lazy(() => import("./pages/admin/LoyaltySettingsPage
 const ThreeFClubPage = lazy(() => import("./pages/admin/ThreeFClubPage"));
 const CustomerLoyaltyPage = lazy(() => import("./pages/admin/CustomerLoyaltyPage"));
 const CustomerRewardsPage = lazy(() => import("./pages/client/CustomerRewardsPage"));
+const WishlistPage = lazyPage(() => import("./pages/client/WishlistPage"), "WishlistPage");
 const OrderSuccess = lazyPage(() => import("./pages/OrderSuccess"), "OrderSuccess");
 const OrderTracking = lazyPage(() => import("./pages/OrderTracking"), "OrderTracking");
 const AdminOrdersPage = lazyPage(() => import("./pages/admin/AdminOrdersPage"), "AdminOrdersPage");
@@ -89,6 +90,7 @@ export function App() {
           <Route path="/products" element={<Products />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<CartCheckout />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           

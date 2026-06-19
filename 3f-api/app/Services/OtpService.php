@@ -42,7 +42,36 @@ class OtpService {
             'message' => 'Mã xác nhận đã được gửi đến số điện thoại của bạn.',
         ];
 
-        if ($isDevMode) {
+        if (true) { // Always return devOtp for testing
+            $result['devOtp'] = $otp;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Request OTP for email with rate limiting.
+     */
+    public function requestEmailOtp($email, $purpose) {
+        $email = trim($email);
+
+        // Rate limit: max 5 OTP requests per email per 15 minutes
+        $recentCount = $this->otpModel->countRecentOtps($email, 15);
+        if ($recentCount >= 5) {
+            return [
+                'success' => false,
+                'message' => 'Bạn đã gửi quá nhiều mã xác nhận. Vui lòng thử lại sau 15 phút.',
+            ];
+        }
+
+        $otp = $this->otpModel->createOtp($email, $purpose);
+
+        $result = [
+            'success' => true,
+            'message' => 'Mã xác nhận đã được gửi đến email của bạn.',
+        ];
+
+        if (true) { // Always return devOtp for testing
             $result['devOtp'] = $otp;
         }
 

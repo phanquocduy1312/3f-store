@@ -1,21 +1,12 @@
-import { useState, useEffect } from "react";
 import { RegisterForm } from "@/components/Auth/RegisterForm";
 import { SocialLogins } from "@/components/Auth/SocialLogins";
-import { PhoneAuthForm } from "@/components/Auth/PhoneAuthForm";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
 
 export function Register() {
-  const [authMode, setAuthMode] = useState<"email" | "phone">("email");
-  const location = useLocation();
   const navigate = useNavigate();
   const { isLoggedIn } = useCustomerAuth();
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get("mode") === "phone") setAuthMode("phone");
-  }, [location]);
 
   // Redirect if already logged in
   if (isLoggedIn) {
@@ -31,47 +22,28 @@ export function Register() {
       <div className="flex-1 lg:col-span-7 xl:col-span-6 flex flex-col justify-center px-4 sm:px-12 lg:px-20 xl:px-24 py-10">
         <div className="w-full max-w-[440px] mx-auto space-y-6">
           
-          {authMode === "email" ? (
-            <>
-              {/* Header */}
-              <div className="space-y-3">
-                <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-forest hover:text-forest-dark transition">
-                  <ArrowLeft size={14} /> Quay lại trang chủ
-                </Link>
-                <h1 className="text-3xl font-black text-ink tracking-tight">Đăng ký thành viên</h1>
-                <p className="text-sm font-semibold text-ink/50">
-                  Nhận ngay ưu đãi 15% cho đơn hàng đầu tiên của bạn!
-                </p>
-                <button onClick={() => setAuthMode("phone")}
-                  className="inline-flex items-center gap-1.5 text-sm font-bold text-forest hover:text-forest-dark transition pt-1">
-                  <Phone size={14} /> Đăng ký bằng số điện thoại
-                </button>
-              </div>
+          <>
+            {/* Header */}
+            <div className="space-y-3">
+              <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-forest hover:text-forest-dark transition">
+                <ArrowLeft size={14} /> Quay lại trang chủ
+              </Link>
+              <h1 className="text-3xl font-black text-ink tracking-tight">Đăng ký thành viên</h1>
+              <p className="text-sm font-semibold text-ink/50">
+                Nhận ngay ưu đãi 15% cho đơn hàng đầu tiên của bạn!
+              </p>
+            </div>
 
-              <RegisterForm onSuccess={handleSuccess} />
-              <SocialLogins label="Hoặc đăng ký bằng" />
+            <RegisterForm onSuccess={handleSuccess} />
+            <SocialLogins label="Hoặc đăng ký bằng" />
 
-              <div className="text-center pt-2">
-                <p className="text-sm font-semibold text-ink/60">
-                  Bạn đã có tài khoản?{" "}
-                  <Link to="/login" className="font-bold text-forest hover:underline transition">Đăng nhập ngay</Link>
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="mb-0">
-                <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-forest hover:text-forest-dark transition">
-                  <ArrowLeft size={14} /> Quay lại trang chủ
-                </Link>
-              </div>
-              <PhoneAuthForm
-                context="register"
-                onSwitchToEmail={() => setAuthMode("email")}
-                onSuccess={handleSuccess}
-              />
-            </>
-          )}
+            <div className="text-center pt-2">
+              <p className="text-sm font-semibold text-ink/60">
+                Bạn đã có tài khoản?{" "}
+                <Link to="/login" className="font-bold text-forest hover:underline transition">Đăng nhập ngay</Link>
+              </p>
+            </div>
+          </>
 
         </div>
       </div>

@@ -4,11 +4,10 @@ import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminKpiCard } from "@/components/admin/admin-kpi-card";
 import { AdminTaskQueue } from "@/components/admin/admin-task-queue";
 import { AdminRevenueChart } from "@/components/admin/admin-revenue-chart";
-import { AdminSourceDonutChart } from "@/components/admin/admin-source-donut-chart";
 import { AdminTopProducts } from "@/components/admin/admin-top-products";
 import { AdminPetNeedsStats } from "@/components/admin/admin-pet-needs-stats";
-import { AdminAiLeadList } from "@/components/admin/admin-ai-lead-list";
 import { AdminShopeeRequestList } from "@/components/admin/admin-shopee-request-list";
+import { adminDashboardApi, DashboardStatsResponse } from "../../api/adminDashboardApi";
 
 interface KpiData {
   title: string;
@@ -29,6 +28,8 @@ export function AdminDashboard() {
   });
   const [searchValue, setSearchValue] = useState("");
   const [selectedDate, setSelectedDate] = useState("today");
+  const [stats, setStats] = useState<DashboardStatsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const handleResize = () => {
@@ -44,68 +45,72 @@ export function AdminDashboard() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+
+    adminDashboardApi.getStats()
+      .then(res => {
+        if (!isMounted) return;
+        setStats(res);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Failed to load dashboard stats", err);
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const kpis: KpiData[] = [
     {
       title: "Doanh thu hôm nay",
-      value: "28.450.000đ",
-      change: "+18.6%",
-      trend: "up",
+      value: stats?.revenue.value ?? "0đ",
+      change: stats?.revenue.change ?? "0%",
+      trend: stats?.revenue.trend ?? "up",
       icon: "wallet",
-      formula: "Tổng giá trị đơn hàng website trong ngày, chỉ tính đơn paid / processing / completed, không tính đơn cancelled."
+      formula: "Tổng doanh thu bán hàng thực tế trong ngày sau khi đã trừ giảm giá."
     },
     {
-      title: "Đơn hàng hôm nay",
-      value: "156",
-      change: "+14.3%",
-      trend: "up",
+      title: "Số đơn hôm nay",
+      value: stats?.orders.value ?? "0",
+      change: stats?.orders.change ?? "0%",
+      trend: stats?.orders.trend ?? "up",
       icon: "cart",
-      formula: "Số đơn hàng website được tạo trong ngày, không tính đơn đã hủy."
+      formula: "Số đơn hàng website được tạo trong ngày."
     },
     {
-      title: "Tỷ lệ chuyển đổi",
-      value: "2.35%",
-      change: "+0.35%",
-      trend: "up",
-      icon: "trending-up",
-      formula: "Số đơn hàng chia cho số lượt truy cập website trong cùng khoảng thời gian."
+      title: "Đơn chờ xác nhận",
+      value: stats?.pending.value ?? "0",
+      change: stats?.pending.change ?? "0",
+      trend: stats?.pending.trend ?? "up",
+      icon: "clock",
+      formula: "Số đơn hàng mới đang chờ duyệt thanh toán hoặc xác nhận thông tin."
     },
     {
-      title: "Giá trị đơn trung bình",
-      value: "182.371đ",
-      change: "+6.8%",
-      trend: "up",
-      icon: "receipt",
-      formula: "Doanh thu chia cho số đơn hàng trong cùng khoảng thời gian."
-    },
-    {
-      title: "Lead tư vấn mới",
-      value: "72",
-      change: "+21.4%",
-      trend: "up",
-      icon: "bot",
-      formula: "Số khách để lại thông tin qua AI Pet Advisor trong ngày."
-    },
-    {
-      title: "Shopee chờ duyệt",
-      value: "18",
-      change: "-5",
-      trend: "down",
-      icon: "shopee",
-      formula: "Số yêu cầu quy đổi điểm Shopee có trạng thái pending."
+      title: "Đơn đang giao",
+      value: stats?.shipping.value ?? "0",
+      change: stats?.shipping.change ?? "0%",
+      trend: stats?.shipping.trend ?? "up",
+      icon: "truck",
+      formula: "Số đơn hàng đang được đối tác vận chuyển giao tới khách hàng."
     },
     {
       title: "Khách hàng mới",
-      value: "61",
-      change: "+12.2%",
-      trend: "up",
+      value: stats?.newCustomers.value ?? "0",
+      change: stats?.newCustomers.change ?? "0%",
+      trend: stats?.newCustomers.trend ?? "up",
       icon: "users",
-      formula: "Số khách hàng có SĐT mới được tạo trong CRM trong ngày."
+      formula: "Số tài khoản khách hàng mới đăng ký trong ngày."
     },
     {
       title: "Điểm 3F Club đã cộng",
-      value: "6.240",
-      change: "+22.1%",
-      trend: "up",
+      value: stats?.points.value ?? "0",
+      change: stats?.points.change ?? "0%",
+      trend: stats?.points.trend ?? "up",
       icon: "gift",
       formula: "Tổng điểm earn đã được duyệt và cộng vào tài khoản 3F Club trong ngày."
     }
@@ -156,7 +161,7 @@ export function AdminDashboard() {
           </div>
 
           {/* Row 1: KPI Cards */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 shrink-0">
             {kpis.map((kpi, idx) => (
               <AdminKpiCard 
                 key={idx}
@@ -180,21 +185,11 @@ export function AdminDashboard() {
             </div>
           </section>
 
-          {/* Row 3: Nguồn đơn hàng + Lead tư vấn + Shopee */}
+          {/* Row 3: Shopee + Sản phẩm + Nhu cầu thú cưng */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-5 shrink-0">
-            <div className="h-full">
-              <AdminSourceDonutChart />
-            </div>
-            <div className="h-full">
-              <AdminAiLeadList searchValue={searchValue} />
-            </div>
             <div className="h-full">
               <AdminShopeeRequestList searchValue={searchValue} />
             </div>
-          </section>
-
-          {/* Row 4: Sản phẩm + Nhu cầu thú cưng */}
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-5 shrink-0">
             <div className="h-full">
               <AdminTopProducts />
             </div>

@@ -2,13 +2,14 @@
 
 import { Image } from "@/components/Image";
 import { Link } from "react-router-dom";
-import { Star, ShoppingCart } from "lucide-react";
+import { Star, ShoppingCart, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { SaleBadge } from "@/components/SaleBadge";
 import { NewBadge } from "@/components/NewBadge";
 import type { Product } from "@/types/store";
 import { addToCart, parsePriceString } from "@/lib/cartHelper";
 import { toast } from "sonner";
+import { useWishlist } from "@/src/context/WishlistContext";
 
 interface ProductCardProps {
   product: Product;
@@ -28,6 +29,9 @@ function formatCompactSold(sold: number) {
 }
 
 export function ProductCard({ product, isNew, index = 0 }: ProductCardProps) {
+  const { toggleWishlist, isFavorite } = useWishlist();
+  const isFav = isFavorite(product.id) || (product.backendId ? isFavorite(product.backendId) : false);
+
   const hasDiscount = !!product.oldPrice;
   const priceValue = getPriceValue(product.price);
   const oldPriceValue = product.oldPrice ? getPriceValue(product.oldPrice) : 0;
@@ -44,6 +48,25 @@ export function ProductCard({ product, isNew, index = 0 }: ProductCardProps) {
       whileHover={{ y: -4 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
     >
+      {/* Wishlist Heart Button */}
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleWishlist(product);
+        }}
+        className="absolute right-2.5 top-2.5 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-forest shadow-md backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95 sm:opacity-0 sm:group-hover:opacity-100 group-focus-within:opacity-100"
+        aria-label={isFav ? "Xóa khỏi danh sách yêu thích" : "Thêm vào danh sách yêu thích"}
+      >
+        <Heart
+          size={16}
+          className={`transition-colors duration-200 ${
+            isFav ? "fill-red-500 text-red-500" : "text-ink/40 group-hover:text-red-500"
+          }`}
+        />
+      </motion.button>
+
       {/* Image Section */}
       <Link
         to={`/product/${product.id}`}

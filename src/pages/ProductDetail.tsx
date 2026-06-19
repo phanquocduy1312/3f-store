@@ -15,6 +15,7 @@ import {
   Fish, BicepsFlexed, Droplets, Eye, HeartHandshake
 } from "lucide-react";
 import type { Product } from "@/types/store";
+import { useWishlist } from "@/src/context/WishlistContext";
 
 function escapeHtml(value: string) {
   return value
@@ -56,7 +57,10 @@ function isFoodItem(category?: string) {
 export function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toggleWishlist, isFavorite } = useWishlist();
   const [product, setProduct] = useState<Product>(EMPTY_PRODUCT);
+  
+  const isFav = isFavorite(product.id) || (product.backendId ? isFavorite(product.backendId) : false);
   const [isLoadingProduct, setIsLoadingProduct] = useState(true);
   const [detailError, setDetailError] = useState<string | null>(null);
   
@@ -435,39 +439,56 @@ export function ProductDetail() {
                   </button>
                 </div>
 
-                {isOutOfStock ? (
-                  <button 
-                    disabled 
-                    className="flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] bg-gray-200 px-6 text-[17px] font-black text-gray-400 cursor-not-allowed border border-gray-300"
+                <div className="flex flex-1 gap-3">
+                  {isOutOfStock ? (
+                    <button 
+                      disabled 
+                      className="flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] bg-gray-200 px-6 text-[17px] font-black text-gray-400 cursor-not-allowed border border-gray-300"
+                    >
+                      Hết hàng
+                    </button>
+                  ) : (
+                    <>
+                      <button 
+                        onClick={() => handleAddToCart(false)}
+                        disabled={isButtonDisabled}
+                        className={`flex h-[60px] flex-1 items-center justify-center gap-2 px-3 text-[15px] font-black py-4 transition ${
+                          isButtonDisabled
+                            ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 shadow-none"
+                            : "bg-[rgb(var(--color-primary-soft))] text-[rgb(var(--color-primary))] shadow-lg hover:bg-[rgb(var(--color-primary-muted))] hover:shadow-xl"
+                        }`}
+                      >
+                        <ShoppingCart size={20} strokeWidth={2.5}/> Thêm vào giỏ 
+                      </button>
+                      <button 
+                        onClick={() => handleAddToCart(true)}
+                        disabled={isButtonDisabled}
+                        className={`flex h-[60px] flex-1 items-center justify-center gap-2 px-3 text-[15px] font-black text-white py-4 transition ${
+                          isButtonDisabled
+                            ? "bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300 shadow-none"
+                            : "bg-[rgb(var(--color-primary))] shadow-lg shadow-[rgb(var(--color-primary))]/30 hover:bg-[rgb(var(--color-primary-dark))] hover:shadow-xl"
+                        }`}
+                      >
+                        Mua ngay
+                      </button>
+                    </>
+                  )}
+
+                  <button
+                    onClick={() => toggleWishlist(product)}
+                    className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] border-2 transition-all duration-200 hover:scale-105 active:scale-95 ${
+                      isFav
+                        ? "border-red-500 bg-red-50 text-red-500 shadow-sm"
+                        : "border-gray-200 bg-white text-gray-500 hover:border-red-500 hover:text-red-500"
+                    }`}
+                    aria-label={isFav ? "Xóa khỏi danh sách yêu thích" : "Thêm vào danh sách yêu thích"}
                   >
-                    Hết hàng
+                    <Heart
+                      size={22}
+                      className={isFav ? "fill-red-500 text-red-500" : ""}
+                    />
                   </button>
-                ) : (
-                  <>
-                    <button 
-                      onClick={() => handleAddToCart(false)}
-                      disabled={isButtonDisabled}
-                      className={`flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] px-6 text-[17px] font-black py-4 transition ${
-                        isButtonDisabled
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 shadow-none"
-                          : "bg-[rgb(var(--color-primary-soft))] text-[rgb(var(--color-primary))] shadow-lg hover:bg-[rgb(var(--color-primary-muted))] hover:shadow-xl"
-                      }`}
-                    >
-                      <ShoppingCart size={22} strokeWidth={2.5}/> Thêm vào giỏ 
-                    </button>
-                    <button 
-                      onClick={() => handleAddToCart(true)}
-                      disabled={isButtonDisabled}
-                      className={`flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] px-6 text-[17px] font-black text-white py-4 transition ${
-                        isButtonDisabled
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300 shadow-none"
-                          : "bg-[rgb(var(--color-primary))] shadow-lg shadow-[rgb(var(--color-primary))]/30 hover:bg-[rgb(var(--color-primary-dark))] hover:shadow-xl"
-                      }`}
-                    >
-                      Mua ngay
-                    </button>
-                  </>
-                )}
+                </div>
               </div>
               
               <div className="mt-4 flex items-center justify-center gap-4 text-[12px] font-medium text-[rgb(var(--color-ink-soft))]">

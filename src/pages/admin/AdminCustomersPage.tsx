@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { adminCustomersApi, AdminCustomerListParams } from "../../api/adminCustomersApi";
-import { Search, Filter, ShieldAlert, CheckCircle2, XCircle, Eye, ShieldOff, SearchX, Download } from "lucide-react";
+import { Search, Filter, ShieldAlert, CheckCircle2, XCircle, Eye, ShieldOff, SearchX } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -63,31 +63,6 @@ export function AdminCustomersPage() {
     setPage(1);
   }, [searchValue, statusFilter, tierFilter, phoneVerifiedFilter, hasOrdersFilter]);
 
-  const handleExportCsv = async () => {
-    try {
-      const params: AdminCustomerListParams = {
-        q: searchValue,
-        status: statusFilter,
-        tier: tierFilter,
-        phoneVerified: phoneVerifiedFilter,
-        hasOrders: hasOrdersFilter
-      };
-      const toastId = toast.loading("Đang chuẩn bị file CSV...");
-      const blob = await adminCustomersApi.exportCsvBlob(params);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `customers_export_${new Date().getTime()}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
-      toast.success("Xuất CSV thành công", { id: toastId });
-    } catch (err: any) {
-      toast.error(err.message || "Lỗi khi xuất CSV");
-    }
-  };
-
   const handleToggleStatus = async (id: number, currentStatus: string) => {
     if (currentStatus === "active") {
       setConfirmBlockId(id);
@@ -147,13 +122,6 @@ export function AdminCustomersPage() {
                 <p className="text-xs text-slate-500 font-semibold">Tổng khách hàng</p>
                 <p className="text-lg font-black text-[#0B1F3A]">{total}</p>
               </div>
-              <button 
-                onClick={handleExportCsv}
-                className="flex items-center gap-2 px-4 py-3 bg-[#0B1F3A] text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm"
-              >
-                <Download size={18} />
-                <span className="hidden sm:inline">Xuất CSV</span>
-              </button>
             </div>
           </div>
 

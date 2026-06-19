@@ -73,6 +73,8 @@ use App\Controllers\CustomerOrderController;
 use App\Controllers\CustomerClubController;
 use App\Controllers\CustomerSecurityController;
 use App\Controllers\CustomerPetController;
+use App\Controllers\CustomerWishlistController;
+use App\Controllers\AdminDashboardController;
 
 try {
     // 0. Pre-instantiate models to run database migrations outside of transactions
@@ -92,6 +94,7 @@ try {
     new \App\Models\ShopeeTokenModel();
     new \App\Models\CustomerSession();
     new \App\Models\CustomerOtp();
+    new \App\Models\CustomerWishlist();
 
     // 3. Initialize Router
     $router = new Router();
@@ -101,6 +104,11 @@ try {
     $router->post("/api/admin/auth/logout", [AdminAuthController::class, "logout"]);
     $router->get("/api/admin/auth/me", [AdminAuthController::class, "me"]);
     $router->post("/api/admin/auth/bootstrap", [AdminAuthController::class, "bootstrap"]);
+
+    // Admin Dashboard Routes
+    $router->get("/api/admin/dashboard/stats", [AdminDashboardController::class, "getStats"]);
+    $router->get("/api/admin/dashboard/revenue-chart", [AdminDashboardController::class, "getRevenueChart"]);
+    $router->get("/api/admin/dashboard/task-queue", [AdminDashboardController::class, "getTaskQueue"]);
 
     // Admin Customer Management Routes
     $router->get("/api/admin/customers", [AdminCustomerController::class, "list"]);
@@ -141,7 +149,15 @@ try {
     $router->patch("/api/customer/profile", [CustomerProfileController::class, "patchProfile"]);
     $router->post("/api/customer/profile/request-phone-change", [CustomerProfileController::class, "requestPhoneChange"]);
     $router->post("/api/customer/profile/verify-phone-change", [CustomerProfileController::class, "verifyPhoneChange"]);
+    $router->post("/api/customer/profile/request-email-verification", [CustomerProfileController::class, "requestEmailVerification"]);
+    $router->post("/api/customer/profile/verify-email", [CustomerProfileController::class, "verifyEmail"]);
     $router->post("/api/customer/profile/upload-avatar", [CustomerProfileController::class, "uploadAvatar"]);
+
+    // Customer Wishlist Routes
+    $router->get("/api/customer/wishlist", [CustomerWishlistController::class, "getWishlist"]);
+    $router->post("/api/customer/wishlist/toggle", [CustomerWishlistController::class, "toggleWishlist"]);
+    $router->post("/api/customer/wishlist/sync", [CustomerWishlistController::class, "syncWishlist"]);
+    $router->get("/api/run-wishlist-migration", [CustomerWishlistController::class, "runWishlistMigration"]);
 
     // Customer Address Book Routes
     $router->get("/api/customer/addresses", [CustomerAddressController::class, "list"]);

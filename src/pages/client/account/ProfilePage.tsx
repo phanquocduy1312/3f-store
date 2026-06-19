@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   BadgeCheck,
@@ -19,6 +19,8 @@ import {
   requestPhoneChangeApi,
   uploadAvatarApi,
   verifyPhoneChangeApi,
+  requestEmailVerificationApi,
+  verifyEmailVerificationApi,
   type ProfileData,
 } from "@/src/api/customerProfileApi";
 
@@ -54,6 +56,11 @@ export function ProfilePage() {
   const [otp, setOtp] = useState("");
   const [phoneSaving, setPhoneSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailOtp, setEmailOtp] = useState("");
+  const [emailSaving, setEmailSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -180,6 +187,58 @@ export function ProfilePage() {
       toast.error(e.message || "Lỗi xác thực OTP");
     } finally {
       setPhoneSaving(false);
+    }
+  };
+
+  const handleRequestEmailOtp = async () => {
+    const email = profile?.email?.trim();
+    if (!email) {
+      toast.error("Vui lòng cập nhật email trước");
+      return;
+    }
+
+    setEmailSaving(true);
+    try {
+      const res = await requestEmailVerificationApi(email);
+      if (res.success) {
+        setEmailOtpSent(true);
+        toast.success("Mã OTP đã được gửi đến email của bạn");
+        if (res.devOtp) toast.info(`[DEV OTP]: ${res.devOtp}`, { duration: 10000 });
+      } else {
+        toast.error(res.message || "Không thể gửi OTP");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Lỗi gửi OTP");
+    } finally {
+      setEmailSaving(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    const email = profile?.email?.trim();
+    if (!email) return;
+
+    if (emailOtp.length !== 6) {
+      toast.error("Vui lòng nhập đủ 6 số OTP");
+      return;
+    }
+
+    setEmailSaving(true);
+    try {
+      const res = await verifyEmailVerificationApi(email, emailOtp);
+      if (res.success) {
+        toast.success("Xác thực Email thành công!");
+        setIsVerifyingEmail(false);
+        setEmailOtpSent(false);
+        setEmailOtp("");
+        fetchProfile();
+      } else {
+        toast.error(res.message || "Xác thực OTP thất bại");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Lỗi xác thực OTP");
+    } finally {
+      setEmailSaving(false);
     }
   };
 
@@ -331,13 +390,30 @@ export function ProfilePage() {
                   <VerificationPill verified={Boolean(profile.phoneVerifiedAt)} />
                 </div>
                 {!isChangingPhone && (
-                  <button
-                    type="button"
-                    onClick={() => setIsChangingPhone(true)}
-                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[#DCEBFF] bg-white px-3 py-2 text-xs font-bold text-[#0057E7] hover:bg-[#EEF6FF]"
-                  >
-                    <Edit2 className="h-3.5 w-3.5" /> Đổi số điện thoại
-                  </button>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {profile.phone && !profile.phoneVerifiedAt && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewPhone(profile.phone || "");
+                          setIsChangingPhone(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#0057E7] px-3 py-2 text-xs font-bold text-white hover:bg-blue-700"
+                      >
+                        <ShieldCheck className="h-3.5 w-3.5" /> Xác minh ngay
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewPhone("");
+                        setIsChangingPhone(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCEBFF] bg-white px-3 py-2 text-xs font-bold text-[#0057E7] hover:bg-[#EEF6FF]"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" /> {profile.phone ? "Đổi số điện thoại" : "Thêm số điện thoại"}
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -346,13 +422,14 @@ export function ProfilePage() {
                   {!otpSent ? (
                     <div className="space-y-3">
                       <div>
-                        <FieldLabel>Số điện thoại mới</FieldLabel>
+                        <FieldLabel>{newPhone === profile.phone ? "Xác minh số điện thoại hiện tại" : "Số điện thoại mới"}</FieldLabel>
                         <input
                           type="tel"
                           value={newPhone}
                           onChange={e => setNewPhone(e.target.value)}
                           placeholder="Ví dụ: 0912345678"
-                          className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold outline-none focus:border-[#0057E7]"
+                          disabled={newPhone === profile.phone}
+                          className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold outline-none focus:border-[#0057E7] disabled:bg-slate-100 disabled:text-slate-500"
                         />
                       </div>
                       <div className="flex gap-2">
@@ -391,7 +468,57 @@ export function ProfilePage() {
                   </div>
                   <VerificationPill verified={Boolean(profile.emailVerifiedAt)} />
                 </div>
+                {!isVerifyingEmail && profile.email && !profile.emailVerifiedAt && (
+                  <button
+                    type="button"
+                    onClick={() => setIsVerifyingEmail(true)}
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#0057E7] px-3 py-2 text-xs font-bold text-white hover:bg-blue-700"
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5" /> Xác minh ngay
+                  </button>
+                )}
               </div>
+
+              {isVerifyingEmail && (
+                <div className="rounded-xl border border-[#DCEBFF] p-3">
+                  {!emailOtpSent ? (
+                    <div className="space-y-3">
+                      <div>
+                        <FieldLabel>Xác minh Email</FieldLabel>
+                        <input
+                          type="email"
+                          value={profile.email || ""}
+                          disabled
+                          className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold outline-none focus:border-[#0057E7] disabled:bg-slate-100 disabled:text-slate-500"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={handleRequestEmailOtp} disabled={emailSaving} className="flex h-10 flex-1 items-center justify-center rounded-xl bg-[#0057E7] text-xs font-bold text-white disabled:opacity-60">
+                          {emailSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gửi OTP"}
+                        </button>
+                        <button type="button" onClick={() => setIsVerifyingEmail(false)} className="h-10 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-500">Hủy</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-xs font-semibold text-slate-500">Nhập mã OTP đã gửi đến {profile.email}.</p>
+                      <input
+                        type="text"
+                        value={emailOtp}
+                        onChange={e => setEmailOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        placeholder="------"
+                        className="h-11 w-full rounded-xl border border-slate-200 px-4 text-center text-lg font-black tracking-[0.35em] outline-none focus:border-[#0057E7]"
+                      />
+                      <div className="flex gap-2">
+                        <button type="button" onClick={handleVerifyEmailOtp} disabled={emailSaving || emailOtp.length !== 6} className="flex h-10 flex-1 items-center justify-center rounded-xl bg-[#0057E7] text-xs font-bold text-white disabled:opacity-60">
+                          {emailSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Xác nhận"}
+                        </button>
+                        <button type="button" onClick={() => { setEmailOtpSent(false); setEmailOtp(""); }} className="h-10 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-500">Nhập lại</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </section>
 

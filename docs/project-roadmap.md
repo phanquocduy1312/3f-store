@@ -45,5 +45,9 @@
 - [x] Xây dựng trang đổi quà tích điểm cho khách hàng (Customer Rewards Page) tại route `/3f-club/rewards`.
 - [x] Xây dựng trang Thành công Đơn hàng (Order Success) hỗ trợ tạo mã VietQR thanh toán nhanh chuyển khoản.
 - [x] Xây dựng trang Theo dõi đơn hàng (Order Tracking) trực quan hiển thị timeline trạng thái đơn hàng và lịch sử điểm thưởng.
-- [x] Xây dựng trang Quản lý đơn hàng Admin (`/admin/orders`) hỗ trợ chuyển đổi trạng thái tuần tự theo quy trình 3F Store, thống kê nhanh qua summary cards, lọc theo ngày và hiển thị địa chỉ chi tiết không bị cắt xén.
+- [x] Xây dựng trang quản lý đơn hàng Admin (`/admin/orders`) hỗ trợ chuyển đổi trạng thái tuần tự theo quy trình 3F Store, thống kê nhanh qua summary cards, lọc theo ngày và hiển thị địa chỉ chi tiết không bị cắt xén.
+- [x] Triển khai tính năng Sản phẩm yêu thích (Wishlist) cho cả Guest (localStorage) và Member (CSDL), tự động đồng bộ khi đăng ký/đăng nhập thành công.
+- [x] Tinh chỉnh Dashboard Admin (bỏ tỷ lệ chuyển đổi/giá trị đơn trung bình/đơn hoàn tất/sản phẩm sắp hết hàng, gom 6 thống kê còn lại lên cùng 1 hàng; loại bỏ biểu đồ nguồn đơn hàng và danh sách lead tư vấn để tối ưu hóa bố cục hàng dưới; sửa chính tả có dấu tiếng Việt cho component Top sản phẩm bán chạy) và trang Khách hàng (loại bỏ nút Xuất CSV).
+- [x] Kết nối dữ liệu thời gian thực cho Admin Dashboard (6 KPI cards, Task Queue, biểu đồ doanh thu SVG động hỗ trợ bộ lọc 7/30 ngày và hộp tổng kết tính toán từ kỳ thực tế).
 - [ ] Trang quản lý tài khoản người dùng (Lịch sử đơn hàng, địa chỉ...).
+
