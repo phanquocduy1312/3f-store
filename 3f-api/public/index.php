@@ -75,6 +75,8 @@ use App\Controllers\CustomerSecurityController;
 use App\Controllers\CustomerPetController;
 use App\Controllers\CustomerWishlistController;
 use App\Controllers\AdminDashboardController;
+use App\Controllers\BannerController;
+use App\Controllers\BlogPostController;
 
 try {
     // 0. Pre-instantiate models to run database migrations outside of transactions
@@ -95,6 +97,8 @@ try {
     new \App\Models\CustomerSession();
     new \App\Models\CustomerOtp();
     new \App\Models\CustomerWishlist();
+    new \App\Models\Banner();
+    new \App\Models\BlogPost();
 
     // 3. Initialize Router
     $router = new Router();
@@ -230,6 +234,22 @@ try {
     $router->post("/api/admin/categories/save", [ProductController::class, "adminCategorySave"]);
     $router->post("/api/admin/categories/toggle-active", [ProductController::class, "adminCategoryToggleActive"]);
     $router->delete("/api/admin/categories/:id", [ProductController::class, "adminCategoryDelete"]);
+
+    // Banners Routes
+    $router->get("/api/banners", [BannerController::class, "getActiveBanners"]);
+    $router->post("/api/banners/:id/click", [BannerController::class, "trackClick"]);
+    $router->post("/api/banners/:id/impression", [BannerController::class, "trackImpression"]);
+    $router->get("/api/admin/banners", [BannerController::class, "adminList"]);
+    $router->post("/api/admin/banners/upload-image", [BannerController::class, "adminUploadImage"]);
+    $router->get("/api/admin/banners/:id", [BannerController::class, "adminDetail"]);
+    $router->post("/api/admin/banners", [BannerController::class, "adminCreate"]);
+    $router->put("/api/admin/banners/:id", [BannerController::class, "adminUpdate"]);
+    $router->delete("/api/admin/banners/:id", [BannerController::class, "adminDelete"]);
+
+    // Blog Posts Routes
+    $router->get("/api/blog-posts", [BlogPostController::class, "getList"]);
+    $router->get("/api/blog-posts/:slug", [BlogPostController::class, "getDetail"]);
+    $router->get("/api/admin/blog-posts/crawl", [BlogPostController::class, "adminCrawl"]);
 
     // Shopee OAuth Sandbox Routes
     $router->get("/api/admin/shopee/auth-url", [ShopeeAuthController::class, "getAuthUrl"]);

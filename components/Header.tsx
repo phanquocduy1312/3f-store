@@ -49,6 +49,7 @@ const navigationData: MenuItem[] = [
   },
   { label: "Kiểm tra đơn hàng", href: "/order-check" },
   { label: "3F Club", href: "/3f-club/rewards" },
+  { label: "Tin tức", href: "/tin-tuc" },
 ];
 
 const SubMenuItem = ({ item }: { item: MenuItem }) => {

@@ -49,5 +49,7 @@
 - [x] Triển khai tính năng Sản phẩm yêu thích (Wishlist) cho cả Guest (localStorage) và Member (CSDL), tự động đồng bộ khi đăng ký/đăng nhập thành công.
 - [x] Tinh chỉnh Dashboard Admin (bỏ tỷ lệ chuyển đổi/giá trị đơn trung bình/đơn hoàn tất/sản phẩm sắp hết hàng, gom 6 thống kê còn lại lên cùng 1 hàng; loại bỏ biểu đồ nguồn đơn hàng và danh sách lead tư vấn để tối ưu hóa bố cục hàng dưới; sửa chính tả có dấu tiếng Việt cho component Top sản phẩm bán chạy) và trang Khách hàng (loại bỏ nút Xuất CSV).
 - [x] Kết nối dữ liệu thời gian thực cho Admin Dashboard (6 KPI cards, Task Queue, biểu đồ doanh thu SVG động hỗ trợ bộ lọc 7/30 ngày và hộp tổng kết tính toán từ kỳ thực tế).
+- [x] Triển khai hệ thống Quản lý Banner động chuyên nghiệp (database, API CRUD, Admin UI quản lý chiến dịch/lịch chạy/analytics click & views, client homepage integration với Swiper slider & promo cards fallback tự động).
+- [x] Triển khai hệ thống cào tin tức tự động từ 3fstore.vn/tin-tuc và tích hợp Blog/Tin tức động (database, API, trang tin tức chi tiết rich-text HTML và tích hợp trang chủ).
 - [ ] Trang quản lý tài khoản người dùng (Lịch sử đơn hàng, địa chỉ...).
 

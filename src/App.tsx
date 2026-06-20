@@ -33,6 +33,9 @@ const AdminCustomerDetailPage = lazyPage(() => import("./pages/admin/AdminCustom
 const AdminProductsPage = lazyPage(() => import("./pages/admin/AdminProductsPage"), "AdminProductsPage");
 const AdminProductForm = lazyPage(() => import("./pages/admin/AdminProductForm"), "AdminProductForm");
 const AdminCategoriesPage = lazyPage(() => import("./pages/admin/AdminCategoriesPage"), "AdminCategoriesPage");
+const AdminBannersPage = lazyPage(() => import("./pages/admin/AdminBannersPage"), "AdminBannersPage");
+const BlogList = lazyPage(() => import("./pages/BlogList"), "BlogList");
+const BlogDetail = lazyPage(() => import("./pages/BlogDetail"), "BlogDetail");
 
 // Client Account Pages
 import { AccountLayout } from "./pages/client/account/AccountShell";
@@ -93,6 +96,8 @@ export function App() {
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/tin-tuc" element={<BlogList />} />
+          <Route path="/tin-tuc/:slug" element={<BlogDetail />} />
           
           {/* Protected Client Routes */}
           <Route element={<CustomerRouteGuard />}>
@@ -125,6 +130,7 @@ export function App() {
             <Route path="/admin/products/create" element={<AdminProductForm />} />
             <Route path="/admin/products/:id" element={<AdminProductForm />} />
             <Route path="/admin/categories" element={<AdminCategoriesPage />} />
+            <Route path="/admin/banners" element={<AdminBannersPage />} />
           </Route>
 
           <Route path="/3f-club/rewards" element={<CustomerRewardsPage />} />

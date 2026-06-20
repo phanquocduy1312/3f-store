@@ -1,18 +1,54 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Image } from "@/components/Image";
 import { ArrowRight, CalendarDays, Heart, Mail, ShieldCheck, PawPrint, Gift, Tag, User, Phone } from "lucide-react";
-import { blogPosts } from "@/data/store";
+import { getBlogPosts, type BlogPost } from "@/src/api/blogApi";
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
 
 export function BlogNewsletter() {
-  const visiblePosts = blogPosts.slice(0, 4);
-  const postDescriptions = [
-    "Cát đậu nành tự nhiên, vón cục nhanh, khử mùi vượt trội và thân thiện với mèo...",
-    "Giải pháp vệ sinh tối ưu cho mèo cưng với khả năng thấm hút mạnh mẽ, ít bụi...",
-    "Sản phẩm an toàn, không hóa chất độc hại, bảo vệ sức khỏe cho mèo và gia đình...",
-    "Đồ chơi thông minh giúp mèo vận động, giảm stress và phát triển trí thông minh...",
-  ];
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecentPosts = async () => {
+      try {
+        const res = await getBlogPosts(1, 4);
+        if (res.success && res.data) {
+          setPosts(res.data.items);
+        }
+      } catch (err) {
+        console.error("Failed to load recent posts:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchRecentPosts();
+  }, []);
+
+  const getGuessedCategory = (post: BlogPost) => {
+    const txt = (post.title + " " + (post.summary || "")).toLowerCase();
+    if (txt.includes("ăn") || txt.includes("dinh dưỡng") || txt.includes("pate") || txt.includes("hạt")) return "Dinh dưỡng";
+    if (txt.includes("cát") || txt.includes("vệ sinh") || txt.includes("khử mùi")) return "Vệ sinh";
+    if (txt.includes("bệnh") || txt.includes("sức khỏe") || txt.includes("viêm tai") || txt.includes("rụng lông")) return "Sức khỏe";
+    if (txt.includes("chuồng") || txt.includes("đồ chơi") || txt.includes("phụ kiện")) return "Phụ kiện";
+    return "Chăm sóc";
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString("vi-VN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
 
   return (
     <MotionSection id="blog" className="relative bg-white pb-24 pt-16">
@@ -29,7 +65,7 @@ export function BlogNewsletter() {
             <PawPrint size={60} className="-rotate-12" />
           </div>
           <div className="pointer-events-none absolute bottom-[20%] left-[40%] opacity-5">
-            <PawPrint size={100} className="rotate-45" />
+            <PawPrint size={100} className="-rotate-45" />
           </div>
 
           {/* Header */}
@@ -46,6 +82,10 @@ export function BlogNewsletter() {
                 </div>
               </div>
             </div>
+            
+            <Link to="/tin-tuc" className="hidden items-center gap-2 rounded-full border border-forest/15 bg-white px-5 py-2.5 text-xs font-black text-forest shadow-sm transition hover:bg-forest/5 sm:inline-flex">
+              Tất cả bài viết <ArrowRight size={14} />
+            </Link>
           </div>
 
           {/* Main Layout: Stacked vertically */}
@@ -55,50 +95,79 @@ export function BlogNewsletter() {
             <div className="flex flex-col gap-8">
               {/* Blog Posts Grid: 4 columns */}
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {visiblePosts.map((post, index) => (
-                  <article
-                    key={post.title}
-                    className="flex flex-col overflow-hidden rounded-[1.5rem] border border-[rgb(var(--color-border))] bg-white p-3 shadow-[0_4px_20px_rgba(var(--color-primary),0.03)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(var(--color-primary),0.08)]"
-                  >
-                    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-[rgb(var(--color-surface))]">
-                      <Image
-                        src={post.image}
-                        alt={post.title}
-                        fill
-                        className="object-contain p-2 transition duration-500 hover:scale-[1.05]"
-                      />
-                    </div>
-
-                    <div className="mt-4 flex flex-1 flex-col px-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex items-center gap-1.5 rounded-md bg-[rgb(var(--color-primary-soft))] px-2 py-1 text-[10px] font-bold text-[rgb(var(--color-primary))]">
-                          <CalendarDays size={12} />
-                          {post.date}
-                        </div>
-                        <div className="flex items-center gap-1.5 rounded-md bg-[rgb(var(--color-primary-soft))] px-2 py-1 text-[10px] font-bold text-[rgb(var(--color-primary))]">
-                          {post.category}
-                        </div>
+                {isLoading ? (
+                  Array.from({ length: 4 }).map((_, idx) => (
+                    <div key={idx} className="animate-pulse flex flex-col overflow-hidden rounded-[1.5rem] border border-[rgb(var(--color-border))] bg-white p-3">
+                      <div className="aspect-[4/3] w-full rounded-xl bg-forest/5" />
+                      <div className="mt-4 flex-1 space-y-3 px-1">
+                        <div className="h-4 w-20 rounded bg-forest/5" />
+                        <div className="h-5 w-full rounded bg-forest/5" />
+                        <div className="h-12 w-full rounded bg-forest/5" />
                       </div>
-
-                      <h3
-                        className="mt-3 min-h-[40px] text-sm font-black leading-[20px] text-[#171A14] line-clamp-2"
-                        title={post.title}
+                    </div>
+                  ))
+                ) : posts.length === 0 ? (
+                  <div className="col-span-full py-10 text-center font-bold text-ink/40">Chưa có bài viết nào được đăng tải.</div>
+                ) : (
+                  posts.map((post) => {
+                    const guessedCat = getGuessedCategory(post);
+                    const imageSrc = post.thumbnail_url || "/assets/images/cat-food.webp";
+                    
+                    return (
+                      <article
+                        key={post.id}
+                        className="flex flex-col overflow-hidden rounded-[1.5rem] border border-[rgb(var(--color-border))] bg-white p-3 shadow-[0_4px_20px_rgba(var(--color-primary),0.03)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(var(--color-primary),0.08)]"
                       >
-                        {post.title}
-                      </h3>
-                      
-                      <p className="mt-2 text-[13px] leading-relaxed text-[rgb(var(--color-ink-soft))] line-clamp-3">
-                        {postDescriptions[index] || "Thông tin hữu ích dành cho thú cưng của bạn. Cùng khám phá thêm nhé!"}
-                      </p>
+                        <Link to={`/tin-tuc/${post.slug}`} className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-[rgb(var(--color-surface))]">
+                          <img
+                            src={imageSrc}
+                            alt={post.title}
+                            className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/assets/images/cat-food.webp";
+                            }}
+                          />
+                        </Link>
 
-                      <div className="mt-4 mt-auto">
-                        <button className="inline-flex items-center gap-1.5 text-[13px] font-bold text-[rgb(var(--color-primary))] transition hover:text-[rgb(var(--color-primary-dark))]">
-                          Đọc thêm <ArrowRight size={14} strokeWidth={2.5} />
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                ))}
+                        <div className="mt-4 flex flex-1 flex-col px-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-1.5 rounded-md bg-[rgb(var(--color-primary-soft))] px-2 py-1 text-[10px] font-bold text-[rgb(var(--color-primary))]">
+                              <CalendarDays size={12} />
+                              {formatDate(post.published_at)}
+                            </div>
+                            <div className="flex items-center gap-1.5 rounded-md bg-[rgb(var(--color-primary-soft))] px-2 py-1 text-[10px] font-bold text-[rgb(var(--color-primary))]">
+                              {guessedCat}
+                            </div>
+                          </div>
+
+                          <h3
+                            className="mt-3 min-h-[40px] text-sm font-black leading-[20px] text-[#171A14] line-clamp-2 hover:text-forest transition-colors duration-200"
+                            title={post.title}
+                          >
+                            <Link to={`/tin-tuc/${post.slug}`}>{post.title}</Link>
+                          </h3>
+                          
+                          <p className="mt-2 text-[13px] leading-relaxed text-[rgb(var(--color-ink-soft))] line-clamp-3">
+                            {post.summary || "Thông tin hữu ích giúp nuôi dưỡng và chăm sóc thú cưng của bạn toàn diện nhất..."}
+                          </p>
+
+                          <div className="mt-4 mt-auto">
+                            <Link to={`/tin-tuc/${post.slug}`} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-[rgb(var(--color-primary))] transition hover:text-[rgb(var(--color-primary-dark))]">
+                              Đọc thêm <ArrowRight size={14} strokeWidth={2.5} />
+                            </Link>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })
+                )}
+              </div>
+              
+              {/* Show more button on mobile */}
+              <div className="flex justify-center sm:hidden">
+                <Link to="/tin-tuc" className="inline-flex items-center gap-2 rounded-full border border-forest/15 bg-white px-6 py-3 text-xs font-black text-forest shadow-sm transition hover:bg-forest/5">
+                  Tất cả bài viết <ArrowRight size={14} />
+                </Link>
               </div>
             </div>
 

@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS banners (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    placement VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NULL,
+    subtitle VARCHAR(255) NULL,
+    image_url VARCHAR(500) NOT NULL,
+    link_url VARCHAR(500) NULL,
+    button_text VARCHAR(100) NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    sort_order INT DEFAULT 0,
+    start_at DATETIME NULL,
+    end_at DATETIME NULL,
+    impression_count INT DEFAULT 0,
+    click_count INT DEFAULT 0,
+    created_by_admin_id INT NULL,
+    updated_by_admin_id INT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL,
+    deleted_at DATETIME NULL,
+    INDEX idx_placement_active (placement, is_active),
+    INDEX idx_schedule (start_at, end_at),
+    INDEX idx_sort_order (sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

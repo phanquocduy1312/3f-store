@@ -81,10 +81,11 @@ export function getCartTotal(): number {
   return getCart().reduce((sum, item) => sum + item.price * item.quantity, 0);
 }
 
-// Convert format "23.000đ" or "23.000" to number 23000
+// Convert format "23.000đ" or "23.000" to number 23000 (handles ranges by taking first price)
 export function parsePriceString(priceStr: string | undefined | null): number {
   if (!priceStr) return 0;
-  const clean = priceStr.replace(/[^0-9]/g, "");
+  const cleanPrice = priceStr.split("-")[0].trim();
+  const clean = cleanPrice.replace(/[^0-9]/g, "");
   return parseInt(clean, 10) || 0;
 }
 

@@ -21,7 +21,9 @@ class CustomerWishlist {
         $stmt = $this->db->prepare("
             SELECT p.id, p.name, p.slug, p.brand, p.pet_type, p.product_type,
                    p.main_image_url as image, p.min_price as minPrice, p.max_price as maxPrice,
-                   p.sold_count as sold, p.rating_average as rating, p.review_count as reviews
+                   p.sold_count as sold, p.rating_average as rating, p.review_count as reviews,
+                   (SELECT MIN(original_price) FROM product_variants pv WHERE pv.product_id = p.id AND pv.is_active = 1) AS minOriginalPrice,
+                   (SELECT MAX(original_price) FROM product_variants pv WHERE pv.product_id = p.id AND pv.is_active = 1) AS maxOriginalPrice
             FROM customer_wishlists cw
             JOIN products p ON cw.product_id = p.id
             WHERE cw.customer_id = :customer_id
@@ -32,10 +34,7 @@ class CustomerWishlist {
 
         foreach ($items as &$item) {
             $item['price'] = number_format($item['minPrice'], 0, ',', '.') . 'đ';
-            if ($item['maxPrice'] > $item['minPrice']) {
-                $item['price'] = number_format($item['minPrice'], 0, ',', '.') . 'đ - ' . number_format($item['maxPrice'], 0, ',', '.') . 'đ';
-            }
-            $item['oldPrice'] = null; 
+            $item['oldPrice'] = isset($item['maxOriginalPrice']) && $item['maxOriginalPrice'] !== null ? number_format($item['maxOriginalPrice'], 0, ',', '.') . 'đ' : null;
         }
 
         return $items;

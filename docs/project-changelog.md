@@ -1,5 +1,33 @@
 # Project Changelog
 
+## [2026-06-20]
+### Added
+- Triển khai hệ thống Quản lý Banner động chuyên nghiệp (Banner Management System):
+  - Thiết kế và di trú bảng CSDL `banners` với các chỉ số hoạt động, thứ tự sắp xếp và thống kê hiệu năng (bao gồm cơ chế tự động seed dữ liệu 3 ảnh banner chính của trang chủ khi khởi tạo bảng).
+  - Viết Model `Banner.php` và Controller `BannerController.php` để lấy danh sách banner đang chạy theo placement, tăng lượt click/impression không đồng bộ, và cung cấp đầy đủ các API CRUD cho Admin.
+  - Xây dựng API tải ảnh banner lên hệ thống `UploadService::uploadBannerImage` hỗ trợ chặn định dạng độc hại (chỉ cho phép JPG/JPEG/PNG/WEBP, dung lượng tối đa 5MB) lưu trữ an toàn trong `/public/uploads/banners/`.
+  - Thiết lập định nghĩa vị trí hiển thị hợp lệ (`home_hero_slider`) và kiểm tra tính hợp lệ trên cả frontend và backend.
+  - Thiết kế trang quản lý Banner phía Admin tại `/admin/banners` hiển thị các chỉ số KPI động (tổng số banner, số đang hoạt động, tổng số click), bộ lọc trạng thái hiển thị, cùng form Modal thêm/sửa tích hợp tải ảnh trực quan và liên kết điều hướng (đã lược bỏ thời gian chạy start/end và chữ nút CTA để tối ưu hoá giao diện).
+  - Tích hợp banner động vào trang chủ `HeroSection.tsx` tự động tải các placement tương ứng, chạy tracking click/impression trong nền, và tự động fallback về tài nguyên tĩnh mặc định nếu không có dữ liệu từ API hoặc API bị lỗi.
+- Triển khai hệ thống cào tin tức tự động và tích hợp Blog động:
+  - Thiết kế và di trú bảng CSDL `blog_posts` lưu trữ tin tức với cơ chế tự động chạy di trú trên backend.
+  - Phát triển bộ cào tin tức bằng PHP `BlogPostController::adminCrawl` chạy trực tiếp trên môi trường staging thông qua API, cho phép cào 100% dữ liệu bài viết (tiêu đề, slug, tóm tắt, ảnh đại diện, nội dung bài viết dạng rich-text HTML và tự động chuyển các liên kết ảnh/link tương đối thành tuyệt đối).
+  - Viết Model `BlogPost.php` và Controller `BlogPostController.php` cung cấp các API lấy danh sách bài viết phân trang (`/api/blog-posts`) và chi tiết bài viết theo slug (`/api/blog-posts/:slug`).
+  - Xây dựng các trang giao diện frontend: trang danh sách tin tức `/tin-tuc` (`BlogList.tsx`) hỗ trợ bộ lọc danh mục và tìm kiếm, cùng trang chi tiết tin tức `/tin-tuc/:slug` (`BlogDetail.tsx`) hiển thị nội dung rich HTML an toàn bằng `DOMPurify` kết hợp sidebar hiển thị các bài viết mới nhất.
+  - Đồng bộ hóa component bài viết trên trang chủ `BlogNewsletter.tsx` để hiển thị 4 bài viết mới nhất lấy trực tiếp từ API thay thế cho mảng dữ liệu tĩnh cũ.
+  - Thêm liên kết điều hướng "Tin tức" trên thanh Header (`Header.tsx`) cho cả giao diện desktop và mobile drawer.
+
+### Changed
+- Tái cấu trúc và đồng bộ hóa component Card sản phẩm (`ProductCard.tsx`):
+  - Đồng bộ thiết kế card sản phẩm giữa trang Sản phẩm yêu thích (`WishlistPage.tsx`), trang danh mục sản phẩm (`ProductListing.tsx`), và slider trang chủ (`ProductSlider.tsx`).
+  - Nâng cấp `ProductCard.tsx` sử dụng cấu trúc giao diện premium của `/products` (hiển thị thương hiệu, hiệu ứng gradient glow và sweeping light shimmer khi hover, bo tròn góc `rounded-[24px]` và shadow-glass).
+  - Tích hợp prop `showBuyNow?: boolean` cho phép tùy biến hiển thị 1 nút "Thêm vào giỏ" hoặc 2 nút "Thêm vào giỏ" & "Mua ngay". Cập nhật mặc định `showBuyNow` thành `true` để tất cả các trang (bao gồm cả trang yêu thích và danh sách danh mục) hiển thị giao diện 2 nút hành động chuyên nghiệp đồng bộ với trang chủ.
+  - Loại bỏ hoàn toàn khối mã HTML card sản phẩm viết lặp (inline) trong `ProductListing.tsx` và thay thế bằng component `<ProductCard>`.
+  - Thiết lập hiển thị đánh giá trung bình mặc định thành `5.0` sao nếu rating bằng `4.8` hoặc khi lượt review (`reviews`) bằng `0`.
+  - Định dạng hiển thị giá giảm/giá cũ (`product.oldPrice`) có dấu gạch ngang (`line-through`), kích thước font nhỏ hơn giá bán thực tế, và đổi thành màu xám rõ ràng (`text-gray-400`).
+  - Sửa lỗi API danh sách yêu thích của backend (`CustomerWishlist.php`): thay vì trả về `oldPrice` bằng `null`, backend hiện tại lấy `minOriginalPrice` và `maxOriginalPrice` từ các variant hoạt động và tự động định dạng `oldPrice` dạng khoảng giá hoặc giá đơn tương ứng (ví dụ: `133.900đ - 645.900đ`) đồng bộ với giao diện.
+  - Thay thế nhãn Brand text thô bằng thẻ Nhãn Danh mục dạng Pill bo góc (ví dụ: `Thức ăn khô`, `Thức ăn ướt`) với nền mờ nhạt và màu thương hiệu nổi bật, lấy thông tin tự động dựa trên tên và phân loại của sản phẩm.
+
 ## [2026-06-19]
 ### Added
 - Triển khai tính năng Sản phẩm yêu thích (Wishlist) chuẩn nghiệp vụ:

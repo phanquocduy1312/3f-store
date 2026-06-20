@@ -19,7 +19,11 @@ import { toast } from "sonner";
 
 const categoryLabels = ["Thức ăn khô cho mèo", "Thức ăn khô cho chó", "Cát vệ sinh cho mèo", "Pate & snack"];
 
-const getPriceValue = (price: string) => Number(price.replace(/\D/g, "")) || 0;
+const getPriceValue = (price: string) => {
+  if (!price) return 0;
+  const cleanPrice = price.split("-")[0].trim();
+  return Number(cleanPrice.replace(/\D/g, "")) || 0;
+};
 const formatMoney = (value: number) => `${value.toLocaleString("vi-VN")}đ`;
 
 function CountdownTimer() {

@@ -43,6 +43,7 @@ const menuItems: MenuItem[] = [
   { name: "3F Club", icon: Gift, path: "/admin/3f-club" },
   { name: "Sản phẩm", icon: Package, path: "/admin/products" },
   { name: "Danh mục", icon: Layers, path: "/admin/categories" },
+  { name: "Quản lý Banner", icon: FileText, path: "/admin/banners" },
   { name: "Voucher / Campaign", icon: Tag, hasChevron: true },
   { name: "Nội dung / SEO", icon: FileText, hasChevron: true },
   { name: "Báo cáo", icon: BarChart3, hasChevron: true },
