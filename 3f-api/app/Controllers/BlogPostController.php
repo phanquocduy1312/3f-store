@@ -4,6 +4,8 @@ namespace App\Controllers;
 use App\Core\Request;
 use App\Core\Response;
 use App\Models\BlogPost;
+use App\Helpers\AuthMiddleware;
+use App\Services\UploadService;
 use Exception;
 
 class BlogPostController {
@@ -16,8 +18,21 @@ class BlogPostController {
             $limit = (int)Request::query('limit', 10);
             $q = trim((string)Request::query('q', ''));
 
+            $isAdmin = false;
+            try {
+                $token = AuthMiddleware::extractBearerToken();
+                if (!empty($token)) {
+                    $sessionModel = new \App\Models\AdminSession();
+                    if ($sessionModel->validateToken($token)) {
+                        $isAdmin = true;
+                    }
+                }
+            } catch (Exception $e) {
+                // Ignore
+            }
+
             $model = new BlogPost();
-            $data = $model->getPaginated($page, $limit, $q);
+            $data = $model->getPaginated($page, $limit, $q, $isAdmin);
 
             Response::json([
                 "success" => true,
@@ -39,6 +54,7 @@ class BlogPostController {
             $slug = Request::query('slug', '');
             if ($slug === '') {
                 Response::json(['success' => false, 'message' => 'Slug không hợp lệ.'], 400);
+                return;
             }
 
             $model = new BlogPost();
@@ -46,7 +62,33 @@ class BlogPostController {
 
             if (!$post) {
                 Response::json(['success' => false, 'message' => 'Không tìm thấy bài viết.'], 404);
+                return;
             }
+
+            $isAdmin = false;
+            try {
+                $token = AuthMiddleware::extractBearerToken();
+                if (!empty($token)) {
+                    $sessionModel = new \App\Models\AdminSession();
+                    if ($sessionModel->validateToken($token)) {
+                        $isAdmin = true;
+                    }
+                }
+            } catch (Exception $e) {
+                // Ignore
+            }
+
+            if (!$isAdmin) {
+                // Public check: status must be published, and published_at must be in the past or now
+                if (($post['status'] ?? 'published') !== 'published' || (!empty($post['published_at']) && strtotime($post['published_at']) > time())) {
+                    Response::json(['success' => false, 'message' => 'Không tìm thấy bài viết.'], 404);
+                    return;
+                }
+            }
+
+            // Increment view count dynamically
+            $model->incrementViews($slug);
+            $post['view_count']++; // Update view count locally for immediate frontend display
 
             Response::json([
                 "success" => true,
@@ -273,6 +315,121 @@ class BlogPostController {
                 "success" => false,
                 "message" => "Lỗi thực hiện cào tin tức: " . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * POST /api/admin/blog-posts
+     */
+    public function adminCreate() {
+        try {
+            AuthMiddleware::requireAdmin();
+            $data = Request::json();
+
+            if (empty($data['title']) || empty($data['slug']) || empty($data['content'])) {
+                Response::json(['success' => false, 'message' => 'Vui lòng nhập đầy đủ Tiêu đề, Slug và Nội dung.'], 400);
+                return;
+            }
+
+            $model = new BlogPost();
+            // Automatically generate unique slug if not standard, or check uniqueness
+            $existing = $model->getBySlug($data['slug']);
+            if ($existing) {
+                Response::json(['success' => false, 'message' => 'Slug này đã tồn tại, vui lòng đổi slug khác.'], 400);
+                return;
+            }
+
+            $id = $model->create($data);
+            if ($id) {
+                Response::json(['success' => true, 'message' => 'Đã tạo bài viết thành công.', 'id' => $id], 201);
+            } else {
+                Response::json(['success' => false, 'message' => 'Lỗi lưu trữ bài viết.'], 500);
+            }
+        } catch (Exception $e) {
+            Response::json(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * PUT /api/admin/blog-posts/:id
+     */
+    public function adminUpdate() {
+        try {
+            AuthMiddleware::requireAdmin();
+            $id = (int)Request::query('id', 0);
+            if ($id <= 0) {
+                Response::json(['success' => false, 'message' => 'ID bài viết không hợp lệ.'], 400);
+                return;
+            }
+
+            $data = Request::json();
+            if (empty($data['title']) || empty($data['slug']) || empty($data['content'])) {
+                Response::json(['success' => false, 'message' => 'Vui lòng nhập đầy đủ Tiêu đề, Slug và Nội dung.'], 400);
+                return;
+            }
+
+            $model = new BlogPost();
+            $existing = $model->getBySlug($data['slug']);
+            if ($existing && (int)$existing['id'] !== $id) {
+                Response::json(['success' => false, 'message' => 'Slug này đã bị trùng với bài viết khác.'], 400);
+                return;
+            }
+
+            $success = $model->update($id, $data);
+            if ($success) {
+                Response::json(['success' => true, 'message' => 'Cập nhật bài viết thành công.'], 200);
+            } else {
+                Response::json(['success' => false, 'message' => 'Không tìm thấy bài viết hoặc lỗi cập nhật.'], 404);
+            }
+        } catch (Exception $e) {
+            Response::json(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * DELETE /api/admin/blog-posts/:id
+     */
+    public function adminDelete() {
+        try {
+            AuthMiddleware::requireAdmin();
+            $id = (int)Request::query('id', 0);
+            if ($id <= 0) {
+                Response::json(['success' => false, 'message' => 'ID bài viết không hợp lệ.'], 400);
+                return;
+            }
+
+            $model = new BlogPost();
+            $success = $model->delete($id);
+            if ($success) {
+                Response::json(['success' => true, 'message' => 'Xóa bài viết thành công.'], 200);
+            } else {
+                Response::json(['success' => false, 'message' => 'Lỗi xóa bài viết.'], 500);
+            }
+        } catch (Exception $e) {
+            Response::json(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * POST /api/admin/blog-posts/upload
+     */
+    public function adminUploadImage() {
+        try {
+            AuthMiddleware::requireAdmin();
+            if (empty($_FILES['image'])) {
+                Response::json(['success' => false, 'message' => 'Không tìm thấy file ảnh tải lên.'], 400);
+                return;
+            }
+
+            $result = UploadService::uploadBlogImage($_FILES['image']);
+            Response::json([
+                'success' => true,
+                'message' => 'Tải ảnh lên thành công.',
+                'url' => $result['url'],
+                'image_url' => $result['image_url']
+            ], 200);
+        } catch (Exception $e) {
+            Response::json(['success' => false, 'message' => 'Lỗi tải ảnh: ' . $e->getMessage()], 500);
         }
     }
 }

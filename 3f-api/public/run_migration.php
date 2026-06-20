@@ -53,12 +53,16 @@ try {
     CREATE TABLE IF NOT EXISTS blog_posts (
         id INT AUTO_INCREMENT PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
+        seo_title VARCHAR(255) NULL,
         slug VARCHAR(255) NOT NULL UNIQUE,
         summary TEXT NULL,
+        seo_description TEXT NULL,
         content LONGTEXT NOT NULL,
         thumbnail_url VARCHAR(500) NULL,
         author VARCHAR(100) DEFAULT 'Admin',
+        seo_keywords VARCHAR(255) NULL,
         published_at DATETIME NULL,
+        view_count INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
         deleted_at TIMESTAMP NULL,
@@ -68,6 +72,35 @@ try {
     ";
     $db->exec($sqlBlogPosts);
     echo "blog_posts table checked/created.\n<br>";
+
+    // Check and add seo_title
+    try {
+        $db->query("SELECT seo_title FROM blog_posts LIMIT 1");
+    } catch (\PDOException $e) {
+        $db->exec("ALTER TABLE blog_posts ADD COLUMN seo_title VARCHAR(255) NULL AFTER title");
+        echo "Added column seo_title to blog_posts.\n<br>";
+    }
+    // Check and add seo_description
+    try {
+        $db->query("SELECT seo_description FROM blog_posts LIMIT 1");
+    } catch (\PDOException $e) {
+        $db->exec("ALTER TABLE blog_posts ADD COLUMN seo_description TEXT NULL AFTER summary");
+        echo "Added column seo_description to blog_posts.\n<br>";
+    }
+    // Check and add seo_keywords
+    try {
+        $db->query("SELECT seo_keywords FROM blog_posts LIMIT 1");
+    } catch (\PDOException $e) {
+        $db->exec("ALTER TABLE blog_posts ADD COLUMN seo_keywords VARCHAR(255) NULL AFTER author");
+        echo "Added column seo_keywords to blog_posts.\n<br>";
+    }
+    // Check and add view_count
+    try {
+        $db->query("SELECT view_count FROM blog_posts LIMIT 1");
+    } catch (\PDOException $e) {
+        $db->exec("ALTER TABLE blog_posts ADD COLUMN view_count INT DEFAULT 0 AFTER published_at");
+        echo "Added column view_count to blog_posts.\n<br>";
+    }
 
     // Seed default banners if empty
     $count = $db->query("SELECT COUNT(*) FROM banners WHERE deleted_at IS NULL")->fetchColumn();

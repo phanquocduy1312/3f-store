@@ -51,5 +51,6 @@
 - [x] Kết nối dữ liệu thời gian thực cho Admin Dashboard (6 KPI cards, Task Queue, biểu đồ doanh thu SVG động hỗ trợ bộ lọc 7/30 ngày và hộp tổng kết tính toán từ kỳ thực tế).
 - [x] Triển khai hệ thống Quản lý Banner động chuyên nghiệp (database, API CRUD, Admin UI quản lý chiến dịch/lịch chạy/analytics click & views, client homepage integration với Swiper slider & promo cards fallback tự động).
 - [x] Triển khai hệ thống cào tin tức tự động từ 3fstore.vn/tin-tuc và tích hợp Blog/Tin tức động (database, API, trang tin tức chi tiết rich-text HTML và tích hợp trang chủ).
+- [x] Triển khai hệ thống Tin tức chuyên nghiệp đầy đủ nghiệp vụ SEO và trang tin tức làm đẹp (SEO Metadata injector, structured JSON-LD data, Table of Contents, sharing bar, related products slider, circular scroll-to-top, và Admin News Operations Page).
 - [ ] Trang quản lý tài khoản người dùng (Lịch sử đơn hàng, địa chỉ...).
 

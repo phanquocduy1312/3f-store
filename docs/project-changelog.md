@@ -2,6 +2,16 @@
 
 ## [2026-06-20]
 ### Added
+- Triển khai hệ thống Tin tức chuyên nghiệp đầy đủ nghiệp vụ SEO và trang tin tức làm đẹp:
+  - Thiết kế và tích hợp trang quản lý Tin tức phía Admin tại `/admin/news` (`AdminNewsPage.tsx`) hiển thị danh sách bài viết, lượt xem thực tế và huy hiệu Điểm SEO (SEO Score) tự động tính toán.
+  - Tích hợp các nút hành động CRUD (Thêm, Sửa, Xóa) bài viết và trigger cào tin tức tự động từ web nguồn `3fstore.vn` bằng Sonner toast loading state.
+  - Phát triển component SEO metadata [seo-metadata.tsx](file:///c:/Users/Admin/Downloads/ccc/src/components/blog/seo-metadata.tsx) quản lý động các thẻ tiêu đề, mô tả, từ khóa, Open Graph và cấu trúc dữ liệu JSON-LD (BlogPosting & BreadcrumbList) chuẩn SEO.
+  - Phát triển component Mục lục bài viết tự động [blog-toc.tsx](file:///c:/Users/Admin/Downloads/ccc/src/components/blog/blog-toc.tsx) thiết kế theo phong cách Paddy chuyên nghiệp (gồm phần Giới thiệu, các thẻ Heading H2/H3 đánh số thứ tự tuần tự dạng 1., 2. và kết thúc bằng phần Sản phẩm gợi ý; tự động highlight bằng màu xanh dương thương hiệu dựa trên IntersectionObserver khi cuộn trang, hỗ trợ cuộn mượt smooth scroll bù trừ khoảng cách header sticky).
+  - Tích hợp số thứ tự dạng huy hiệu hình tròn màu xanh dương đầy phong cách (blue circular number badges) tự động gắn vào các thẻ tiêu đề H2/H3 trong thân bài viết của [BlogDetail.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/BlogDetail.tsx) thông qua bộ phân tách DOMParser.
+  - Tái cấu trúc [BlogDetail.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/BlogDetail.tsx) thành bố cục 3 cột (3-column layout) chuẩn mực cao cấp: cột trái chứa Mục lục & Chia sẻ, cột giữa chứa Nội dung bài viết chính và Sản phẩm gợi ý, cột phải chứa cột bài viết Xu Hướng (Trending list).
+  - Triển khai thanh đo tiến trình đọc bài viết (Reading Progress Bar) 3px ở đỉnh trang cùng nút cuộn nhanh lên đầu trang (Scroll-To-Top) dạng vòng tròn tiến độ SVG trực quan.
+  - Tích hợp thanh chia sẻ bài viết [blog-share.tsx](file:///c:/Users/Admin/Downloads/ccc/src/components/blog/blog-share.tsx) dạng các icon tròn tối giản nằm gọn gàng bên dưới mục lục ở cột trái, hỗ trợ sao chép liên kết bài viết và liên kết chia sẻ trực tiếp qua Facebook, Twitter/X, Telegram.
+  - Triển khai khối sản phẩm gợi ý [blog-related-products.tsx](file:///c:/Users/Admin/Downloads/ccc/src/components/blog/blog-related-products.tsx) tự động truy vấn sản phẩm trong kho cửa hàng dựa theo từ khóa SEO của bài viết để tối ưu tỷ lệ chuyển đổi.
 - Triển khai hệ thống Quản lý Banner động chuyên nghiệp (Banner Management System):
   - Thiết kế và di trú bảng CSDL `banners` với các chỉ số hoạt động, thứ tự sắp xếp và thống kê hiệu năng (bao gồm cơ chế tự động seed dữ liệu 3 ảnh banner chính của trang chủ khi khởi tạo bảng).
   - Viết Model `Banner.php` và Controller `BannerController.php` để lấy danh sách banner đang chạy theo placement, tăng lượt click/impression không đồng bộ, và cung cấp đầy đủ các API CRUD cho Admin.

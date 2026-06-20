@@ -34,6 +34,7 @@ const AdminProductsPage = lazyPage(() => import("./pages/admin/AdminProductsPage
 const AdminProductForm = lazyPage(() => import("./pages/admin/AdminProductForm"), "AdminProductForm");
 const AdminCategoriesPage = lazyPage(() => import("./pages/admin/AdminCategoriesPage"), "AdminCategoriesPage");
 const AdminBannersPage = lazyPage(() => import("./pages/admin/AdminBannersPage"), "AdminBannersPage");
+const AdminNewsPage = lazyPage(() => import("./pages/admin/AdminNewsPage"), "AdminNewsPage");
 const BlogList = lazyPage(() => import("./pages/BlogList"), "BlogList");
 const BlogDetail = lazyPage(() => import("./pages/BlogDetail"), "BlogDetail");
 
@@ -131,6 +132,7 @@ export function App() {
             <Route path="/admin/products/:id" element={<AdminProductForm />} />
             <Route path="/admin/categories" element={<AdminCategoriesPage />} />
             <Route path="/admin/banners" element={<AdminBannersPage />} />
+            <Route path="/admin/news" element={<AdminNewsPage />} />
           </Route>
 
           <Route path="/3f-club/rewards" element={<CustomerRewardsPage />} />

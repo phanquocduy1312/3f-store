@@ -114,7 +114,7 @@ export function BlogList() {
         </nav>
 
         {/* Title Header Section */}
-        <div className="relative mb-12 overflow-hidden rounded-[2.5rem] border border-forest/10 bg-gradient-to-br from-forest to-forest-dark p-8 text-cream shadow-[0_15px_40px_rgba(41,76,38,0.15)] sm:p-12">
+        <div className="relative mb-8 sm:mb-12 overflow-hidden rounded-3xl sm:rounded-[2.5rem] border border-forest/10 bg-gradient-to-br from-forest to-forest-dark p-6 sm:p-12 text-cream shadow-[0_15px_40px_rgba(41,76,38,0.15)]">
           <div className="pointer-events-none absolute -right-16 -top-16 opacity-10">
             <BookOpen size={240} className="rotate-12" />
           </div>
@@ -122,7 +122,7 @@ export function BlogList() {
             <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/15 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-cream/90 backdrop-blur-sm">
               <Sparkles size={13} className="animate-pulse" /> Góc chia sẻ
             </span>
-            <h1 className="mt-4 text-4xl font-black tracking-tight text-white sm:text-5xl">
+            <h1 className="mt-4 text-3xl font-black tracking-tight text-white sm:text-5xl">
               Cẩm nang thú cưng
             </h1>
             <p className="mt-4 text-sm font-medium text-cream/80 sm:text-base leading-relaxed">
@@ -134,7 +134,7 @@ export function BlogList() {
         {/* Filtering & Search Bar */}
         <div className="mb-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           {/* Categories Tab list */}
-          <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 lg:mx-0 lg:px-0">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -165,7 +165,7 @@ export function BlogList() {
 
         {/* Loading Indicator / Skeletons */}
         {isLoading ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, idx) => (
               <div key={idx} className="animate-pulse flex flex-col overflow-hidden rounded-[1.5rem] border border-forest/5 bg-white p-3">
                 <div className="aspect-[4/3] w-full rounded-xl bg-forest/5" />
@@ -188,7 +188,7 @@ export function BlogList() {
         ) : (
           /* Blog Grid */
           <div>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {posts.map((post) => {
                 const guessedCat = getGuessedCategory(post);
                 const badgeStyle = getCategoryColor(guessedCat);
