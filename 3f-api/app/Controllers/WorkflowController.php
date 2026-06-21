@@ -631,10 +631,10 @@ class WorkflowController {
     /**
      * GET /api/admin/orders/:id/allowed-transitions
      */
-    public function orderAllowedTransitions($params) {
+    public function orderAllowedTransitions() {
         try {
             $this->checkAuth();
-            $orderId = isset($params['id']) ? (int)$params['id'] : 0;
+            $orderId = (int)(\App\Core\Request::query('id') ?? $_GET['id'] ?? 0);
 
             if ($orderId <= 0) {
                 Response::json(["success" => false, "message" => "Thiếu ID đơn hàng."], 400);
