@@ -196,6 +196,18 @@ export function AdminOrdersPage() {
         .then((res) => {
           if (res.success) {
             setAllowedTransitions(res.data);
+            
+            // Console warning check for empty transitions on non-terminal order statuses
+            const TERMINAL_STATUSES = ["completed", "cancelled", "return_completed"];
+            const isTerminal = TERMINAL_STATUSES.includes(selectedOrder.order_status);
+            if (!isTerminal && (!res.data || !res.data.order || res.data.order.length === 0)) {
+              console.warn("Chưa cấu hình bước chuyển cho trạng thái này", {
+                order_id: selectedOrder.id,
+                group_key: "order",
+                current_status: selectedOrder.order_status,
+                api_response: res.data
+              });
+            }
           }
         })
         .catch((err) => {
@@ -901,41 +913,55 @@ export function AdminOrdersPage() {
                             </div>
                           </div>
                           <div>
-                            {allowedTransitions?.order && allowedTransitions.order.length > 0 ? (
-                              <select
-                                value=""
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  if (!val) return;
-                                  const t = allowedTransitions.order.find((x: any) => x.to_status === val);
-                                  if (!t) return;
-                                  setConfirmState({
-                                    isOpen: true,
-                                    orderId: selectedOrder.id,
-                                    orderCode: selectedOrder.order_code,
-                                    newStatus: t.to_status,
-                                    groupKey: "order",
-                                    title: `${t.label}?`,
-                                    description: `Chuyển trạng thái đơn hàng sang "${t.to_status_label}".`,
-                                    confirmLabel: t.label,
-                                    hasTextarea: t.requires_reason === 1,
-                                    textareaLabel: "Lý do thay đổi",
-                                    textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
-                                  });
-                                  setConfirmText("");
-                                }}
-                                className="rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-2.5 py-1.5 text-xs font-bold text-[#0057E7] focus:border-[#0057E7] focus:outline-none cursor-pointer transition hover:bg-slate-50"
-                              >
-                                <option value="" disabled>Chuyển trạng thái...</option>
-                                {allowedTransitions.order.map((t: any) => (
-                                  <option key={t.id} value={t.to_status}>
-                                    {t.label}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span className="text-[11px] font-semibold text-gray-400 italic">Không có chuyển đổi</span>
-                            )}
+                            {(() => {
+                              const TERMINAL_STATUSES = ["completed", "cancelled", "return_completed"];
+                              const isTerminal = TERMINAL_STATUSES.includes(selectedOrder.order_status);
+                              if (allowedTransitions?.order && allowedTransitions.order.length > 0) {
+                                return (
+                                  <select
+                                    value=""
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (!val) return;
+                                      const t = allowedTransitions.order.find((x: any) => x.to_status === val);
+                                      if (!t) return;
+                                      setConfirmState({
+                                        isOpen: true,
+                                        orderId: selectedOrder.id,
+                                        orderCode: selectedOrder.order_code,
+                                        newStatus: t.to_status,
+                                        groupKey: "order",
+                                        title: `${t.label}?`,
+                                        description: `Chuyển trạng thái đơn hàng sang "${t.to_status_label}".`,
+                                        confirmLabel: t.label,
+                                        hasTextarea: t.requires_reason === 1,
+                                        textareaLabel: "Lý do thay đổi",
+                                        textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
+                                      });
+                                      setConfirmText("");
+                                    }}
+                                    className="rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-2.5 py-1.5 text-xs font-bold text-[#0057E7] focus:border-[#0057E7] focus:outline-none cursor-pointer transition hover:bg-slate-50"
+                                  >
+                                    <option value="" disabled>Chuyển trạng thái...</option>
+                                    {allowedTransitions.order.map((t: any) => (
+                                      <option key={t.id} value={t.to_status}>
+                                        {t.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                );
+                              } else {
+                                if (isTerminal) {
+                                  return (
+                                    <span className="text-[11px] font-semibold text-gray-400 italic">Đơn hàng đã ở trạng thái cuối.</span>
+                                  );
+                                } else {
+                                  return (
+                                    <span className="text-[11px] font-semibold text-amber-600 italic">Chưa cấu hình bước chuyển cho trạng thái này</span>
+                                  );
+                                }
+                              }
+                            })()}
                           </div>
                         </div>
 
@@ -1271,13 +1297,85 @@ export function AdminOrdersPage() {
               </div>
 
               {/* Drawer Footer - Fixed at bottom */}
-              <div className="px-6 py-4 border-t border-[#EEF6FF] bg-slate-50 flex items-center justify-end gap-3 shrink-0">
-                <button
-                  onClick={() => setSelectedOrder(null)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-black bg-slate-600 hover:bg-slate-700 text-white shadow-sm transition"
-                >
-                  Đóng Slide-over
-                </button>
+              <div className="px-6 py-4 border-t border-[#EEF6FF] bg-slate-50 flex items-center justify-between gap-3 shrink-0">
+                {/* Left side: current primary order status summary */}
+                <div className="flex flex-col items-start min-w-0">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.03em] text-[#64748B] mb-0.5">Trạng thái đơn hàng</div>
+                  {(() => {
+                    const stat = STATUS_MAP[selectedOrder.order_status] || { label: selectedOrder.order_status, bg: "bg-gray-50", text: "text-gray-700" };
+                    return (
+                      <span className={`inline-flex px-2 py-0.5 rounded-full border text-[10.5px] font-black ${stat.bg} ${stat.text}`}>
+                        {stat.label}
+                      </span>
+                    );
+                  })()}
+                </div>
+
+                {/* Right side: action buttons based on allowed transitions */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Secondary Close Button */}
+                  <button
+                    onClick={() => setSelectedOrder(null)}
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 transition border border-[#DCEBFF]"
+                  >
+                    Đóng
+                  </button>
+
+                  {/* Transition actions */}
+                  {(() => {
+                    const TERMINAL_STATUSES = ["completed", "cancelled", "return_completed"];
+                    const isTerminal = TERMINAL_STATUSES.includes(selectedOrder.order_status);
+                    
+                    if (isTerminal) {
+                      return (
+                        <span className="text-xs font-semibold text-gray-400 italic bg-gray-50 border border-slate-100 rounded-lg px-2.5 py-2">
+                          Đơn hàng đã ở trạng thái cuối.
+                        </span>
+                      );
+                    }
+                    
+                    if (allowedTransitions?.order && allowedTransitions.order.length > 0) {
+                      return allowedTransitions.order.map((t: any) => {
+                        const isDangerous = ["cancelled", "refunded", "return_completed", "delivery_failed", "returned"].includes(t.to_status);
+                        
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => {
+                              setConfirmState({
+                                isOpen: true,
+                                orderId: selectedOrder.id,
+                                orderCode: selectedOrder.order_code,
+                                newStatus: t.to_status,
+                                groupKey: "order",
+                                title: `${t.label}?`,
+                                description: `Chuyển trạng thái đơn hàng sang "${t.to_status_label}".`,
+                                confirmLabel: t.label,
+                                hasTextarea: t.requires_reason === 1,
+                                textareaLabel: "Lý do thay đổi",
+                                textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
+                              });
+                              setConfirmText("");
+                            }}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition ${
+                              isDangerous
+                                ? "border border-red-200 hover:border-red-300 bg-red-50 hover:bg-red-100 text-red-700"
+                                : "bg-[#0057E7] hover:bg-[#003b7a] text-white shadow-sm"
+                            }`}
+                          >
+                            {t.label}
+                          </button>
+                        );
+                      });
+                    } else {
+                      return (
+                        <span className="text-xs font-semibold text-amber-600 bg-amber-50/50 border border-amber-100 rounded-lg px-2.5 py-2">
+                          Chưa cấu hình bước chuyển cho trạng thái này
+                        </span>
+                      );
+                    }
+                  })()}
+                </div>
               </div>
 
             </div>
