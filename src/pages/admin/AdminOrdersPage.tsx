@@ -7,7 +7,8 @@ import {
   updateAdminOrderStatus, 
   OrderDetail, 
   AdminOrderListParams,
-  getAllowedTransitions
+  getAllowedTransitions,
+  getOrderDetails
 } from "@/src/api/ordersApi";
 import { 
   Search, 
@@ -221,9 +222,10 @@ export function AdminOrdersPage() {
         fetchOrdersData();
         // Refresh selectedOrder details and allowed transitions
         if (selectedOrder && selectedOrder.id === orderId) {
-          const detailRes = await getAdminOrders({ page: 1, limit: 100 });
-          const updated = detailRes.data.items.find(o => o.id === orderId);
-          if (updated) setSelectedOrder(updated);
+          const detailRes = await getOrderDetails(orderCode);
+          if (detailRes.success) {
+            setSelectedOrder(detailRes.data);
+          }
 
           const transRes = await getAllowedTransitions(orderId);
           if (transRes.success) {
@@ -555,7 +557,17 @@ export function AdminOrdersPage() {
                             <div className="flex items-center justify-center gap-1.5">
                               {/* Always show Eye details */}
                               <button
-                                onClick={() => setSelectedOrder(order)}
+                                onClick={async () => {
+                                  setSelectedOrder(order);
+                                  try {
+                                    const detailRes = await getOrderDetails(order.order_code);
+                                    if (detailRes.success) {
+                                      setSelectedOrder(detailRes.data);
+                                    }
+                                  } catch (e) {
+                                    console.error("Lỗi lấy chi tiết đơn hàng", e);
+                                  }
+                                }}
                                 className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-200 transition shadow-sm"
                                 title="Chi tiết đơn hàng"
                               >
@@ -879,155 +891,199 @@ export function AdminOrdersPage() {
                       <div className="text-[12.5px] space-y-3.5">
                         
                         {/* Dimensions 1: Order Status */}
-                        <div className="space-y-1.5 border-b pb-3 last:border-0 last:pb-0">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-400 font-semibold">Trạng thái đơn hàng:</span>
-                            <span className={`inline-flex px-2 py-0.5 rounded-full border text-[10px] font-black ${ORDER_STATUS_MAP[selectedOrder.order_status]?.bg || 'bg-gray-50'} ${ORDER_STATUS_MAP[selectedOrder.order_status]?.text || 'text-gray-700'}`}>
-                              {ORDER_STATUS_MAP[selectedOrder.order_status]?.label || selectedOrder.order_status}
-                            </span>
-                          </div>
-                          {allowedTransitions?.order && allowedTransitions.order.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pt-1 justify-end">
-                              {allowedTransitions.order.map((t: any) => (
-                                <button
-                                  key={t.id}
-                                  onClick={() => {
-                                    setConfirmState({
-                                      isOpen: true,
-                                      orderId: selectedOrder.id,
-                                      orderCode: selectedOrder.order_code,
-                                      newStatus: t.to_status,
-                                      groupKey: "order",
-                                      title: `${t.label}?`,
-                                      description: `Chuyển trạng thái đơn hàng sang "${t.to_status_label}".`,
-                                      confirmLabel: t.label,
-                                      hasTextarea: t.requires_reason === 1,
-                                      textareaLabel: "Lý do thay đổi",
-                                      textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
-                                    });
-                                    setConfirmText("");
-                                  }}
-                                  className="px-2 py-0.5 text-[11px] font-bold rounded-lg border text-[#0057E7] border-[#0057E7]/25 bg-white hover:bg-[#0057E7] hover:text-white transition shadow-sm"
-                                >
-                                  {t.label}
-                                </button>
-                              ))}
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                          <div className="space-y-1">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái đơn hàng</div>
+                            <div>
+                              <span className={`inline-flex px-2 py-0.5 rounded-full border text-[10.5px] font-black ${ORDER_STATUS_MAP[selectedOrder.order_status]?.bg || 'bg-gray-50'} ${ORDER_STATUS_MAP[selectedOrder.order_status]?.text || 'text-gray-700'}`}>
+                                {ORDER_STATUS_MAP[selectedOrder.order_status]?.label || selectedOrder.order_status}
+                              </span>
                             </div>
-                          )}
+                          </div>
+                          <div>
+                            {allowedTransitions?.order && allowedTransitions.order.length > 0 ? (
+                              <select
+                                value=""
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (!val) return;
+                                  const t = allowedTransitions.order.find((x: any) => x.to_status === val);
+                                  if (!t) return;
+                                  setConfirmState({
+                                    isOpen: true,
+                                    orderId: selectedOrder.id,
+                                    orderCode: selectedOrder.order_code,
+                                    newStatus: t.to_status,
+                                    groupKey: "order",
+                                    title: `${t.label}?`,
+                                    description: `Chuyển trạng thái đơn hàng sang "${t.to_status_label}".`,
+                                    confirmLabel: t.label,
+                                    hasTextarea: t.requires_reason === 1,
+                                    textareaLabel: "Lý do thay đổi",
+                                    textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
+                                  });
+                                  setConfirmText("");
+                                }}
+                                className="rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-2.5 py-1.5 text-xs font-bold text-[#0057E7] focus:border-[#0057E7] focus:outline-none cursor-pointer transition hover:bg-slate-50"
+                              >
+                                <option value="" disabled>Chuyển trạng thái...</option>
+                                {allowedTransitions.order.map((t: any) => (
+                                  <option key={t.id} value={t.to_status}>
+                                    {t.label}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="text-[11px] font-semibold text-gray-400 italic">Không có chuyển đổi</span>
+                            )}
+                          </div>
                         </div>
 
                         {/* Dimensions 2: Payment Status */}
-                        <div className="space-y-1.5 border-b pb-3 last:border-0 last:pb-0">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-400 font-semibold">Trạng thái thanh toán:</span>
-                            <span className={`inline-flex px-2 py-0.5 rounded-full border text-[10px] font-black ${PAYMENT_MAP[selectedOrder.payment_status]?.bg || 'bg-gray-50'} ${PAYMENT_MAP[selectedOrder.payment_status]?.color || 'text-gray-700'}`}>
-                              {PAYMENT_MAP[selectedOrder.payment_status]?.label || selectedOrder.payment_status}
-                            </span>
-                          </div>
-                          {allowedTransitions?.payment && allowedTransitions.payment.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pt-1 justify-end">
-                              {allowedTransitions.payment.map((t: any) => (
-                                <button
-                                  key={t.id}
-                                  onClick={() => {
-                                    setConfirmState({
-                                      isOpen: true,
-                                      orderId: selectedOrder.id,
-                                      orderCode: selectedOrder.order_code,
-                                      newStatus: t.to_status,
-                                      groupKey: "payment",
-                                      title: `${t.label}?`,
-                                      description: `Chuyển trạng thái thanh toán sang "${t.to_status_label}".`,
-                                      confirmLabel: t.label,
-                                      hasTextarea: t.requires_reason === 1,
-                                      textareaLabel: "Lý do thay đổi",
-                                      textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
-                                    });
-                                    setConfirmText("");
-                                  }}
-                                  className="px-2 py-0.5 text-[11px] font-bold rounded-lg border text-[#0057E7] border-[#0057E7]/25 bg-white hover:bg-[#0057E7] hover:text-white transition shadow-sm"
-                                >
-                                  {t.label}
-                                </button>
-                              ))}
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                          <div className="space-y-1">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái thanh toán</div>
+                            <div>
+                              <span className={`inline-flex px-2 py-0.5 rounded-full border text-[10.5px] font-black ${PAYMENT_MAP[selectedOrder.payment_status]?.bg || 'bg-gray-50'} ${PAYMENT_MAP[selectedOrder.payment_status]?.color || 'text-gray-700'}`}>
+                                {PAYMENT_MAP[selectedOrder.payment_status]?.label || selectedOrder.payment_status}
+                              </span>
                             </div>
-                          )}
+                          </div>
+                          <div>
+                            {allowedTransitions?.payment && allowedTransitions.payment.length > 0 ? (
+                              <select
+                                value=""
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (!val) return;
+                                  const t = allowedTransitions.payment.find((x: any) => x.to_status === val);
+                                  if (!t) return;
+                                  setConfirmState({
+                                    isOpen: true,
+                                    orderId: selectedOrder.id,
+                                    orderCode: selectedOrder.order_code,
+                                    newStatus: t.to_status,
+                                    groupKey: "payment",
+                                    title: `${t.label}?`,
+                                    description: `Chuyển trạng thái thanh toán sang "${t.to_status_label}".`,
+                                    confirmLabel: t.label,
+                                    hasTextarea: t.requires_reason === 1,
+                                    textareaLabel: "Lý do thay đổi",
+                                    textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
+                                  });
+                                  setConfirmText("");
+                                }}
+                                className="rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-2.5 py-1.5 text-xs font-bold text-[#0057E7] focus:border-[#0057E7] focus:outline-none cursor-pointer transition hover:bg-slate-50"
+                              >
+                                <option value="" disabled>Chuyển trạng thái...</option>
+                                {allowedTransitions.payment.map((t: any) => (
+                                  <option key={t.id} value={t.to_status}>
+                                    {t.label}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="text-[11px] font-semibold text-gray-400 italic">Không có chuyển đổi</span>
+                            )}
+                          </div>
                         </div>
 
                         {/* Dimensions 3: Shipping Status */}
-                        <div className="space-y-1.5 border-b pb-3 last:border-0 last:pb-0">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-400 font-semibold">Trạng thái vận chuyển:</span>
-                            <span className={`inline-flex px-2 py-0.5 rounded-full border text-[10px] font-black ${SHIPPING_STATUS_MAP[selectedOrder.shipping_status || "no_shipment"]?.bg} ${SHIPPING_STATUS_MAP[selectedOrder.shipping_status || "no_shipment"]?.text}`}>
-                              {SHIPPING_STATUS_MAP[selectedOrder.shipping_status || "no_shipment"]?.label}
-                            </span>
-                          </div>
-                          {allowedTransitions?.shipping && allowedTransitions.shipping.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pt-1 justify-end">
-                              {allowedTransitions.shipping.map((t: any) => (
-                                <button
-                                  key={t.id}
-                                  onClick={() => {
-                                    setConfirmState({
-                                      isOpen: true,
-                                      orderId: selectedOrder.id,
-                                      orderCode: selectedOrder.order_code,
-                                      newStatus: t.to_status,
-                                      groupKey: "shipping",
-                                      title: `${t.label}?`,
-                                      description: `Chuyển trạng thái giao hàng sang "${t.to_status_label}".`,
-                                      confirmLabel: t.label,
-                                      hasTextarea: t.requires_reason === 1,
-                                      textareaLabel: "Lý do thay đổi",
-                                      textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
-                                    });
-                                    setConfirmText("");
-                                  }}
-                                  className="px-2 py-0.5 text-[11px] font-bold rounded-lg border text-[#0057E7] border-[#0057E7]/25 bg-white hover:bg-[#0057E7] hover:text-white transition shadow-sm"
-                                >
-                                  {t.label}
-                                </button>
-                              ))}
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                          <div className="space-y-1">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái vận chuyển</div>
+                            <div>
+                              <span className={`inline-flex px-2 py-0.5 rounded-full border text-[10.5px] font-black ${SHIPPING_STATUS_MAP[selectedOrder.shipping_status || "no_shipment"]?.bg} ${SHIPPING_STATUS_MAP[selectedOrder.shipping_status || "no_shipment"]?.text}`}>
+                                {SHIPPING_STATUS_MAP[selectedOrder.shipping_status || "no_shipment"]?.label}
+                              </span>
                             </div>
-                          )}
+                          </div>
+                          <div>
+                            {allowedTransitions?.shipping && allowedTransitions.shipping.length > 0 ? (
+                              <select
+                                value=""
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (!val) return;
+                                  const t = allowedTransitions.shipping.find((x: any) => x.to_status === val);
+                                  if (!t) return;
+                                  setConfirmState({
+                                    isOpen: true,
+                                    orderId: selectedOrder.id,
+                                    orderCode: selectedOrder.order_code,
+                                    newStatus: t.to_status,
+                                    groupKey: "shipping",
+                                    title: `${t.label}?`,
+                                    description: `Chuyển trạng thái giao hàng sang "${t.to_status_label}".`,
+                                    confirmLabel: t.label,
+                                    hasTextarea: t.requires_reason === 1,
+                                    textareaLabel: "Lý do thay đổi",
+                                    textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
+                                  });
+                                  setConfirmText("");
+                                }}
+                                className="rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-2.5 py-1.5 text-xs font-bold text-[#0057E7] focus:border-[#0057E7] focus:outline-none cursor-pointer transition hover:bg-slate-50"
+                              >
+                                <option value="" disabled>Chuyển trạng thái...</option>
+                                {allowedTransitions.shipping.map((t: any) => (
+                                  <option key={t.id} value={t.to_status}>
+                                    {t.label}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="text-[11px] font-semibold text-gray-400 italic">Không có chuyển đổi</span>
+                            )}
+                          </div>
                         </div>
 
                         {/* Dimensions 4: Loyalty Status */}
-                        <div className="space-y-1.5 border-b pb-3 last:border-0 last:pb-0">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-400 font-semibold">Trạng thái tích điểm:</span>
-                            <span className={`inline-flex px-2 py-0.5 rounded-full border text-[10px] font-black ${LOYALTY_STATUS_MAP[selectedOrder.loyalty_status || "not_earned"]?.bg} ${LOYALTY_STATUS_MAP[selectedOrder.loyalty_status || "not_earned"]?.text}`}>
-                              {LOYALTY_STATUS_MAP[selectedOrder.loyalty_status || "not_earned"]?.label}
-                            </span>
-                          </div>
-                          {allowedTransitions?.loyalty && allowedTransitions.loyalty.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pt-1 justify-end">
-                              {allowedTransitions.loyalty.map((t: any) => (
-                                <button
-                                  key={t.id}
-                                  onClick={() => {
-                                    setConfirmState({
-                                      isOpen: true,
-                                      orderId: selectedOrder.id,
-                                      orderCode: selectedOrder.order_code,
-                                      newStatus: t.to_status,
-                                      groupKey: "loyalty",
-                                      title: `${t.label}?`,
-                                      description: `Chuyển trạng thái tích điểm sang "${t.to_status_label}".`,
-                                      confirmLabel: t.label,
-                                      hasTextarea: t.requires_reason === 1,
-                                      textareaLabel: "Lý do thay đổi",
-                                      textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
-                                    });
-                                    setConfirmText("");
-                                  }}
-                                  className="px-2 py-0.5 text-[11px] font-bold rounded-lg border text-[#0057E7] border-[#0057E7]/25 bg-white hover:bg-[#0057E7] hover:text-white transition shadow-sm"
-                                >
-                                  {t.label}
-                                </button>
-                              ))}
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                          <div className="space-y-1">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái tích điểm</div>
+                            <div>
+                              <span className={`inline-flex px-2 py-0.5 rounded-full border text-[10.5px] font-black ${LOYALTY_STATUS_MAP[selectedOrder.loyalty_status || "not_earned"]?.bg} ${LOYALTY_STATUS_MAP[selectedOrder.loyalty_status || "not_earned"]?.text}`}>
+                                {LOYALTY_STATUS_MAP[selectedOrder.loyalty_status || "not_earned"]?.label}
+                              </span>
                             </div>
-                          )}
+                          </div>
+                          <div>
+                            {allowedTransitions?.loyalty && allowedTransitions.loyalty.length > 0 ? (
+                              <select
+                                value=""
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (!val) return;
+                                  const t = allowedTransitions.loyalty.find((x: any) => x.to_status === val);
+                                  if (!t) return;
+                                  setConfirmState({
+                                    isOpen: true,
+                                    orderId: selectedOrder.id,
+                                    orderCode: selectedOrder.order_code,
+                                    newStatus: t.to_status,
+                                    groupKey: "loyalty",
+                                    title: `${t.label}?`,
+                                    description: `Chuyển trạng thái tích điểm sang "${t.to_status_label}".`,
+                                    confirmLabel: t.label,
+                                    hasTextarea: t.requires_reason === 1,
+                                    textareaLabel: "Lý do thay đổi",
+                                    textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
+                                  });
+                                  setConfirmText("");
+                                }}
+                                className="rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-2.5 py-1.5 text-xs font-bold text-[#0057E7] focus:border-[#0057E7] focus:outline-none cursor-pointer transition hover:bg-slate-50"
+                              >
+                                <option value="" disabled>Chuyển trạng thái...</option>
+                                {allowedTransitions.loyalty.map((t: any) => (
+                                  <option key={t.id} value={t.to_status}>
+                                    {t.label}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="text-[11px] font-semibold text-gray-400 italic">Không có chuyển đổi</span>
+                            )}
+                          </div>
                         </div>
 
                       </div>
@@ -1064,37 +1120,48 @@ export function AdminOrdersPage() {
                     {selectedOrder.status_logs && selectedOrder.status_logs.length > 0 ? (
                       selectedOrder.status_logs.map((log) => {
                         let groupLabel = "";
-                        let statusText = log.to_status;
+                        let fromText = "";
+                        let toText = log.to_status;
                         
                         if (log.group_key === "order") {
-                          groupLabel = "Đơn hàng";
-                          const st = log.to_status ? ORDER_STATUS_MAP[log.to_status] : undefined;
-                          statusText = st ? st.label : (log.to_status || "");
+                          groupLabel = "ĐƠN HÀNG";
+                          const stFrom = log.from_status ? ORDER_STATUS_MAP[log.from_status] : undefined;
+                          const stTo = log.to_status ? ORDER_STATUS_MAP[log.to_status] : undefined;
+                          fromText = stFrom ? stFrom.label : (log.from_status || "");
+                          toText = stTo ? stTo.label : (log.to_status || "");
                         } else if (log.group_key === "payment") {
-                          groupLabel = "Thanh toán";
-                          const st = log.to_status ? PAYMENT_MAP[log.to_status] : undefined;
-                          statusText = st ? st.label : (log.to_status || "");
+                          groupLabel = "THANH TOÁN";
+                          const stFrom = log.from_status ? PAYMENT_MAP[log.from_status] : undefined;
+                          const stTo = log.to_status ? PAYMENT_MAP[log.to_status] : undefined;
+                          fromText = stFrom ? stFrom.label : (log.from_status || "");
+                          toText = stTo ? stTo.label : (log.to_status || "");
                         } else if (log.group_key === "shipping") {
-                          groupLabel = "Vận chuyển";
-                          const st = SHIPPING_STATUS_MAP[log.to_status || "no_shipment"];
-                          statusText = st ? st.label : (log.to_status || "");
+                          groupLabel = "VẬN CHUYỂN";
+                          const stFrom = log.from_status ? SHIPPING_STATUS_MAP[log.from_status] : undefined;
+                          const stTo = log.to_status ? SHIPPING_STATUS_MAP[log.to_status] : undefined;
+                          fromText = stFrom ? stFrom.label : (log.from_status || "");
+                          toText = stTo ? stTo.label : (log.to_status || "");
                         } else if (log.group_key === "loyalty") {
-                          groupLabel = "Tích điểm";
-                          const st = LOYALTY_STATUS_MAP[log.to_status || "not_earned"];
-                          statusText = st ? st.label : (log.to_status || "");
+                          groupLabel = "TÍCH ĐIỂM";
+                          const stFrom = log.from_status ? LOYALTY_STATUS_MAP[log.from_status] : undefined;
+                          const stTo = log.to_status ? LOYALTY_STATUS_MAP[log.to_status] : undefined;
+                          fromText = stFrom ? stFrom.label : (log.from_status || "");
+                          toText = stTo ? stTo.label : (log.to_status || "");
                         }
+
+                        const statusText = fromText ? `${fromText} → ${toText}` : toText;
 
                         return (
                           <div key={log.id} className="relative pb-2">
                             <div className="absolute -left-[31px] top-0.5 h-3.5 w-3.5 rounded-full bg-white border-2 border-[#0057E7]" />
                             <div className="flex justify-between items-center">
-                              <span className="font-bold text-[#0B1F3A]">
-                                <span className="text-[10px] uppercase font-extrabold tracking-wider bg-slate-150 text-slate-500 px-1.5 py-0.5 rounded mr-1.5 border">
+                              <span className="font-bold text-[#0B1F3A] whitespace-normal break-words pr-2">
+                                <span className="text-[10px] uppercase font-extrabold tracking-wider bg-slate-150 text-slate-500 px-1.5 py-0.5 rounded mr-1.5 border inline-block">
                                   {groupLabel}
                                 </span>
                                 {statusText}
                               </span>
-                              <span className="text-[10px] text-gray-400 font-semibold">
+                              <span className="text-[10px] text-gray-400 font-semibold shrink-0">
                                 {new Date(log.created_at).toLocaleString("vi-VN")}
                               </span>
                             </div>
@@ -1242,44 +1309,57 @@ export function AdminOrdersPage() {
                 </div>
               </div>
 
-              {confirmState.hasTextarea && (
-                <div className="space-y-1.5">
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.03em] text-[#64748B]">
-                    {confirmState.textareaLabel || "Ghi chú"}
-                  </label>
-                  <textarea
-                    value={confirmText}
-                    onChange={(e) => setConfirmText(e.target.value)}
-                    placeholder={confirmState.textareaPlaceholder || "Nhập thông tin..."}
-                    rows={3}
-                    className="w-full rounded-2xl border border-[#dcebff] bg-[#f6faff] px-4 py-3 text-[13px] font-semibold text-[#0b1f3a] placeholder:text-[#94a3b8] focus:border-[#0057e7] focus:bg-white focus:outline-none transition-colors"
-                  />
-                </div>
-              )}
+              {(() => {
+                const isDangerous = ["cancelled", "refunded", "return_completed", "delivery_failed", "returned"].includes(confirmState.newStatus) ||
+                  (confirmState.groupKey === "loyalty" && confirmState.newStatus === "cancelled");
+                const hasTextarea = confirmState.hasTextarea || isDangerous;
+                const isReasonRequired = isDangerous || confirmState.hasTextarea;
+                const textareaLabel = confirmState.textareaLabel || (isReasonRequired ? "Lý do thay đổi" : "Ghi chú");
+                const textareaPlaceholder = confirmState.textareaPlaceholder || (isReasonRequired ? "Bắt buộc nhập lý do cho hành động này..." : "Nhập ghi chú tùy chọn...");
+                
+                return (
+                  <>
+                    {hasTextarea && (
+                      <div className="space-y-1.5">
+                        <label className="block text-[11px] font-bold uppercase tracking-[0.03em] text-[#64748B]">
+                          {textareaLabel} {isReasonRequired && <span className="text-red-500 font-extrabold">* (Bắt buộc)</span>}
+                        </label>
+                        <textarea
+                          value={confirmText}
+                          onChange={(e) => setConfirmText(e.target.value)}
+                          placeholder={textareaPlaceholder}
+                          rows={3}
+                          className="w-full rounded-2xl border border-[#dcebff] bg-[#f6faff] px-4 py-3 text-[13px] font-semibold text-[#0b1f3a] placeholder:text-[#94a3b8] focus:border-[#0057e7] focus:bg-white focus:outline-none transition-colors"
+                        />
+                      </div>
+                    )}
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setConfirmState(null)}
-                  className="flex-1 py-2.5 border border-[#dcebff] text-[13px] font-bold text-[#64748b] hover:bg-slate-50 rounded-xl transition"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="button"
-                  disabled={isUpdatingStatus}
-                  onClick={() => {
-                    executeStatusTransition(confirmState.orderId, confirmState.orderCode, confirmState.newStatus, confirmText, confirmState.groupKey);
-                  }}
-                  className={`flex-1 py-2.5 text-[13px] font-bold text-white rounded-xl shadow-sm transition disabled:opacity-50 ${
-                    confirmState.newStatus === "cancelled"
-                      ? "bg-red-600 hover:bg-red-700" 
-                      : "bg-[#0057e7] hover:bg-[#003b7a]"
-                  }`}
-                >
-                  {isUpdatingStatus ? "Đang xử lý..." : confirmState.confirmLabel}
-                </button>
-              </div>
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setConfirmState(null)}
+                        className="flex-1 py-2.5 border border-[#dcebff] text-[13px] font-bold text-[#64748b] hover:bg-slate-50 rounded-xl transition"
+                      >
+                        Hủy bỏ
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isUpdatingStatus || (isReasonRequired && !confirmText.trim())}
+                        onClick={() => {
+                          executeStatusTransition(confirmState.orderId, confirmState.orderCode, confirmState.newStatus, confirmText, confirmState.groupKey);
+                        }}
+                        className={`flex-1 py-2.5 text-[13px] font-bold text-white rounded-xl shadow-sm transition disabled:opacity-50 ${
+                          confirmState.newStatus === "cancelled" || confirmState.newStatus === "refunded"
+                            ? "bg-red-600 hover:bg-red-700" 
+                            : "bg-[#0057e7] hover:bg-[#003b7a]"
+                        }`}
+                      >
+                        {isUpdatingStatus ? "Đang xử lý..." : confirmState.confirmLabel}
+                      </button>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}
