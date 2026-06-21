@@ -86,6 +86,120 @@ const SHIPPING_METHOD_MAP: Record<string, string> = {
   sameday: "Trong ngày",
 };
 
+const defaultOrderTransitions: Record<string, Array<{ to_status: string; label: string; danger?: boolean; requires_reason?: boolean }>> = {
+  pending_confirmation: [
+    { to_status: 'confirmed', label: 'Xác nhận đơn' },
+    { to_status: 'cancelled', label: 'Hủy đơn', danger: true, requires_reason: true },
+  ],
+  confirmed: [
+    { to_status: 'preparing', label: 'Chuẩn bị hàng' },
+    { to_status: 'cancelled', label: 'Hủy đơn', danger: true, requires_reason: true },
+  ],
+  pending_payment: [
+    { to_status: 'paid_or_cod', label: 'Đã thanh toán / COD' },
+    { to_status: 'cancelled', label: 'Hủy đơn', danger: true, requires_reason: true },
+  ],
+  paid_or_cod: [
+    { to_status: 'preparing', label: 'Chuẩn bị hàng' },
+  ],
+  preparing: [
+    { to_status: 'awaiting_pickup_or_booking', label: 'Chờ lấy hàng / Đặt ship' },
+  ],
+  awaiting_pickup_or_booking: [
+    { to_status: 'shipping', label: 'Đang giao' },
+  ],
+  shipping: [
+    { to_status: 'delivered', label: 'Giao thành công' },
+    { to_status: 'return_requested', label: 'Yêu cầu đổi / trả', requires_reason: true },
+  ],
+  delivered: [
+    { to_status: 'completed', label: 'Hoàn tất' },
+    { to_status: 'return_requested', label: 'Yêu cầu đổi / trả', requires_reason: true },
+  ],
+  return_requested: [
+    { to_status: 'return_completed', label: 'Đã hoàn / đổi trả xong' },
+  ],
+  completed: [],
+  cancelled: [],
+  return_completed: [],
+};
+
+const defaultPaymentTransitions: Record<string, Array<{ to_status: string; label: string; danger?: boolean; requires_reason?: boolean }>> = {
+  unpaid: [
+    { to_status: 'paid', label: 'Đã thanh toán' },
+    { to_status: 'cod', label: 'COD' },
+    { to_status: 'payment_failed', label: 'Thanh toán lỗi', danger: true },
+  ],
+  cod: [
+    { to_status: 'paid', label: 'Đã thanh toán' },
+  ],
+  paid: [
+    { to_status: 'refunded', label: 'Hoàn tiền', danger: true, requires_reason: true },
+  ],
+  payment_failed: [
+    { to_status: 'unpaid', label: 'Chưa thanh toán' },
+  ],
+  refunded: [],
+};
+
+const defaultShippingTransitions: Record<string, Array<{ to_status: string; label: string; danger?: boolean; requires_reason?: boolean }>> = {
+  no_shipment: [
+    { to_status: 'shipment_created', label: 'Tạo vận đơn' },
+  ],
+  shipment_created: [
+    { to_status: 'picking_up', label: 'Đang lấy hàng' },
+    { to_status: 'shipping', label: 'Đang giao' },
+  ],
+  picking_up: [
+    { to_status: 'shipping', label: 'Đang giao' },
+  ],
+  shipping: [
+    { to_status: 'delivered', label: 'Giao thành công' },
+    { to_status: 'delivery_failed', label: 'Giao thất bại', danger: true, requires_reason: true },
+  ],
+  delivery_failed: [
+    { to_status: 'shipping', label: 'Giao lại' },
+    { to_status: 'returned', label: 'Hoàn hàng', danger: true, requires_reason: true },
+  ],
+  delivered: [],
+  returned: [],
+};
+
+const defaultLoyaltyTransitions: Record<string, Array<{ to_status: string; label: string; danger?: boolean; requires_reason?: boolean }>> = {
+  not_earned: [
+    { to_status: 'pending_review', label: 'Chờ duyệt điểm' },
+    { to_status: 'holding', label: 'Tạm giữ điểm' },
+    { to_status: 'cancelled', label: 'Hủy điểm', danger: true, requires_reason: true },
+  ],
+  pending_review: [
+    { to_status: 'credited', label: 'Cộng điểm' },
+    { to_status: 'cancelled', label: 'Hủy điểm', danger: true, requires_reason: true },
+  ],
+  holding: [
+    { to_status: 'credited', label: 'Cộng điểm' },
+    { to_status: 'cancelled', label: 'Hủy điểm', danger: true, requires_reason: true },
+  ],
+  credited: [],
+  redeemed: [],
+  cancelled: [],
+};
+
+const getStatusLabel = (status: string, groupKey: string): string => {
+  if (groupKey === "order") {
+    return STATUS_MAP[status]?.label || status;
+  }
+  if (groupKey === "payment") {
+    return PAYMENT_MAP[status]?.label || status;
+  }
+  if (groupKey === "shipping") {
+    return SHIPPING_STATUS_MAP[status]?.label || status;
+  }
+  if (groupKey === "loyalty") {
+    return LOYALTY_STATUS_MAP[status]?.label || status;
+  }
+  return status;
+};
+
 export function AdminOrdersPage() {
   const [activeMenu, setActiveMenu] = useState("Đơn hàng");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -148,6 +262,35 @@ export function AdminOrdersPage() {
     textareaPlaceholder?: string;
   } | null>(null);
   const [confirmText, setConfirmText] = useState("");
+
+  const getTransitionsForGroup = (groupKey: "order" | "payment" | "shipping" | "loyalty", currentStatus: string): any[] => {
+    // 1. Check if backend transitions exist and have items for this group
+    if (allowedTransitions && allowedTransitions[groupKey] && allowedTransitions[groupKey].length > 0) {
+      return allowedTransitions[groupKey].map((t: any) => ({
+        to_status: t.to_status,
+        label: t.label,
+        to_status_label: t.to_status_label || getStatusLabel(t.to_status, groupKey),
+        danger: t.danger === true || ["cancelled", "refunded", "return_completed", "delivery_failed", "returned"].includes(t.to_status) || (groupKey === "loyalty" && t.to_status === "cancelled"),
+        requires_reason: t.requires_reason === 1 || ["cancelled", "refunded", "return_completed", "delivery_failed", "returned"].includes(t.to_status) || (groupKey === "loyalty" && t.to_status === "cancelled")
+      }));
+    }
+
+    // 2. Fallback to frontend map if backend is empty
+    let fallbackMap: any = {};
+    if (groupKey === "order") fallbackMap = defaultOrderTransitions;
+    else if (groupKey === "payment") fallbackMap = defaultPaymentTransitions;
+    else if (groupKey === "shipping") fallbackMap = defaultShippingTransitions;
+    else if (groupKey === "loyalty") fallbackMap = defaultLoyaltyTransitions;
+
+    const fallbackItems = fallbackMap[currentStatus] || [];
+    return fallbackItems.map((item: any) => ({
+      to_status: item.to_status,
+      label: item.label,
+      to_status_label: getStatusLabel(item.to_status, groupKey),
+      danger: item.danger || ["cancelled", "refunded", "return_completed", "delivery_failed", "returned"].includes(item.to_status) || (groupKey === "loyalty" && item.to_status === "cancelled"),
+      requires_reason: item.requires_reason || ["cancelled", "refunded", "return_completed", "delivery_failed", "returned"].includes(item.to_status) || (groupKey === "loyalty" && item.to_status === "cancelled")
+    }));
+  };
 
   const fetchOrdersData = () => {
     setIsLoading(true);
@@ -903,7 +1046,7 @@ export function AdminOrdersPage() {
                       <div className="text-[12.5px] space-y-3.5">
                         
                         {/* Dimensions 1: Order Status */}
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between border-b border-slate-100 pb-3 gap-2 last:border-0 last:pb-0">
                           <div className="space-y-1">
                             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái đơn hàng</div>
                             <div>
@@ -912,61 +1055,47 @@ export function AdminOrdersPage() {
                               </span>
                             </div>
                           </div>
-                          <div>
+                          <div className="flex flex-wrap gap-1.5 justify-end">
                             {(() => {
-                              const TERMINAL_STATUSES = ["completed", "cancelled", "return_completed"];
-                              const isTerminal = TERMINAL_STATUSES.includes(selectedOrder.order_status);
-                              if (allowedTransitions?.order && allowedTransitions.order.length > 0) {
-                                return (
-                                  <select
-                                    value=""
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      if (!val) return;
-                                      const t = allowedTransitions.order.find((x: any) => x.to_status === val);
-                                      if (!t) return;
+                              const transitions = getTransitionsForGroup("order", selectedOrder.order_status);
+                              if (transitions.length > 0) {
+                                return transitions.map((t: any) => (
+                                  <button
+                                    key={t.to_status}
+                                    onClick={() => {
                                       setConfirmState({
                                         isOpen: true,
                                         orderId: selectedOrder.id,
                                         orderCode: selectedOrder.order_code,
                                         newStatus: t.to_status,
                                         groupKey: "order",
-                                        title: `${t.label}?`,
-                                        description: `Chuyển trạng thái đơn hàng sang "${t.to_status_label}".`,
+                                        title: "Xác nhận thao tác",
+                                        description: `Bạn muốn chuyển đơn hàng từ "${getStatusLabel(selectedOrder.order_status, "order")}" sang "${t.to_status_label}"?`,
                                         confirmLabel: t.label,
-                                        hasTextarea: t.requires_reason === 1,
+                                        hasTextarea: t.requires_reason === true,
                                         textareaLabel: "Lý do thay đổi",
-                                        textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
+                                        textareaPlaceholder: "Nhập lý do thực hiện..."
                                       });
                                       setConfirmText("");
                                     }}
-                                    className="rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-2.5 py-1.5 text-xs font-bold text-[#0057E7] focus:border-[#0057E7] focus:outline-none cursor-pointer transition hover:bg-slate-50"
+                                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition ${
+                                      t.danger
+                                        ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                                        : "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                    }`}
                                   >
-                                    <option value="" disabled>Chuyển trạng thái...</option>
-                                    {allowedTransitions.order.map((t: any) => (
-                                      <option key={t.id} value={t.to_status}>
-                                        {t.label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                );
+                                    {t.label}
+                                  </button>
+                                ));
                               } else {
-                                if (isTerminal) {
-                                  return (
-                                    <span className="text-[11px] font-semibold text-gray-400 italic">Đơn hàng đã ở trạng thái cuối.</span>
-                                  );
-                                } else {
-                                  return (
-                                    <span className="text-[11px] font-semibold text-amber-600 italic">Chưa cấu hình bước chuyển cho trạng thái này</span>
-                                  );
-                                }
+                                return <span className="text-[11px] font-semibold text-gray-400 italic">Chưa có thao tác tiếp theo</span>;
                               }
                             })()}
                           </div>
                         </div>
 
                         {/* Dimensions 2: Payment Status */}
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between border-b border-slate-100 pb-3 gap-2 last:border-0 last:pb-0">
                           <div className="space-y-1">
                             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái thanh toán</div>
                             <div>
@@ -975,47 +1104,47 @@ export function AdminOrdersPage() {
                               </span>
                             </div>
                           </div>
-                          <div>
-                            {allowedTransitions?.payment && allowedTransitions.payment.length > 0 ? (
-                              <select
-                                value=""
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  if (!val) return;
-                                  const t = allowedTransitions.payment.find((x: any) => x.to_status === val);
-                                  if (!t) return;
-                                  setConfirmState({
-                                    isOpen: true,
-                                    orderId: selectedOrder.id,
-                                    orderCode: selectedOrder.order_code,
-                                    newStatus: t.to_status,
-                                    groupKey: "payment",
-                                    title: `${t.label}?`,
-                                    description: `Chuyển trạng thái thanh toán sang "${t.to_status_label}".`,
-                                    confirmLabel: t.label,
-                                    hasTextarea: t.requires_reason === 1,
-                                    textareaLabel: "Lý do thay đổi",
-                                    textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
-                                  });
-                                  setConfirmText("");
-                                }}
-                                className="rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-2.5 py-1.5 text-xs font-bold text-[#0057E7] focus:border-[#0057E7] focus:outline-none cursor-pointer transition hover:bg-slate-50"
-                              >
-                                <option value="" disabled>Chuyển trạng thái...</option>
-                                {allowedTransitions.payment.map((t: any) => (
-                                  <option key={t.id} value={t.to_status}>
+                          <div className="flex flex-wrap gap-1.5 justify-end">
+                            {(() => {
+                              const transitions = getTransitionsForGroup("payment", selectedOrder.payment_status);
+                              if (transitions.length > 0) {
+                                return transitions.map((t: any) => (
+                                  <button
+                                    key={t.to_status}
+                                    onClick={() => {
+                                      setConfirmState({
+                                        isOpen: true,
+                                        orderId: selectedOrder.id,
+                                        orderCode: selectedOrder.order_code,
+                                        newStatus: t.to_status,
+                                        groupKey: "payment",
+                                        title: "Xác nhận thao tác",
+                                        description: `Bạn muốn chuyển trạng thái thanh toán từ "${getStatusLabel(selectedOrder.payment_status, "payment")}" sang "${t.to_status_label}"?`,
+                                        confirmLabel: t.label,
+                                        hasTextarea: t.requires_reason === true,
+                                        textareaLabel: "Lý do thay đổi",
+                                        textareaPlaceholder: "Nhập lý do thực hiện..."
+                                      });
+                                      setConfirmText("");
+                                    }}
+                                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition ${
+                                      t.danger
+                                        ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                                        : "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                    }`}
+                                  >
                                     {t.label}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span className="text-[11px] font-semibold text-gray-400 italic">Không có chuyển đổi</span>
-                            )}
+                                  </button>
+                                ));
+                              } else {
+                                return <span className="text-[11px] font-semibold text-gray-400 italic">Chưa có thao tác tiếp theo</span>;
+                              }
+                            })()}
                           </div>
                         </div>
 
                         {/* Dimensions 3: Shipping Status */}
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between border-b border-slate-100 pb-3 gap-2 last:border-0 last:pb-0">
                           <div className="space-y-1">
                             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái vận chuyển</div>
                             <div>
@@ -1024,47 +1153,47 @@ export function AdminOrdersPage() {
                               </span>
                             </div>
                           </div>
-                          <div>
-                            {allowedTransitions?.shipping && allowedTransitions.shipping.length > 0 ? (
-                              <select
-                                value=""
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  if (!val) return;
-                                  const t = allowedTransitions.shipping.find((x: any) => x.to_status === val);
-                                  if (!t) return;
-                                  setConfirmState({
-                                    isOpen: true,
-                                    orderId: selectedOrder.id,
-                                    orderCode: selectedOrder.order_code,
-                                    newStatus: t.to_status,
-                                    groupKey: "shipping",
-                                    title: `${t.label}?`,
-                                    description: `Chuyển trạng thái giao hàng sang "${t.to_status_label}".`,
-                                    confirmLabel: t.label,
-                                    hasTextarea: t.requires_reason === 1,
-                                    textareaLabel: "Lý do thay đổi",
-                                    textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
-                                  });
-                                  setConfirmText("");
-                                }}
-                                className="rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-2.5 py-1.5 text-xs font-bold text-[#0057E7] focus:border-[#0057E7] focus:outline-none cursor-pointer transition hover:bg-slate-50"
-                              >
-                                <option value="" disabled>Chuyển trạng thái...</option>
-                                {allowedTransitions.shipping.map((t: any) => (
-                                  <option key={t.id} value={t.to_status}>
+                          <div className="flex flex-wrap gap-1.5 justify-end">
+                            {(() => {
+                              const transitions = getTransitionsForGroup("shipping", selectedOrder.shipping_status || "no_shipment");
+                              if (transitions.length > 0) {
+                                return transitions.map((t: any) => (
+                                  <button
+                                    key={t.to_status}
+                                    onClick={() => {
+                                      setConfirmState({
+                                        isOpen: true,
+                                        orderId: selectedOrder.id,
+                                        orderCode: selectedOrder.order_code,
+                                        newStatus: t.to_status,
+                                        groupKey: "shipping",
+                                        title: "Xác nhận thao tác",
+                                        description: `Bạn muốn chuyển trạng thái vận chuyển từ "${getStatusLabel(selectedOrder.shipping_status || "no_shipment", "shipping")}" sang "${t.to_status_label}"?`,
+                                        confirmLabel: t.label,
+                                        hasTextarea: t.requires_reason === true,
+                                        textareaLabel: "Lý do thay đổi",
+                                        textareaPlaceholder: "Nhập lý do thực hiện..."
+                                      });
+                                      setConfirmText("");
+                                    }}
+                                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition ${
+                                      t.danger
+                                        ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                                        : "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                    }`}
+                                  >
                                     {t.label}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span className="text-[11px] font-semibold text-gray-400 italic">Không có chuyển đổi</span>
-                            )}
+                                  </button>
+                                ));
+                              } else {
+                                return <span className="text-[11px] font-semibold text-gray-400 italic">Chưa có thao tác tiếp theo</span>;
+                              }
+                            })()}
                           </div>
                         </div>
 
                         {/* Dimensions 4: Loyalty Status */}
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between border-b border-slate-100 pb-3 gap-2 last:border-0 last:pb-0">
                           <div className="space-y-1">
                             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Trạng thái tích điểm</div>
                             <div>
@@ -1073,42 +1202,42 @@ export function AdminOrdersPage() {
                               </span>
                             </div>
                           </div>
-                          <div>
-                            {allowedTransitions?.loyalty && allowedTransitions.loyalty.length > 0 ? (
-                              <select
-                                value=""
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  if (!val) return;
-                                  const t = allowedTransitions.loyalty.find((x: any) => x.to_status === val);
-                                  if (!t) return;
-                                  setConfirmState({
-                                    isOpen: true,
-                                    orderId: selectedOrder.id,
-                                    orderCode: selectedOrder.order_code,
-                                    newStatus: t.to_status,
-                                    groupKey: "loyalty",
-                                    title: `${t.label}?`,
-                                    description: `Chuyển trạng thái tích điểm sang "${t.to_status_label}".`,
-                                    confirmLabel: t.label,
-                                    hasTextarea: t.requires_reason === 1,
-                                    textareaLabel: "Lý do thay đổi",
-                                    textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
-                                  });
-                                  setConfirmText("");
-                                }}
-                                className="rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-2.5 py-1.5 text-xs font-bold text-[#0057E7] focus:border-[#0057E7] focus:outline-none cursor-pointer transition hover:bg-slate-50"
-                              >
-                                <option value="" disabled>Chuyển trạng thái...</option>
-                                {allowedTransitions.loyalty.map((t: any) => (
-                                  <option key={t.id} value={t.to_status}>
+                          <div className="flex flex-wrap gap-1.5 justify-end">
+                            {(() => {
+                              const transitions = getTransitionsForGroup("loyalty", selectedOrder.loyalty_status || "not_earned");
+                              if (transitions.length > 0) {
+                                return transitions.map((t: any) => (
+                                  <button
+                                    key={t.to_status}
+                                    onClick={() => {
+                                      setConfirmState({
+                                        isOpen: true,
+                                        orderId: selectedOrder.id,
+                                        orderCode: selectedOrder.order_code,
+                                        newStatus: t.to_status,
+                                        groupKey: "loyalty",
+                                        title: "Xác nhận thao tác",
+                                        description: `Bạn muốn chuyển trạng thái tích điểm từ "${getStatusLabel(selectedOrder.loyalty_status || "not_earned", "loyalty")}" sang "${t.to_status_label}"?`,
+                                        confirmLabel: t.label,
+                                        hasTextarea: t.requires_reason === true,
+                                        textareaLabel: "Lý do thay đổi",
+                                        textareaPlaceholder: "Nhập lý do thực hiện..."
+                                      });
+                                      setConfirmText("");
+                                    }}
+                                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition ${
+                                      t.danger
+                                        ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                                        : "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                    }`}
+                                  >
                                     {t.label}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span className="text-[11px] font-semibold text-gray-400 italic">Không có chuyển đổi</span>
-                            )}
+                                  </button>
+                                ));
+                              } else {
+                                return <span className="text-[11px] font-semibold text-gray-400 italic">Chưa có thao tác tiếp theo</span>;
+                              }
+                            })()}
                           </div>
                         </div>
 
@@ -1313,6 +1442,20 @@ export function AdminOrdersPage() {
 
                 {/* Right side: action buttons based on allowed transitions */}
                 <div className="flex items-center gap-2 shrink-0">
+                  {/* Message for terminal / finished states */}
+                  {(() => {
+                    if (selectedOrder.order_status === "completed") {
+                      return <span className="text-xs font-semibold text-green-600 bg-green-50 border border-green-100 rounded-lg px-2.5 py-1.5 mr-2">Đơn hàng đã hoàn tất</span>;
+                    }
+                    if (selectedOrder.order_status === "cancelled") {
+                      return <span className="text-xs font-semibold text-gray-500 bg-gray-100 border border-slate-200 rounded-lg px-2.5 py-1.5 mr-2">Đơn hàng đã hủy</span>;
+                    }
+                    if (selectedOrder.order_status === "return_completed") {
+                      return <span className="text-xs font-semibold text-red-500 bg-red-50 border border-red-100 rounded-lg px-2.5 py-1.5 mr-2">Đơn hàng đã hoàn tất đổi trả</span>;
+                    }
+                    return null;
+                  })()}
+
                   {/* Secondary Close Button */}
                   <button
                     onClick={() => setSelectedOrder(null)}
@@ -1321,56 +1464,47 @@ export function AdminOrdersPage() {
                     Đóng
                   </button>
 
-                  {/* Transition actions */}
+                  {/* Main next action buttons */}
                   {(() => {
                     const TERMINAL_STATUSES = ["completed", "cancelled", "return_completed"];
-                    const isTerminal = TERMINAL_STATUSES.includes(selectedOrder.order_status);
-                    
-                    if (isTerminal) {
-                      return (
-                        <span className="text-xs font-semibold text-gray-400 italic bg-gray-50 border border-slate-100 rounded-lg px-2.5 py-2">
-                          Đơn hàng đã ở trạng thái cuối.
-                        </span>
-                      );
+                    if (TERMINAL_STATUSES.includes(selectedOrder.order_status)) {
+                      return null;
                     }
-                    
-                    if (allowedTransitions?.order && allowedTransitions.order.length > 0) {
-                      return allowedTransitions.order.map((t: any) => {
-                        const isDangerous = ["cancelled", "refunded", "return_completed", "delivery_failed", "returned"].includes(t.to_status);
-                        
-                        return (
-                          <button
-                            key={t.id}
-                            onClick={() => {
-                              setConfirmState({
-                                isOpen: true,
-                                orderId: selectedOrder.id,
-                                orderCode: selectedOrder.order_code,
-                                newStatus: t.to_status,
-                                groupKey: "order",
-                                title: `${t.label}?`,
-                                description: `Chuyển trạng thái đơn hàng sang "${t.to_status_label}".`,
-                                confirmLabel: t.label,
-                                hasTextarea: t.requires_reason === 1,
-                                textareaLabel: "Lý do thay đổi",
-                                textareaPlaceholder: "Nhập lý do chuyển trạng thái..."
-                              });
-                              setConfirmText("");
-                            }}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition ${
-                              isDangerous
-                                ? "border border-red-200 hover:border-red-300 bg-red-50 hover:bg-red-100 text-red-700"
-                                : "bg-[#0057E7] hover:bg-[#003b7a] text-white shadow-sm"
-                            }`}
-                          >
-                            {t.label}
-                          </button>
-                        );
-                      });
+
+                    const orderTransitions = getTransitionsForGroup("order", selectedOrder.order_status);
+                    if (orderTransitions.length > 0) {
+                      return orderTransitions.map((t: any) => (
+                        <button
+                          key={t.to_status}
+                          onClick={() => {
+                            setConfirmState({
+                              isOpen: true,
+                              orderId: selectedOrder.id,
+                              orderCode: selectedOrder.order_code,
+                              newStatus: t.to_status,
+                              groupKey: "order",
+                              title: "Xác nhận thao tác",
+                              description: `Bạn muốn chuyển đơn hàng từ "${getStatusLabel(selectedOrder.order_status, "order")}" sang "${t.to_status_label}"?`,
+                              confirmLabel: t.label,
+                              hasTextarea: t.requires_reason === true,
+                              textareaLabel: "Lý do thay đổi",
+                              textareaPlaceholder: "Nhập lý do thực hiện..."
+                            });
+                            setConfirmText("");
+                          }}
+                          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition ${
+                            t.danger
+                              ? "border border-red-200 hover:border-red-300 bg-red-50 hover:bg-red-100 text-red-700"
+                              : "bg-[#0057E7] hover:bg-[#003b7a] text-white shadow-sm"
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ));
                     } else {
                       return (
-                        <span className="text-xs font-semibold text-amber-600 bg-amber-50/50 border border-amber-100 rounded-lg px-2.5 py-2">
-                          Chưa cấu hình bước chuyển cho trạng thái này
+                        <span className="text-xs font-semibold text-gray-400 italic bg-gray-50 border border-slate-100 rounded-lg px-2.5 py-2">
+                          Chưa có thao tác tiếp theo
                         </span>
                       );
                     }
@@ -1394,12 +1528,12 @@ export function AdminOrdersPage() {
             {/* Dialog content panel */}
             <div className="relative w-full max-w-md bg-white rounded-3xl border border-[#dcebff] shadow-[0_20px_50px_rgba(6,43,95,0.15)] p-6 space-y-4 z-10 animate-fade-in">
               <div className="flex items-start gap-3.5">
-                <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 shrink-0">
+                <div className="p-2.5 rounded-2xl bg-blue-50 border border-blue-100 text-[#0057E7] shrink-0">
                   <AlertCircle size={22} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-base font-black text-[#0b1f3a] leading-tight">
-                    {confirmState.title}
+                    Xác nhận thao tác
                   </h3>
                   <p className="mt-1.5 text-[12.5px] text-[#64748b] leading-relaxed">
                     {confirmState.description}
@@ -1410,27 +1544,22 @@ export function AdminOrdersPage() {
               {(() => {
                 const isDangerous = ["cancelled", "refunded", "return_completed", "delivery_failed", "returned"].includes(confirmState.newStatus) ||
                   (confirmState.groupKey === "loyalty" && confirmState.newStatus === "cancelled");
-                const hasTextarea = confirmState.hasTextarea || isDangerous;
                 const isReasonRequired = isDangerous || confirmState.hasTextarea;
-                const textareaLabel = confirmState.textareaLabel || (isReasonRequired ? "Lý do thay đổi" : "Ghi chú");
-                const textareaPlaceholder = confirmState.textareaPlaceholder || (isReasonRequired ? "Bắt buộc nhập lý do cho hành động này..." : "Nhập ghi chú tùy chọn...");
                 
                 return (
                   <>
-                    {hasTextarea && (
-                      <div className="space-y-1.5">
-                        <label className="block text-[11px] font-bold uppercase tracking-[0.03em] text-[#64748B]">
-                          {textareaLabel} {isReasonRequired && <span className="text-red-500 font-extrabold">* (Bắt buộc)</span>}
-                        </label>
-                        <textarea
-                          value={confirmText}
-                          onChange={(e) => setConfirmText(e.target.value)}
-                          placeholder={textareaPlaceholder}
-                          rows={3}
-                          className="w-full rounded-2xl border border-[#dcebff] bg-[#f6faff] px-4 py-3 text-[13px] font-semibold text-[#0b1f3a] placeholder:text-[#94a3b8] focus:border-[#0057e7] focus:bg-white focus:outline-none transition-colors"
-                        />
-                      </div>
-                    )}
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold uppercase tracking-[0.03em] text-[#64748B]">
+                        {isReasonRequired ? "Lý do thay đổi" : "Ghi chú nội bộ"} {isReasonRequired ? <span className="text-red-500 font-extrabold">* (Bắt buộc)</span> : <span className="text-gray-400 font-normal text-[10px]">(Không bắt buộc)</span>}
+                      </label>
+                      <textarea
+                        value={confirmText}
+                        onChange={(e) => setConfirmText(e.target.value)}
+                        placeholder={isReasonRequired ? "Bắt buộc nhập lý do cho hành động này..." : "Nhập ghi chú nội bộ (nếu có)..."}
+                        rows={3}
+                        className="w-full rounded-2xl border border-[#dcebff] bg-[#f6faff] px-4 py-3 text-[13px] font-semibold text-[#0b1f3a] placeholder:text-[#94a3b8] focus:border-[#0057e7] focus:bg-white focus:outline-none transition-colors"
+                      />
+                    </div>
 
                     <div className="flex gap-3 pt-2">
                       <button
@@ -1438,7 +1567,7 @@ export function AdminOrdersPage() {
                         onClick={() => setConfirmState(null)}
                         className="flex-1 py-2.5 border border-[#dcebff] text-[13px] font-bold text-[#64748b] hover:bg-slate-50 rounded-xl transition"
                       >
-                        Hủy bỏ
+                        Hủy
                       </button>
                       <button
                         type="button"

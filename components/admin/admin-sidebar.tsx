@@ -99,6 +99,10 @@ export function AdminSidebar({ activeMenu, setActiveMenu, collapsed }: AdminSide
 
       <nav className="no-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-4">
         {menuItems.map((item) => {
+          // Hide "Cấu hình Workflow" from normal admin (only allow role === "super_admin" or "dev")
+          if (item.path === "/admin/settings/workflows" && adminRole !== "super_admin" && adminRole !== "dev") {
+            return null;
+          }
           const Icon = item.icon;
           const isRouteActive = item.path ? location.pathname === item.path : false;
           const isActive = isRouteActive || activeMenu === item.name;

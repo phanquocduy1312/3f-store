@@ -84,7 +84,34 @@ export function AdminWorkflowSettingsPage() {
   const [shippingForm, setShippingForm] = useState<Partial<ShippingProviderSetting>>({});
   const [notificationForm, setNotificationForm] = useState<Partial<NotificationChannelSetting>>({});
 
+  const [adminRole, setAdminRole] = useState("admin");
+
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setAdminRole(user.role || "admin");
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }, []);
+
   const fetchData = async () => {
+    // Only fetch if role is allowed
+    const userStr = localStorage.getItem("admin_user");
+    let role = "admin";
+    try {
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        role = u.role || "admin";
+      }
+    } catch (e) {}
+    if (role !== "super_admin" && role !== "dev") {
+      return;
+    }
+
     setIsLoading(true);
     try {
       if (activeTab === "statuses") {
@@ -115,7 +142,7 @@ export function AdminWorkflowSettingsPage() {
 
   useEffect(() => {
     fetchData();
-  }, [activeTab]);
+  }, [activeTab, adminRole]);
 
   // STATUS CRUD actions
   const handleOpenStatusModal = (item?: WorkflowStatusSetting) => {
@@ -443,6 +470,45 @@ export function AdminWorkflowSettingsPage() {
       toast.error(err.message || "Lỗi lưu kênh thông báo.");
     }
   };
+
+  if (adminRole !== "super_admin" && adminRole !== "dev") {
+    return (
+      <div className="min-h-screen bg-[#F6FAFF] font-sans relative">
+        <AdminSidebar 
+          activeMenu={activeMenu} 
+          setActiveMenu={setActiveMenu} 
+          collapsed={sidebarCollapsed} 
+        />
+
+        <div className={`min-h-screen flex flex-col overflow-x-hidden transition-all duration-300 ${
+          sidebarCollapsed ? "w-full lg:pl-20" : "w-full lg:pl-[220px]"
+        }`}>
+          <AdminHeader 
+            onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+            searchValue=""
+            onSearchChange={() => {}}
+            selectedDate="today"
+            onDateChange={() => {}}
+          />
+
+          <main className="flex-1 px-4 sm:px-6 py-6 flex items-center justify-center">
+            <div className="text-center p-8 bg-white border border-[#DCEBFF] rounded-3xl max-w-md shadow-sm">
+              <h1 className="text-lg font-black text-[#0B1F3A] mb-2">Truy cập bị hạn chế</h1>
+              <p className="text-xs text-amber-600 font-bold bg-amber-50 p-3 rounded-2xl border border-amber-100 mb-4">
+                Khu vực cấu hình nâng cao, chỉ dành cho quản trị hệ thống.
+              </p>
+              <button 
+                onClick={() => window.location.href = "/admin/orders"}
+                className="px-4 py-2 bg-[#0057E7] hover:bg-[#003B7A] text-white text-xs font-bold rounded-xl transition"
+              >
+                Quay lại Quản lý đơn hàng
+              </button>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] font-sans relative">
