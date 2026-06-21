@@ -58,7 +58,10 @@ export function BlogDetail() {
 
   const getEnrichedContentAndHeadings = (rawHtml: string) => {
     const headings: HeadingItem[] = [];
-    const cleanHtml = DOMPurify.sanitize(rawHtml);
+    const cleanHtml = DOMPurify.sanitize(rawHtml, {
+      ADD_TAGS: ["input"],
+      ADD_ATTR: ["data-type", "data-checked", "type", "checked", "disabled"]
+    });
     const parser = new DOMParser();
     const doc = parser.parseFromString(cleanHtml, "text/html");
 
@@ -66,6 +69,17 @@ export function BlogDetail() {
     const imgElements = doc.querySelectorAll("img");
     imgElements.forEach((img) => {
       img.setAttribute("onerror", "this.style.display='none';");
+    });
+
+    // Ensure external links have rel="noopener noreferrer" and target="_blank"
+    const linkElements = doc.querySelectorAll("a");
+    linkElements.forEach((a) => {
+      const href = a.getAttribute("href") || "";
+      const isExternal = href.startsWith("http") && !href.includes("3fstore") && !href.includes("localhost") && !href.includes("vercel.app");
+      if (isExternal) {
+        a.setAttribute("rel", "noopener noreferrer");
+        a.setAttribute("target", "_blank");
+      }
     });
 
     const headingElements = doc.querySelectorAll("h2, h3");
@@ -177,7 +191,9 @@ export function BlogDetail() {
           
           {/* LEFT COLUMN: Table of Contents & Social Share (col-span-3) */}
           <aside className="hidden lg:block lg:col-span-3 space-y-6 lg:sticky lg:top-[160px] h-fit">
-            <BlogToc headings={headings} />
+            {post.toc_enabled !== 0 && post.toc_enabled !== false && (
+              <BlogToc headings={headings} title={post.toc_title || "Mục lục bài viết"} />
+            )}
             <BlogShare title={post.title} />
           </aside>
 
@@ -195,7 +211,13 @@ export function BlogDetail() {
                 </span>
               </div>
 
-              <h1 id="article-title" className="mt-4 text-2xl font-black leading-tight text-ink sm:text-3xl lg:text-4xl">
+              {post.category && (
+                <div className="mt-4 text-xs font-extrabold uppercase tracking-widest text-forest">
+                  {post.category}
+                </div>
+              )}
+
+              <h1 id="article-title" className="mt-2 text-2xl font-black leading-tight text-ink sm:text-3xl lg:text-4xl">
                 {post.title}
               </h1>
 
@@ -206,7 +228,7 @@ export function BlogDetail() {
               )}
 
               {/* Mobile Table of Contents (collapsible Accordion) */}
-              {headings.length > 0 && (
+              {(post.toc_enabled !== 0 && post.toc_enabled !== false) && headings.length > 0 && (
                 <div className="mt-6 block lg:hidden rounded-2xl border border-forest/10 bg-cream/5 p-4">
                   <button
                     onClick={() => setIsTocOpen(!isTocOpen)}
@@ -214,7 +236,7 @@ export function BlogDetail() {
                   >
                     <span className="flex items-center gap-2 text-forest">
                       <BookOpen size={14} />
-                      Mục lục bài viết
+                      {post.toc_title || "Mục lục bài viết"}
                     </span>
                     <span className={`transform transition-transform duration-200 ${isTocOpen ? "rotate-180" : ""}`}>
                       <ChevronDown size={14} className="text-ink/65" />

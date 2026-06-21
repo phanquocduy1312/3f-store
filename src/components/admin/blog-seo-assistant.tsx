@@ -11,6 +11,7 @@ interface BlogSeoAssistantProps {
   slug: string;
   thumbnailUrl: string;
   thumbnailAlt: string;
+  category: string;
   onScoreChange?: (score: number) => void;
 }
 
@@ -24,6 +25,7 @@ export function BlogSeoAssistant({
   slug = "",
   thumbnailUrl = "",
   thumbnailAlt = "",
+  category = "",
   onScoreChange,
 }: BlogSeoAssistantProps) {
   // Helpers
@@ -56,6 +58,13 @@ export function BlogSeoAssistant({
 
   // Auditing checks
   const checks = [
+    {
+      id: "category-presence",
+      label: "Danh mục bài viết",
+      desc: "Bắt buộc chọn loại tin / danh mục bài viết để phân loại bài viết rõ ràng.",
+      status: category ? "pass" : "fail",
+      detail: category || "Chưa chọn",
+    },
     {
       id: "title-len",
       label: "Độ dài tiêu đề",
@@ -109,7 +118,7 @@ export function BlogSeoAssistant({
     {
       id: "headings-structure",
       label: "Tiêu đề con (H2, H3)",
-      desc: "Bài viết nên có ít nhất 2 headings con để cấu trúc bài rõ ràng.",
+      desc: "Bài viết nên có ít nhất 2 headings con để cấu trúc bài rõ ràng và kích hoạt mục lục.",
       status: headingsCount >= 2 ? "pass" : headingsCount > 0 ? "warn" : "fail",
       detail: `${headingsCount} headings`,
     },

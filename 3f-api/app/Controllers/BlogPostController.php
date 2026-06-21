@@ -17,6 +17,8 @@ class BlogPostController {
             $page = (int)Request::query('page', 1);
             $limit = (int)Request::query('limit', 10);
             $q = trim((string)Request::query('q', ''));
+            $category = trim((string)Request::query('category', ''));
+            $sort = trim((string)Request::query('sort', ''));
 
             $isAdmin = false;
             try {
@@ -32,7 +34,7 @@ class BlogPostController {
             }
 
             $model = new BlogPost();
-            $data = $model->getPaginated($page, $limit, $q, $isAdmin);
+            $data = $model->getPaginated($page, $limit, $q, $isAdmin, $category, $sort);
 
             Response::json([
                 "success" => true,
@@ -289,7 +291,9 @@ class BlogPostController {
                         'content' => $contentHtml,
                         'thumbnail_url' => $thumbnailUrl,
                         'author' => $author,
-                        'published_at' => $publishedAt
+                        'published_at' => $publishedAt,
+                        'category' => 'Tin tức 3F Store',
+                        'category_slug' => 'tin-tuc-3f-store'
                     ];
 
                     $success = $model->upsert($blogData);
@@ -331,6 +335,12 @@ class BlogPostController {
                 return;
             }
 
+            if (empty($data['category'])) {
+                Response::json(['success' => false, 'message' => 'Vui lòng chọn loại tin.'], 400);
+                return;
+            }
+            $data['category_slug'] = $this->generateCategorySlug($data['category']);
+
             $model = new BlogPost();
             // Automatically generate unique slug if not standard, or check uniqueness
             $existing = $model->getBySlug($data['slug']);
@@ -367,6 +377,12 @@ class BlogPostController {
                 Response::json(['success' => false, 'message' => 'Vui lòng nhập đầy đủ Tiêu đề, Slug và Nội dung.'], 400);
                 return;
             }
+
+            if (empty($data['category'])) {
+                Response::json(['success' => false, 'message' => 'Vui lòng chọn loại tin.'], 400);
+                return;
+            }
+            $data['category_slug'] = $this->generateCategorySlug($data['category']);
 
             $model = new BlogPost();
             $existing = $model->getBySlug($data['slug']);
@@ -431,5 +447,19 @@ class BlogPostController {
         } catch (Exception $e) {
             Response::json(['success' => false, 'message' => 'Lỗi tải ảnh: ' . $e->getMessage()], 500);
         }
+    }
+
+    private function generateCategorySlug($str) {
+        $str = mb_strtolower($str, 'UTF-8');
+        $str = preg_replace('/(à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ)/', 'a', $str);
+        $str = preg_replace('/(è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ)/', 'e', $str);
+        $str = preg_replace('/(ì|í|ị|ỉ|ĩ)/', 'i', $str);
+        $str = preg_replace('/(ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ)/', 'o', $str);
+        $str = preg_replace('/(ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ)/', 'u', $str);
+        $str = preg_replace('/(ỳ|ý|ỵ|ỷ|ỹ)/', 'y', $str);
+        $str = preg_replace('/(đ)/', 'd', $str);
+        $str = preg_replace('/([^a-z0-9-\s])/', '', $str);
+        $str = preg_replace('/([\s-]+)/', '-', $str);
+        return trim($str, '-');
     }
 }

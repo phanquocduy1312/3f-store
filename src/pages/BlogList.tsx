@@ -16,16 +16,26 @@ export function BlogList() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
 
-  const categories = ["Tất cả", "Dinh dưỡng", "Chăm sóc", "Sức khỏe", "Vệ sinh", "Phụ kiện"];
+  const categories = [
+    "Tất cả",
+    "Chăm sóc mèo",
+    "Chăm sóc chó",
+    "Dinh dưỡng thú cưng",
+    "Sức khỏe thú cưng",
+    "Huấn luyện & hành vi",
+    "Sản phẩm & đánh giá",
+    "Khuyến mãi / Thông báo",
+    "Tin tức 3F Store"
+  ];
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchPosts = async (currentPage: number, searchKeyword: string) => {
     setIsLoading(true);
     try {
-      // If a category other than "Tất cả" is selected, we filter by category
-      const queryKeyword = selectedCategory !== "Tất cả" ? `${selectedCategory} ${searchKeyword}`.trim() : searchKeyword;
-      const res = await getBlogPosts(currentPage, limit, queryKeyword);
+      // Pass the selected category directly as the category parameter instead of appending to q
+      const categoryParam = selectedCategory !== "Tất cả" ? selectedCategory : "";
+      const res = await getBlogPosts(currentPage, limit, searchKeyword, categoryParam);
       if (res.success && res.data) {
         setPosts(res.data.items);
         setTotal(res.data.total);
@@ -83,23 +93,16 @@ export function BlogList() {
   };
 
   // Determine category badge color
-  const getCategoryColor = (title: string) => {
-    const lower = title.toLowerCase();
-    if (lower.includes("dinh dưỡng") || lower.includes("thức ăn")) return "bg-orange-50 text-orange-600 border-orange-100";
-    if (lower.includes("vệ sinh") || lower.includes("cát")) return "bg-blue-50 text-blue-600 border-blue-100";
-    if (lower.includes("sức khỏe") || lower.includes("bệnh")) return "bg-red-50 text-red-600 border-red-100";
-    if (lower.includes("phụ kiện") || lower.includes("chuồng")) return "bg-purple-50 text-purple-600 border-purple-100";
+  const getCategoryColor = (catName: string) => {
+    const lower = catName.toLowerCase();
+    if (lower.includes("dinh dưỡng")) return "bg-orange-50 text-orange-600 border-orange-100";
+    if (lower.includes("chăm sóc mèo")) return "bg-blue-50 text-blue-600 border-blue-100";
+    if (lower.includes("chăm sóc chó")) return "bg-sky-50 text-sky-600 border-sky-100";
+    if (lower.includes("sức khỏe")) return "bg-red-50 text-red-600 border-red-100";
+    if (lower.includes("huấn luyện")) return "bg-purple-50 text-purple-600 border-purple-100";
+    if (lower.includes("sản phẩm") || lower.includes("đánh giá")) return "bg-amber-50 text-amber-600 border-amber-100";
+    if (lower.includes("khuyến mãi") || lower.includes("thông báo")) return "bg-rose-50 text-rose-600 border-rose-100";
     return "bg-forest/5 text-forest border-forest/10";
-  };
-
-  // Guess category based on title/summary
-  const getGuessedCategory = (post: BlogPost) => {
-    const txt = (post.title + " " + (post.summary || "")).toLowerCase();
-    if (txt.includes("ăn") || txt.includes("dinh dưỡng") || txt.includes("pate") || txt.includes("hạt")) return "Dinh dưỡng";
-    if (txt.includes("cát") || txt.includes("vệ sinh") || txt.includes("khử mùi")) return "Vệ sinh";
-    if (txt.includes("bệnh") || txt.includes("sức khỏe") || txt.includes("viêm tai") || txt.includes("rụng lông")) return "Sức khỏe";
-    if (txt.includes("chuồng") || txt.includes("đồ chơi") || txt.includes("phụ kiện")) return "Phụ kiện";
-    return "Chăm sóc";
   };
 
   return (
@@ -190,8 +193,8 @@ export function BlogList() {
           <div>
             <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {posts.map((post) => {
-                const guessedCat = getGuessedCategory(post);
-                const badgeStyle = getCategoryColor(guessedCat);
+                const catName = post.category || "Tin tức 3F Store";
+                const badgeStyle = getCategoryColor(catName);
                 const imageSrc = post.thumbnail_url || "/assets/images/cat-food.webp";
                 
                 return (
@@ -218,7 +221,7 @@ export function BlogList() {
                           {formatDate(post.published_at)}
                         </div>
                         <div className={`inline-flex rounded border px-2 py-0.5 text-[10px] font-bold ${badgeStyle}`}>
-                          {guessedCat}
+                          {catName}
                         </div>
                       </div>
 

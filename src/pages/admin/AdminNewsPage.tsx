@@ -10,7 +10,7 @@ import {
   adminCrawlBlogPosts,
   type BlogPost 
 } from "@/src/api/blogApi";
-import { BlogEditor } from "@/src/components/admin/blog-editor";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Plus, Edit2, Trash2, Search, Eye, RefreshCw, FileText, Sparkles, CheckSquare, ChevronLeft, ChevronRight, ExternalLink, MoreHorizontal, Copy, EyeOff } from "lucide-react";
 
@@ -22,19 +22,20 @@ export function AdminNewsPage() {
     return true;
   });
   const [posts, setPosts] = useState<BlogPost[]>([]);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [crawling, setCrawling] = useState(false);
   const [search, setSearch] = useState("");
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [seoFilter, setSeoFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSort, setSelectedSort] = useState("updated_at");
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, seoFilter]);
+  }, [search, seoFilter, selectedCategory, selectedSort]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -47,7 +48,7 @@ export function AdminNewsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const res = await adminGetBlogPosts(1, 100, search);
+      const res = await adminGetBlogPosts(1, 200, search, selectedCategory, selectedSort);
       if (res.success) {
         setPosts(res.data.items || []);
       } else {
@@ -62,7 +63,7 @@ export function AdminNewsPage() {
 
   useEffect(() => {
     loadData();
-  }, [search]);
+  }, [search, selectedCategory, selectedSort]);
 
   const handleCrawl = async () => {
     if (crawling) return;
@@ -83,24 +84,7 @@ export function AdminNewsPage() {
     }
   };
 
-  const handleSave = async (formData: any) => {
-    const isEdit = !!formData.id;
-    try {
-      const res = isEdit 
-        ? await adminUpdateBlogPost(formData.id, formData)
-        : await adminCreateBlogPost(formData);
-      
-      if (res.success) {
-        toast.success(isEdit ? "Cập nhật bài viết thành công" : "Tạo bài viết thành công");
-        loadData();
-      } else {
-        toast.error(res.message || "Lỗi lưu bài viết");
-        throw new Error(res.message);
-      }
-    } catch (err) {
-      throw err;
-    }
-  };
+  // handleSave is now handled in AdminNewsEditorPage
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
@@ -157,11 +141,7 @@ export function AdminNewsPage() {
     }
   };
 
-  const handleImageUpload = async (file: File) => {
-    const res = await adminUploadBlogImage(file);
-    if (res.success) return res.url;
-    throw new Error(res.message || "Lỗi tải ảnh lên");
-  };
+  // handleImageUpload is now handled in AdminNewsEditorPage
 
   const calculateSeoScore = (post: BlogPost): number => {
     let score = 0;
@@ -274,7 +254,7 @@ export function AdminNewsPage() {
               </button>
               
               <button
-                onClick={() => { setEditingPost(null); setIsEditorOpen(true); }}
+                onClick={() => navigate("/admin/news/new")}
                 className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-sm transition"
               >
                 <Plus size={14} />
@@ -364,15 +344,47 @@ export function AdminNewsPage() {
               </button>
             </div>
 
-            <div className="relative w-full sm:w-64">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="Tìm tiêu đề hoặc slug..." 
-                value={search} 
-                onChange={(e) => setSearch(e.target.value)} 
-                className="w-full h-9 pl-9 pr-4 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-slate-400 transition" 
-              />
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              {/* Category Filter */}
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold focus:border-slate-400 outline-none transition cursor-pointer text-slate-600 shadow-sm"
+              >
+                <option value="">Tất cả danh mục</option>
+                <option value="Chăm sóc mèo">Chăm sóc mèo</option>
+                <option value="Chăm sóc chó">Chăm sóc chó</option>
+                <option value="Dinh dưỡng thú cưng">Dinh dưỡng thú cưng</option>
+                <option value="Sức khỏe thú cưng">Sức khỏe thú cưng</option>
+                <option value="Huấn luyện & hành vi">Huấn luyện & hành vi</option>
+                <option value="Sản phẩm & đánh giá">Sản phẩm & đánh giá</option>
+                <option value="Khuyến mãi / Thông báo">Khuyến mãi / Thông báo</option>
+                <option value="Tin tức 3F Store">Tin tức 3F Store</option>
+              </select>
+
+              {/* Sort selector */}
+              <select
+                value={selectedSort}
+                onChange={(e) => setSelectedSort(e.target.value)}
+                className="h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold focus:border-slate-400 outline-none transition cursor-pointer text-slate-600 shadow-sm"
+              >
+                <option value="updated_at">Mới cập nhật</option>
+                <option value="published_at">Ngày xuất bản</option>
+                <option value="views">Lượt xem</option>
+                <option value="seo_score">Điểm SEO thấp nhất</option>
+              </select>
+
+              {/* Search box */}
+              <div className="relative w-full sm:w-48">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="text" 
+                  placeholder="Tìm tiêu đề..." 
+                  value={search} 
+                  onChange={(e) => setSearch(e.target.value)} 
+                  className="w-full h-9 pl-8 pr-3 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-slate-400 transition shadow-sm" 
+                />
+              </div>
             </div>
           </div>
 
@@ -382,6 +394,7 @@ export function AdminNewsPage() {
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/70 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     <th className="px-6 py-3.5">Bài viết</th>
+                    <th className="px-6 py-3.5 text-center">Loại tin</th>
                     <th className="px-6 py-3.5 text-center">Trạng thái</th>
                     <th className="px-6 py-3.5 text-center">SEO</th>
                     <th className="px-6 py-3.5 text-center">Lượt xem</th>
@@ -393,7 +406,7 @@ export function AdminNewsPage() {
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
+                      <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-3">
                           <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-900 border-t-transparent"></div>
                           <span className="text-xs font-medium">Đang tải danh sách bài viết...</span>
@@ -402,12 +415,12 @@ export function AdminNewsPage() {
                     </tr>
                   ) : paginatedPosts.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-16 text-center text-slate-400">
+                      <td colSpan={8} className="px-6 py-16 text-center text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-3">
                           <FileText size={32} className="text-slate-300" />
                           <span className="text-xs font-bold text-slate-600">Chưa có bài viết nào.</span>
                           <button
-                            onClick={() => { setEditingPost(null); setIsEditorOpen(true); }}
+                            onClick={() => navigate("/admin/news/new")}
                             className="mt-2 text-xs font-bold text-[#0057E7] hover:underline"
                           >
                             Viết bài đầu tiên
@@ -438,7 +451,7 @@ export function AdminNewsPage() {
                               )}
                               <div className="min-w-0">
                                 <button 
-                                  onClick={() => { setEditingPost(post); setIsEditorOpen(true); }}
+                                  onClick={() => navigate(`/admin/news/${post.id}/edit`)}
                                   className="text-xs font-bold text-slate-800 hover:text-blue-600 text-left line-clamp-1 leading-snug tracking-tight focus:outline-none"
                                 >
                                   {post.title}
@@ -450,6 +463,11 @@ export function AdminNewsPage() {
                                 </div>
                               </div>
                             </div>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-slate-100 text-slate-600 border border-slate-200/60 tracking-tight whitespace-nowrap">
+                              {post.category || "Tin tức 3F Store"}
+                            </span>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border tracking-wider ${
@@ -513,8 +531,7 @@ export function AdminNewsPage() {
                                   </a>
                                   <button
                                     onClick={() => {
-                                      setEditingPost(post);
-                                      setIsEditorOpen(true);
+                                      navigate(`/admin/news/${post.id}/edit`);
                                       setActiveDropdown(null);
                                     }}
                                     className="flex items-center gap-2 w-full px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition text-left"
@@ -623,7 +640,6 @@ export function AdminNewsPage() {
         </main>
       </div>
 
-      <BlogEditor isOpen={isEditorOpen} onClose={() => { setIsEditorOpen(false); setEditingPost(null); }} onSave={handleSave} initialData={editingPost} onImageUpload={handleImageUpload} />
     </div>
   );
 }

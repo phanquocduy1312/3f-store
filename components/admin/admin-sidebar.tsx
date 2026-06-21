@@ -49,6 +49,7 @@ const menuItems: MenuItem[] = [
   { name: "Báo cáo", icon: BarChart3, hasChevron: true },
   { name: "Hỗ trợ khách hàng", icon: PhoneCall },
   { name: "Cài đặt", icon: Settings, hasChevron: true },
+  { name: "Cấu hình Workflow", icon: CheckSquare, path: "/admin/settings/workflows" },
 ];
 
 export function AdminSidebar({ activeMenu, setActiveMenu, collapsed }: AdminSidebarProps) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Save, Upload, Calendar, User as UserIcon, Settings, BarChart2 } from "lucide-react";
+import { X, Save, Upload, Calendar, User as UserIcon, Settings, BarChart2, BookOpen } from "lucide-react";
 import { TiptapEditor } from "./tiptap-editor";
 import { BlogSeoAssistant } from "./blog-seo-assistant";
 
@@ -27,6 +27,9 @@ export function BlogEditor({ isOpen, onClose, onSave, initialData, onImageUpload
     seo_keywords: "",
     status: "published" as "draft" | "published" | "scheduled",
     seo_score: 0,
+    category: "",
+    toc_enabled: 1 as number | boolean,
+    toc_title: "Mục lục bài viết",
   });
 
   const [activeTab, setActiveTab] = useState<"config" | "seo">("config");
@@ -49,6 +52,9 @@ export function BlogEditor({ isOpen, onClose, onSave, initialData, onImageUpload
         seo_keywords: initialData.seo_keywords ?? "",
         status: (initialData.status as "draft" | "published" | "scheduled") ?? "published",
         seo_score: initialData.seo_score ?? 0,
+        category: initialData.category ?? "",
+        toc_enabled: initialData.toc_enabled !== undefined ? (initialData.toc_enabled ? 1 : 0) : 1,
+        toc_title: initialData.toc_title ?? "Mục lục bài viết",
       });
     } else {
       setFormData({
@@ -66,6 +72,9 @@ export function BlogEditor({ isOpen, onClose, onSave, initialData, onImageUpload
         seo_keywords: "",
         status: "published",
         seo_score: 0,
+        category: "Tin tức 3F Store",
+        toc_enabled: 1,
+        toc_title: "Mục lục bài viết",
       });
     }
   }, [initialData, isOpen]);
@@ -123,6 +132,10 @@ export function BlogEditor({ isOpen, onClose, onSave, initialData, onImageUpload
   };
 
   const handleSaveWithStatus = async (statusOverride?: "draft" | "published") => {
+    if (!formData.category) {
+      alert("Vui lòng chọn loại tin / danh mục bài viết!");
+      return;
+    }
     setIsSaving(true);
     const postPayload = {
       ...formData,
@@ -247,9 +260,7 @@ export function BlogEditor({ isOpen, onClose, onSave, initialData, onImageUpload
             {/* TipTap content editor */}
             <div className="space-y-2">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Nội dung chi tiết</label>
-              <div className="border border-slate-200 rounded-xl overflow-hidden focus-within:border-slate-400 transition">
-                <TiptapEditor value={formData.content} onChange={(val) => handleChange("content", val)} onImageUpload={onImageUpload} />
-              </div>
+              <TiptapEditor value={formData.content} onChange={(val) => handleChange("content", val)} onImageUpload={onImageUpload} />
             </div>
           </div>
 
@@ -287,6 +298,29 @@ export function BlogEditor({ isOpen, onClose, onSave, initialData, onImageUpload
             <div className="flex-1 overflow-y-auto p-5 space-y-5 no-scrollbar">
               {activeTab === "config" ? (
                 <>
+                  {/* Category Dropdown (Required) */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Loại tin / Danh mục tin <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => handleChange("category", e.target.value)}
+                      required
+                      className="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:border-slate-400 outline-none transition cursor-pointer"
+                    >
+                      <option value="">-- Chọn loại tin --</option>
+                      <option value="Chăm sóc mèo">Chăm sóc mèo</option>
+                      <option value="Chăm sóc chó">Chăm sóc chó</option>
+                      <option value="Dinh dưỡng thú cưng">Dinh dưỡng thú cưng</option>
+                      <option value="Sức khỏe thú cưng">Sức khỏe thú cưng</option>
+                      <option value="Huấn luyện & hành vi">Huấn luyện & hành vi</option>
+                      <option value="Sản phẩm & đánh giá">Sản phẩm & đánh giá</option>
+                      <option value="Khuyến mãi / Thông báo">Khuyến mãi / Thông báo</option>
+                      <option value="Tin tức 3F Store">Tin tức 3F Store</option>
+                    </select>
+                  </div>
+
                   {/* Status Dropdown */}
                   <div className="space-y-2">
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái xuất bản</label>
@@ -328,6 +362,32 @@ export function BlogEditor({ isOpen, onClose, onSave, initialData, onImageUpload
                         className="w-full h-10 pl-10 pr-4 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:border-slate-400 outline-none transition"
                       />
                     </div>
+                  </div>
+
+                  {/* ToC Configurations */}
+                  <div className="space-y-3 pt-3 border-t border-slate-200">
+                    <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.toc_enabled === 1}
+                        onChange={(e) => handleChange("toc_enabled", e.target.checked ? 1 : 0)}
+                        className="rounded border-slate-300 text-[#0057E7] focus:ring-[#0057E7]"
+                      />
+                      Hiển thị mục lục trong bài viết
+                    </label>
+                    
+                    {formData.toc_enabled === 1 && (
+                      <div className="space-y-1">
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tiêu đề mục lục</label>
+                        <input
+                          type="text"
+                          value={formData.toc_title}
+                          onChange={(e) => handleChange("toc_title", e.target.value)}
+                          placeholder="Mục lục bài viết"
+                          className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:border-slate-400 outline-none transition"
+                        />
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (
@@ -379,6 +439,7 @@ export function BlogEditor({ isOpen, onClose, onSave, initialData, onImageUpload
                     slug={formData.slug}
                     thumbnailUrl={formData.thumbnail_url}
                     thumbnailAlt={formData.thumbnail_alt}
+                    category={formData.category}
                     onScoreChange={handleScoreChange}
                   />
                 </>

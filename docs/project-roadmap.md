@@ -31,6 +31,7 @@
 - [x] Triển khai Database và API cho Khách hàng, Địa chỉ và Đơn hàng (`orders`, `order_items`, `order_status_logs`, `order_payment_proofs`).
 - [x] Triển khai cơ chế Reserve, Release và Fulfill tồn kho atomically sử dụng transaction lock (`FOR UPDATE`).
 - [x] Tích hợp tích lũy điểm 3F Club tự động cho đơn hàng web khi trạng thái đơn hàng chuyển sang `completed`.
+- [x] Triển khai hệ thống Quản lý Quy trình & Trạng thái đơn hàng đa chiều nâng cấp (CRM + Loyalty + Automation-ready) bao gồm 4 chiều độc lập (Order, Payment, Shipping, Loyalty) được cấu hình động từ database.
 - [ ] Tích hợp thanh toán online (SePay / Stripe).
 
 ## Phase 5: User Authentication & Profile (Hoàn thành một phần)

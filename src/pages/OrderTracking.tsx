@@ -1,26 +1,36 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { ArrowLeft, Calendar, CheckCircle2, Clock, MapPin, Package, Search, ShoppingBag, ShieldCheck, CreditCard, Award } from "lucide-react";
-import { getOrderDetails, checkOrdersByPhone, OrderDetail } from "@/src/api/productsApi";
+import { getOrderDetails, checkOrdersByPhone, OrderDetail } from "@/src/api/ordersApi";
 import { Image } from "@/components/Image";
 import { toast } from "sonner";
 
 // Status translation & color map
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
   pending: { label: "Chờ xác nhận", color: "text-amber-600", bg: "bg-amber-50" },
+  pending_confirmation: { label: "Chờ xác nhận", color: "text-amber-600", bg: "bg-amber-50" },
   confirmed: { label: "Đã xác nhận", color: "text-blue-600", bg: "bg-blue-50" },
+  pending_payment: { label: "Chờ thanh toán", color: "text-yellow-600", bg: "bg-yellow-50" },
+  paid_or_cod: { label: "Đã thanh toán / COD", color: "text-emerald-600", bg: "bg-emerald-50" },
   packing: { label: "Đang đóng gói", color: "text-indigo-600", bg: "bg-indigo-50" },
+  preparing: { label: "Đang chuẩn bị hàng", color: "text-indigo-600", bg: "bg-indigo-50" },
+  awaiting_pickup_or_booking: { label: "Chờ đơn vị vận chuyển", color: "text-indigo-650", bg: "bg-indigo-50" },
   shipping: { label: "Đang giao hàng", color: "text-purple-600", bg: "bg-purple-50" },
-  completed: { label: "Đã giao thành công", color: "text-forest", bg: "bg-forest/10" },
+  delivered: { label: "Giao hàng thành công", color: "text-green-600", bg: "bg-green-50" },
+  completed: { label: "Hoàn tất đơn hàng", color: "text-forest", bg: "bg-forest/10" },
+  return_requested: { label: "Yêu cầu đổi / trả", color: "text-rose-600", bg: "bg-rose-50" },
+  return_completed: { label: "Đã hoàn tất đổi trả", color: "text-red-700", bg: "bg-red-50" },
   cancelled: { label: "Đã hủy", color: "text-red-600", bg: "bg-red-50" },
-  refunded: { label: "Đã hoàn tiền", color: "text-gray-600", bg: "bg-gray-100" },
+  refunded: { label: "Đã hoàn tiền", color: "text-gray-650", bg: "bg-gray-100" },
 };
 
 const PAYMENT_MAP: Record<string, { label: string; color: string }> = {
   unpaid: { label: "Chưa thanh toán", color: "text-amber-600" },
   pending: { label: "Đang kiểm tra", color: "text-blue-600" },
   paid: { label: "Đã thanh toán", color: "text-forest" },
-  failed: { label: "Thất bại", color: "text-red-600" },
+  cod: { label: "COD thanh toán sau", color: "text-blue-600" },
+  failed: { label: "Thất bại", color: "text-red-650" },
+  payment_failed: { label: "Thanh toán lỗi", color: "text-red-650" },
   refunded: { label: "Đã hoàn tiền", color: "text-gray-600" },
 };
 

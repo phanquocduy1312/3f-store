@@ -114,7 +114,7 @@ export type ProductDetailResponse = {
   data: ApiProduct;
 };
 
-async function apiJson<T>(path: string, options?: RequestInit): Promise<T> {
+export async function apiJson<T>(path: string, options?: RequestInit): Promise<T> {
   const adminToken = localStorage.getItem("admin_token");
   const customerToken = localStorage.getItem("customer_token");
   const headers: Record<string, string> = {
@@ -404,11 +404,15 @@ export type OrderItemDetail = {
 export type OrderStatusLog = {
   id: number;
   order_id: number;
+  group_key?: string | null;
   from_status: string | null;
   to_status: string | null;
   note: string | null;
   created_at: string;
   changed_by: string;
+  changed_by_admin_id?: number | null;
+  changed_by_customer_id?: number | null;
+  metadata?: any;
 };
 
 export type OrderDetail = {
@@ -428,6 +432,8 @@ export type OrderDetail = {
   shipping_method?: string;
   payment_status: string;
   order_status: string;
+  shipping_status?: string;
+  loyalty_status?: string;
   subtotal: string;
   shipping_fee: string;
   discount: string;
@@ -493,72 +499,6 @@ export async function createOrder(payload: CreateOrderPayload): Promise<CreateOr
   });
 }
 
-export async function getOrderDetails(orderCode: string): Promise<OrderDetailResponse> {
-  return apiJson<OrderDetailResponse>(`/api/orders/detail?orderCode=${encodeURIComponent(orderCode)}`);
-}
-
-export async function checkOrdersByPhone(phone: string, orderCode?: string): Promise<OrderCheckResponse> {
-  const query = new URLSearchParams({ phone });
-  if (orderCode) {
-    query.set("orderCode", orderCode);
-  }
-  return apiJson<OrderCheckResponse>(`/api/orders/check?${query.toString()}`);
-}
-
-export type AdminOrderListParams = {
-  q?: string;
-  order_status?: string;
-  payment_status?: string;
-  start_date?: string;
-  end_date?: string;
-  page?: number;
-  limit?: number;
-};
-
-export type AdminOrderListResponse = {
-  success: boolean;
-  data: {
-    items: OrderDetail[];
-    summary: {
-      totalOrders: number;
-      pendingOrders: number;
-      processingOrders: number;
-      shippingOrders: number;
-      completedOrders: number;
-      completedRevenue: number;
-    };
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-    };
-  };
-};
-
-export async function getAdminOrders(params: AdminOrderListParams = {}): Promise<AdminOrderListResponse> {
-  const queryParams = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== "") {
-      queryParams.set(key, String(value));
-    }
-  });
-  return apiJson<AdminOrderListResponse>(`/api/admin/orders?${queryParams.toString()}`);
-}
-
-export async function updateAdminOrderStatus(orderId: number, newStatus: string, note?: string): Promise<{ success: boolean; message: string }> {
-  return apiJson<{ success: boolean; message: string }>("/api/admin/orders/update-status", {
-    method: "POST",
-    body: JSON.stringify({ orderId, newStatus, note }),
-  });
-}
-
-export async function markAdminOrderPaid(orderId: number, note?: string): Promise<{ success: boolean; message: string }> {
-  return apiJson<{ success: boolean; message: string }>("/api/admin/orders/mark-paid", {
-    method: "POST",
-    body: JSON.stringify({ orderId, note }),
-  });
-}
 
 export type AdminProductListParams = {
   q?: string;

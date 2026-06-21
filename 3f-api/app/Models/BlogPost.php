@@ -39,7 +39,12 @@ class BlogPost {
             'view_count' => "ALTER TABLE blog_posts ADD COLUMN view_count INT DEFAULT 0 AFTER published_at",
             'thumbnail_alt' => "ALTER TABLE blog_posts ADD COLUMN thumbnail_alt VARCHAR(255) NULL AFTER thumbnail_url",
             'status' => "ALTER TABLE blog_posts ADD COLUMN status VARCHAR(50) DEFAULT 'published' AFTER author",
-            'seo_score' => "ALTER TABLE blog_posts ADD COLUMN seo_score INT DEFAULT 0 AFTER view_count"
+            'seo_score' => "ALTER TABLE blog_posts ADD COLUMN seo_score INT DEFAULT 0 AFTER view_count",
+            'category' => "ALTER TABLE blog_posts ADD COLUMN category VARCHAR(100) NULL AFTER author",
+            'category_slug' => "ALTER TABLE blog_posts ADD COLUMN category_slug VARCHAR(150) NULL AFTER category",
+            'toc_enabled' => "ALTER TABLE blog_posts ADD COLUMN toc_enabled TINYINT(1) DEFAULT 1 AFTER view_count",
+            'toc_title' => "ALTER TABLE blog_posts ADD COLUMN toc_title VARCHAR(100) DEFAULT 'Mục lục bài viết' AFTER toc_enabled",
+            'deleted_at' => "ALTER TABLE blog_posts ADD COLUMN deleted_at TIMESTAMP NULL AFTER updated_at"
         ];
 
         foreach ($columns as $col => $alterSql) {
@@ -58,7 +63,7 @@ class BlogPost {
     /**
      * Get paginated active blog posts.
      */
-    public function getPaginated($page = 1, $limit = 10, $q = '', $isAdmin = false) {
+    public function getPaginated($page = 1, $limit = 10, $q = '', $isAdmin = false, $category = '', $sort = '') {
         $page = max(1, (int)$page);
         $limit = min(100, max(1, (int)$limit));
         $offset = ($page - 1) * $limit;
@@ -76,6 +81,11 @@ class BlogPost {
             $params[':q'] = "%$q%";
         }
 
+        if (!empty($category)) {
+            $where[] = "(category = :category OR category_slug = :category)";
+            $params[':category'] = $category;
+        }
+
         $whereSql = implode(' AND ', $where);
 
         // Count total
@@ -83,12 +93,28 @@ class BlogPost {
         $countStmt->execute($params);
         $total = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
+        // Determine sort order
+        $orderSql = "published_at DESC, created_at DESC"; // Default for public
+        if ($isAdmin) {
+            $orderSql = "updated_at DESC, created_at DESC, id DESC"; // Default for admin
+        }
+
+        if ($sort === "updated_at") {
+            $orderSql = "updated_at DESC, created_at DESC, id DESC";
+        } elseif ($sort === "published_at") {
+            $orderSql = "published_at DESC, created_at DESC, id DESC";
+        } elseif ($sort === "views") {
+            $orderSql = "view_count DESC, id DESC";
+        } elseif ($sort === "seo_score") {
+            $orderSql = "seo_score ASC, id DESC";
+        }
+
         // Get items
         $sql = "
-            SELECT id, title, seo_title, slug, summary, seo_description, thumbnail_url, thumbnail_alt, author, status, seo_keywords, published_at, view_count, seo_score, created_at, updated_at
+            SELECT id, title, seo_title, slug, summary, seo_description, thumbnail_url, thumbnail_alt, author, status, category, category_slug, toc_enabled, toc_title, seo_keywords, published_at, view_count, seo_score, created_at, updated_at
             FROM blog_posts
             WHERE $whereSql
-            ORDER BY published_at DESC, created_at DESC
+            ORDER BY $orderSql
             LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
 
         $stmt = $this->db->prepare($sql);
@@ -118,8 +144,8 @@ class BlogPost {
      */
     public function create($data) {
         $sql = "
-            INSERT INTO blog_posts (title, seo_title, slug, summary, seo_description, content, thumbnail_url, thumbnail_alt, author, status, seo_keywords, published_at, seo_score)
-            VALUES (:title, :seo_title, :slug, :summary, :seo_description, :content, :thumbnail_url, :thumbnail_alt, :author, :status, :seo_keywords, :published_at, :seo_score)
+            INSERT INTO blog_posts (title, seo_title, slug, summary, seo_description, content, thumbnail_url, thumbnail_alt, author, status, category, category_slug, toc_enabled, toc_title, seo_keywords, published_at, seo_score)
+            VALUES (:title, :seo_title, :slug, :summary, :seo_description, :content, :thumbnail_url, :thumbnail_alt, :author, :status, :category, :category_slug, :toc_enabled, :toc_title, :seo_keywords, :published_at, :seo_score)
         ";
         $stmt = $this->db->prepare($sql);
         $success = $stmt->execute([
@@ -133,6 +159,10 @@ class BlogPost {
             ':thumbnail_alt' => $data['thumbnail_alt'] ?? null,
             ':author' => $data['author'] ?? 'Admin',
             ':status' => $data['status'] ?? 'published',
+            ':category' => $data['category'] ?? null,
+            ':category_slug' => $data['category_slug'] ?? null,
+            ':toc_enabled' => isset($data['toc_enabled']) ? (int)$data['toc_enabled'] : 1,
+            ':toc_title' => $data['toc_title'] ?? 'Mục lục bài viết',
             ':seo_keywords' => $data['seo_keywords'] ?? null,
             ':published_at' => $data['published_at'] ?? date('Y-m-d H:i:s'),
             ':seo_score' => (int)($data['seo_score'] ?? 0)
@@ -156,6 +186,10 @@ class BlogPost {
                 thumbnail_alt = :thumbnail_alt,
                 author = :author,
                 status = :status,
+                category = :category,
+                category_slug = :category_slug,
+                toc_enabled = :toc_enabled,
+                toc_title = :toc_title,
                 seo_keywords = :seo_keywords,
                 published_at = :published_at,
                 seo_score = :seo_score,
@@ -175,6 +209,10 @@ class BlogPost {
             ':thumbnail_alt' => $data['thumbnail_alt'] ?? null,
             ':author' => $data['author'] ?? 'Admin',
             ':status' => $data['status'] ?? 'published',
+            ':category' => $data['category'] ?? null,
+            ':category_slug' => $data['category_slug'] ?? null,
+            ':toc_enabled' => isset($data['toc_enabled']) ? (int)$data['toc_enabled'] : 1,
+            ':toc_title' => $data['toc_title'] ?? 'Mục lục bài viết',
             ':seo_keywords' => $data['seo_keywords'] ?? null,
             ':published_at' => $data['published_at'] ?? null,
             ':seo_score' => (int)($data['seo_score'] ?? 0)
@@ -202,8 +240,8 @@ class BlogPost {
      */
     public function upsert($data) {
         $sql = "
-            INSERT INTO blog_posts (title, seo_title, slug, summary, seo_description, content, thumbnail_url, thumbnail_alt, author, status, seo_keywords, published_at, seo_score)
-            VALUES (:title, :seo_title, :slug, :summary, :seo_description, :content, :thumbnail_url, :thumbnail_alt, :author, :status, :seo_keywords, :published_at, :seo_score)
+            INSERT INTO blog_posts (title, seo_title, slug, summary, seo_description, content, thumbnail_url, thumbnail_alt, author, status, category, category_slug, toc_enabled, toc_title, seo_keywords, published_at, seo_score)
+            VALUES (:title, :seo_title, :slug, :summary, :seo_description, :content, :thumbnail_url, :thumbnail_alt, :author, :status, :category, :category_slug, :toc_enabled, :toc_title, :seo_keywords, :published_at, :seo_score)
             ON DUPLICATE KEY UPDATE
                 title = VALUES(title),
                 seo_title = VALUES(seo_title),
@@ -214,6 +252,10 @@ class BlogPost {
                 thumbnail_alt = VALUES(thumbnail_alt),
                 author = VALUES(author),
                 status = VALUES(status),
+                category = VALUES(category),
+                category_slug = VALUES(category_slug),
+                toc_enabled = VALUES(toc_enabled),
+                toc_title = VALUES(toc_title),
                 seo_keywords = VALUES(seo_keywords),
                 published_at = VALUES(published_at),
                 seo_score = VALUES(seo_score),
@@ -232,9 +274,14 @@ class BlogPost {
             ':thumbnail_alt' => $data['thumbnail_alt'] ?? null,
             ':author' => $data['author'] ?? 'Admin',
             ':status' => $data['status'] ?? 'published',
+            ':category' => $data['category'] ?? null,
+            ':category_slug' => $data['category_slug'] ?? null,
+            ':toc_enabled' => isset($data['toc_enabled']) ? (int)$data['toc_enabled'] : 1,
+            ':toc_title' => $data['toc_title'] ?? 'Mục lục bài viết',
             ':seo_keywords' => $data['seo_keywords'] ?? null,
             ':published_at' => $data['published_at'] ?? null,
             ':seo_score' => (int)($data['seo_score'] ?? 0)
         ]);
     }
 }
+

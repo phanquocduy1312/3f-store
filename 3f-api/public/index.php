@@ -77,6 +77,8 @@ use App\Controllers\CustomerWishlistController;
 use App\Controllers\AdminDashboardController;
 use App\Controllers\BannerController;
 use App\Controllers\BlogPostController;
+use App\Controllers\WorkflowController;
+
 
 try {
     // 0. Pre-instantiate models to run database migrations outside of transactions
@@ -215,6 +217,25 @@ try {
     $router->get("/api/admin/orders", [OrderController::class, "adminList"]);
     $router->post("/api/admin/orders/update-status", [OrderController::class, "adminUpdateStatus"]);
     $router->post("/api/admin/orders/mark-paid", [OrderController::class, "adminMarkPaid"]);
+    $router->get("/api/admin/orders/:id/allowed-transitions", [WorkflowController::class, "orderAllowedTransitions"]);
+
+    // Workflow Configuration Settings Routes
+    $router->get("/api/admin/workflows/statuses", [WorkflowController::class, "listStatuses"]);
+    $router->post("/api/admin/workflows/statuses/save", [WorkflowController::class, "saveStatus"]);
+    $router->post("/api/admin/workflows/statuses/delete", [WorkflowController::class, "deleteStatus"]);
+    $router->get("/api/admin/workflows/transitions", [WorkflowController::class, "listTransitions"]);
+    $router->post("/api/admin/workflows/transitions/save", [WorkflowController::class, "saveTransition"]);
+    $router->post("/api/admin/workflows/transitions/delete", [WorkflowController::class, "deleteTransition"]);
+    $router->get("/api/admin/workflows/automation-rules", [WorkflowController::class, "listAutomationRules"]);
+    $router->post("/api/admin/workflows/automation-rules/save", [WorkflowController::class, "saveAutomationRule"]);
+    $router->post("/api/admin/workflows/automation-rules/delete", [WorkflowController::class, "deleteAutomationRule"]);
+    $router->get("/api/admin/workflows/shipping-providers", [WorkflowController::class, "listShippingProviders"]);
+    $router->post("/api/admin/workflows/shipping-providers/save", [WorkflowController::class, "saveShippingProvider"]);
+    $router->post("/api/admin/workflows/shipping-providers/delete", [WorkflowController::class, "deleteShippingProvider"]);
+    $router->get("/api/admin/workflows/notification-channels", [WorkflowController::class, "listNotificationChannels"]);
+    $router->post("/api/admin/workflows/notification-channels/save", [WorkflowController::class, "saveNotificationChannel"]);
+    $router->post("/api/admin/workflows/notification-channels/delete", [WorkflowController::class, "deleteNotificationChannel"]);
+
 
     // Product Catalog Routes
     $router->get("/api/products", [ProductController::class, "list"]);

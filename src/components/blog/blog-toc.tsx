@@ -10,12 +10,14 @@ interface BlogTocProps {
   headings: HeadingItem[];
   hideHeader?: boolean;
   className?: string;
+  title?: string;
 }
 
 export function BlogToc({ 
   headings, 
   hideHeader = false, 
-  className = "bg-white rounded-2xl border border-slate-100 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)]" 
+  className = "bg-white rounded-2xl border border-slate-100 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)]",
+  title = "Mục lục"
 }: BlogTocProps) {
   const [activeId, setActiveId] = useState<string>("intro");
 
@@ -84,7 +86,7 @@ export function BlogToc({
     <div className={className}>
       {!hideHeader && (
         <h3 className="text-[10px] font-black text-slate-400 tracking-wider uppercase border-b border-slate-50 pb-2.5">
-          Mục lục
+          {title}
         </h3>
       )}
       <nav className={hideHeader ? "" : "mt-3"}>

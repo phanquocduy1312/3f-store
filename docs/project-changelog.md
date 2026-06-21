@@ -1,5 +1,25 @@
 # Project Changelog
 
+## [2026-06-21]
+### Added
+- Nâng cấp hệ thống Quản lý Quy trình & Trạng thái Đơn hàng đa chiều (CRM + Loyalty + Automation-ready):
+  - Tách biệt trạng thái đơn hàng thành 4 chiều độc lập: Trạng thái đơn hàng (Order status), Trạng thái thanh toán (Payment status), Trạng thái vận chuyển (Shipping status), và Trạng thái tích điểm (Loyalty status).
+  - Cấu trúc CSDL động hỗ trợ quản lý trạng thái qua các bảng `workflow_statuses`, `workflow_transitions`, `automation_rules`, `customer_activity_logs`, `notification_channels`, và `shipping_providers`.
+  - Tích hợp công cụ cập nhật trạng thái đa chiều và lọc luồng chuyển đổi được cấu hình động từ database phía Admin Drawer Chi tiết Đơn hàng.
+  - Xây dựng API và CSDL tích lũy điểm an toàn (Loyalty Safety Engine): Đảm bảo tự động cộng/hủy điểm chuẩn xác, chống cộng điểm trùng lặp bằng ràng buộc transaction lock và kiểm tra transaction lịch sử unique.
+  - Xây dựng Timeline nhật ký hoạt động khách hàng (CRM Timeline) ghi nhận chi tiết mọi hành vi liên quan đến đơn hàng, giao vận, tích điểm và thay đổi thông tin.
+  - Thiết kế và phát triển trang cấu hình hệ thống chuyên nghiệp phía Admin tại route `/admin/settings/workflows` (`AdminWorkflowSettingsPage.tsx`) cho phép quản lý trạng thái, bước chuyển giao, automation rules, nhà vận chuyển và cổng thông báo.
+  - Tích hợp liên kết menu "Cấu hình Quy trình" vào sidebar Admin và đăng ký Route bảo mật an toàn.
+- Hoàn tất kiểm thử QA tự động & thủ công (Manual & Automated QA Run):
+  - Xác nhận an toàn di trú cơ sở dữ liệu (idempotent database migrations) và cơ chế ánh xạ trạng thái cũ (old status mapping) an toàn không làm mất mát/ảnh hưởng đơn hàng hiện có.
+  - Kiểm thử 8 kịch bản nghiệp vụ (Case A - H) tích hợp liên quan đến trạng thái chuyển đổi hợp lệ/không hợp lệ, cập nhật độc lập các trục trạng thái, và ngăn chặn sửa đổi/xóa các khóa hệ thống trọng yếu.
+  - Kiểm thử tính bất biến điểm thưởng (Loyalty Points Idempotency): Xác thực cơ chế ngăn cộng điểm trùng lặp cho đơn hàng và xử lý hoàn tác điểm chuẩn xác khi hủy/trả đơn.
+- Tái cấu trúc API (API Naming Cleanup Refactor):
+  - Khởi tạo [ordersApi.ts](file:///c:/Users/Admin/Downloads/ccc/src/api/ordersApi.ts) chứa các API truy vấn/cập nhật đơn hàng.
+  - Khởi tạo [workflowApi.ts](file:///c:/Users/Admin/Downloads/ccc/src/api/workflowApi.ts) chứa các API cấu hình trạng thái, bước chuyển đổi, automation rules, nhà vận chuyển và cổng thông báo.
+  - Loại bỏ hoàn toàn các phương thức và types liên quan đến đơn hàng/workflows khỏi [productsApi.ts](file:///c:/Users/Admin/Downloads/ccc/src/api/productsApi.ts), nâng cao tính đóng gói (cohesion) và giảm kích thước file.
+  - Cập nhật tất cả các màn hình admin/client tiêu thụ API tương ứng.
+
 ## [2026-06-20]
 ### Added
 - Triển khai hệ thống Tin tức chuyên nghiệp đầy đủ nghiệp vụ SEO và trang tin tức làm đẹp:

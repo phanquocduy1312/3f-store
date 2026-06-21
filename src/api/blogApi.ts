@@ -18,6 +18,10 @@ export interface BlogPost {
   seo_keywords?: string | null;
   view_count?: number;
   seo_score?: number;
+  category?: string | null;
+  category_slug?: string | null;
+  toc_enabled?: number | boolean | null;
+  toc_title?: string | null;
 }
 
 export interface BlogListResponse {
@@ -50,13 +54,19 @@ function getAdminHeaders(): Record<string, string> {
 /**
  * Fetch paginated blog posts.
  */
-export async function getBlogPosts(page = 1, limit = 10, q = ""): Promise<BlogListResponse> {
+export async function getBlogPosts(page = 1, limit = 10, q = "", category = "", sort = ""): Promise<BlogListResponse> {
   try {
     const url = new URL(buildApiUrl("/api/blog-posts"));
     url.searchParams.append("page", String(page));
     url.searchParams.append("limit", String(limit));
     if (q) {
       url.searchParams.append("q", q);
+    }
+    if (category) {
+      url.searchParams.append("category", category);
+    }
+    if (sort) {
+      url.searchParams.append("sort", sort);
     }
     const res = await fetch(url.toString(), { method: "GET" });
     if (!res.ok) {
@@ -89,13 +99,19 @@ export async function getBlogPostDetail(slug: string): Promise<BlogDetailRespons
 /**
  * Fetch all posts for Admin (can support query params).
  */
-export async function adminGetBlogPosts(page = 1, limit = 100, q = ""): Promise<BlogListResponse> {
+export async function adminGetBlogPosts(page = 1, limit = 100, q = "", category = "", sort = ""): Promise<BlogListResponse> {
   try {
     const url = new URL(buildApiUrl("/api/blog-posts"));
     url.searchParams.append("page", String(page));
     url.searchParams.append("limit", String(limit));
     if (q) {
       url.searchParams.append("q", q);
+    }
+    if (category) {
+      url.searchParams.append("category", category);
+    }
+    if (sort) {
+      url.searchParams.append("sort", sort);
     }
     const res = await fetch(url.toString(), {
       method: "GET",
