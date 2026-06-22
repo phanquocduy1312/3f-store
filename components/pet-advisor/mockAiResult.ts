@@ -1,5 +1,7 @@
 import { detectNeeds, detectSeriousWarning, calculateMonthlyBudget, getBudgetSegment, formatVnd } from "./petAdvisorUtils";
 
+import type { Product } from "../../types/store";
+
 export interface QuizData {
   pet_type: "dog" | "cat" | "both";
   answers: Record<string, { value: string | string[]; customText?: string }>;
@@ -19,6 +21,7 @@ export interface AiRecommendedProduct {
   group?: RecommendedProductGroup;
   matched_need?: string[];
   budget_fit?: string;
+  product?: Product | null;
 }
 
 export interface AiBudgetAnalysis {

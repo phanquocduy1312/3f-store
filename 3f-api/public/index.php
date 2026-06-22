@@ -201,6 +201,7 @@ try {
     $router->post("/api/customer/pets", [CustomerPetController::class, "create"]);
     $router->patch("/api/customer/pets/:id", [CustomerPetController::class, "update"]);
     $router->delete("/api/customer/pets/:id", [CustomerPetController::class, "delete"]);
+    $router->post("/api/customer/pet-advisor/consult", [CustomerPetController::class, "consult"]);
 
     $router->post("/api/shopee/order-scan", [ShopeeOrderScanController::class, "scan"]);
     $router->post("/api/shopee/guest/request-otp", [ShopeeGuestController::class, "requestOtp"]);

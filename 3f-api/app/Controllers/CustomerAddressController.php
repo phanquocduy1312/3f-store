@@ -27,6 +27,8 @@ class CustomerAddressController {
                 'receiverPhone' => $row['receiver_phone'] ?: $row['phone'],
                 'provinceCode' => $row['province_code'] ?? '',
                 'provinceName' => $row['province_name'] ?: $row['province'],
+                'districtCode' => $row['district_code'] ?? '',
+                'district' => $row['district'] ?? '',
                 'wardCode' => $row['ward_code'] ?? '',
                 'wardName' => $row['ward_name'] ?: $row['ward'],
                 'addressLine' => $row['address_line'],
@@ -48,6 +50,8 @@ class CustomerAddressController {
         $receiverPhone = trim(Request::input('receiverPhone', ''));
         $provinceCode = trim(Request::input('provinceCode', ''));
         $provinceName = trim(Request::input('provinceName', ''));
+        $districtCode = trim(Request::input('districtCode', ''));
+        $district = trim(Request::input('district', ''));
         $wardCode = trim(Request::input('wardCode', ''));
         $wardName = trim(Request::input('wardName', ''));
         $addressLine = trim(Request::input('addressLine', ''));
@@ -55,7 +59,7 @@ class CustomerAddressController {
         $type = trim(Request::input('type', 'home'));
         $isDefault = (int)Request::input('isDefault', 0);
 
-        if (empty($receiverName) || empty($receiverPhone) || empty($provinceName) || empty($wardName) || empty($addressLine)) {
+        if (empty($receiverName) || empty($receiverPhone) || empty($provinceName) || empty($district) || empty($wardName) || empty($addressLine)) {
             Response::json(['success' => false, 'message' => 'Vui lòng nhập đầy đủ thông tin bắt buộc.'], 400);
         }
 
@@ -78,17 +82,17 @@ class CustomerAddressController {
             INSERT INTO customer_addresses (
                 customer_id, receiver_name, phone, receiver_phone, 
                 province, district, ward, province_code, province_name, 
-                ward_code, ward_name, address_line, note, type, is_default, created_at, updated_at
+                district_code, ward_code, ward_name, address_line, note, type, is_default, created_at, updated_at
             ) VALUES (
                 ?, ?, ?, ?,
-                ?, '', ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, NOW(), NOW()
+                ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
             )
         ");
         $stmtInsert->execute([
             $customer['id'], $receiverName, $receiverPhone, $receiverPhone,
-            $provinceName, $wardName, $provinceCode, $provinceName,
-            $wardCode, $wardName, $addressLine, $note, $type, $isDefault
+            $provinceName, $district, $wardName, $provinceCode, $provinceName,
+            $districtCode, $wardCode, $wardName, $addressLine, $note, $type, $isDefault
         ]);
 
         Response::json(['success' => true, 'message' => 'Thêm địa chỉ mới thành công!', 'id' => (int)$db->lastInsertId()]);
@@ -105,6 +109,8 @@ class CustomerAddressController {
         $receiverPhone = trim(Request::input('receiverPhone', ''));
         $provinceCode = trim(Request::input('provinceCode', ''));
         $provinceName = trim(Request::input('provinceName', ''));
+        $districtCode = trim(Request::input('districtCode', ''));
+        $district = trim(Request::input('district', ''));
         $wardCode = trim(Request::input('wardCode', ''));
         $wardName = trim(Request::input('wardName', ''));
         $addressLine = trim(Request::input('addressLine', ''));
@@ -112,7 +118,7 @@ class CustomerAddressController {
         $type = trim(Request::input('type', 'home'));
         $isDefault = (int)Request::input('isDefault', 0);
 
-        if (empty($receiverName) || empty($receiverPhone) || empty($provinceName) || empty($wardName) || empty($addressLine)) {
+        if (empty($receiverName) || empty($receiverPhone) || empty($provinceName) || empty($district) || empty($wardName) || empty($addressLine)) {
             Response::json(['success' => false, 'message' => 'Vui lòng nhập đầy đủ thông tin bắt buộc.'], 400);
         }
 
@@ -134,14 +140,14 @@ class CustomerAddressController {
         $stmtUpdate = $db->prepare("
             UPDATE customer_addresses SET 
                 receiver_name = ?, phone = ?, receiver_phone = ?,
-                province = ?, ward = ?, province_code = ?, province_name = ?,
-                ward_code = ?, ward_name = ?, address_line = ?, note = ?, type = ?, is_default = ?, updated_at = NOW()
+                province = ?, district = ?, ward = ?, province_code = ?, province_name = ?,
+                district_code = ?, ward_code = ?, ward_name = ?, address_line = ?, note = ?, type = ?, is_default = ?, updated_at = NOW()
             WHERE id = ?
         ");
         $stmtUpdate->execute([
             $receiverName, $receiverPhone, $receiverPhone,
-            $provinceName, $wardName, $provinceCode, $provinceName,
-            $wardCode, $wardName, $addressLine, $note, $type, $isDefault,
+            $provinceName, $district, $wardName, $provinceCode, $provinceName,
+            $districtCode, $wardCode, $wardName, $addressLine, $note, $type, $isDefault,
             $id
         ]);
 

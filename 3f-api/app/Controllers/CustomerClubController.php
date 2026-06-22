@@ -19,40 +19,117 @@ class CustomerClubController {
      */
     public function summary() {
         $customer = AuthMiddleware::requireCustomer();
-        if (empty($customer['phone'])) {
-            Response::json(['success' => true, 'data' => null]);
+        
+        $db = Database::getInstance()->getConnection();
+        
+        $phone = $customer['phone'] ?? '';
+        $customerId = $customer['id'];
+        $isPhoneVerified = (int)($customer['is_phone_verified'] ?? 0);
+
+        if ($isPhoneVerified !== 1) {
+            Response::json([
+                'success' => true,
+                'data' => [
+                    'phone_verified' => false,
+                    'locked' => true
+                ]
+            ]);
+            return;
         }
 
-        $phone = $customer['phone'];
         $model = new LoyaltyProductionModel();
         
         // Ensure loyalty profile exists and calculate stats
-        $profile = $model->ensureCustomerProfile($phone, $customer['full_name'] ?? $customer['name']);
-        $pointsBalance = (new CustomerPointTransactionModel())->getBalance($phone);
-        $totalEarned = $model->sumEarnedPoints($phone);
-        $totalSpent = $model->sumSpentPoints($phone);
-
-        // Map tiers Silver/Gold/Platinum
-        $nextTier = null;
-        if ($profile['tier_name'] === 'Silver') {
-            $nextTier = ['name' => 'Gold', 'minPoints' => 5000];
-        } elseif ($profile['tier_name'] === 'Gold') {
-            $nextTier = ['name' => 'Platinum', 'minPoints' => 15000];
+        $profile = $model->ensureCustomerProfile($customerId, $customer['full_name'] ?? $customer['name']);
+        
+        $transModel = new \App\Models\LoyaltyPointTransaction();
+        $pointsBalance = $transModel->getAvailableBalance($customerId);
+        $holdingPoints = $transModel->getHoldingBalance($customerId);
+        $usedPoints = $transModel->getUsedBalance($customerId);
+        $expiredPoints = $transModel->getExpiredBalance($customerId);
+        
+        // Get rolling 12 months stats for tier progress
+        $currentOrders = 0;
+        $currentSpend = 0.00;
+        if (!empty($phone)) {
+            $stmtStats = $db->prepare("
+                SELECT 
+                    COUNT(*) as order_count,
+                    COALESCE(SUM(subtotal - discount), 0) as total_spend
+                FROM orders
+                WHERE (customer_id = :cust_id OR phone = :phone)
+                  AND order_status = 'completed'
+                  AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+            ");
+            $stmtStats->execute([':cust_id' => $customerId, ':phone' => $phone]);
+            $stats = $stmtStats->fetch(PDO::FETCH_ASSOC);
+            $currentOrders = (int)($stats['order_count'] ?? 0);
+            $currentSpend = (float)($stats['total_spend'] ?? 0);
         }
+
+        $settings = new \App\Models\LoyaltySettings();
+        $diamondSpend = (float)($settings->get('tier_diamond_spend') ?: 10000000);
+        $diamondOrders = (int)($settings->get('tier_diamond_orders') ?: 12);
+        
+        $goldSpend = (float)($settings->get('tier_gold_spend') ?: 5000000);
+        $goldOrders = (int)($settings->get('tier_gold_orders') ?: 6);
+        
+        $silverSpend = (float)($settings->get('tier_silver_spend') ?: 2000000);
+        $silverOrders = (int)($settings->get('tier_silver_orders') ?: 3);
+
+        $nextTier = null;
+        $tierName = $profile['tier_name'] ?: 'Member';
+        if ($tierName === 'Member') {
+            $nextTier = [
+                'name' => 'Silver',
+                'minSpend' => $silverSpend,
+                'minOrders' => $silverOrders,
+                'currentSpend' => $currentSpend,
+                'currentOrders' => $currentOrders,
+            ];
+        } elseif ($tierName === 'Silver') {
+            $nextTier = [
+                'name' => 'Gold',
+                'minSpend' => $goldSpend,
+                'minOrders' => $goldOrders,
+                'currentSpend' => $currentSpend,
+                'currentOrders' => $currentOrders,
+            ];
+        } elseif ($tierName === 'Gold') {
+            $nextTier = [
+                'name' => 'Diamond',
+                'minSpend' => $diamondSpend,
+                'minOrders' => $diamondOrders,
+                'currentSpend' => $currentSpend,
+                'currentOrders' => $currentOrders,
+            ];
+        }
+
+        // Get tier redemption cap percentage
+        $tierKey = strtolower($tierName);
+        $capPercent = (int)($settings->get("tier_{$tierKey}_cap") ?: 10);
+        $otpRequired = (int)($settings->get('otp_required_redemption') ?: 1) === 1;
 
         Response::json([
             'success' => true,
             'data' => [
                 'pointsBalance' => $pointsBalance,
+                'holdingPoints' => $holdingPoints,
+                'usedPoints' => $usedPoints,
+                'expiredPoints' => $expiredPoints,
+                'phoneVerified' => $isPhoneVerified === 1,
+                'phone' => $phone,
+                'otpRequired' => $otpRequired,
                 'tier' => [
-                    'name' => $profile['tier_name'] ?: 'Silver',
+                    'name' => $tierName,
                     'multiplier' => (float)($profile['tier_multiplier'] ?: 1.0),
-                    'color' => $profile['tier_color'] ?: '#94A3B8',
-                    'minPoints' => (int)($profile['min_points'] ?? 0)
+                    'color' => $profile['tier_color'] ?: '#64748B',
+                    'benefits' => $profile['tier_benefits'] ?: 'Tích điểm cơ bản',
+                    'capPercent' => $capPercent
                 ],
                 'nextTier' => $nextTier,
-                'totalEarned' => $totalEarned,
-                'totalSpent' => $totalSpent
+                'totalEarned' => $pointsBalance + $usedPoints,
+                'totalSpent' => $usedPoints
             ]
         ]);
     }
@@ -62,12 +139,35 @@ class CustomerClubController {
      */
     public function transactions() {
         $customer = AuthMiddleware::requireCustomer();
-        if (empty($customer['phone'])) {
-            Response::json(['success' => true, 'data' => []]);
+        
+        $model = new \App\Models\LoyaltyPointTransaction();
+        $rows = $model->getCustomerTransactions($customer['id']);
+        
+        if (empty($rows) && !empty($customer['phone'])) {
+            // fallback to legacy
+            $legacyModel = new CustomerPointTransactionModel();
+            $legacyRows = $legacyModel->getCustomerTransactions($customer['phone']);
+            // map legacy format to new format
+            $rows = array_map(function($r) {
+                return [
+                    'id' => (int)$r['id'],
+                    'customer_id' => null,
+                    'order_id' => $r['reference_type'] === 'order' ? $r['reference_id'] : null,
+                    'source' => strpos($r['type'], 'shopee') !== false ? 'shopee' : 'website',
+                    'type' => strpos($r['type'], 'spend') !== false ? 'redeem' : 'earn',
+                    'status' => 'available',
+                    'points' => (int)$r['points'],
+                    'eligible_amount' => 0,
+                    'multiplier' => 1.0,
+                    'balance_after' => (int)$r['balance_after'],
+                    'expires_at' => null,
+                    'reference_type' => $r['reference_type'],
+                    'reference_id' => $r['reference_id'],
+                    'reason' => $r['note'],
+                    'created_at' => $r['created_at']
+                ];
+            }, $legacyRows);
         }
-
-        $model = new CustomerPointTransactionModel();
-        $rows = $model->getCustomerTransactions($customer['phone']);
         Response::json(['success' => true, 'data' => $rows]);
     }
 

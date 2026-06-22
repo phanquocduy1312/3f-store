@@ -5,6 +5,7 @@ import { AiResultData } from "./mockAiResult";
 import { getProductById } from "@/data/store";
 import { Link, useNavigate } from "react-router-dom";
 import { addToCart, parsePriceString } from "@/lib/cartHelper";
+import { mapApiProduct } from "@/src/api/productsApi";
 
 interface AiResultProps {
   result: AiResultData;
@@ -53,7 +54,7 @@ export function AiResult({
   };
 
   const selectedProducts = result.recommended_products
-    ?.map(item => getProductById(item.id))
+    ?.map(item => item.product ? mapApiProduct(item.product) : getProductById(item.id))
     .filter((p): p is NonNullable<typeof p> => p != null && selectedProductIds.has(p.id)) || [];
 
   const totalPrice = selectedProducts.reduce((sum, p) => sum + parsePriceString(p.price), 0);
@@ -123,7 +124,7 @@ export function AiResult({
         
         <div className="space-y-2.5">
           {items.map((item, idx) => {
-            const product = getProductById(item.id);
+            const product = item.product ? mapApiProduct(item.product) : getProductById(item.id);
             if (!product) return null;
             const isSelected = selectedProductIds.has(item.id);
 

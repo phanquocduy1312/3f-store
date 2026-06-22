@@ -35,7 +35,10 @@ class ShopeePointRequest {
                 processing_status, 
                 verification_status, 
                 source,
-                customer_id
+                customer_id,
+                otp_verified,
+                otp_verified_at,
+                otp_provider
             ) VALUES (
                 :customer_name, 
                 :phone, 
@@ -50,7 +53,10 @@ class ShopeePointRequest {
                 'pending', 
                 'not_checked', 
                 :source,
-                :customer_id
+                :customer_id,
+                :otp_verified,
+                :otp_verified_at,
+                :otp_provider
             )
         ";
         $params = [
@@ -64,7 +70,10 @@ class ShopeePointRequest {
             ':image_id'          => isset($data['image_id']) ? $data['image_id'] : null,
             ':scan_id'           => isset($data['scan_id']) ? $data['scan_id'] : null,
             ':source'            => isset($data['source']) ? $data['source'] : 'customer_form',
-            ':customer_id'       => isset($data['customer_id']) ? $data['customer_id'] : null
+            ':customer_id'       => isset($data['customer_id']) ? $data['customer_id'] : null,
+            ':otp_verified'      => isset($data['otp_verified']) ? (int)$data['otp_verified'] : 0,
+            ':otp_verified_at'   => isset($data['otp_verified_at']) ? $data['otp_verified_at'] : null,
+            ':otp_provider'      => isset($data['otp_provider']) ? $data['otp_provider'] : null
         ];
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
@@ -302,6 +311,13 @@ class ShopeePointRequest {
             $stmtRejectCode = $this->db->query("SHOW COLUMNS FROM `shopee_point_requests` LIKE 'reject_reason_code'");
             if (!$stmtRejectCode->fetch()) {
                 $this->db->exec("ALTER TABLE `shopee_point_requests` ADD COLUMN `reject_reason_code` VARCHAR(50) NULL AFTER `rejected_reason`");
+            }
+
+            $stmtOtp = $this->db->query("SHOW COLUMNS FROM `shopee_point_requests` LIKE 'otp_verified'");
+            if (!$stmtOtp->fetch()) {
+                $this->db->exec("ALTER TABLE `shopee_point_requests` ADD COLUMN `otp_verified` TINYINT(1) DEFAULT 0 AFTER `source`");
+                $this->db->exec("ALTER TABLE `shopee_point_requests` ADD COLUMN `otp_verified_at` DATETIME NULL AFTER `otp_verified`");
+                $this->db->exec("ALTER TABLE `shopee_point_requests` ADD COLUMN `otp_provider` VARCHAR(50) NULL AFTER `otp_verified_at`");
             }
 
             // Create shopee_point_awards table

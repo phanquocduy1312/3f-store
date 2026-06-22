@@ -6,6 +6,29 @@ use App\Models\LoyaltyProductionModel;
 
 class LoyaltyPointService {
     /**
+     * Calculates points based on the active database loyalty settings configurations.
+     */
+    public static function calculatePointsFromSettings($eligibleAmount, $source) {
+        $settings = new \App\Models\LoyaltySettings();
+        $moneyPerPoint = (int)($settings->get('money_per_point') ?: 200);
+        if ($moneyPerPoint <= 0) $moneyPerPoint = 200;
+
+        $multiplierKey = 'multiplier_' . strtolower($source);
+        $channelMultiplier = (float)($settings->get($multiplierKey) ?: 1.0);
+        
+        $basePoints = (int)floor($eligibleAmount / $moneyPerPoint);
+        
+        $campaignMultiplier = 1.0;
+        try {
+            $productionModel = new \App\Models\LoyaltyProductionModel();
+            $campaignMultiplier = $productionModel->getActiveCampaignMultiplier();
+        } catch (\Throwable $e) {}
+
+        $points = (int)floor($basePoints * $channelMultiplier * $campaignMultiplier);
+        return $points;
+    }
+
+    /**
      * Calculates points from order amount using active rule configs.
      * Fallbacks to default rule (10k VND = 1 Point, floor) if no active rule exists.
      *

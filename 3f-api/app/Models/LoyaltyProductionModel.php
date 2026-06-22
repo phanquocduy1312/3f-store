@@ -46,13 +46,15 @@ class LoyaltyProductionModel {
             ");
 
             $count = (int)$this->db->query("SELECT COUNT(*) AS total FROM membership_tiers")->fetch(PDO::FETCH_ASSOC)['total'];
-            if ($count === 0) {
+            $platinumExists = (int)$this->db->query("SELECT COUNT(*) FROM membership_tiers WHERE name = 'Platinum'")->fetchColumn();
+            if ($count === 0 || $platinumExists > 0) {
+                $this->db->exec("DELETE FROM membership_tiers");
                 $this->db->exec("
-                    INSERT INTO membership_tiers (name, min_points, multiplier, color, benefits, is_active) VALUES
-                    ('Silver', 0, 1.00, '#94A3B8', 'Tich diem co ban', 1),
-                    ('Gold', 5000, 1.20, '#F59E0B', 'Nhan 1.2x diem tich luy', 1),
-                    ('Platinum', 10000, 1.50, '#38BDF8', 'Nhan 1.5x diem tich luy', 1),
-                    ('Diamond', 20000, 2.00, '#8B5CF6', 'Nhan 2x diem tich luy', 1)
+                    INSERT INTO membership_tiers (id, name, min_points, multiplier, color, benefits, is_active) VALUES
+                    (1, 'Member', 0, 1.00, '#64748B', 'Tích điểm cơ bản', 1),
+                    (2, 'Silver', 0, 1.00, '#94A3B8', 'Nhận 1.0x điểm, giới hạn sử dụng điểm 10%', 1),
+                    (3, 'Gold', 0, 1.20, '#F59E0B', 'Nhận 1.2x điểm, giới hạn sử dụng điểm 15%', 1),
+                    (4, 'Diamond', 0, 1.50, '#8B5CF6', 'Nhận 1.5x điểm, giới hạn sử dụng điểm 20%', 1)
                 ");
             }
 
@@ -134,6 +136,16 @@ class LoyaltyProductionModel {
             $this->addColumnIfMissing('loyalty_reward_redemptions', 'assigned_voucher_id', "INT NULL AFTER `reward_id`");
             $this->addColumnIfMissing('loyalty_reward_redemptions', 'voucher_code', "VARCHAR(120) NULL AFTER `assigned_voucher_id`");
             $this->addColumnIfMissing('loyalty_reward_redemptions', 'fulfilled_at', "DATETIME NULL AFTER `processed_at`");
+
+            // Add is_points_enabled to products if not exists
+            try {
+                $checkCol = $this->db->query("SHOW COLUMNS FROM products LIKE 'is_points_enabled'")->fetch();
+                if (!$checkCol) {
+                    $this->db->exec("ALTER TABLE products ADD COLUMN is_points_enabled TINYINT(1) DEFAULT 1 AFTER is_active");
+                }
+            } catch (\Exception $e) {
+                error_log("Failed to add is_points_enabled to products: " . $e->getMessage());
+            }
         } catch (\Exception $e) {
             error_log("LoyaltyProduction migration failed: " . $e->getMessage());
         }
@@ -293,19 +305,163 @@ class LoyaltyProductionModel {
 
     public function getTierForPoints($points) {
         $stmt = $this->db->prepare("
-            SELECT * FROM membership_tiers
-            WHERE is_active = 1 AND min_points <= :points
-            ORDER BY min_points DESC
+            SELECT *, 
+                   name AS tier_name, 
+                   multiplier AS tier_multiplier, 
+                   color AS tier_color, 
+                   benefits AS tier_benefits, 
+                   min_spend AS min_points 
+            FROM loyalty_tiers
+            WHERE is_active = 1 AND min_spend <= :points
+            ORDER BY min_spend DESC
             LIMIT 1
         ");
         $stmt->execute([':points' => (int)$points]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
+    private function resolveCustomerId($idOrPhone) {
+        if (empty($idOrPhone)) return $idOrPhone;
+        
+        $clean = preg_replace('/[^\d]/', '', (string)$idOrPhone);
+        
+        if (is_numeric($clean) && (int)$clean > 0 && strlen($clean) < 9) {
+            $stmt = $this->db->prepare("SELECT id FROM customers WHERE id = :id LIMIT 1");
+            $stmt->execute([':id' => (int)$clean]);
+            $val = $stmt->fetchColumn();
+            if ($val) return $val;
+        }
+        
+        // Try searching by phone/id
+        $stmt = $this->db->prepare("SELECT id FROM customers WHERE phone = :phone OR phone = :clean OR id = :id LIMIT 1");
+        $stmt->execute([':phone' => $idOrPhone, ':clean' => $clean, ':id' => $idOrPhone]);
+        $val = $stmt->fetchColumn();
+        if ($val) return $val;
+
+        // Try searching by name/full_name
+        $stmt = $this->db->prepare("SELECT id FROM customers WHERE name = :val OR full_name = :val LIMIT 1");
+        $stmt->execute([':val' => $idOrPhone]);
+        $val = $stmt->fetchColumn();
+        return $val ?: $idOrPhone;
+    }
+
+    public function calculateCustomerTierName($customerId) {
+        $customerId = $this->resolveCustomerId($customerId);
+        $stmtPhone = $this->db->prepare("SELECT phone, is_phone_verified FROM customers WHERE id = :id LIMIT 1");
+        $stmtPhone->execute([':id' => $customerId]);
+        $customer = $stmtPhone->fetch(PDO::FETCH_ASSOC);
+        if (!$customer) {
+            return 'Member';
+        }
+
+        $phone = $customer['phone'];
+        $isPhoneVerified = (int)($customer['is_phone_verified'] ?? 0);
+
+        if ($isPhoneVerified !== 1) {
+            return 'Member';
+        }
+
+        $stmtStats = $this->db->prepare("
+            SELECT 
+                COUNT(*) as order_count,
+                COALESCE(SUM(subtotal - discount), 0) as total_spend
+            FROM orders
+            WHERE (customer_id = :cust_id OR phone = :phone)
+              AND order_status = 'completed'
+              AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+        ");
+        $stmtStats->execute([':cust_id' => $customerId, ':phone' => $phone]);
+        $stats = $stmtStats->fetch(PDO::FETCH_ASSOC);
+        $orderCount = (int)($stats['order_count'] ?? 0);
+        $totalSpend = (float)($stats['total_spend'] ?? 0);
+
+        // Fetch limits from loyalty_tiers
+        try {
+            $tiers = $this->db->query("SELECT key_name, min_spend, min_orders FROM loyalty_tiers")->fetchAll(PDO::FETCH_ASSOC);
+            $tierMap = [];
+            foreach ($tiers as $t) {
+                $tierMap[$t['key_name']] = $t;
+            }
+        } catch (\Exception $e) {
+            $tierMap = [];
+        }
+
+        $diamondSpend = isset($tierMap['diamond']) ? (float)$tierMap['diamond']['min_spend'] : 10000000;
+        $diamondOrders = isset($tierMap['diamond']) ? (int)$tierMap['diamond']['min_orders'] : 12;
+        
+        $goldSpend = isset($tierMap['gold']) ? (float)$tierMap['gold']['min_spend'] : 5000000;
+        $goldOrders = isset($tierMap['gold']) ? (int)$tierMap['gold']['min_orders'] : 6;
+        
+        $silverSpend = isset($tierMap['silver']) ? (float)$tierMap['silver']['min_spend'] : 2000000;
+        $silverOrders = isset($tierMap['silver']) ? (int)$tierMap['silver']['min_orders'] : 3;
+
+        if ($totalSpend >= $diamondSpend || $orderCount >= $diamondOrders) {
+            return 'Diamond';
+        } elseif ($totalSpend >= $goldSpend || $orderCount >= $goldOrders) {
+            return 'Gold';
+        } elseif ($totalSpend >= $silverSpend || $orderCount >= $silverOrders) {
+            return 'Silver';
+        }
+        return 'Member';
+    }
+
     public function ensureCustomerProfile($customerId, $name = null) {
-        $earned = $this->sumEarnedPoints($customerId);
-        $spent = $this->sumSpentPoints($customerId);
-        $tier = $this->getTierForPoints($earned);
+        $resolvedId = $this->resolveCustomerId($customerId);
+        
+        // 1. Check if customer exists in main customers table
+        $stmtCust = $this->db->prepare("SELECT phone, full_name, name FROM customers WHERE id = :id LIMIT 1");
+        $stmtCust->execute([':id' => $resolvedId]);
+        $custRow = $stmtCust->fetch();
+        
+        // 2. Check if they already have profile
+        $stmtProf = $this->db->prepare("SELECT customer_id FROM customer_loyalty_profiles WHERE customer_id = :id LIMIT 1");
+        $stmtProf->execute([':id' => $resolvedId]);
+        $profRow = $stmtProf->fetch();
+
+        // 3. Check if they have any points or shopee requests history
+        $hasHistory = false;
+        if (!$custRow && !$profRow) {
+            $stmtTx = $this->db->prepare("SELECT COUNT(*) FROM customer_point_transactions WHERE customer_phone = :phone");
+            $stmtTx->execute([':phone' => $customerId]);
+            if ((int)$stmtTx->fetchColumn() > 0) {
+                $hasHistory = true;
+            } else {
+                $stmtShopee = $this->db->prepare("SELECT COUNT(*) FROM shopee_point_requests WHERE phone = :phone");
+                $stmtShopee->execute([':phone' => $customerId]);
+                if ((int)$stmtShopee->fetchColumn() > 0) {
+                    $hasHistory = true;
+                }
+            }
+        }
+
+        if (!$custRow && !$profRow && !$hasHistory) {
+            throw new \Exception("Không tìm thấy thông tin khách hàng.");
+        }
+
+        $earned = $this->sumEarnedPoints($resolvedId);
+        $spent = $this->sumSpentPoints($resolvedId);
+        
+        $tierName = $this->calculateCustomerTierName($resolvedId);
+        $stmtTier = $this->db->prepare("SELECT * FROM loyalty_tiers WHERE name = :name AND is_active = 1 LIMIT 1");
+        $stmtTier->execute([':name' => $tierName]);
+        $tier = $stmtTier->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$tier) {
+            $stmtTier = $this->db->prepare("SELECT * FROM loyalty_tiers WHERE key_name = 'member' LIMIT 1");
+            $stmtTier->execute();
+            $tier = $stmtTier->fetch(PDO::FETCH_ASSOC);
+        }
+
+        // Get customer phone and name
+        $phone = null;
+        $customerName = $name;
+        if ($custRow) {
+            $phone = $custRow['phone'];
+            if (empty($customerName)) {
+                $customerName = $custRow['full_name'] ?: $custRow['name'] ?: null;
+            }
+        }
+
         $stmt = $this->db->prepare("
             INSERT INTO customer_loyalty_profiles
                 (customer_id, customer_name, phone, current_tier_id, total_earned_points, total_spent_points)
@@ -313,28 +469,36 @@ class LoyaltyProductionModel {
                 (:customer_id, :customer_name, :phone, :tier_id, :earned, :spent)
             ON DUPLICATE KEY UPDATE
                 customer_name = COALESCE(VALUES(customer_name), customer_name),
-                phone = VALUES(phone),
+                phone = COALESCE(VALUES(phone), phone),
                 current_tier_id = VALUES(current_tier_id),
                 total_earned_points = VALUES(total_earned_points),
                 total_spent_points = VALUES(total_spent_points)
         ");
         $stmt->execute([
-            ':customer_id' => $customerId,
-            ':customer_name' => $name,
-            ':phone' => $customerId,
+            ':customer_id' => $resolvedId,
+            ':customer_name' => $customerName,
+            ':phone' => $phone ?: $resolvedId,
             ':tier_id' => $tier ? (int)$tier['id'] : null,
             ':earned' => $earned,
             ':spent' => $spent
         ]);
-        return $this->getCustomerTier($customerId);
+        return $this->getCustomerTier($resolvedId);
     }
 
     public function getCustomerTier($customerId) {
+        $customerId = $this->resolveCustomerId($customerId);
         $this->ensureBareProfile($customerId);
         $stmt = $this->db->prepare("
-            SELECT p.*, t.name AS tier_name, t.multiplier AS tier_multiplier, t.color AS tier_color, t.benefits AS tier_benefits, t.min_points
+            SELECT p.customer_id, 
+                   COALESCE(c.full_name, c.name, p.customer_name) AS customer_name,
+                   COALESCE(c.phone, p.phone) AS phone,
+                   p.birthday, p.current_tier_id, p.total_earned_points, p.total_spent_points,
+                   (p.total_earned_points - p.total_spent_points) AS current_points,
+                   t.name AS tier_name, t.multiplier AS tier_multiplier, t.color AS tier_color, t.benefits AS tier_benefits, 
+                   t.min_spend AS min_points, t.min_spend, t.min_orders, t.redemption_cap_percent
             FROM customer_loyalty_profiles p
-            LEFT JOIN membership_tiers t ON p.current_tier_id = t.id
+            LEFT JOIN customers c ON p.customer_id = c.id
+            LEFT JOIN loyalty_tiers t ON p.current_tier_id = t.id
             WHERE p.customer_id = :customer_id
         ");
         $stmt->execute([':customer_id' => $customerId]);
@@ -350,12 +514,34 @@ class LoyaltyProductionModel {
     }
 
     public function sumEarnedPoints($customerId) {
+        // Try new table loyalty_point_transactions first
+        $stmt = $this->db->prepare("
+            SELECT COALESCE(SUM(points), 0) AS total 
+            FROM loyalty_point_transactions 
+            WHERE customer_id = :id AND status = 'available' AND points > 0
+        ");
+        $stmt->execute([':id' => $customerId]);
+        $val = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
+        if ($val > 0) return $val;
+
+        // Fallback to legacy
         $stmt = $this->db->prepare("SELECT COALESCE(SUM(points), 0) AS total FROM customer_point_transactions WHERE customer_phone = :id AND points > 0");
         $stmt->execute([':id' => $customerId]);
         return (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
     }
 
     public function sumSpentPoints($customerId) {
+        // Try new table loyalty_point_transactions first
+        $stmt = $this->db->prepare("
+            SELECT COALESCE(SUM(ABS(points)), 0) AS total 
+            FROM loyalty_point_transactions 
+            WHERE customer_id = :id AND status = 'used' AND points < 0
+        ");
+        $stmt->execute([':id' => $customerId]);
+        $val = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
+        if ($val > 0) return $val;
+
+        // Fallback to legacy
         $stmt = $this->db->prepare("SELECT COALESCE(SUM(ABS(points)), 0) AS total FROM customer_point_transactions WHERE customer_phone = :id AND points < 0");
         $stmt->execute([':id' => $customerId]);
         return (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];

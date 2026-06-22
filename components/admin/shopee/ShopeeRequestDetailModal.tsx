@@ -373,6 +373,13 @@ export function ShopeeRequestDetailModal({
                     <DetailField label="SĐT nhận điểm" value={request.phone} />
                     <DetailField label="Email" value={request.email || "Chưa cập nhật"} />
                     <DetailField label="Zalo" value={request.zalo || request.phone} />
+                    <DetailField label="Xác thực OTP" value={request.otpVerified ? "Có" : "Không"} />
+                    {request.otpVerified ? (
+                      <>
+                        <DetailField label="Thời gian OTP" value={formatDateTime(request.otpVerifiedAt)} />
+                        <DetailField label="Nhà cung cấp OTP" value={request.otpProvider === "stringee" ? "Stringee" : (request.otpProvider ? request.otpProvider : "Mock / Khác")} />
+                      </>
+                    ) : null}
                     {request.source === "guest" && (
                       <div className="md:col-span-2 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 font-medium">
                         Yêu cầu này được gửi từ khách vãng lai, số điện thoại đã được xác thực qua mã OTP.
@@ -474,30 +481,7 @@ export function ShopeeRequestDetailModal({
               </div>
 
               <div className="space-y-5 xl:col-span-7">
-                <DetailCard
-                  title="Thông tin đối chiếu Shopee API"
-                  action={
-                    processingStatus === "pending" ? (
-                      <button
-                        type="button"
-                        disabled={isVerifying}
-                        onClick={onReconcile}
-                        className={cn(
-                          "inline-flex h-10 items-center gap-2 rounded-2xl border px-4 text-[13px] font-bold transition",
-                          isVerifying
-                            ? "cursor-not-allowed border-[#DCEBFF] bg-[#F6FAFF] text-[#94A3B8]"
-                            : "border-[#BFD7FF] bg-white text-[#0057E7] hover:bg-[#F6FAFF]",
-                        )}
-                      >
-                        {isVerifying ? (
-                          <><Loader2 className="h-4 w-4 animate-spin" /> Đang đối chiếu...</>
-                        ) : (
-                          <><RefreshCcw className="h-4 w-4" /> Đối chiếu API</>
-                        )}
-                      </button>
-                    ) : undefined
-                  }
-                >
+                <DetailCard title="Thông tin đối chiếu Shopee API">
                   {verificationStatus && verificationStatus !== "not_checked" ? (
                     <>
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -552,9 +536,28 @@ export function ShopeeRequestDetailModal({
                   ) : (
                     <div className="rounded-[20px] border border-dashed border-[#DCEBFF] bg-[#F6FAFF] p-5">
                       <p className="text-[18px] font-black text-[#0B1F3A]">Chưa đối chiếu API</p>
-                      <p className="mt-2 text-[14px] text-[#64748B]">
+                      <p className="mt-2 text-[14px] text-[#64748B] mb-4">
                         Bấm “Đối chiếu API” để kiểm tra đơn hàng với Shopee.
                       </p>
+                      {processingStatus === "pending" && (
+                        <button
+                          type="button"
+                          disabled={isVerifying}
+                          onClick={onReconcile}
+                          className={cn(
+                            "inline-flex h-11 items-center gap-2 rounded-2xl border px-5 text-[14px] font-bold transition",
+                            isVerifying
+                              ? "cursor-not-allowed border-[#DCEBFF] bg-[#F6FAFF] text-[#94A3B8]"
+                              : "border-[#BFD7FF] bg-white text-[#0057E7] hover:bg-[#F6FAFF]",
+                          )}
+                        >
+                          {isVerifying ? (
+                            <><Loader2 className="h-4 w-4 animate-spin" /> Đang đối chiếu...</>
+                          ) : (
+                            <><RefreshCcw className="h-4 w-4" /> Đối chiếu API</>
+                          )}
+                        </button>
+                      )}
                     </div>
                   )}
                 </DetailCard>

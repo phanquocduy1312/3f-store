@@ -83,48 +83,51 @@ class Order {
 
         // Seed workflow_statuses
         try {
-            $count = (int)$this->db->query("SELECT COUNT(*) AS total FROM workflow_statuses")->fetch(PDO::FETCH_ASSOC)['total'];
-            if ($count === 0) {
-                $statuses = [
-                    // main order
-                    ['order', 'pending_confirmation', 'Chờ xác nhận', 'Chờ xác nhận thông tin đơn hàng', '#f59e0b', 1, 1, 0, 0],
-                    ['order', 'confirmed', 'Đã xác nhận', 'Đơn hàng đã được xác nhận', '#3b82f6', 2, 0, 0, 0],
-                    ['order', 'pending_payment', 'Chờ thanh toán', 'Chờ thanh toán từ khách hàng', '#eab308', 3, 0, 0, 0],
-                    ['order', 'paid_or_cod', 'Đã thanh toán / COD', 'Đã xác nhận thanh toán hoặc COD', '#10b981', 4, 0, 0, 0],
-                    ['order', 'preparing', 'Đang chuẩn bị hàng', 'Đang đóng gói và chuẩn bị sản phẩm', '#6366f1', 5, 0, 0, 0],
-                    ['order', 'awaiting_pickup_or_booking', 'Chờ lấy hàng / đặt ship', 'Chờ shipper lấy hàng hoặc đặt ship', '#8b5cf6', 6, 0, 0, 0],
-                    ['order', 'shipping', 'Đang giao', 'Đơn hàng đang trên đường giao', '#a855f7', 7, 0, 0, 0],
-                    ['order', 'delivered', 'Giao thành công', 'Đơn hàng đã giao tới người nhận', '#22c55e', 8, 0, 0, 0],
-                    ['order', 'completed', 'Hoàn tất', 'Đơn hàng đã hoàn tất', '#15803d', 9, 0, 0, 1],
-                    ['order', 'return_requested', 'Yêu cầu đổi / trả', 'Khách hàng yêu cầu đổi hoặc trả hàng', '#ef4444', 10, 0, 0, 0],
-                    ['order', 'return_completed', 'Đã đổi trả xong', 'Hoàn tất quá trình đổi trả hàng', '#b91c1c', 11, 0, 0, 1],
-                    ['order', 'cancelled', 'Đã hủy', 'Đơn hàng đã bị hủy', '#6b7280', 12, 0, 0, 1],
-                    // payment
-                    ['payment', 'unpaid', 'Chưa thanh toán', 'Chưa thực hiện thanh toán', '#f59e0b', 1, 1, 1, 0],
-                    ['payment', 'paid', 'Đã thanh toán', 'Thanh toán hoàn tất', '#22c55e', 2, 0, 0, 1],
-                    ['payment', 'cod', 'COD', 'Thanh toán khi nhận hàng', '#3b82f6', 3, 0, 0, 0],
-                    ['payment', 'refunded', 'Hoàn tiền', 'Đã hoàn tiền cho khách hàng', '#6b7280', 4, 0, 0, 1],
-                    ['payment', 'payment_failed', 'Thanh toán lỗi', 'Giao dịch thanh toán thất bại', '#ef4444', 5, 0, 0, 0],
-                    // shipping
-                    ['shipping', 'no_shipment', 'Chưa tạo vận đơn', 'Chưa tạo thông tin vận chuyển', '#f59e0b', 1, 1, 1, 0],
-                    ['shipping', 'shipment_created', 'Đã tạo vận đơn', 'Vận đơn đã được khởi tạo', '#3b82f6', 2, 0, 0, 0],
-                    ['shipping', 'picking_up', 'Đang lấy hàng', 'Shipper đang lấy hàng từ kho', '#6366f1', 3, 0, 0, 0],
-                    ['shipping', 'shipping', 'Đang giao', 'Đang trên đường vận chuyển', '#a855f7', 4, 0, 0, 0],
-                    ['shipping', 'delivered', 'Giao thành công', 'Giao hàng thành công', '#22c55e', 5, 0, 0, 1],
-                    ['shipping', 'delivery_failed', 'Giao thất bại', 'Giao hàng không thành công', '#ef4444', 6, 0, 0, 0],
-                    ['shipping', 'returned', 'Hoàn hàng', 'Đã hoàn trả hàng về kho', '#6b7280', 7, 0, 0, 1],
-                    // loyalty
-                    ['loyalty', 'not_earned', 'Chưa tích điểm', 'Chưa cộng điểm cho đơn hàng', '#f59e0b', 1, 1, 1, 0],
-                    ['loyalty', 'pending_review', 'Chờ duyệt', 'Đang chờ quản trị viên duyệt điểm', '#3b82f6', 2, 0, 0, 0],
-                    ['loyalty', 'holding', 'Điểm tạm giữ', 'Điểm đang được giữ trong thời gian đổi trả', '#eab308', 3, 0, 0, 0],
-                    ['loyalty', 'credited', 'Đã cộng điểm', 'Điểm đã được cộng vào tài khoản', '#22c55e', 4, 0, 0, 1],
-                    ['loyalty', 'redeemed', 'Đã dùng điểm', 'Điểm đã được sử dụng', '#a855f7', 5, 0, 0, 0],
-                    ['loyalty', 'cancelled', 'Hủy điểm', 'Đã hủy điểm tích lũy', '#6b7280', 6, 0, 0, 1]
-                ];
-                $stmt = $this->db->prepare("INSERT INTO workflow_statuses (group_key, status_key, label, description, color, sort_order, is_active, is_default, is_terminal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                foreach ($statuses as $status) {
-                    $stmt->execute($status);
-                }
+            $statuses = [
+                // main order
+                ['order', 'pending_confirmation', 'Chờ xác nhận', 'Chờ xác nhận thông tin đơn hàng', '#f59e0b', 1, 1, 1, 0],
+                ['order', 'confirmed', 'Đã xác nhận', 'Đơn hàng đã được xác nhận', '#3b82f6', 2, 1, 0, 0],
+                ['order', 'pending_payment', 'Chờ thanh toán', 'Chờ thanh toán từ khách hàng', '#eab308', 3, 1, 0, 0],
+                ['order', 'paid_or_cod', 'Đã thanh toán / COD', 'Đã xác nhận thanh toán hoặc COD', '#10b981', 4, 1, 0, 0],
+                ['order', 'preparing', 'Đang chuẩn bị hàng', 'Đang đóng gói và chuẩn bị sản phẩm', '#6366f1', 5, 1, 0, 0],
+                ['order', 'awaiting_pickup_or_booking', 'Chờ lấy hàng / đặt ship', 'Chờ shipper lấy hàng hoặc đặt ship', '#8b5cf6', 6, 1, 0, 0],
+                ['order', 'shipping', 'Đang giao', 'Đơn hàng đang trên đường giao', '#a855f7', 7, 1, 0, 0],
+                ['order', 'delivered', 'Giao thành công', 'Đơn hàng đã giao tới người nhận', '#22c55e', 8, 1, 0, 0],
+                ['order', 'completed', 'Hoàn tất', 'Đơn hàng đã hoàn tất', '#15803d', 9, 1, 0, 1],
+                ['order', 'return_requested', 'Yêu cầu đổi / trả', 'Khách hàng yêu cầu đổi hoặc trả hàng', '#ef4444', 10, 1, 0, 0],
+                ['order', 'return_completed', 'Đã hoàn / đổi trả xong', 'Hoàn tất quá trình đổi trả hàng', '#b91c1c', 11, 1, 0, 1],
+                ['order', 'cancelled', 'Đã hủy', 'Đơn hàng đã bị hủy', '#6b7280', 12, 1, 0, 1],
+                // payment
+                ['payment', 'unpaid', 'Chưa thanh toán', 'Chưa thực hiện thanh toán', '#f59e0b', 1, 1, 1, 0],
+                ['payment', 'paid', 'Đã thanh toán', 'Thanh toán hoàn tất', '#22c55e', 2, 1, 0, 1],
+                ['payment', 'cod', 'COD', 'Thanh toán khi nhận hàng', '#3b82f6', 3, 1, 0, 0],
+                ['payment', 'refunded', 'Hoàn tiền', 'Đã hoàn tiền cho khách hàng', '#6b7280', 4, 1, 0, 1],
+                ['payment', 'payment_failed', 'Thanh toán lỗi', 'Giao dịch thanh toán thất bại', '#ef4444', 5, 1, 0, 0],
+                // shipping
+                ['shipping', 'no_shipment', 'Chưa tạo vận đơn', 'Chưa tạo thông tin vận chuyển', '#f59e0b', 1, 1, 1, 0],
+                ['shipping', 'shipment_created', 'Đã tạo vận đơn', 'Vận đơn đã được khởi tạo', '#3b82f6', 2, 1, 0, 0],
+                ['shipping', 'picking_up', 'Đang lấy hàng', 'Shipper đang lấy hàng từ kho', '#6366f1', 3, 1, 0, 0],
+                ['shipping', 'shipping', 'Đang giao', 'Đang trên đường vận chuyển', '#a855f7', 4, 1, 0, 0],
+                ['shipping', 'delivered', 'Giao thành công', 'Giao hàng thành công', '#22c55e', 5, 1, 0, 1],
+                ['shipping', 'delivery_failed', 'Giao thất bại', 'Giao hàng không thành công', '#ef4444', 6, 1, 0, 0],
+                ['shipping', 'returned', 'Hoàn hàng', 'Đã hoàn trả hàng về kho', '#6b7280', 7, 1, 0, 1],
+                // loyalty
+                ['loyalty', 'not_earned', 'Chưa tích điểm', 'Chưa cộng điểm cho đơn hàng', '#f59e0b', 1, 1, 1, 0],
+                ['loyalty', 'pending_review', 'Chờ duyệt', 'Đang chờ quản trị viên duyệt điểm', '#3b82f6', 2, 1, 0, 0],
+                ['loyalty', 'holding', 'Điểm tạm giữ', 'Điểm đang được giữ trong thời gian đổi trả', '#eab308', 3, 1, 0, 0],
+                ['loyalty', 'credited', 'Đã cộng điểm', 'Điểm đã được cộng vào tài khoản', '#22c55e', 4, 1, 0, 1],
+                ['loyalty', 'redeemed', 'Đã dùng điểm', 'Điểm đã được sử dụng', '#a855f7', 5, 1, 0, 0],
+                ['loyalty', 'cancelled', 'Hủy điểm', 'Đã hủy điểm tích lũy', '#6b7280', 6, 1, 0, 1]
+            ];
+            $stmt = $this->db->prepare("
+                INSERT INTO workflow_statuses (group_key, status_key, label, description, color, sort_order, is_active, is_default, is_terminal)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE 
+                    is_active = VALUES(is_active),
+                    is_terminal = VALUES(is_terminal)
+            ");
+            foreach ($statuses as $status) {
+                $stmt->execute($status);
             }
         } catch (\PDOException $e) {
             // Ignore
@@ -132,61 +135,63 @@ class Order {
 
         // Seed workflow_transitions
         try {
-            $countTrans = (int)$this->db->query("SELECT COUNT(*) AS total FROM workflow_transitions")->fetch(PDO::FETCH_ASSOC)['total'];
-            if ($countTrans === 0) {
-                $transitions = [
-                    // order transitions
-                    ['order', 'pending_confirmation', 'confirmed', 'Xác nhận đơn hàng', 0, null, 1, 1],
-                    ['order', 'pending_confirmation', 'cancelled', 'Hủy đơn hàng', 1, null, 1, 2],
-                    ['order', 'confirmed', 'preparing', 'Chuẩn bị hàng', 0, null, 1, 1],
-                    ['order', 'confirmed', 'cancelled', 'Hủy đơn hàng', 1, null, 1, 2],
-                    ['order', 'pending_payment', 'paid_or_cod', 'Thanh toán đơn hàng', 0, null, 1, 1],
-                    ['order', 'pending_payment', 'cancelled', 'Hủy đơn hàng', 1, null, 1, 2],
-                    ['order', 'paid_or_cod', 'preparing', 'Chuẩn bị hàng', 0, null, 1, 1],
-                    ['order', 'preparing', 'awaiting_pickup_or_booking', 'Chờ lấy / đặt ship', 0, null, 1, 1],
-                    ['order', 'preparing', 'cancelled', 'Hủy đơn hàng', 1, null, 1, 2],
-                    ['order', 'awaiting_pickup_or_booking', 'shipping', 'Bắt đầu giao hàng', 0, null, 1, 1],
-                    ['order', 'shipping', 'delivered', 'Giao hàng thành công', 0, null, 1, 1],
-                    ['order', 'shipping', 'cancelled', 'Hủy đơn hàng', 1, null, 1, 2],
-                    ['order', 'delivered', 'completed', 'Hoàn tất đơn hàng', 0, null, 1, 1],
-                    ['order', 'completed', 'return_requested', 'Yêu cầu đổi / trả', 1, null, 1, 1],
-                    ['order', 'return_requested', 'return_completed', 'Hoàn tất đổi trả', 0, null, 1, 1],
-                    
-                    // payment transitions
-                    ['payment', 'unpaid', 'paid', 'Thanh toán trực tiếp', 0, null, 1, 1],
-                    ['payment', 'unpaid', 'cod', 'COD thanh toán sau', 0, null, 1, 2],
-                    ['payment', 'unpaid', 'payment_failed', 'Lỗi giao dịch', 0, null, 1, 3],
-                    ['payment', 'cod', 'paid', 'Xác nhận thu COD', 0, null, 1, 1],
-                    ['payment', 'payment_failed', 'paid', 'Thanh toán lại thành công', 0, null, 1, 1],
-                    ['payment', 'payment_failed', 'unpaid', 'Đóng cổng thanh toán cũ', 0, null, 1, 2],
-                    ['payment', 'paid', 'refunded', 'Hoàn tiền giao dịch', 1, null, 1, 1],
-                    
-                    // shipping transitions
-                    ['shipping', 'no_shipment', 'shipment_created', 'Tạo vận đơn ship', 0, null, 1, 1],
-                    ['shipping', 'shipment_created', 'picking_up', 'Shipper đang lấy', 0, null, 1, 1],
-                    ['shipping', 'shipment_created', 'no_shipment', 'Hủy vận đơn ship', 0, null, 1, 2],
-                    ['shipping', 'picking_up', 'shipping', 'Bắt đầu giao', 0, null, 1, 1],
-                    ['shipping', 'picking_up', 'delivery_failed', 'Shipper không lấy được hàng', 1, null, 1, 2],
-                    ['shipping', 'shipping', 'delivered', 'Giao thành công', 0, null, 1, 1],
-                    ['shipping', 'shipping', 'delivery_failed', 'Giao hàng thất bại', 1, null, 1, 2],
-                    ['shipping', 'delivery_failed', 'shipping', 'Giao lại', 0, null, 1, 1],
-                    ['shipping', 'delivery_failed', 'returned', 'Chuyển hoàn kho', 0, null, 1, 2],
-                    ['shipping', 'delivered', 'returned', 'Thu hồi/Trả hàng', 1, null, 1, 1],
-                    
-                    // loyalty transitions
-                    ['loyalty', 'not_earned', 'holding', 'Tạm giữ điểm tích lũy', 0, null, 1, 1],
-                    ['loyalty', 'not_earned', 'pending_review', 'Đưa vào hàng đợi duyệt điểm', 0, null, 1, 2],
-                    ['loyalty', 'not_earned', 'credited', 'Cộng điểm nóng', 0, null, 1, 3],
-                    ['loyalty', 'holding', 'credited', 'Xác nhận cộng điểm', 0, null, 1, 1],
-                    ['loyalty', 'holding', 'cancelled', 'Hủy điểm tích lũy tạm giữ', 1, null, 1, 2],
-                    ['loyalty', 'pending_review', 'credited', 'Xác nhận duyệt cộng điểm', 0, null, 1, 1],
-                    ['loyalty', 'pending_review', 'cancelled', 'Từ chối duyệt điểm', 1, null, 1, 2],
-                    ['loyalty', 'credited', 'cancelled', 'Hủy / Hoàn tác điểm tích lũy', 1, null, 1, 1],
-                ];
-                $stmt = $this->db->prepare("INSERT INTO workflow_transitions (group_key, from_status, to_status, label, requires_reason, requires_permission, is_active, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                foreach ($transitions as $trans) {
-                    $stmt->execute($trans);
-                }
+            $transitions = [
+                // order transitions
+                ['order', 'pending_confirmation', 'confirmed', 'Xác nhận đơn hàng', 0, null, 1, 1],
+                ['order', 'pending_confirmation', 'cancelled', 'Hủy đơn hàng', 1, null, 1, 2],
+                ['order', 'confirmed', 'preparing', 'Chuẩn bị hàng', 0, null, 1, 1],
+                ['order', 'confirmed', 'cancelled', 'Hủy đơn hàng', 1, null, 1, 2],
+                ['order', 'pending_payment', 'paid_or_cod', 'Thanh toán đơn hàng', 0, null, 1, 1],
+                ['order', 'pending_payment', 'cancelled', 'Hủy đơn hàng', 1, null, 1, 2],
+                ['order', 'paid_or_cod', 'preparing', 'Chuẩn bị hàng', 0, null, 1, 1],
+                ['order', 'preparing', 'awaiting_pickup_or_booking', 'Chờ lấy / đặt ship', 0, null, 1, 1],
+                ['order', 'preparing', 'cancelled', 'Hủy đơn hàng', 1, null, 1, 2],
+                ['order', 'awaiting_pickup_or_booking', 'shipping', 'Bắt đầu giao hàng', 0, null, 1, 1],
+                ['order', 'shipping', 'delivered', 'Giao thành công', 0, null, 1, 1],
+                ['order', 'shipping', 'cancelled', 'Hủy đơn hàng', 1, null, 1, 2],
+                ['order', 'delivered', 'completed', 'Hoàn tất', 0, null, 1, 1],
+                ['order', 'delivered', 'return_requested', 'Yêu cầu đổi / trả', 1, null, 1, 1],
+                ['order', 'return_requested', 'return_completed', 'Đã hoàn / đổi trả xong', 0, null, 1, 1],
+                
+                // payment transitions
+                ['payment', 'unpaid', 'paid', 'Thanh toán trực tiếp', 0, null, 1, 1],
+                ['payment', 'unpaid', 'cod', 'COD thanh toán sau', 0, null, 1, 2],
+                ['payment', 'unpaid', 'payment_failed', 'Lỗi giao dịch', 0, null, 1, 3],
+                ['payment', 'cod', 'paid', 'Xác nhận thu COD', 0, null, 1, 1],
+                ['payment', 'payment_failed', 'paid', 'Thanh toán lại thành công', 0, null, 1, 1],
+                ['payment', 'payment_failed', 'unpaid', 'Đóng cổng thanh toán cũ', 0, null, 1, 2],
+                ['payment', 'paid', 'refunded', 'Hoàn tiền giao dịch', 1, null, 1, 1],
+                
+                // shipping transitions
+                ['shipping', 'no_shipment', 'shipment_created', 'Tạo vận đơn ship', 0, null, 1, 1],
+                ['shipping', 'shipment_created', 'picking_up', 'Shipper đang lấy', 0, null, 1, 1],
+                ['shipping', 'shipment_created', 'no_shipment', 'Hủy vận đơn ship', 0, null, 1, 2],
+                ['shipping', 'picking_up', 'shipping', 'Bắt đầu giao', 0, null, 1, 1],
+                ['shipping', 'picking_up', 'delivery_failed', 'Shipper không lấy được hàng', 1, null, 1, 2],
+                ['shipping', 'shipping', 'delivered', 'Giao thành công', 0, null, 1, 1],
+                ['shipping', 'shipping', 'delivery_failed', 'Giao hàng thất bại', 1, null, 1, 2],
+                ['shipping', 'delivery_failed', 'shipping', 'Giao lại', 0, null, 1, 1],
+                ['shipping', 'delivery_failed', 'returned', 'Chuyển hoàn kho', 0, null, 1, 2],
+                ['shipping', 'delivered', 'returned', 'Thu hồi/Trả hàng', 1, null, 1, 1],
+                
+                // loyalty transitions
+                ['loyalty', 'not_earned', 'holding', 'Tạm giữ điểm tích lũy', 0, null, 1, 1],
+                ['loyalty', 'not_earned', 'pending_review', 'Đưa vào hàng đợi duyệt điểm', 0, null, 1, 2],
+                ['loyalty', 'not_earned', 'credited', 'Cộng điểm nóng', 0, null, 1, 3],
+                ['loyalty', 'holding', 'credited', 'Xác nhận cộng điểm', 0, null, 1, 1],
+                ['loyalty', 'holding', 'cancelled', 'Hủy điểm tích lũy tạm giữ', 1, null, 1, 2],
+                ['loyalty', 'pending_review', 'credited', 'Xác nhận duyệt cộng điểm', 0, null, 1, 1],
+                ['loyalty', 'pending_review', 'cancelled', 'Từ chối duyệt điểm', 1, null, 1, 2],
+                ['loyalty', 'credited', 'cancelled', 'Hủy / Hoàn tác điểm tích lũy', 1, null, 1, 1],
+            ];
+            $stmt = $this->db->prepare("
+                INSERT INTO workflow_transitions (group_key, from_status, to_status, label, requires_reason, requires_permission, is_active, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE 
+                    is_active = VALUES(is_active)
+            ");
+            foreach ($transitions as $trans) {
+                $stmt->execute($trans);
             }
         } catch (\PDOException $e) {
             // Ignore
@@ -263,6 +268,44 @@ class Order {
             }
         } catch (\PDOException $e) {
             // Ignore database errors
+        }
+
+        // Idempotently force correct states & transitions
+        try {
+            // Update workflow statuses terminal flags & labels
+            $this->db->exec("UPDATE workflow_statuses SET is_terminal = 0 WHERE group_key = 'order' AND status_key = 'delivered'");
+            $this->db->exec("UPDATE workflow_statuses SET is_terminal = 1 WHERE group_key = 'order' AND status_key = 'completed'");
+            $this->db->exec("UPDATE workflow_statuses SET is_terminal = 1 WHERE group_key = 'order' AND status_key = 'cancelled'");
+            $this->db->exec("UPDATE workflow_statuses SET is_terminal = 1 WHERE group_key = 'order' AND status_key = 'return_completed'");
+            $this->db->exec("UPDATE workflow_statuses SET label = 'Đã hoàn / đổi trả xong' WHERE group_key = 'order' AND status_key = 'return_completed'");
+
+            // Delete incorrect transition
+            $this->db->exec("DELETE FROM workflow_transitions WHERE group_key = 'order' AND from_status = 'completed' AND to_status = 'return_requested'");
+
+            // Upsert expected transitions
+            $expectedTransitions = [
+                ['order', 'shipping', 'delivered', 'Giao thành công', 0, null, 1, 1],
+                ['order', 'delivered', 'completed', 'Hoàn tất', 0, null, 1, 1],
+                ['order', 'delivered', 'return_requested', 'Yêu cầu đổi / trả', 1, null, 1, 1],
+                ['order', 'return_requested', 'return_completed', 'Đã hoàn / đổi trả xong', 0, null, 1, 1],
+            ];
+
+            $stmtUpsert = $this->db->prepare("
+                INSERT INTO workflow_transitions (group_key, from_status, to_status, label, requires_reason, requires_permission, is_active, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                    label = VALUES(label),
+                    requires_reason = VALUES(requires_reason),
+                    requires_permission = VALUES(requires_permission),
+                    is_active = VALUES(is_active),
+                    sort_order = VALUES(sort_order)
+            ");
+
+            foreach ($expectedTransitions as $trans) {
+                $stmtUpsert->execute($trans);
+            }
+        } catch (\PDOException $e) {
+            // Ignore
         }
     }
 
@@ -537,6 +580,9 @@ class Order {
         if ($fromStatus === $toStatus) {
             return true;
         }
+        if ($changedBy === 'system') {
+            return true;
+        }
 
         // Check if fromStatus is terminal
         $stmtStatus = $this->db->prepare("SELECT is_terminal FROM workflow_statuses WHERE group_key = :group_key AND status_key = :status_key");
@@ -689,7 +735,7 @@ class Order {
     }
 
     public function updateLoyaltyStatus($orderId, $newStatus, $note = null, $changedBy = null, $adminId = null, $customerId = null) {
-        $stmt = $this->db->prepare("SELECT loyalty_status, customer_id, order_code, phone, total, loyalty_points_earned, receiver_name FROM orders WHERE id = :id FOR UPDATE");
+        $stmt = $this->db->prepare("SELECT loyalty_status, customer_id, order_code, phone, total, subtotal, discount, loyalty_points_earned, receiver_name, order_source FROM orders WHERE id = :id FOR UPDATE");
         $stmt->execute([':id' => (int)$orderId]);
         $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -723,79 +769,218 @@ class Order {
         );
 
         // Execute point adjustments based on the status target
-        if ($newStatus === 'credited') {
-            // Check duplicate awards
+        if ($newStatus === 'holding') {
+            // Check duplicate holding
             $stmtCheck = $this->db->prepare("
-                SELECT id FROM customer_point_transactions 
-                WHERE customer_phone = :phone 
-                  AND type = 'earn_web_order' 
-                  AND reference_type = 'order' 
-                  AND reference_id = :order_id
+                SELECT id FROM loyalty_point_transactions 
+                WHERE customer_id = :customer_id 
+                  AND order_id = :order_id
+                  AND type = 'hold'
             ");
             $stmtCheck->execute([
-                ':phone' => $order['phone'],
+                ':customer_id' => $order['customer_id'],
                 ':order_id' => $orderId
             ]);
             $exists = $stmtCheck->fetch();
 
             if (!$exists) {
-                // Calculate points
-                $preview = \App\Services\LoyaltyPointService::previewPoints((int)$order['total'], $order['phone'], "web_store", false);
-                $points = (int)$preview['finalPoints'];
+                $source = $order['order_source'] ?: 'website';
+                
+                // Calculate eligible amount excluding products with points disabled
+                $stmtItems = $this->db->prepare("
+                    SELECT oi.price, oi.quantity, p.is_points_enabled 
+                    FROM order_items oi
+                    LEFT JOIN products p ON oi.product_id = p.id
+                    WHERE oi.order_id = :order_id
+                ");
+                $stmtItems->execute([':order_id' => $orderId]);
+                $items = $stmtItems->fetchAll();
+
+                $eligibleAmount = 0;
+                if ($items) {
+                    foreach ($items as $item) {
+                        $itemAmount = (float)$item['price'] * (int)$item['quantity'];
+                        $isPointsEnabled = isset($item['is_points_enabled']) ? (int)$item['is_points_enabled'] : 1;
+                        if ($isPointsEnabled !== 0) {
+                            $eligibleAmount += $itemAmount;
+                        }
+                    }
+                } else {
+                    $eligibleAmount = (float)$order['subtotal'];
+                }
+
+                $eligibleAmount -= (float)$order['discount'];
+                if ($eligibleAmount < 0) $eligibleAmount = 0;
+
+                // Let's get the multiplier
+                $settings = new \App\Models\LoyaltySettings();
+                $multiplierKey = 'multiplier_' . strtolower($source);
+                $channelMultiplier = (float)($settings->get($multiplierKey) ?: 1.0);
+
+                $points = \App\Services\LoyaltyPointService::calculatePointsFromSettings($eligibleAmount, $source);
 
                 if ($points > 0) {
-                    $txModel = new CustomerPointTransactionModel();
-                    $txModel->addTransaction(
-                        $order['phone'],
-                        'earn_web_order',
-                        $points,
-                        null,
-                        'order',
-                        $orderId,
-                        "Cộng điểm từ đơn web {$order['order_code']}"
-                    );
-
-                    // Update balance
-                    $loyaltyModel = new LoyaltyProductionModel();
-                    $loyaltyModel->ensureCustomerProfile($order['phone'], $order['receiver_name']);
+                    $txModel = new \App\Models\LoyaltyPointTransaction();
+                    $txModel->addTransaction([
+                        'customer_id' => $order['customer_id'],
+                        'order_id' => $orderId,
+                        'source' => $source,
+                        'type' => 'hold',
+                        'status' => 'holding',
+                        'points' => $points,
+                        'eligible_amount' => $eligibleAmount,
+                        'multiplier' => $channelMultiplier,
+                        'reference_type' => 'order',
+                        'reference_id' => $orderId,
+                        'reason' => "Tạm giữ điểm từ đơn hàng {$order['order_code']}",
+                        'idempotency_key' => "hold_order_{$orderId}"
+                    ]);
 
                     // Update order loyalty_points_earned
                     $this->updateLoyaltyPointsEarned($orderId, $points);
                 }
             }
+        } elseif ($newStatus === 'credited') {
+            // 1. Try to update existing holding transaction to available
+            $stmtUpdateHold = $this->db->prepare("
+                UPDATE loyalty_point_transactions 
+                SET status = 'available', type = 'earn'
+                WHERE order_id = :order_id AND status = 'holding'
+            ");
+            $stmtUpdateHold->execute([':order_id' => $orderId]);
+            $updated = $stmtUpdateHold->rowCount();
+
+            if ($updated > 0) {
+                // Update balance
+                $loyaltyModel = new LoyaltyProductionModel();
+                $loyaltyModel->ensureCustomerProfile($order['customer_id'], $order['receiver_name']);
+            } else {
+                // Check duplicate awards
+                $stmtCheck = $this->db->prepare("
+                    SELECT id FROM loyalty_point_transactions 
+                    WHERE customer_id = :customer_id 
+                      AND order_id = :order_id
+                      AND type = 'earn'
+                ");
+                $stmtCheck->execute([
+                    ':customer_id' => $order['customer_id'],
+                    ':order_id' => $orderId
+                ]);
+                $exists = $stmtCheck->fetch();
+
+                if (!$exists) {
+                    $source = $order['order_source'] ?: 'website';
+                    
+                    // Calculate eligible amount excluding products with points disabled
+                    $stmtItems = $this->db->prepare("
+                        SELECT oi.price, oi.quantity, p.is_points_enabled 
+                        FROM order_items oi
+                        LEFT JOIN products p ON oi.product_id = p.id
+                        WHERE oi.order_id = :order_id
+                    ");
+                    $stmtItems->execute([':order_id' => $orderId]);
+                    $items = $stmtItems->fetchAll();
+
+                    $eligibleAmount = 0;
+                    if ($items) {
+                        foreach ($items as $item) {
+                            $itemAmount = (float)$item['price'] * (int)$item['quantity'];
+                            $isPointsEnabled = isset($item['is_points_enabled']) ? (int)$item['is_points_enabled'] : 1;
+                            if ($isPointsEnabled !== 0) {
+                                $eligibleAmount += $itemAmount;
+                            }
+                        }
+                    } else {
+                        $eligibleAmount = (float)$order['subtotal'];
+                    }
+
+                    $eligibleAmount -= (float)$order['discount'];
+                    if ($eligibleAmount < 0) $eligibleAmount = 0;
+
+                    // Let's get the multiplier
+                    $settings = new \App\Models\LoyaltySettings();
+                    $multiplierKey = 'multiplier_' . strtolower($source);
+                    $channelMultiplier = (float)($settings->get($multiplierKey) ?: 1.0);
+
+                    $points = \App\Services\LoyaltyPointService::calculatePointsFromSettings($eligibleAmount, $source);
+
+                    if ($points > 0) {
+                        $txModel = new \App\Models\LoyaltyPointTransaction();
+                        
+                        // Expiry calculation: default 12 months after available
+                        $expiryMonths = (int)($settings->get('point_expiry_months') ?: 12);
+                        $expiresAt = date('Y-m-d H:i:s', strtotime("+{$expiryMonths} months"));
+
+                        $txModel->addTransaction([
+                            'customer_id' => $order['customer_id'],
+                            'order_id' => $orderId,
+                            'source' => $source,
+                            'type' => 'earn',
+                            'status' => 'available',
+                            'points' => $points,
+                            'eligible_amount' => $eligibleAmount,
+                            'multiplier' => $channelMultiplier,
+                            'expires_at' => $expiresAt,
+                            'reference_type' => 'order',
+                            'reference_id' => $orderId,
+                            'reason' => "Cộng điểm từ đơn hàng {$order['order_code']}",
+                            'idempotency_key' => "earn_order_{$orderId}"
+                        ]);
+
+                        // Update balance
+                        $loyaltyModel = new LoyaltyProductionModel();
+                        $loyaltyModel->ensureCustomerProfile($order['customer_id'], $order['receiver_name']);
+
+                        // Update order loyalty_points_earned
+                        $this->updateLoyaltyPointsEarned($orderId, $points);
+                    }
+                }
+            }
         } elseif ($newStatus === 'cancelled') {
+            // 1. Cancel holding transaction if exists
+            $stmtCancelHold = $this->db->prepare("
+                UPDATE loyalty_point_transactions 
+                SET status = 'cancelled', type = 'cancel'
+                WHERE order_id = :order_id AND status = 'holding'
+            ");
+            $stmtCancelHold->execute([':order_id' => $orderId]);
+
             // Reverse points if credited before
             if ($order['loyalty_points_earned'] > 0) {
                 // Check if already reversed
                 $stmtCheckRev = $this->db->prepare("
-                    SELECT id FROM customer_point_transactions 
-                    WHERE customer_phone = :phone 
-                      AND type = 'cancel_web_order' 
-                      AND reference_type = 'order' 
-                      AND reference_id = :order_id
+                    SELECT id FROM loyalty_point_transactions 
+                    WHERE customer_id = :customer_id 
+                      AND order_id = :order_id
+                      AND type = 'cancel'
                 ");
                 $stmtCheckRev->execute([
-                    ':phone' => $order['phone'],
+                    ':customer_id' => $order['customer_id'],
                     ':order_id' => $orderId
                 ]);
                 $existsRev = $stmtCheckRev->fetch();
 
                 if (!$existsRev) {
                     $pointsToDeduct = -$order['loyalty_points_earned'];
-                    $txModel = new CustomerPointTransactionModel();
-                    $txModel->addTransaction(
-                        $order['phone'],
-                        'cancel_web_order',
-                        $pointsToDeduct,
-                        null,
-                        'order',
-                        $orderId,
-                        "Hủy điểm tích lũy do hủy/trả đơn hàng {$order['order_code']}"
-                    );
+                    $txModel = new \App\Models\LoyaltyPointTransaction();
+                    $txModel->addTransaction([
+                        'customer_id' => $order['customer_id'],
+                        'order_id' => $orderId,
+                        'source' => $order['order_source'] ?: 'website',
+                        'type' => 'cancel',
+                        'status' => 'cancelled',
+                        'points' => $pointsToDeduct,
+                        'eligible_amount' => 0.00,
+                        'multiplier' => 1.00,
+                        'reference_type' => 'order',
+                        'reference_id' => $orderId,
+                        'reason' => "Hủy/thu hồi điểm do hủy đơn hàng {$order['order_code']}",
+                        'idempotency_key' => "cancel_order_{$orderId}"
+                    ]);
 
                     // Update balance
                     $loyaltyModel = new LoyaltyProductionModel();
-                    $loyaltyModel->ensureCustomerProfile($order['phone'], $order['receiver_name']);
+                    $loyaltyModel->ensureCustomerProfile($order['customer_id'], $order['receiver_name']);
 
                     // Clear loyalty_points_earned in orders
                     $this->updateLoyaltyPointsEarned($orderId, 0);

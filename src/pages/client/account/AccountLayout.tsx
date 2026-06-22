@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   BadgeCheck,
@@ -13,12 +13,13 @@ import {
 import { removeCustomerToken } from "@/src/api/customerAuthApi";
 import { getProfileApi, type ProfileData } from "@/src/api/customerProfileApi";
 import { toast } from "sonner";
+import { buildImageUrl } from "@/src/config/api";
 
 const navItems = [
   { name: "Hồ sơ cá nhân", path: "/account/profile", icon: User },
   { name: "Đơn hàng của tôi", path: "/account/orders", icon: ShoppingBag },
   { name: "Sổ địa chỉ", path: "/account/addresses", icon: MapPin },
-  { name: "Hồ sơ thú cưng", path: "/account/pets", icon: Heart },
+  { name: "Tư vấn AI", path: "/account/pets", icon: Sparkles },
   { name: "Bảo mật", path: "/account/security", icon: Shield },
 ];
 
@@ -42,7 +43,9 @@ export function AccountLayout() {
     navigate("/login");
   };
 
-  const avatarUrl = profile?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.fullName || "3F")}&background=0B1F3A&color=fff`;
+  const avatarUrl = profile?.avatarUrl
+    ? buildImageUrl(profile.avatarUrl)
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.fullName || "3F")}&background=0B1F3A&color=fff`;
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] py-6 md:py-10">

@@ -36,6 +36,7 @@ const AdminProductForm = lazyPage(() => import("./pages/admin/AdminProductForm")
 const AdminCategoriesPage = lazyPage(() => import("./pages/admin/AdminCategoriesPage"), "AdminCategoriesPage");
 const AdminBannersPage = lazyPage(() => import("./pages/admin/AdminBannersPage"), "AdminBannersPage");
 const AdminNewsPage = lazyPage(() => import("./pages/admin/AdminNewsPage"), "AdminNewsPage");
+const AdminNewsEditorPage = lazyPage(() => import("./pages/admin/AdminNewsEditorPage"), "AdminNewsEditorPage");
 const BlogList = lazyPage(() => import("./pages/BlogList"), "BlogList");
 const BlogDetail = lazyPage(() => import("./pages/BlogDetail"), "BlogDetail");
 
@@ -46,6 +47,7 @@ const OrdersPage = lazyPage(() => import("./pages/client/account/OrdersPage"), "
 const AddressesPage = lazyPage(() => import("./pages/client/account/AddressBookPage"), "AddressesPage");
 const PetsPage = lazyPage(() => import("./pages/client/account/PetsPage"), "PetsPage");
 const SecurityPage = lazyPage(() => import("./pages/client/account/SecurityPage"), "SecurityPage");
+const ClubPage = lazyPage(() => import("./pages/client/account/ClubPage"), "ClubPage");
 
 function AdminRouteGuard() {
   const token = localStorage.getItem("admin_token");
@@ -110,6 +112,7 @@ export function App() {
               <Route path="addresses" element={<AddressesPage />} />
               <Route path="pets" element={<PetsPage />} />
               <Route path="security" element={<SecurityPage />} />
+              <Route path="club" element={<ClubPage />} />
             </Route>
           </Route>
           
@@ -135,6 +138,8 @@ export function App() {
             <Route path="/admin/categories" element={<AdminCategoriesPage />} />
             <Route path="/admin/banners" element={<AdminBannersPage />} />
             <Route path="/admin/news" element={<AdminNewsPage />} />
+            <Route path="/admin/news/new" element={<AdminNewsEditorPage />} />
+            <Route path="/admin/news/:id/edit" element={<AdminNewsEditorPage />} />
           </Route>
 
           <Route path="/3f-club/rewards" element={<CustomerRewardsPage />} />

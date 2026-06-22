@@ -145,3 +145,39 @@ export async function deleteNotificationChannel(id: number): Promise<{ success: 
     body: JSON.stringify({ id }),
   });
 }
+
+export async function getOrderStatusConfig(): Promise<{
+  success: boolean;
+  data: {
+    statuses: WorkflowStatusSetting[];
+    transitions: WorkflowTransitionSetting[];
+  };
+}> {
+  return apiJson<{
+    success: boolean;
+    data: {
+      statuses: WorkflowStatusSetting[];
+      transitions: WorkflowTransitionSetting[];
+    };
+  }>("/api/admin/orders/status-config");
+}
+
+export async function updateOrderStatusSetting(
+  id: number,
+  payload: Partial<WorkflowStatusSetting>
+): Promise<{ success: boolean; message: string }> {
+  return apiJson<{ success: boolean; message: string }>(`/api/admin/orders/status-config/statuses/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateOrderTransitionSetting(
+  id: number,
+  payload: Partial<WorkflowTransitionSetting>
+): Promise<{ success: boolean; message: string }> {
+  return apiJson<{ success: boolean; message: string }>(`/api/admin/orders/status-config/transitions/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}

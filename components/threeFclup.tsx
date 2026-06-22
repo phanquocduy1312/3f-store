@@ -674,7 +674,7 @@ function ThreeFClub({
 		{
 			tone: "silver",
 			name: "SILVER",
-			range: "2.000.000đ hoặc 3 đơn",
+			range: "2.000.000đ",
 			badge: a.badgeSilver,
 			action: "Đăng ký ngay",
 			benefits: [
@@ -686,7 +686,7 @@ function ThreeFClub({
 		{
 			tone: "gold",
 			name: "GOLD",
-			range: "5.000.000đ hoặc 6 đơn",
+			range: "5.000.000đ",
 			badge: a.badgeGold,
 			action: "Tham gia Gold",
 			benefits: [

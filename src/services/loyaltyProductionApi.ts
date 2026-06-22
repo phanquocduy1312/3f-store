@@ -45,12 +45,16 @@ export type VoucherPoolItem = {
 
 export type MembershipTier = {
   id: number;
+  key_name?: string;
   name: string;
   min_points: number;
   multiplier: number;
   color: string | null;
   benefits: string | null;
   is_active: number;
+  min_spend?: number;
+  min_orders?: number;
+  redemption_cap_percent?: number;
 };
 
 export type LoyaltyCampaign = {
@@ -78,20 +82,22 @@ export async function importVoucherPool(payload: { rewardId: number; text?: stri
 }
 
 export async function getMembershipTiers() {
-  return apiJson<{ success: boolean; data: MembershipTier[] }>("/api/admin/loyalty/tiers");
+  return apiJson<{ success: boolean; data: MembershipTier[] }>("/api/admin/3f-club/tiers");
 }
 
-export async function saveMembershipTier(payload: Partial<MembershipTier> & { name: string; minPoints: number; multiplier: number; isActive?: number }) {
-  return apiJson<{ success: boolean; id: number }>("/api/admin/loyalty/tiers/save", {
-    method: "POST",
+export async function saveMembershipTier(payload: Partial<MembershipTier> & { name: string; minPoints?: number; multiplier?: number; isActive?: number; min_spend?: number; min_orders?: number; redemption_cap_percent?: number }) {
+  const method = payload.id ? "PUT" : "POST";
+  const url = payload.id ? `/api/admin/3f-club/tiers/${payload.id}` : "/api/admin/3f-club/tiers";
+  return apiJson<{ success: boolean; id: number }>(url, {
+    method,
     body: JSON.stringify(payload),
   });
 }
 
 export async function setMembershipTierActive(id: number, isActive: number) {
-  return apiJson<{ success: boolean }>("/api/admin/loyalty/tiers/active", {
-    method: "POST",
-    body: JSON.stringify({ id, isActive }),
+  return apiJson<{ success: boolean }>(`/api/admin/3f-club/tiers/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ isActive }),
   });
 }
 

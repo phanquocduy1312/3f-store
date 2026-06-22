@@ -73,4 +73,7 @@ export type ShopeePointRequest = {
   updatedAt?: string;
   approvedAt?: string;
   approvedBy?: string;
+  otpVerified?: number;
+  otpVerifiedAt?: string;
+  otpProvider?: string;
 };

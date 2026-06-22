@@ -13,6 +13,8 @@ import { dogQuizSteps, catQuizSteps } from "./quizConfig";
 import { AiResultData } from "./mockAiResult";
 import { getPetAdviceFromGroq } from "./groqApi";
 import { detectNeeds, detectSeriousWarning, calculateMonthlyBudget, getBudgetSegment } from "./petAdvisorUtils";
+import { createPetApi } from "@/src/api/customerPetsApi";
+import { getCustomerToken } from "@/src/api/customerAuthApi";
 
 const CLOSED_KEY = "pet_popup_closed_at";
 const SUBMITTED_KEY = "pet_quiz_submitted_at";
@@ -192,6 +194,32 @@ export function PetAdvisorPopup() {
       setStatus("result");
       localStorage.setItem(SUBMITTED_KEY, String(Date.now()));
       trackEvent("pet_advisor_result_viewed", { summary: result.summary });
+
+      // Persist to database if customer is logged in
+      const token = getCustomerToken();
+      if (token) {
+        const breedVal = answers.breed?.value;
+        const breedStr = Array.isArray(breedVal) ? breedVal.join(", ") : (breedVal || "");
+        const finalBreed = breedStr === "other" ? (answers.breed?.customText || "Khác") : breedStr;
+
+        const foodVal = answers.current_food?.value;
+        const foodStr = Array.isArray(foodVal) ? foodVal.join(", ") : (foodVal || "");
+
+        const finalSpecies = activeFlow === "cat" ? "cat" : activeFlow === "dog" ? "dog" : "other";
+
+        await createPetApi({
+          name: info.petName || "Thú cưng",
+          species: finalSpecies,
+          breed: finalBreed,
+          gender: "unknown",
+          healthNotes: answers.problem_text?.value as string || "",
+          favoriteFood: foodStr,
+          aiResult: JSON.stringify(result)
+        });
+
+        // Trigger an event to refresh pets list if on PetsPage
+        window.dispatchEvent(new CustomEvent("refresh-pets"));
+      }
     } catch (e) {
       console.error(e);
       setStatus("contact");

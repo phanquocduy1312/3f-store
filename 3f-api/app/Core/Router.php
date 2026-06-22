@@ -114,7 +114,9 @@ class Router {
                 'admin.auth.logout'           => '/api/admin/auth/logout',
                 'admin.auth.me'               => '/api/admin/auth/me',
                 'admin.auth.bootstrap'        => '/api/admin/auth/bootstrap',
-                'coupons.validate'            => '/api/coupons/validate'
+                'coupons.validate'            => '/api/coupons/validate',
+                'admin.3f_club.settings'      => '/api/admin/3f-club/settings',
+                'admin.3f_club.tiers'         => '/api/admin/3f-club/tiers'
             ];
             $path = isset($mapping[$routeQuery]) ? $mapping[$routeQuery] : '';
         } else {

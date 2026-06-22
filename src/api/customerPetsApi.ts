@@ -20,6 +20,8 @@ export interface PetData {
   allergies?: string;
   favoriteFood?: string;
   avatarUrl?: string | null;
+  aiResult?: string | null;
+  createdAt?: string | null;
 }
 
 export async function listPetsApi(): Promise<{ success: boolean; data?: PetData[]; message?: string }> {
@@ -52,6 +54,20 @@ export async function deletePetApi(id: number): Promise<{ success: boolean; mess
   const res = await fetch(buildApiUrl(`/api/customer/pets/${id}`), {
     method: "DELETE",
     headers: authHeaders(),
+  });
+  return res.json();
+}
+
+export async function consultPetAdviceApi(payload: {
+  answers: any;
+  petType: string;
+  activeFlow: string | null;
+  customer: any;
+}): Promise<{ success: boolean; data?: any; message?: string }> {
+  const res = await fetch(buildApiUrl("/api/customer/pet-advisor/consult"), {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
   });
   return res.json();
 }

@@ -57,6 +57,15 @@ class ShopeePointRequestController {
             $customerId = null;
         }
         
+        $otpService = new OtpService();
+        $otpToken = isset($input['verificationToken']) ? $input['verificationToken'] : 
+                    (isset($input['otpToken']) ? $input['otpToken'] : 
+                    (isset($input['otp_token']) ? $input['otp_token'] : ''));
+
+        if (empty($otpToken) || !$otpService->validateVerificationToken($phone, $otpToken, 'shopee_point_request')) {
+            Response::json(["success" => false, "message" => "Vui lòng xác thực OTP trước khi gửi yêu cầu tích điểm Shopee."], 400);
+        }
+
         $email = ValidationService::sanitizeText(isset($input['email']) ? $input['email'] : '');
         $zalo = ValidationService::sanitizeText(isset($input['zalo']) ? $input['zalo'] : '');
         $shopeeOrderCode = ValidationService::sanitizeText(isset($input['shopeeOrderCode']) ? $input['shopeeOrderCode'] : '');
@@ -93,6 +102,9 @@ class ShopeePointRequestController {
                 ], 400);
             }
 
+            // Consume OTP token
+            $otpService->consumeVerificationToken($phone, $otpToken, 'shopee_point_request');
+
             // Create Request
             $requestId = $requestModel->create([
                 "customer_name"     => $customerName,
@@ -105,7 +117,10 @@ class ShopeePointRequestController {
                 "expected_points"   => $expectedPoints,
                 "image_id"          => $imageId,
                 "scan_id"           => $scanId,
-                "source"            => $source
+                "source"            => $source,
+                "otp_verified"      => 1,
+                "otp_verified_at"   => date('Y-m-d H:i:s'),
+                "otp_provider"      => getenv('OTP_PROVIDER') ?: 'mock'
             ]);
 
             Response::json([
@@ -170,7 +185,10 @@ class ShopeePointRequestController {
                     "verificationNote"     => $row['verification_note'] ?? null,
                     "source"             => $row['source'] ?? null,
                     "imageUrl"           => $row['imageUrl'] ?? null,
-                    "createdAt"          => $row['created_at'] ?? null
+                    "createdAt"          => $row['created_at'] ?? null,
+                    "otpVerified"        => isset($row['otp_verified']) ? (int)$row['otp_verified'] : 0,
+                    "otpVerifiedAt"      => $row['otp_verified_at'] ?? null,
+                    "otpProvider"        => $row['otp_provider'] ?? null
                 ];
             }
 
@@ -233,6 +251,9 @@ class ShopeePointRequestController {
                 "updatedAt"          => $request['updated_at'] ?? null,
                 "approvedAt"         => $request['approved_at'] ?? null,
                 "rejectedAt"         => $request['rejected_at'] ?? null,
+                "otpVerified"        => isset($request['otp_verified']) ? (int)$request['otp_verified'] : 0,
+                "otpVerifiedAt"      => $request['otp_verified_at'] ?? null,
+                "otpProvider"        => $request['otp_provider'] ?? null,
                 "image"              => null,
                 "scan"               => null
             ];

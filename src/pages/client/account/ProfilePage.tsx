@@ -11,8 +11,13 @@ import {
   Save,
   ShieldCheck,
   UserRound,
+  Award,
+  Coins,
+  Lock,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
+import { buildImageUrl } from "@/src/config/api";
 import {
   getProfileApi,
   patchProfileApi,
@@ -61,6 +66,20 @@ export function ProfilePage() {
   const [emailOtpSent, setEmailOtpSent] = useState(false);
   const [emailOtp, setEmailOtp] = useState("");
   const [emailSaving, setEmailSaving] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("verify") === "phone" && profile) {
+      setNewPhone(profile.phone || "");
+      setIsChangingPhone(true);
+      setTimeout(() => {
+        const element = document.getElementById("phone-verification-section");
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 300);
+    }
+  }, [profile]);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -174,12 +193,12 @@ export function ProfilePage() {
     try {
       const res = await verifyPhoneChangeApi(newPhone.trim(), otp);
       if (res.success) {
-        toast.success("Đổi số điện thoại thành công");
         setIsChangingPhone(false);
         setOtpSent(false);
         setOtp("");
         setNewPhone("");
-        fetchProfile();
+        await fetchProfile();
+        toast.success("Xác thực số điện thoại thành công. 3F Club đã được mở khóa.");
       } else {
         toast.error(res.message || "Xác thực OTP thất bại");
       }
@@ -258,7 +277,9 @@ export function ProfilePage() {
     return <div className="rounded-2xl bg-red-50 p-5 text-sm font-bold text-red-600">Không có dữ liệu hồ sơ.</div>;
   }
 
-  const avatarUrl = profile.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName || "3F")}&background=0B1F3A&color=fff`;
+  const avatarUrl = profile.avatarUrl 
+    ? buildImageUrl(profile.avatarUrl) 
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName || "3F")}&background=0B1F3A&color=fff`;
   const completion = profile.stats.profileCompletion || 0;
 
   return (
@@ -375,7 +396,9 @@ export function ProfilePage() {
         </section>
 
         <aside className="space-y-5">
-          <section className="rounded-2xl border border-[#DCEBFF] bg-white p-5">
+
+
+          <section id="phone-verification-section" className="rounded-2xl border border-[#DCEBFF] bg-white p-5">
             <div className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-4">
               <ShieldCheck className="h-5 w-5 text-[#0057E7]" />
               <h3 className="font-black text-[#0B1F3A]">Xác thực liên hệ</h3>

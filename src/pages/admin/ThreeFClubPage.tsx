@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
+  Award,
   CheckCircle2,
   ClipboardList,
   Coins,
@@ -7,27 +8,21 @@ import {
   History,
   Settings,
   ShoppingBag,
-  Ticket,
 } from "lucide-react";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 
-import { LoyaltyRedemptionsSection } from "@/components/admin/loyalty/LoyaltyRedemptionsSection";
-import { LoyaltyRewardsSection } from "@/components/admin/loyalty/LoyaltyRewardsSection";
-import {
-  LoyaltySettingsSection,
-  type LoyaltyRule,
-} from "@/components/admin/loyalty/LoyaltySettingsSection";
+import { ClubSettingsSection } from "@/components/admin/loyalty/ClubSettingsSection";
 import { LoyaltyTransactionsSection } from "@/components/admin/loyalty/LoyaltyTransactionsSection";
 import { MembershipTiersSection } from "@/components/admin/loyalty/MembershipTiersSection";
 import { ShopeeRequestsSection } from "@/components/admin/shopee/ShopeeRequestsSection";
+import type { LoyaltyRule } from "@/components/admin/loyalty/LoyaltySettingsSection";
 import { API_BASE_URL } from "@/src/config/api";
 import { getAdminLoyaltyRedemptions } from "@/src/services/loyaltyRedemptionsApi";
 import type { ShopeePointRequest } from "@/types/shopee";
 import { toast } from "sonner";
 
-type MainTab = "shopee" | "points" | "tiers" | "rewards" | "history";
-type RewardsSubTab = "redemptions" | "catalog";
+type MainTab = "shopee" | "history" | "clubSettings" | "tiers";
 
 type ShopeeDateRange = "today" | "this_week" | "this_month" | "this_year" | "all_time" | "custom";
 type DateRangeResult = {
@@ -37,10 +32,9 @@ type DateRangeResult = {
 
 const mainTabs: Array<{ id: MainTab; label: string; icon: any }> = [
   { id: "shopee", label: "Đơn Shopee", icon: ShoppingBag },
-  { id: "points", label: "Cấu Hình Điểm", icon: Coins },
-  { id: "tiers", label: "Hạng thành viên", icon: Ticket },
-  { id: "rewards", label: "Quà & Voucher", icon: Gift },
   { id: "history", label: "Lịch sử", icon: History },
+  { id: "tiers", label: "Hạng thành viên", icon: Award },
+  { id: "clubSettings", label: "Cấu hình 3F Club", icon: Settings },
 ];
 
 export default function ThreeFClubPage() {
@@ -51,7 +45,6 @@ export default function ThreeFClubPage() {
   const [searchValue, setSearchValue] = useState("");
   const [selectedDate, setSelectedDate] = useState("all_time");
   const [activeTab, setActiveTab] = useState<MainTab>("shopee");
-  const [rewardsSubTab, setRewardsSubTab] = useState<RewardsSubTab>("catalog");
 
   const [requests, setRequests] = useState<ShopeePointRequest[]>([]);
   const [shopeeConnection, setShopeeConnection] = useState<{
@@ -149,11 +142,7 @@ export default function ThreeFClubPage() {
     loadShopeeConnectionStatus();
   }, []);
 
-  useEffect(() => {
-    if (overview.pendingRedemptions > 0) {
-      setRewardsSubTab("redemptions");
-    }
-  }, [overview.pendingRedemptions]);
+  // Removed rewardsSubTab update effect
 
   const selectedRange = useMemo(
     () => getShopeeDateRange(selectedDate as ShopeeDateRange),
@@ -312,20 +301,10 @@ export default function ThreeFClubPage() {
             />
           )}
 
-          {activeTab === "points" && (
-            <GroupedPanel
-              intro="Thiết lập cách quy đổi tiền thành điểm cho khách hàng khi tích điểm trong 3F Club."
-              tabs={[{ id: "rules", label: "Quy đổi điểm" }]}
-              active="rules"
-              onChange={() => undefined}
-            >
-              <LoyaltySettingsSection onActiveRuleLoaded={setActiveRule} hideTitle={true} />
-            </GroupedPanel>
-          )}
-
+          {/* Removed tiers, rewards, and clubSettings panels */}
           {activeTab === "tiers" && (
             <GroupedPanel
-              intro="Quản lý các hạng thành viên và điều kiện nâng hạng trong 3F Club."
+              intro="Quản lý và thiết lập điều kiện thăng hạng thành viên."
               tabs={[{ id: "tiers", label: "Hạng thành viên" }]}
               active="tiers"
               onChange={() => undefined}
@@ -334,18 +313,14 @@ export default function ThreeFClubPage() {
             </GroupedPanel>
           )}
 
-          {activeTab === "rewards" && (
+          {activeTab === "clubSettings" && (
             <GroupedPanel
-              intro="Quản lý quà đổi điểm, voucher và các yêu cầu đổi quà của khách hàng."
-              tabs={[
-                { id: "catalog", label: "Danh sách quà" },
-                { id: "redemptions", label: "Yêu cầu đổi quà" },
-              ]}
-              active={rewardsSubTab}
-              onChange={(id) => setRewardsSubTab(id as RewardsSubTab)}
+              intro="Cấu hình nâng cao cho 3F Club Loyalty & OTP Security."
+              tabs={[{ id: "clubSettings", label: "Cách tính điểm" }]}
+              active="clubSettings"
+              onChange={() => undefined}
             >
-              {rewardsSubTab === "catalog" && <LoyaltyRewardsSection />}
-              {rewardsSubTab === "redemptions" && <LoyaltyRedemptionsSection />}
+              <ClubSettingsSection />
             </GroupedPanel>
           )}
 

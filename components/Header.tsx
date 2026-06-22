@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronRight, Menu, ShoppingCart, User, Heart, Sparkles, LogOut, Package, Award, Phone as PhoneIcon, Ticket } from "lucide-react";
+import { ChevronDown, ChevronRight, Menu, ShoppingCart, User, Heart, Sparkles, LogOut } from "lucide-react";
 import { Image } from "@/components/Image";
 import { getCartCount } from "@/lib/cartHelper";
 import { MobileNavigationDrawer } from "./mobile-navigation-drawer";
@@ -162,32 +162,11 @@ function AccountMenu() {
               <p className="text-[11px] font-semibold text-ink/50 truncate">{customer?.email || customer?.phone}</p>
             </div>
 
-            {/* Phone warning */}
-            {!customer?.phone && (
-              <Link to="/account" onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2.5 px-4 py-2.5 bg-honey/10 text-honey-dark text-xs font-bold hover:bg-honey/20 transition">
-                <PhoneIcon size={14} />
-                <span>Bổ sung SĐT để tích điểm 3F Club</span>
-              </Link>
-            )}
-
             {/* Menu items */}
             <div className="py-1">
               <Link to="/account" onClick={() => setIsOpen(false)}
                 className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink/80 hover:bg-forest/5 hover:text-forest transition">
                 <User size={16} /> Tài khoản của tôi
-              </Link>
-              <Link to="/account/orders" onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink/80 hover:bg-forest/5 hover:text-forest transition">
-                <Package size={16} /> Đơn hàng của tôi
-              </Link>
-              <Link to="/account/club" onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink/80 hover:bg-forest/5 hover:text-forest transition">
-                <Award size={16} /> Điểm 3F Club
-              </Link>
-              <Link to="/account/vouchers" onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink/80 hover:bg-forest/5 hover:text-forest transition">
-                <Ticket size={16} /> Voucher của tôi
               </Link>
             </div>
 

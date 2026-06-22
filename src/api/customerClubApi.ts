@@ -15,13 +15,22 @@ export interface ClubSummary {
     multiplier: number;
     color: string;
     minPoints: number;
+    benefits?: string;
+    capPercent?: number;
   };
   nextTier: {
     name: string;
-    minPoints: number;
+    minPoints?: number;
+    minSpend?: number;
+    minOrders?: number;
+    currentSpend?: number;
+    currentOrders?: number;
   } | null;
   totalEarned: number;
   totalSpent: number;
+  locked?: boolean;
+  phone_verified?: boolean;
+  holdingPoints?: number;
 }
 
 export interface PointTransaction {

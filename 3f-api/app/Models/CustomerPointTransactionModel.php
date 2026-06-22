@@ -104,7 +104,16 @@ class CustomerPointTransactionModel {
             ':reference_id' => $referenceId ? (int)$referenceId : null,
             ':note' => $note
         ]);
-        return (int)$this->db->lastInsertId();
+        $newId = (int)$this->db->lastInsertId();
+
+        // Sync to customer_loyalty_profiles
+        try {
+            (new LoyaltyProductionModel())->ensureCustomerProfile($customerPhone);
+        } catch (\Exception $e) {
+            // Ignore
+        }
+
+        return $newId;
     }
 
     public function addManualAdjustment($customerId, $phone, $points, $reason, $note, $adminId) {
@@ -132,7 +141,14 @@ class CustomerPointTransactionModel {
             ':admin_id' => (int)$adminId
         ]);
         
-        // Cập nhật lại membership tier dựa trên tổng điểm lịch sử nếu cộng điểm dương
+        // Sync to customer_loyalty_profiles
+        try {
+            (new LoyaltyProductionModel())->ensureCustomerProfile($customerId);
+        } catch (\Exception $e) {
+            // Ignore
+        }
+        
+        // Cập nhật lại membership tier dựa trên tổng điểm lịch sử nếu cộng điểm dương (fallback)
         if ($points > 0 && $phone) {
             $stmtSum = $this->db->prepare("SELECT SUM(points) AS total FROM customer_point_transactions WHERE customer_phone = :phone AND points > 0");
             $stmtSum->execute([':phone' => $phone]);
@@ -141,7 +157,7 @@ class CustomerPointTransactionModel {
             
             // Tìm tier phù hợp
             try {
-                $stmtTier = $this->db->prepare("SELECT id FROM membership_tiers WHERE min_points <= :points ORDER BY min_points DESC LIMIT 1");
+                $stmtTier = $this->db->prepare("SELECT id FROM loyalty_tiers WHERE is_active = 1 AND min_spend <= :points ORDER BY min_spend DESC LIMIT 1");
                 $stmtTier->execute([':points' => $totalEarned]);
                 $tierRow = $stmtTier->fetch(PDO::FETCH_ASSOC);
                 if ($tierRow) {
@@ -149,7 +165,7 @@ class CustomerPointTransactionModel {
                     $stmtUpdateCust->execute([':tier_id' => $tierRow['id'], ':id' => $customerId]);
                 }
             } catch (\Exception $e) {
-                // Ignore if membership_tiers or current_tier_id doesn't exist yet
+                // Ignore if legacy tables or columns don't exist
             }
         }
         

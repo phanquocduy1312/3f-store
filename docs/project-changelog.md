@@ -1,5 +1,86 @@
 # Project Changelog
 
+## [2026-06-22]
+### Added
+- Nâng cấp phân hệ Tư vấn AI và Lịch sử tư vấn (AI Consultation History):
+  - Hỗ trợ tải `GROQ_API_KEY` động từ biến môi trường `import.meta.env.VITE_GROQ_API_KEY` trước khi sử dụng key fallback cũ, giúp giải quyết lỗi 401 dễ dàng qua việc cập nhật `.env`.
+  - Chuyển đổi trang Hồ sơ thú cưng thành giao diện "Lịch sử tư vấn dinh dưỡng" chuyên biệt.
+  - Loại bỏ hoàn toàn chức năng tạo/sửa thủ công hồ sơ thú cưng cũ để tập trung hoàn toàn vào lịch sử tư vấn AI.
+  - Redesign giao diện danh sách thẻ tư vấn hiển thị rõ ràng: Tên thú cưng, Loài, Giống, Ngày tư vấn (createdAt thực tế lấy từ API), và kết luận tư vấn AI.
+  - Cải tiến PetAdviceModal hiển thị thêm phần "Thông tin đầu vào của bé" (loài, giống, cân nặng, thức ăn hiện tại, vấn đề sức khỏe) ngay phía trên Lời khuyên dinh dưỡng để người dùng tiện theo dõi ngữ cảnh tư vấn.
+  - Cập nhật model và controller phía backend (CustomerPetController.php) hỗ trợ trả về trường createdAt thời gian thực từ database.
+- Thiết kế lại Giao diện Biến thể & Tồn kho phía Admin (Redesign Product Variants & Inventory Tab):
+  - Thay thế bảng biến thể rộng hiện tại (đòi hỏi cuộn ngang) bằng danh sách Thẻ Biến thể (Variant Cards) thông thoáng, trực quan và thân thiện với người dùng.
+  - Thiết kế bố cục Thẻ Biến thể tự động co giãn 2 cột trên Desktop và xếp chồng 1 cột trên Mobile.
+  - Hiển thị đầy đủ tiêu đề "Biến thể #X" (hoặc "Biến thể mặc định" khi không có phân loại), nhãn SKU, trạng thái Bật/Tắt dạng badge, toggle kích hoạt, nút xóa (vô hiệu hóa kèm icon cảnh báo nếu có lịch sử đơn hàng), viền đỏ cảnh báo và huy hiệu "Cần sửa" khi có lỗi.
+  - Tích hợp tính năng đối chiếu và click nhảy nhanh trực tiếp từ thanh sidebar lỗi sang trường input bị lỗi tương ứng (bao gồm cả Tên sản phẩm, Danh mục, Ảnh và các trường biến thể) thông qua ID động và bộ hẹn giờ cuộn mượt.
+  - Bổ sung nút "Thêm phân loại" / "Bỏ phân loại" tại Action Bar trên cùng giúp kích hoạt hoặc gỡ bỏ các tùy chọn Phân loại 1/Phân loại 2 linh hoạt, tự động ẩn giao diện phân loại khi cả 2 tùy chọn trống.
+  - Nâng cấp bộ tạo SKU tự động riêng lẻ cho từng biến thể và nút tạo SKU hàng loạt toàn cục.
+  - Bổ sung kiểm tra trùng lặp SKU trong danh sách lỗi validation, đồng thời đổi tên các nhãn giá thành "Giá bán thực tế" (Giá khách thanh toán) và "Giá niêm yết / Giá trước khuyến mãi" (Có thể bỏ trống).
+  - Chuyển cảnh báo thiếu ảnh thành dạng cảnh báo không chặn lưu (warning severity), giúp admin lưu sản phẩm thành công dù chưa thêm hình ảnh.
+  - Loại bỏ hoàn toàn các nút "Tạo yêu cầu thủ công" (manual request creation), "Xuất danh sách" (export list) và modal drawer tạo thủ công tương ứng trên trang Yêu cầu Shopee của 3F Club.
+- Triển khai Cấu hình Hạng thành viên Admin 3F Club (Phase 2 - Admin Membership Tiers Configuration):
+  - Tích hợp bảng CSDL `loyalty_tiers` động thay thế cho các cấu hình cứng trước đây.
+  - Xây dựng model `LoyaltyTier` phục vụ việc truy vấn dữ liệu và cập nhật cấu hình linh hoạt.
+  - Cung cấp các API `GET /api/admin/3f-club/tiers` và `PUT /api/admin/3f-club/tiers/:id` với cơ chế validate nghiêm ngặt (redemption cap <= 100%, spend/orders >= 0, multiplier >= 1.0).
+  - Cải tiến giao diện quản lý Admin `MembershipTiersSection` liên kết trực tiếp với CSDL thực tế, loại bỏ tính năng tạo thêm hạng mới hoặc xóa các hạng hệ thống để đảm bảo tính nhất quán (Diamond được cấu hình read-only hoàn toàn).
+  - Cập nhật luồng tính toán thăng hạng trong `LoyaltyProductionModel` để áp dụng động các điều kiện được lưu trong CSDL.
+  - Refactored the modal preview card layout in `MembershipTiersSection` to render spend, orders, and redemption cap values instead of legacy minPoints.
+- Di chuyển Hạng thành viên 3F Club thành Tab riêng biệt bên trái (Dedicated 3F Club Navigation Tab):
+  - Chuyển toàn bộ các thành phần hiển thị 3F Club từ trang Hồ sơ cá nhân (`/account/profile`) sang một Tab riêng biệt "Thành viên 3F Club" ở thanh điều hướng bên trái (`/account/club`).
+  - Hiển thị thông tin hạng thành viên động (Member, Silver, Gold, Diamond) trực quan kèm hệ số nhân điểm (multiplier) và hạn mức thanh toán (cap percent) tại giao diện Tab mới sau khi số điện thoại được xác thực.
+  - Tích hợp thanh tiến trình kép hiển thị điều kiện thăng hạng động rolling 12 tháng (gồm doanh thu chi tiêu và số lượng đơn hàng cần đạt) trực tiếp lấy từ API `/api/customer/club/summary`.
+  - Triển khai giao diện Locked Teaser Card với thiết kế nét đứt tinh tế và biểu tượng Lock khi tài khoản chưa xác thực số điện thoại ở Tab mới.
+  - Bổ sung nút CTA "Xác thực số điện thoại ngay" trên teaser card, tự động chuyển hướng người dùng sang trang Hồ sơ cá nhân kèm tham số kích hoạt và cuộn mượt mà đến vùng xác thực liên kết liên hệ (`#phone-verification-section`).
+
+### Changed
+- Nâng cấp số lượng sản phẩm gợi ý trong phân hệ Tư vấn AI Pet Advisor:
+  - Tăng số lượng đề xuất từ tối đa 6 sản phẩm lên đúng **9 sản phẩm** phù hợp nhất (3 sản phẩm cho mỗi nhóm: Tiết kiệm - saving, Cân bằng - balanced, Cao cấp - premium) theo nhu cầu hiển thị nhiều lựa chọn hơn của khách hàng.
+  - Tăng giới hạn số lượng sản phẩm gửi lên AI phân tích từ 20 sản phẩm lên 30 sản phẩm (15 sản phẩm chó, 15 sản phẩm mèo cho luồng chung) để AI có nguồn sản phẩm thực tế dồi dào hơn phục vụ việc lựa chọn chính xác.
+
+### Fixed
+- Sửa lỗi hệ thống gián đoạn khi thực hiện tư vấn AI và hiển thị danh sách sản phẩm khuyên dùng:
+  - Di chuyển hoàn chỉnh logic gọi API Groq từ phía client (frontend) sang proxy an toàn phía backend (`/api/customer/pet-advisor/consult`) để bảo mật API key và phòng ngừa hoàn toàn lỗi 401/403/CORS khi gọi trực tiếp từ trình duyệt.
+  - Tự động cập nhật `GROQ_API_KEY` vào tệp cấu hình `.env` của máy chủ staging để loại bỏ hoàn toàn lỗi 401 Unauthorized từ cuộc gọi API của backend.
+  - Tối ưu hóa API tư vấn bằng cách gửi ID dạng số ngắn gọn của sản phẩm lên Groq thay vì slug dài dặc để tránh AI chép sai/hallucinate slug (dẫn đến khớp sản phẩm ra `null`). Khi trả về, hệ thống sẽ tự động đối chiếu ID số thành slug đầy đủ để đảm bảo khớp nối chính xác.
+  - Cải tiến system prompt để AI tư vấn chọn **tối đa 6 sản phẩm** (chia đều mỗi gói Tiết kiệm, Cân bằng, Cao cấp có 2 sản phẩm đề cử) giúp khách hàng có nhiều sự lựa chọn hơn.
+  - Tích hợp hàm `mapApiProduct` tại `AiResult.tsx` để đồng bộ cấu trúc dữ liệu của sản phẩm nhận từ backend, tự động ánh xạ `mainImageUrl` thành `image`, khắc phục triệt để lỗi hiển thị ảnh sản phẩm bị hỏng (broken image).
+  - Bổ sung cấu trúc dữ liệu đầy đủ cho các sản phẩm gợi ý mẫu trong `FALLBACK_RESULT` (gồm đầy đủ ảnh, tên, giá của Gói tiết kiệm và Gói cân bằng) giúp hiển thị danh sách sản phẩm đẹp mắt ngay cả khi hệ thống rơi vào trạng thái tư vấn mặc định do gián đoạn mạng.
+  - Khắc phục lỗi TPM (Tokens Per Minute) limit của tài khoản free khi gửi dữ liệu catalog quá dài (vượt quá 6,000 tokens của model `llama-3.1-8b-instant`).
+  - Nâng cấp model mặc định sang `llama-3.3-70b-versatile` có giới hạn TPM cao hơn (12,000 TPM) và chất lượng tư vấn tốt hơn.
+  - Tối ưu hóa kích thước prompt bằng cách giới hạn số lượng sản phẩm tải từ catalog xuống còn tối đa 20 sản phẩm (hoặc 10 sản phẩm mỗi loại cho luồng cả hai), giúp giảm hơn 40% dung lượng payload gửi đi và đảm bảo an toàn tuyệt đối trước giới hạn token.
+  - Khắc phục lỗi không hiển thị danh sách sản phẩm khuyên dùng ("Tổng 0 sản phẩm") sau khi nhận kết quả tư vấn AI do danh mục tĩnh trong `data/store.ts` bị làm rỗng sau khi chuyển sản phẩm sang MySQL backend.
+  - Cấu hình khớp nối sản phẩm đề cử với danh sách sản phẩm thật lấy từ API CSDL trong `groqApi.ts` và đính kèm trực tiếp thông tin đầy đủ vào thuộc tính `product`.
+  - Cập nhật `AiResult.tsx` để ưu tiên render từ trường `item.product` động này, hiển thị lại đầy đủ ảnh sản phẩm, tên, giá, nút chọn mua nhanh và tổng tiền chính xác.
+- Khôi phục và khóa tính năng sửa/xóa hạng Diamond tại Quản lý Hạng thành viên Admin (Restore and Read-Only Diamond Tier):
+  - Loại bỏ bộ lọc loại trừ "diamond" khỏi visibleTiers memo block để hiển thị chính xác vị trí của Diamond trong bảng Hạng thành viên.
+  - Vô hiệu hóa nút Sửa hạng (Pencil) và Tắt/Kích hoạt hạng (Trash2) cho dòng Diamond bằng thuộc tính disabled và style thiết kế grayed-out (`cursor-not-allowed`).
+  - Ánh xạ huy hiệu Diamond về tệp ảnh `badge_platinum.png` để hiển thị visual khiên đặc quyền premium giống giao diện trang chủ.
+  - Cập nhật bộ kiểm tra tên trùng lặp trong form tạo mới để báo lỗi chi tiết khi người dùng gõ tên "Diamond".
+- Sửa lỗi nút đối chiếu API bị lặp trong Modal Chi tiết yêu cầu Shopee (Duplicate Shopee API Reconciliation Buttons Fix):
+  - Loại bỏ hoàn toàn thuộc tính `action` ở tiêu đề `DetailCard` phần đối chiếu để xóa nút "Đối chiếu API" ở góc phải khi kết quả đối chiếu đã hiển thị.
+  - Tích hợp nút "Đối chiếu API" vào bên trong khung nét đứt khi trạng thái là chưa đối chiếu, và giữ nguyên nút "Đối chiếu lại API" dưới thông tin chi tiết khi đã đối chiếu, đảm bảo không bao giờ xuất hiện đồng thời hai nút.
+- Bổ sung phân trang cho danh sách Lịch sử giao dịch điểm Admin (Loyalty Transactions Pagination):
+  - Tích hợp bộ điều khiển phân trang (15 dòng mỗi trang) kèm hiển thị chỉ số dòng, số trang và các nút điều hướng (Trước/Sau) chuyên nghiệp trong [LoyaltyTransactionsSection.tsx](file:///c:/Users/Admin/Downloads/ccc/components/admin/loyalty/LoyaltyTransactionsSection.tsx), hỗ trợ hiển thị lịch sử điểm tối ưu và mượt mà hơn.
+- Vá lỗi hiển thị ảnh đại diện khách hàng (Customer Avatar Path Resolution Fix):
+  - Bổ sung hàm tiện ích `buildImageUrl` để giải mã và tự động ánh xạ các đường dẫn tương đối `/uploads/avatars/` của avatar thành URL tuyệt đối trỏ tới backend phục vụ hiển thị chính xác ở các trang client ([ProfilePage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/client/account/ProfilePage.tsx), [AccountShell.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/client/account/AccountShell.tsx) và [AccountLayout.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/client/account/AccountLayout.tsx)).
+  - Nâng cấp hàm `uploadAvatarImage` trong [UploadService.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Services/UploadService.php) của backend để tự động sinh URL tuyệt đối trỏ tới file ảnh dựa trên cấu hình `public_url`.
+- Sửa lỗi preflight CORS cho phương thức PATCH (PATCH Preflight CORS Issue):
+  - Bổ sung `PATCH` vào danh sách `Access-Control-Allow-Methods` trong file cấu hình CORS [cors.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Helpers/cors.php) ở backend, cho phép frontend thực hiện thành công các thao tác cập nhật hồ sơ cá nhân qua API.
+- Tích hợp huy hiệu hình khiên (Shield Badge Icons) từ trang chủ vào Quản lý Hạng thành viên Admin (Admin Loyalty Tiers Visual Upgrade):
+  - Thay thế biểu tượng Lucide `Award` mặc định bằng các hình ảnh huy hiệu hình khiên đặc quyền từ trang khách hàng (`badge_silver.png`, `badge_gold.png`, `badge_platinum.png`).
+  - Ánh xạ tự động tên hạng thành viên (không phân biệt chữ hoa thường) với tệp ảnh tương ứng và có cơ chế fallback về huy hiệu Silver cho các hạng khác.
+  - Cải tiến component `TierMedal` để hiển thị ảnh với hiệu ứng đổ bóng `shadow-[0_4px_12px_rgba(15,23,42,0.06)]` cao cấp, tối ưu kích thước để hiển thị đẹp mắt trong cả bảng danh sách và phần xem trước (modal preview).
+- Sửa lỗi định tuyến Trang soạn thảo Tin tức Admin (Admin News Editor Routing Registration Fix):
+  - Cấu hình và đăng ký đầy đủ các tuyến đường (routes) `/admin/news/new` và `/admin/news/:id/edit` liên kết tới trang soạn thảo [AdminNewsEditorPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/admin/AdminNewsEditorPage.tsx) bên trong [App.tsx](file:///c:/Users/Admin/Downloads/ccc/src/App.tsx), khắc phục triệt để lỗi hiển thị trang trắng (blank page) khi click nút "Viết bài mới" hoặc "Sửa bài" tại trang Quản lý Tin tức.
+
+### Removed
+- Loại bỏ 3 tab "Hạng thành viên", "Quà & Voucher" và "Cấu hình 3F Club" khỏi trang Admin 3F Club (Removed Tiers, Rewards, and Settings Tabs):
+  - Ẩn hoàn toàn các Tab điều hướng tương ứng và gỡ bỏ các panel JSX liên quan khỏi [ThreeFClubPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/admin/ThreeFClubPage.tsx) để phục vụ quá trình cấu trúc lại tính năng sau này.
+  - Dọn dẹp sạch các component con liên quan nhập khẩu (`MembershipTiersSection`, `LoyaltyRewardsSection`, `LoyaltyRedemptionsSection`, `ClubSettingsSection`).
+- Loại bỏ Tab "Cấu hình điểm" trong Admin 3F Club (Removed Points Config Tab):
+  - Loại bỏ hoàn toàn Tab "Cấu hình điểm" (Coins tab) và component cấu hình quy tắc đổi điểm khỏi trang [ThreeFClubPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/admin/ThreeFClubPage.tsx) theo yêu cầu tinh giản luồng quản trị.
+
 ## [2026-06-21]
 ### Added
 - Nâng cấp hệ thống Quản lý Quy trình & Trạng thái Đơn hàng đa chiều (CRM + Loyalty + Automation-ready):

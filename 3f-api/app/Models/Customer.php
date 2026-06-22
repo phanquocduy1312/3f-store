@@ -301,11 +301,9 @@ class Customer {
         $stmt->execute($params);
         $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
+        $loyaltyProd = new \App\Models\LoyaltyProductionModel();
         foreach ($items as &$item) {
-            $pts = (int)$item['total_points'];
-            $item['tier'] = 'Silver';
-            if ($pts >= 15000) $item['tier'] = 'Platinum';
-            elseif ($pts >= 5000) $item['tier'] = 'Gold';
+            $item['tier'] = $loyaltyProd->calculateCustomerTierName((int)$item['id']);
         }
         
         return [
@@ -389,11 +387,9 @@ class Customer {
         $fp = fopen('php://output', 'w');
         fputcsv($fp, ['ID', 'Ho Ten', 'Email', 'So Dien Thoai', 'Trang Thai', 'Hang Thanh Vien', 'Tong Diem', 'Tong Don', 'Tong Chi Tieu', 'Ngay Tham Gia', 'Dang Nhap Lan Cuoi']);
         
+        $loyaltyProd = new \App\Models\LoyaltyProductionModel();
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $pts = (int)$row['total_points'];
-            $tier = 'Silver';
-            if ($pts >= 15000) $tier = 'Platinum';
-            elseif ($pts >= 5000) $tier = 'Gold';
+            $tier = $loyaltyProd->calculateCustomerTierName((int)$row['id']);
             
             fputcsv($fp, [
                 $row['id'],

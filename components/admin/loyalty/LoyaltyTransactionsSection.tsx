@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   getAdminLoyaltyTransactions,
   type CustomerPointTransaction,
@@ -42,6 +42,13 @@ export function LoyaltyTransactionsSection() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchPhone, typeFilter, dateFrom, dateTo]);
+
   const { toast } = useToast();
 
   const fetchTransactions = async () => {
@@ -64,6 +71,14 @@ export function LoyaltyTransactionsSection() {
   useEffect(() => {
     fetchTransactions();
   }, [typeFilter, dateFrom, dateTo]);
+
+  const totalItems = transactions.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const activePage = Math.min(currentPage, totalPages);
+
+  const startIndex = (activePage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const paginatedTransactions = transactions.slice(startIndex, endIndex);
 
   return (
     <div className="space-y-4">
@@ -129,11 +144,11 @@ export function LoyaltyTransactionsSection() {
                     </div>
                   </td>
                 </tr>
-              ) : transactions.length === 0 ? (
+              ) : paginatedTransactions.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-10 text-center text-[#64748B]">Chưa có giao dịch điểm nào được ghi nhận.</td>
                 </tr>
-              ) : transactions.map((trans) => {
+              ) : paginatedTransactions.map((trans) => {
                 const pointsFormatted = trans.points > 0 ? `+${trans.points}` : `${trans.points}`;
                 const pointsClass = trans.points > 0 ? "text-green-600" : "text-red-500";
 
@@ -156,6 +171,57 @@ export function LoyaltyTransactionsSection() {
             </tbody>
           </table>
         </div>
+
+        {totalItems > 0 && (
+          <div className="px-6 py-4 border-t border-[#DCEBFF] flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#F8FBFF]/50">
+            <span className="text-[11px] font-semibold text-[#64748B]">
+              Hiển thị <span className="text-slate-700">{startIndex + 1}</span>–
+              <span className="text-slate-700">{endIndex}</span> trong tổng số{" "}
+              <span className="text-slate-700">{totalItems}</span> giao dịch
+            </span>
+
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={activePage === 1}
+                className="h-8 w-8 rounded-lg border border-[#DCEBFF] flex items-center justify-center text-[#64748B] hover:bg-white hover:text-[#0B1F3A] disabled:opacity-40 disabled:hover:bg-transparent transition shadow-sm bg-white"
+              >
+                <ChevronLeft size={14} />
+              </button>
+
+              {Array.from({ length: totalPages }, (_, idx) => {
+                const pageNum = idx + 1;
+                if (totalPages > 5 && Math.abs(pageNum - activePage) > 2 && pageNum !== 1 && pageNum !== totalPages) {
+                  return null;
+                }
+                return (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`h-8 min-w-8 px-2 rounded-lg text-xs font-bold transition shadow-sm ${
+                      activePage === pageNum
+                        ? "bg-[#0B1F3A] text-white border border-[#0B1F3A]"
+                        : "border border-[#DCEBFF] text-[#64748B] hover:bg-white hover:text-[#0B1F3A] bg-white"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={activePage === totalPages}
+                className="h-8 w-8 rounded-lg border border-[#DCEBFF] flex items-center justify-center text-[#64748B] hover:bg-white hover:text-[#0B1F3A] disabled:opacity-40 disabled:hover:bg-transparent transition shadow-sm bg-white"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

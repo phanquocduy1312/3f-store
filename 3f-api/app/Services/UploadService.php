@@ -233,8 +233,12 @@ class UploadService {
         }
 
         $relativeUrl = "/uploads/avatars/" . $storedFilename;
+        $config = require dirname(__DIR__, 2) . '/config/config.php';
+        $publicBaseUrl = rtrim($config['app']['public_url'] ?? '', '/');
+        $publicUrl = $publicBaseUrl ? $publicBaseUrl . $relativeUrl : $relativeUrl;
+
         return [
-            "image_url" => $relativeUrl
+            "image_url" => $publicUrl
         ];
     }
 

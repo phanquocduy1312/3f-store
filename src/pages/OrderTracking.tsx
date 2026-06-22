@@ -273,7 +273,7 @@ export function OrderTracking() {
                 <div className="text-2xl font-black text-[#d97706]">
                   {activeOrder.order_status === "completed"
                     ? `+${activeOrder.loyalty_points_earned}`
-                    : `+${Math.floor(parseFloat(activeOrder.total) / 10000)}`}
+                    : `+${Math.floor(parseFloat(activeOrder.total) / 200)}`}
                 </div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-0.5">points</div>
               </div>
