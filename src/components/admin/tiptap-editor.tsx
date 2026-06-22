@@ -32,7 +32,7 @@ export function TiptapEditor({ value = "", onChange, onImageUpload }: TiptapEdit
     extensions: [
       StarterKit.configure({
         heading: {
-          levels: [2, 3, 4],
+          levels: [1, 2, 3, 4],
         },
       }),
       Underline,
@@ -163,6 +163,13 @@ export function TiptapEditor({ value = "", onChange, onImageUpload }: TiptapEdit
       </div>
 
       <style>{`
+        .blog-tiptap-content .ProseMirror h1, .blog-tiptap-preview h1 {
+          font-size: 1.85rem !important;
+          font-weight: 850 !important;
+          margin: 1.75rem 0 1rem !important;
+          line-height: 1.25 !important;
+          color: #0f172a !important;
+        }
         .blog-tiptap-content .ProseMirror h2, .blog-tiptap-preview h2 {
           font-size: 1.5rem !important;
           font-weight: 700 !important;

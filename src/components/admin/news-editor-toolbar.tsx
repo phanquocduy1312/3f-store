@@ -1,10 +1,10 @@
 import React from "react";
 import { Editor } from "@tiptap/react";
 import { 
-  Bold, Italic, Underline as UnderlineIcon, Strikethrough, Heading2, Heading3, Heading4, Pilcrow,
+  Bold, Italic, Underline as UnderlineIcon, Strikethrough, Heading1, Heading2, Heading3, Heading4, Pilcrow,
   List, ListOrdered, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Link2, Unlink, Image as ImageIcon, Quote, Minus, Table as TableIcon, Undo2, Redo2, 
-  Highlighter, CheckSquare, Sparkles, Trash2
+  Highlighter, Sparkles, Trash2
 } from "lucide-react";
 
 interface NewsEditorToolbarProps {
@@ -112,6 +112,7 @@ export function NewsEditorToolbar({ editor, onImageUpload }: NewsEditorToolbarPr
       <div className="h-5 w-[1px] bg-slate-200 mx-1" />
 
       {btn(editor.isActive("paragraph"), () => editor.chain().focus().setParagraph().run(), "Đoạn văn", <Pilcrow size={14} />)}
+      {btn(editor.isActive("heading", { level: 1 }), () => editor.chain().focus().toggleHeading({ level: 1 }).run(), "Tiêu đề H1", <Heading1 size={14} />)}
       {btn(editor.isActive("heading", { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run(), "Tiêu đề H2", <Heading2 size={14} />)}
       {btn(editor.isActive("heading", { level: 3 }), () => editor.chain().focus().toggleHeading({ level: 3 }).run(), "Tiêu đề H3", <Heading3 size={14} />)}
       {btn(editor.isActive("heading", { level: 4 }), () => editor.chain().focus().toggleHeading({ level: 4 }).run(), "Tiêu đề H4", <Heading4 size={14} />)}
@@ -127,7 +128,6 @@ export function NewsEditorToolbar({ editor, onImageUpload }: NewsEditorToolbarPr
 
       {btn(editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), "Danh sách không số", <List size={14} />)}
       {btn(editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run(), "Danh sách có số", <ListOrdered size={14} />)}
-      {btn(editor.isActive("taskList"), () => editor.chain().focus().toggleTaskList().run(), "Danh sách checklist", <CheckSquare size={14} />)}
 
       <div className="h-5 w-[1px] bg-slate-200 mx-1" />
 
