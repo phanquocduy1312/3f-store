@@ -670,99 +670,46 @@ function ThreeFClub({
 		!isFormValid || 
 		isSubmitting;
 
-	const mappedTiers: Tier[] = dynamicTiers.length > 0
-		? dynamicTiers
-			.filter((t: any) => t.key_name !== "member")
-			.map((t: any) => {
-				const key = t.key_name.toLowerCase();
-				let tone: TierTone = "silver";
-				let badge = a.badgeSilver;
-				let action = "Đăng ký ngay";
-				
-				if (key === "silver") {
-					tone = "silver";
-					badge = a.badgeSilver;
-					action = "Đăng ký ngay";
-				} else if (key === "gold") {
-					tone = "gold";
-					badge = a.badgeGold;
-					action = "Tham gia Gold";
-				} else if (key === "diamond" || key === "platinum") {
-					tone = "platinum";
-					badge = a.badgePlatinum;
-					action = "Lên hạng Diamond";
-				}
-				
-				// Spend threshold formatting
-				const minSpendText = Number(t.min_spend).toLocaleString("vi-VN") + "đ";
-				const minOrdersText = t.min_orders ? `${t.min_orders} đơn` : "";
-				const range = `${minSpendText}${minOrdersText ? ` hoặc ${minOrdersText}` : ""}`;
-				
-				// Parse benefits
-				let benefits: string[] = [];
-				const isTechnicalOnly = !t.benefits || t.benefits.includes("Chi tiêu hợp lệ") || t.benefits.includes("Xác thực SĐT");
-				if (!isTechnicalOnly && t.benefits) {
-					benefits = t.benefits.split(/(?:[;\n]|\.\s+)/).map((b: string) => b.trim()).filter(Boolean);
-				}
-				if (benefits.length === 0) {
-					if (key === "silver") benefits = ["Tích điểm mỗi đơn hàng", "Voucher chào mừng", "Ưu đãi sinh nhật cho bé", "Nhận tư vấn AI"];
-					else if (key === "gold") benefits = ["Giảm thêm 3%", "Freeship đơn đủ điều kiện", "Quà sinh nhật hấp dẫn", "Ưu tiên ưu đãi độc quyền"];
-					else benefits = ["Giảm thêm 5%", "Freeship toàn quốc", "Quà VIP cho Boss", "Ưu tiên xử lý đơn hàng", "Ưu đãi riêng theo hồ sơ thú cưng"];
-				}
-				
-				return {
-					tone,
-					name: t.name.toUpperCase(),
-					range,
-					badge,
-					action,
-					benefits,
-				};
-			})
-		: [
-			{
-				tone: "silver",
-				name: "SILVER",
-				range: "2.000.000đ hoặc 3 đơn",
-				badge: a.badgeSilver,
-				action: "Đăng ký ngay",
-				benefits: [
-					"Tích điểm mỗi đơn hàng",
-					"Voucher chào mừng",
-					"Ưu đãi sinh nhật cho bé",
-					"Nhận tư vấn AI",
-				],
-			},
-			{
-				tone: "gold",
-				name: "GOLD",
-				range: "5.000.000đ hoặc 6 đơn",
-				badge: a.badgeGold,
-				action: "Tham gia Gold",
-				benefits: [
-					"Giảm thêm 3%",
-					"Freeship đơn đủ điều kiện",
-					"Quà sinh nhật hấp dẫn",
-					"Ưu tiên ưu đãi độc quyền",
-				],
-			},
-			{
-				tone: "platinum",
-				name: "DIAMOND",
-				range: "10.000.000đ hoặc 12 đơn",
-				badge: a.badgeDiamond || "/assets/images/badge_diamond.png",
-				action: "Lên hạng Diamond",
-				benefits: [
-					"Giảm thêm 5%",
-					"Freeship toàn quốc",
-					"Quà VIP cho Boss",
-					"Ưu tiên xử lý đơn hàng",
-					"Ưu đãi riêng theo hồ sơ thú cưng",
-				],
-			},
-		];
-
-	const tiers = mappedTiers;
+	const tiers: Tier[] = [
+		{
+			tone: "silver",
+			name: "SILVER",
+			range: "2.000.000đ hoặc 3 đơn",
+			badge: a.badgeSilver,
+			action: "Đăng ký ngay",
+			benefits: [
+				"Tích điểm tốt hơn trên kênh riêng.",
+				"Được dùng điểm tối đa 10% giá trị đơn.",
+				"Có voucher chăm sóc định kỳ.",
+			],
+		},
+		{
+			tone: "gold",
+			name: "GOLD",
+			range: "5.000.000đ hoặc 6 đơn",
+			badge: a.badgeGold,
+			action: "Tham gia Gold",
+			benefits: [
+				"Ưu đãi riêng cho combo lớn.",
+				"Được dùng điểm tối đa 15% giá trị đơn.",
+				"Được nhắc lịch mua lại theo lịch ăn / cát / pate của pet.",
+				"Được ưu tiên nhận deal sớm.",
+			],
+		},
+		{
+			tone: "platinum",
+			name: "DIAMOND",
+			range: "10.000.000đ",
+			badge: a.badgePlatinum || "/assets/images/badge_platinum.png",
+			action: "Lên hạng Diamond",
+			benefits: [
+				"Nhóm chăm sóc riêng / ưu tiên CSKH.",
+				"Được dùng điểm tối đa 20% giá trị đơn.",
+				"Có deal riêng cho khách nuôi nhiều bé.",
+				"Được ưu tiên giữ hàng, deal hot hoặc sản phẩm mới.",
+			],
+		},
+	];
 
 	const topBenefits = [
 		{
