@@ -34,6 +34,24 @@ const PAYMENT_MAP: Record<string, { label: string; color: string }> = {
   refunded: { label: "Đã hoàn tiền", color: "text-gray-600" },
 };
 
+const normalizeOrderCode = (code: string): string => {
+  let clean = code.trim().replace(/^#+/, "").replace(/\s+/g, "").toUpperCase();
+  if (!clean) return "";
+  
+  // If it already starts with "3F-"
+  if (clean.startsWith("3F-")) {
+    return clean;
+  }
+  
+  // If it starts with "3F" (but not "3F-"), e.g. "3F123456"
+  if (clean.startsWith("3F")) {
+    return "3F-" + clean.substring(2);
+  }
+  
+  // Otherwise, prepend "3F-" (e.g. "653989" -> "3F-653989", "TEST-99" -> "3F-TEST-99")
+  return "3F-" + clean;
+};
+
 export function OrderTracking() {
   const { orderCode } = useParams<{ orderCode: string }>();
   const navigate = useNavigate();
@@ -45,14 +63,15 @@ export function OrderTracking() {
   // If orderCode in URL, fetch immediately
   useEffect(() => {
     if (orderCode) {
+      const normalizedCode = normalizeOrderCode(orderCode);
       setIsLoading(true);
       setError(null);
-      getOrderDetails(orderCode)
+      getOrderDetails(normalizedCode)
         .then((res) => {
           if (res.success) {
             setActiveOrder(res.data);
           } else {
-            setError("Không tìm thấy thông tin đơn hàng.");
+            setError(`Không tìm thấy thông tin đơn hàng ${normalizedCode}. Vui lòng kiểm tra lại.`);
           }
         })
         .catch((err) => {
@@ -73,7 +92,8 @@ export function OrderTracking() {
       toast.error("Vui lòng nhập mã đơn hàng");
       return;
     }
-    navigate(`/orders/${code}`);
+    const normalized = normalizeOrderCode(code);
+    navigate(`/orders/${normalized}`);
   };
 
   const activeStatus = activeOrder ? STATUS_MAP[activeOrder.order_status] || { label: activeOrder.order_status, color: "text-gray-600", bg: "bg-gray-50" } : null;
@@ -104,7 +124,7 @@ export function OrderTracking() {
                 type="text"
                 value={orderCodeQuery}
                 onChange={(e) => setOrderCodeQuery(e.target.value)}
-                placeholder="Ví dụ: 3F10001"
+                placeholder="Ví dụ: 3F-123456"
                 className="flex-1 rounded-2xl border border-gray-200 px-4 py-3.5 text-sm font-semibold outline-none focus:border-forest/50"
               />
               <button
