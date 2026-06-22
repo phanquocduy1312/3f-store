@@ -701,7 +701,7 @@ function ThreeFClub({
 				// Parse benefits
 				let benefits: string[] = [];
 				if (t.benefits) {
-					benefits = t.benefits.split(/[;.\n]+/).map((b: string) => b.trim()).filter(Boolean);
+					benefits = t.benefits.split(/(?:[;\n]|\.\s+)/).map((b: string) => b.trim()).filter(Boolean);
 				}
 				if (benefits.length === 0) {
 					if (key === "silver") benefits = ["Tích điểm mỗi đơn hàng", "Voucher chào mừng", "Ưu đãi sinh nhật cho bé", "Nhận tư vấn AI"];
