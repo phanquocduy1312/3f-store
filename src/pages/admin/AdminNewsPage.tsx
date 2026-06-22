@@ -3,7 +3,6 @@ import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { 
   adminGetBlogPosts, 
-  adminCreateBlogPost, 
   adminUpdateBlogPost, 
   adminDeleteBlogPost, 
   adminUploadBlogImage, 
@@ -12,7 +11,7 @@ import {
 } from "@/src/api/blogApi";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Plus, Edit2, Trash2, Search, Eye, RefreshCw, FileText, Sparkles, CheckSquare, ChevronLeft, ChevronRight, ExternalLink, MoreHorizontal, Copy, EyeOff } from "lucide-react";
+import { Plus, Edit2, Trash2, Search, Eye, RefreshCw, FileText, Sparkles, CheckSquare, ChevronLeft, ChevronRight, MoreHorizontal, EyeOff } from "lucide-react";
 
 export function AdminNewsPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -101,26 +100,7 @@ export function AdminNewsPage() {
     }
   };
 
-  const handleDuplicate = async (post: BlogPost) => {
-    try {
-      const cloned = {
-        ...post,
-        id: undefined,
-        title: `${post.title} (Bản sao)`,
-        slug: `${post.slug}-copy-${Math.floor(Math.random() * 1000)}`,
-        status: "draft" as const,
-      };
-      const res = await adminCreateBlogPost(cloned);
-      if (res.success) {
-        toast.success("Nhân bản bài viết thành công!");
-        loadData();
-      } else {
-        toast.error(res.message || "Lỗi nhân bản bài viết");
-      }
-    } catch (err) {
-      toast.error("Lỗi kết nối");
-    }
-  };
+
 
   const handleTogglePublish = async (post: BlogPost) => {
     try {
@@ -519,16 +499,6 @@ export function AdminNewsPage() {
                               <>
                                 <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
                                 <div className="absolute right-6 mt-1 w-36 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-20 text-left">
-                                  <a
-                                    href={`/tin-tuc/${post.slug}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={() => setActiveDropdown(null)}
-                                    className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition"
-                                  >
-                                    <ExternalLink size={12} />
-                                    Xem web
-                                  </a>
                                   <button
                                     onClick={() => {
                                       navigate(`/admin/news/${post.id}/edit`);
@@ -538,16 +508,6 @@ export function AdminNewsPage() {
                                   >
                                     <Edit2 size={12} />
                                     Sửa bài
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      handleDuplicate(post);
-                                      setActiveDropdown(null);
-                                    }}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition text-left"
-                                  >
-                                    <Copy size={12} />
-                                    Nhân bản
                                   </button>
                                   <button
                                     onClick={() => {

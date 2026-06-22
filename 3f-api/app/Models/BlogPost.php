@@ -96,11 +96,11 @@ class BlogPost {
         // Determine sort order
         $orderSql = "published_at DESC, created_at DESC"; // Default for public
         if ($isAdmin) {
-            $orderSql = "updated_at DESC, created_at DESC, id DESC"; // Default for admin
+            $orderSql = "COALESCE(updated_at, created_at) DESC, created_at DESC, id DESC"; // Default for admin
         }
 
         if ($sort === "updated_at") {
-            $orderSql = "updated_at DESC, created_at DESC, id DESC";
+            $orderSql = "COALESCE(updated_at, created_at) DESC, created_at DESC, id DESC";
         } elseif ($sort === "published_at") {
             $orderSql = "published_at DESC, created_at DESC, id DESC";
         } elseif ($sort === "views") {
@@ -154,8 +154,8 @@ class BlogPost {
      */
     public function create($data) {
         $sql = "
-            INSERT INTO blog_posts (title, seo_title, slug, summary, seo_description, content, thumbnail_url, thumbnail_alt, author, status, category, category_slug, toc_enabled, toc_title, seo_keywords, published_at, seo_score)
-            VALUES (:title, :seo_title, :slug, :summary, :seo_description, :content, :thumbnail_url, :thumbnail_alt, :author, :status, :category, :category_slug, :toc_enabled, :toc_title, :seo_keywords, :published_at, :seo_score)
+            INSERT INTO blog_posts (title, seo_title, slug, summary, seo_description, content, thumbnail_url, thumbnail_alt, author, status, category, category_slug, toc_enabled, toc_title, seo_keywords, published_at, seo_score, created_at, updated_at)
+            VALUES (:title, :seo_title, :slug, :summary, :seo_description, :content, :thumbnail_url, :thumbnail_alt, :author, :status, :category, :category_slug, :toc_enabled, :toc_title, :seo_keywords, :published_at, :seo_score, NOW(), NOW())
         ";
         $stmt = $this->db->prepare($sql);
         $success = $stmt->execute([
