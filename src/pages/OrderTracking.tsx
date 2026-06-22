@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams, Link } from "react-router-dom";
-import { ArrowLeft, Calendar, CheckCircle2, Clock, MapPin, Package, Search, ShoppingBag, ShieldCheck, CreditCard, Award } from "lucide-react";
-import { getOrderDetails, checkOrdersByPhone, OrderDetail } from "@/src/api/ordersApi";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Calendar, CheckCircle2, Clock, MapPin, Package, Search, CreditCard, Award } from "lucide-react";
+import { getOrderDetails, OrderDetail } from "@/src/api/ordersApi";
 import { Image } from "@/components/Image";
 import { toast } from "sonner";
 
@@ -36,11 +36,9 @@ const PAYMENT_MAP: Record<string, { label: string; color: string }> = {
 
 export function OrderTracking() {
   const { orderCode } = useParams<{ orderCode: string }>();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [phoneQuery, setPhoneQuery] = useState(searchParams.get("phone") || "");
-  const [ordersList, setOrdersList] = useState<OrderDetail[]>([]);
+  const navigate = useNavigate();
+  const [orderCodeQuery, setOrderCodeQuery] = useState("");
   const [activeOrder, setActiveOrder] = useState<OrderDetail | null>(null);
-  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,7 +51,6 @@ export function OrderTracking() {
         .then((res) => {
           if (res.success) {
             setActiveOrder(res.data);
-            setPhoneQuery(res.data.phone);
           } else {
             setError("Không tìm thấy thông tin đơn hàng.");
           }
@@ -66,42 +63,17 @@ export function OrderTracking() {
         });
     } else {
       setActiveOrder(null);
-      // If phone in URL params, check by phone
-      const phoneParam = searchParams.get("phone");
-      if (phoneParam) {
-        handleSearchByPhone(phoneParam);
-      }
     }
-  }, [orderCode, searchParams]);
+  }, [orderCode]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneQuery.trim()) {
-      toast.error("Vui lòng nhập số điện thoại");
+    const code = orderCodeQuery.trim();
+    if (!code) {
+      toast.error("Vui lòng nhập mã đơn hàng");
       return;
     }
-    setSearchParams({ phone: phoneQuery });
-    handleSearchByPhone(phoneQuery);
-  };
-
-  const handleSearchByPhone = (phoneNum: string) => {
-    setIsLoading(true);
-    setError(null);
-    checkOrdersByPhone(phoneNum)
-      .then((res) => {
-        if (res.success) {
-          setOrdersList(res.data);
-          if (res.data.length === 0) {
-            setError("Không tìm thấy đơn hàng nào liên kết với số điện thoại này.");
-          }
-        }
-      })
-      .catch((err) => {
-        setError(err.message || "Lỗi tìm kiếm đơn hàng.");
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+    navigate(`/orders/${code}`);
   };
 
   const activeStatus = activeOrder ? STATUS_MAP[activeOrder.order_status] || { label: activeOrder.order_status, color: "text-gray-600", bg: "bg-gray-50" } : null;
@@ -113,8 +85,8 @@ export function OrderTracking() {
         
         {/* Back Link */}
         <div className="mb-6">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm font-bold text-forest hover:opacity-85">
-            <ArrowLeft size={16} /> Quay lại trang chủ
+          <Link to={orderCode ? "/order-check" : "/"} className="inline-flex items-center gap-2 text-sm font-bold text-forest hover:opacity-85">
+            <ArrowLeft size={16} /> {orderCode ? "Quay lại tra cứu" : "Quay lại trang chủ"}
           </Link>
         </div>
 
@@ -123,16 +95,16 @@ export function OrderTracking() {
           {orderCode ? `Đơn hàng ${orderCode}` : "Tra cứu đơn hàng"}
         </h1>
 
-        {/* Phone Lookup Form (always visible at top of lookup page) */}
+        {/* Order Code Lookup Form (always visible at top of lookup page) */}
         {!orderCode && (
           <div className="rounded-3xl border border-forest/10 bg-white p-6 shadow-glass-sm mb-8">
-            <h2 className="text-base font-black text-ink mb-4">Nhập số điện thoại để tra cứu đơn hàng</h2>
+            <h2 className="text-base font-black text-ink mb-4">Nhập mã đơn hàng để tra cứu đơn hàng</h2>
             <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-4">
               <input
-                type="tel"
-                value={phoneQuery}
-                onChange={(e) => setPhoneQuery(e.target.value)}
-                placeholder="Ví dụ: 0987654321"
+                type="text"
+                value={orderCodeQuery}
+                onChange={(e) => setOrderCodeQuery(e.target.value)}
+                placeholder="Ví dụ: 3F10001"
                 className="flex-1 rounded-2xl border border-gray-200 px-4 py-3.5 text-sm font-semibold outline-none focus:border-forest/50"
               />
               <button
@@ -157,45 +129,6 @@ export function OrderTracking() {
         {error && !isLoading && (
           <div className="rounded-2xl bg-red-50 border border-red-100 p-4 text-center text-sm font-semibold text-red-600 mb-8">
             {error}
-          </div>
-        )}
-
-        {/* Search results list (when on check page and activeOrder is null) */}
-        {!orderCode && !activeOrder && ordersList.length > 0 && !isLoading && (
-          <div className="space-y-4">
-            <h3 className="font-black text-lg text-ink">Danh sách đơn hàng tìm thấy ({ordersList.length})</h3>
-            <div className="grid grid-cols-1 gap-4">
-              {ordersList.map((ord) => {
-                const stat = STATUS_MAP[ord.order_status] || { label: ord.order_status, color: "text-gray-600", bg: "bg-gray-50" };
-                return (
-                  <div 
-                    key={ord.id} 
-                    className="rounded-3xl border border-forest/10 bg-white p-6 shadow-glass-sm hover:shadow-glass transition flex flex-col sm:flex-row sm:items-center justify-between gap-6"
-                  >
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-black text-forest text-base">{ord.order_code}</span>
-                        <span className={`rounded-full px-3 py-1 text-xs font-black ${stat.bg} ${stat.color}`}>
-                          {stat.label}
-                        </span>
-                      </div>
-                      <div className="mt-2 text-xs font-semibold text-gray-400 flex items-center gap-1.5">
-                        <Calendar size={13} /> {new Date(ord.created_at).toLocaleDateString("vi-VN")}
-                      </div>
-                      <div className="mt-1.5 text-xs text-gray-500 font-medium">
-                        Số sản phẩm: {ord.items.reduce((acc, it) => acc + it.quantity, 0)} • Tổng tiền: <span className="font-bold text-ink">{(parseFloat(ord.total)).toLocaleString("vi-VN")}đ</span>
-                      </div>
-                    </div>
-                    <Link
-                      to={`/orders/${ord.order_code}`}
-                      className="rounded-xl border border-forest px-5 py-2 text-xs font-bold text-forest hover:bg-forest/5 text-center"
-                    >
-                      Xem chi tiết
-                    </Link>
-                  </div>
-                );
-              })}
-            </div>
           </div>
         )}
 
