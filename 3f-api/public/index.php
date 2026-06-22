@@ -144,6 +144,10 @@ try {
     $router->post("/api/customer/auth/login-password", [CustomerAuthController::class, "loginPassword"]);
     $router->post("/api/customer/auth/request-otp", [CustomerAuthController::class, "requestOtp"]);
     $router->post("/api/customer/auth/verify-otp", [CustomerAuthController::class, "verifyOtp"]);
+    
+    // Customer OTP Endpoints
+    $router->post("/api/customer/otp/send", [\App\Controllers\OtpController::class, "send"]);
+    $router->post("/api/customer/otp/verify", [\App\Controllers\OtpController::class, "verify"]);
     $router->post("/api/customer/auth/complete-phone-register", [CustomerAuthController::class, "completePhoneRegister"]);
     $router->get("/api/customer/auth/me", [CustomerAuthController::class, "me"]);
     $router->post("/api/customer/auth/logout", [CustomerAuthController::class, "logout"]);
@@ -164,6 +168,7 @@ try {
     $router->post("/api/customer/wishlist/toggle", [CustomerWishlistController::class, "toggleWishlist"]);
     $router->post("/api/customer/wishlist/sync", [CustomerWishlistController::class, "syncWishlist"]);
     $router->get("/api/run-wishlist-migration", [CustomerWishlistController::class, "runWishlistMigration"]);
+    $router->get("/api/run-workflow-migration", [WorkflowController::class, "runWorkflowMigration"]);
 
     // Customer Address Book Routes
     $router->get("/api/customer/addresses", [CustomerAddressController::class, "list"]);
@@ -218,6 +223,9 @@ try {
     $router->post("/api/admin/orders/update-status", [OrderController::class, "adminUpdateStatus"]);
     $router->post("/api/admin/orders/mark-paid", [OrderController::class, "adminMarkPaid"]);
     $router->get("/api/admin/orders/:id/allowed-transitions", [WorkflowController::class, "orderAllowedTransitions"]);
+    $router->get("/api/admin/orders/status-config", [WorkflowController::class, "getOrderStatusConfig"]);
+    $router->put("/api/admin/orders/status-config/statuses/:id", [WorkflowController::class, "updateOrderStatusConfig"]);
+    $router->put("/api/admin/orders/status-config/transitions/:id", [WorkflowController::class, "updateOrderTransitionConfig"]);
 
     // Workflow Configuration Settings Routes
     $router->get("/api/admin/workflows/statuses", [WorkflowController::class, "listStatuses"]);
@@ -284,6 +292,11 @@ try {
     $router->get("/api/admin/shopee/connection-status", [ShopeeAuthController::class, "connectionStatus"]);
 
     // Loyalty Rule Config Routes
+    $router->get("/api/admin/loyalty/settings", [LoyaltyController::class, "getSettings"]);
+    $router->post("/api/admin/loyalty/settings", [LoyaltyController::class, "saveSettings"]);
+    $router->get("/api/admin/3f-club/settings", [LoyaltyController::class, "getSettings"]);
+    $router->put("/api/admin/3f-club/settings", [LoyaltyController::class, "saveSettings"]);
+    $router->post("/api/admin/3f-club/settings", [LoyaltyController::class, "saveSettings"]);
     $router->get("/api/admin/loyalty/point-rules", [LoyaltyController::class, "list"]);
     $router->post("/api/admin/loyalty/point-rules", [LoyaltyController::class, "create"]);
     $router->post("/api/admin/loyalty/point-rules/update", [LoyaltyController::class, "update"]);
@@ -308,10 +321,15 @@ try {
     $router->post("/api/admin/loyalty/redemptions/fulfill", [LoyaltyController::class, "fulfillRedemption"]);
     $router->get("/api/admin/loyalty/transactions", [LoyaltyController::class, "listTransactionsAdmin"]);
     $router->get("/api/loyalty/transactions", [LoyaltyController::class, "listTransactionsClient"]);
+    $router->get("/api/loyalty/tiers", [LoyaltyController::class, "listLoyaltyTiersPublic"]);
+    $router->get("/api/loyalty/point-rules/shopee", [LoyaltyController::class, "getShopeePointRulePublic"]);
     $router->get("/api/admin/loyalty/voucher-pool", [LoyaltyController::class, "listVoucherPool"]);
     $router->post("/api/admin/loyalty/voucher-pool/import", [LoyaltyController::class, "importVoucherPool"]);
     $router->get("/api/admin/loyalty/tiers", [LoyaltyController::class, "listTiers"]);
     $router->post("/api/admin/loyalty/tiers/save", [LoyaltyController::class, "saveTier"]);
+    $router->get("/api/admin/3f-club/tiers", [LoyaltyController::class, "listLoyaltyTiers"]);
+    $router->put("/api/admin/3f-club/tiers/:id", [LoyaltyController::class, "updateLoyaltyTier"]);
+    $router->post("/api/admin/3f-club/tiers/:id", [LoyaltyController::class, "updateLoyaltyTier"]);
     $router->post("/api/admin/loyalty/tiers/active", [LoyaltyController::class, "setTierActive"]);
     $router->get("/api/admin/loyalty/tiers/preview", [LoyaltyController::class, "previewTier"]);
     $router->get("/api/admin/loyalty/campaigns", [LoyaltyController::class, "listCampaigns"]);

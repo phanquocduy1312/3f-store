@@ -166,6 +166,10 @@ def deploy():
     if os.path.exists(seed_file):
         upload_file(seed_file, 'data/products.json')
 
+    diamond_badge_file = os.path.join(project_root, 'public', 'assets', 'images', 'badge_diamond.png')
+    if os.path.exists(diamond_badge_file):
+        upload_file(diamond_badge_file, 'public/assets/images/badge_diamond.png')
+
     ftp.quit()
     print("Deploy completed.")
     print(f"Summary: Uploaded {uploaded_count} files, Skipped {skipped_count} files.")
