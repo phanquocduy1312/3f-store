@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
-import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import Highlight from "@tiptap/extension-highlight";
 import TextAlign from "@tiptap/extension-text-align";
@@ -32,11 +31,6 @@ export function TiptapEditor({ value = "", onChange, onImageUpload }: TiptapEdit
         },
       }),
       Underline,
-      Link.configure({ 
-        openOnClick: false,
-        autolink: true,
-        linkOnPaste: true
-      }),
       Image.configure({ inline: true, HTMLAttributes: { class: "blog-content-image" } }),
       Highlight.configure({ multicolor: true }),
       TextAlign.configure({

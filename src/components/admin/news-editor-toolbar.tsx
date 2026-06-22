@@ -3,7 +3,7 @@ import { Editor } from "@tiptap/react";
 import { 
   Bold, Italic, Underline as UnderlineIcon, Strikethrough, Heading1, Heading2, Heading3, Heading4,
   List, ListOrdered, AlignLeft, AlignCenter, AlignRight, AlignJustify,
-  Link2, Unlink, Image as ImageIcon, Quote, Minus, Undo2, Redo2, 
+  Image as ImageIcon, Quote, Minus, Undo2, Redo2, 
   Highlighter, Trash2
 } from "lucide-react";
 
@@ -13,30 +13,6 @@ interface NewsEditorToolbarProps {
 }
 
 export function NewsEditorToolbar({ editor, onImageUpload }: NewsEditorToolbarProps) {
-  const handleAddLink = () => {
-    const previousUrl = editor.getAttributes("link").href || "";
-    const url = window.prompt("Nhập địa chỉ URL liên kết (bắt đầu bằng http://, https:// hoặc /):", previousUrl);
-    if (url === null) return;
-    
-    const cleanUrl = url.trim();
-    if (cleanUrl === "") {
-      editor.chain().focus().extendMarkRange("link").unsetLink().run();
-      return;
-    }
-
-    if (cleanUrl.toLowerCase().startsWith("javascript:")) {
-      alert("Địa chỉ liên kết không hợp lệ (giao thức javascript bị chặn).");
-      return;
-    }
-
-    if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://") && !cleanUrl.startsWith("/")) {
-      alert("URL phải bắt đầu bằng http://, https:// hoặc /");
-      return;
-    }
-
-    editor.chain().focus().extendMarkRange("link").setLink({ href: cleanUrl }).run();
-  };
-
   const handleAddImage = () => {
     if (!onImageUpload) return;
     const input = document.createElement("input");
@@ -129,8 +105,6 @@ export function NewsEditorToolbar({ editor, onImageUpload }: NewsEditorToolbarPr
 
       <div className="h-5 w-[1px] bg-slate-200 mx-1" />
 
-      {btn(editor.isActive("link"), handleAddLink, "Chèn liên kết", <Link2 size={14} />)}
-      {btn(editor.isActive("link"), () => editor.chain().focus().unsetLink().run(), "Gỡ bỏ liên kết (Unlink)", <Unlink size={14} />, !editor.isActive("link"))}
       {onImageUpload && btn(false, handleAddImage, "Chèn ảnh từ máy tính", <ImageIcon size={14} />)}
       <button
         type="button"
