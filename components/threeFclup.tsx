@@ -689,7 +689,7 @@ function ThreeFClub({
 					action = "Tham gia Gold";
 				} else if (key === "diamond" || key === "platinum") {
 					tone = "platinum";
-					badge = a.badgeDiamond || "/assets/images/badge_diamond.png";
+					badge = a.badgePlatinum;
 					action = "Lên hạng Diamond";
 				}
 				
@@ -700,7 +700,8 @@ function ThreeFClub({
 				
 				// Parse benefits
 				let benefits: string[] = [];
-				if (t.benefits) {
+				const isTechnicalOnly = !t.benefits || t.benefits.includes("Chi tiêu hợp lệ") || t.benefits.includes("Xác thực SĐT");
+				if (!isTechnicalOnly && t.benefits) {
 					benefits = t.benefits.split(/(?:[;\n]|\.\s+)/).map((b: string) => b.trim()).filter(Boolean);
 				}
 				if (benefits.length === 0) {
