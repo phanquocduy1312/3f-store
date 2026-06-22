@@ -128,6 +128,26 @@ export async function adminGetBlogPosts(page = 1, limit = 100, q = "", category 
 }
 
 /**
+ * Fetch detailed blog post by ID for admin.
+ */
+export async function adminGetBlogPostDetail(id: number): Promise<BlogDetailResponse> {
+  try {
+    const url = buildApiUrl(`/api/admin/blog-posts/${id}`);
+    const res = await fetch(url, {
+      method: "GET",
+      headers: getAdminHeaders()
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP Error ${res.status}`);
+    }
+    return res.json();
+  } catch (err: any) {
+    console.error(`Error fetching admin blog post ${id}:`, err);
+    throw err;
+  }
+}
+
+/**
  * Create a new blog post.
  */
 export async function adminCreateBlogPost(data: any): Promise<{ success: boolean; message?: string; id?: number }> {

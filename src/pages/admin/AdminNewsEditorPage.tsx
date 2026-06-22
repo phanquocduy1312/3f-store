@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, Save, Globe, Loader2, Sparkles, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
-import { adminGetBlogPosts, adminCreateBlogPost, adminUpdateBlogPost, adminUploadBlogImage, type BlogPost } from "@/src/api/blogApi";
+import { adminGetBlogPosts, adminGetBlogPostDetail, adminCreateBlogPost, adminUpdateBlogPost, adminUploadBlogImage, type BlogPost } from "@/src/api/blogApi";
 import { TiptapEditor } from "@/src/components/admin/tiptap-editor";
 import { NewsEditorSidebar } from "@/src/components/admin/news-editor-sidebar";
 import { NewsSeoPanel } from "@/src/components/admin/news-seo-panel";
@@ -39,30 +39,28 @@ export function AdminNewsEditorPage() {
     if (!isEdit) return;
     const fetchPost = async () => {
       try {
-        const res = await adminGetBlogPosts(1, 200);
-        if (res.success) {
-          const post = res.data.items.find((p) => p.id === Number(id));
-          if (post) {
-            setTitle(post.title || "");
-            setSlug(post.slug || "");
-            setContent(post.content || "");
-            setSummary(post.summary || "");
-            setSeoTitle(post.seo_title || "");
-            setSeoDescription(post.seo_description || "");
-            setSeoKeywords(post.seo_keywords || "");
-            setThumbnailUrl(post.thumbnail_url || "");
-            setThumbnailAlt(post.thumbnail_alt || "");
-            setCategory(post.category || "");
-            setTocEnabled(post.toc_enabled === 1 || post.toc_enabled === true);
-            setTocTitle(post.toc_title || "Mục lục bài viết");
-            setAuthor(post.author || "Admin");
-            setPublishedAt(post.published_at || new Date().toISOString());
-            setStatus(post.status || "draft");
-            setSeoScore(post.seo_score || 0);
-          } else {
-            toast.error("Không tìm thấy bài viết");
-            navigate("/admin/news");
-          }
+        const res = await adminGetBlogPostDetail(Number(id));
+        if (res.success && res.data) {
+          const post = res.data;
+          setTitle(post.title || "");
+          setSlug(post.slug || "");
+          setContent(post.content || "");
+          setSummary(post.summary || "");
+          setSeoTitle(post.seo_title || "");
+          setSeoDescription(post.seo_description || "");
+          setSeoKeywords(post.seo_keywords || "");
+          setThumbnailUrl(post.thumbnail_url || "");
+          setThumbnailAlt(post.thumbnail_alt || "");
+          setCategory(post.category || "");
+          setTocEnabled(post.toc_enabled === 1 || post.toc_enabled === true);
+          setTocTitle(post.toc_title || "Mục lục bài viết");
+          setAuthor(post.author || "Admin");
+          setPublishedAt(post.published_at || new Date().toISOString());
+          setStatus(post.status || "draft");
+          setSeoScore(post.seo_score || 0);
+        } else {
+          toast.error(res.message || "Không tìm thấy bài viết");
+          navigate("/admin/news");
         }
       } catch (err) {
         toast.error("Lỗi tải thông tin bài viết");

@@ -140,6 +140,16 @@ class BlogPost {
     }
 
     /**
+     * Get detail of a blog post by ID.
+     */
+    public function getById($id) {
+        $stmt = $this->db->prepare("SELECT * FROM blog_posts WHERE id = :id AND deleted_at IS NULL LIMIT 1");
+        $stmt->execute([':id' => (int)$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+
+    /**
      * Create a new blog post.
      */
     public function create($data) {

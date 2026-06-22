@@ -449,6 +449,35 @@ class BlogPostController {
         }
     }
 
+    /**
+     * GET /api/admin/blog-posts/:id
+     */
+    public function adminGetDetail() {
+        try {
+            AuthMiddleware::requireAdmin();
+            $id = (int)Request::query('id', 0);
+            if ($id <= 0) {
+                Response::json(['success' => false, 'message' => 'ID bài viết không hợp lệ.'], 400);
+                return;
+            }
+
+            $model = new BlogPost();
+            $post = $model->getById($id);
+
+            if (!$post) {
+                Response::json(['success' => false, 'message' => 'Không tìm thấy bài viết.'], 404);
+                return;
+            }
+
+            Response::json([
+                "success" => true,
+                "data" => $post
+            ], 200);
+        } catch (Exception $e) {
+            Response::json(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()], 500);
+        }
+    }
+
     private function generateCategorySlug($str) {
         $str = mb_strtolower($str, 'UTF-8');
         $str = preg_replace('/(à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ)/', 'a', $str);

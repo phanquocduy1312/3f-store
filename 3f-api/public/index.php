@@ -280,6 +280,7 @@ try {
     $router->get("/api/blog-posts", [BlogPostController::class, "getList"]);
     $router->get("/api/blog-posts/:slug", [BlogPostController::class, "getDetail"]);
     $router->get("/api/admin/blog-posts/crawl", [BlogPostController::class, "adminCrawl"]);
+    $router->get("/api/admin/blog-posts/:id", [BlogPostController::class, "adminGetDetail"]);
     $router->post("/api/admin/blog-posts", [BlogPostController::class, "adminCreate"]);
     $router->put("/api/admin/blog-posts/:id", [BlogPostController::class, "adminUpdate"]);
     $router->delete("/api/admin/blog-posts/:id", [BlogPostController::class, "adminDelete"]);
