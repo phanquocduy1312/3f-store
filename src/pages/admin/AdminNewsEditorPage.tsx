@@ -207,10 +207,22 @@ export function AdminNewsEditorPage() {
             <TiptapEditor value={content} onChange={setContent} onImageUpload={handleImageUpload} />
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-left">
-            <h3 className="text-xs font-bold text-slate-800 border-b border-slate-100 pb-3 uppercase tracking-wider flex items-center gap-1.5"><Sparkles size={14} /> Tóm tắt / Trích dẫn bài viết</h3>
-            <textarea placeholder="Mô tả ngắn gọn nội dung bài viết hiển thị ở danh mục tin..." value={summary} onChange={(e) => setSummary(e.target.value)} className="w-full min-h-[100px] mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:border-slate-450 focus:bg-white outline-none transition" />
-          </div>
+          {/* Excerpt, SEO settings and Analysis panel */}
+          <NewsSeoPanel
+            title={title}
+            seoTitle={seoTitle}
+            onSeoTitleChange={setSeoTitle}
+            summary={summary}
+            onSummaryChange={setSummary}
+            seoDescription={seoDescription}
+            onSeoDescriptionChange={setSeoDescription}
+            content={content}
+            keywords={seoKeywords}
+            onKeywordsChange={setSeoKeywords}
+            slug={slug}
+            thumbnailAlt={thumbnailAlt}
+            onScoreChange={setSeoScore}
+          />
         </section>
 
         {/* Right settings sidebar */}
@@ -226,7 +238,6 @@ export function AdminNewsEditorPage() {
             publishedAt={publishedAt} onPublishedAtChange={setPublishedAt}
             status={status} onStatusChange={setStatus}
           />
-          <NewsSeoPanel title={title} seoTitle={seoTitle} summary={summary} seoDescription={seoDescription} content={content} keywords={seoKeywords} slug={slug} thumbnailAlt={thumbnailAlt} onScoreChange={setSeoScore} />
         </aside>
       </main>
     </div>
