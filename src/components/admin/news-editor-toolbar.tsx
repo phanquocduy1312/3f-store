@@ -1,10 +1,10 @@
 import React from "react";
 import { Editor } from "@tiptap/react";
 import { 
-  Bold, Italic, Underline as UnderlineIcon, Strikethrough, Heading1, Heading2, Heading3, Heading4, Pilcrow,
+  Bold, Italic, Underline as UnderlineIcon, Strikethrough, Heading1, Heading2, Heading3, Heading4,
   List, ListOrdered, AlignLeft, AlignCenter, AlignRight, AlignJustify,
-  Link2, Unlink, Image as ImageIcon, Quote, Minus, Table as TableIcon, Undo2, Redo2, 
-  Highlighter, Sparkles, Trash2
+  Link2, Unlink, Image as ImageIcon, Quote, Minus, Undo2, Redo2, 
+  Highlighter, Trash2
 } from "lucide-react";
 
 interface NewsEditorToolbarProps {
@@ -107,11 +107,9 @@ export function NewsEditorToolbar({ editor, onImageUpload }: NewsEditorToolbarPr
       {btn(editor.isActive("underline"), () => editor.chain().focus().toggleUnderline().run(), "Gạch chân (Ctrl+U)", <UnderlineIcon size={14} />)}
       {btn(editor.isActive("strike"), () => editor.chain().focus().toggleStrike().run(), "Gạch ngang", <Strikethrough size={14} />)}
       {btn(editor.isActive("highlight"), () => editor.chain().focus().toggleHighlight().run(), "Highlight đánh dấu", <Highlighter size={14} />)}
-      {btn(false, () => editor.chain().focus().clearNodes().unsetAllMarks().run(), "Xóa định dạng", <Sparkles size={14} />)}
       
       <div className="h-5 w-[1px] bg-slate-200 mx-1" />
 
-      {btn(editor.isActive("paragraph"), () => editor.chain().focus().setParagraph().run(), "Đoạn văn", <Pilcrow size={14} />)}
       {btn(editor.isActive("heading", { level: 1 }), () => editor.chain().focus().toggleHeading({ level: 1 }).run(), "Tiêu đề H1", <Heading1 size={14} />)}
       {btn(editor.isActive("heading", { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run(), "Tiêu đề H2", <Heading2 size={14} />)}
       {btn(editor.isActive("heading", { level: 3 }), () => editor.chain().focus().toggleHeading({ level: 3 }).run(), "Tiêu đề H3", <Heading3 size={14} />)}
@@ -146,24 +144,6 @@ export function NewsEditorToolbar({ editor, onImageUpload }: NewsEditorToolbarPr
       </button>
       {btn(editor.isActive("blockquote"), () => editor.chain().focus().toggleBlockquote().run(), "Khối trích dẫn", <Quote size={14} />)}
       {btn(false, () => editor.chain().focus().setHorizontalRule().run(), "Đường phân cách ngang", <Minus size={14} />)}
-
-      <div className="h-5 w-[1px] bg-slate-200 mx-1" />
-
-      {btn(editor.isActive("table"), () => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(), "Chèn bảng (3x3)", <TableIcon size={14} />)}
-      
-      {editor.isActive("table") && (
-        <div className="flex items-center gap-0.5 bg-slate-100 rounded px-1.5 py-0.5 border border-slate-200">
-          {tableBtn(() => editor.chain().focus().addColumnBefore().run(), "Cột Trái")}
-          {tableBtn(() => editor.chain().focus().addColumnAfter().run(), "Cột Phải")}
-          {tableBtn(() => editor.chain().focus().deleteColumn().run(), "Xóa Cột", true)}
-          <span className="text-slate-350 mx-0.5">|</span>
-          {tableBtn(() => editor.chain().focus().addRowBefore().run(), "Dòng Trên")}
-          {tableBtn(() => editor.chain().focus().addRowAfter().run(), "Dòng Dưới")}
-          {tableBtn(() => editor.chain().focus().deleteRow().run(), "Xóa Dòng", true)}
-          <span className="text-slate-350 mx-0.5">|</span>
-          {tableBtn(() => editor.chain().focus().deleteTable().run(), "Xóa Bảng", true)}
-        </div>
-      )}
 
       <div className="h-5 w-[1px] bg-slate-200 mx-1 flex-1 min-w-[4px]" />
 

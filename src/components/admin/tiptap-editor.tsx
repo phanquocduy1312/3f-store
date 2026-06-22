@@ -6,10 +6,6 @@ import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import Highlight from "@tiptap/extension-highlight";
 import TextAlign from "@tiptap/extension-text-align";
-import { Table } from "@tiptap/extension-table";
-import { TableRow } from "@tiptap/extension-table-row";
-import { TableCell } from "@tiptap/extension-table-cell";
-import { TableHeader } from "@tiptap/extension-table-header";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
@@ -46,12 +42,6 @@ export function TiptapEditor({ value = "", onChange, onImageUpload }: TiptapEdit
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
-      Table.configure({
-        resizable: true,
-      }),
-      TableRow,
-      TableHeader,
-      TableCell,
       Placeholder.configure({
         placeholder: "Viết nội dung bài viết thú cưng ở đây...",
       }),
@@ -166,33 +156,47 @@ export function TiptapEditor({ value = "", onChange, onImageUpload }: TiptapEdit
         .blog-tiptap-content .ProseMirror h1, .blog-tiptap-preview h1 {
           font-size: 1.85rem !important;
           font-weight: 850 !important;
-          margin: 1.75rem 0 1rem !important;
+          margin-top: 20px !important;
+          margin-bottom: 8px !important;
           line-height: 1.25 !important;
           color: #0f172a !important;
         }
         .blog-tiptap-content .ProseMirror h2, .blog-tiptap-preview h2 {
           font-size: 1.5rem !important;
           font-weight: 700 !important;
-          margin: 1.5rem 0 0.75rem !important;
+          margin-top: 16px !important;
+          margin-bottom: 8px !important;
           line-height: 1.3 !important;
           color: #1e293b !important;
         }
         .blog-tiptap-content .ProseMirror h3, .blog-tiptap-preview h3 {
           font-size: 1.25rem !important;
           font-weight: 700 !important;
-          margin: 1.25rem 0 0.5rem !important;
+          margin-top: 14px !important;
+          margin-bottom: 6px !important;
           line-height: 1.35 !important;
           color: #1e293b !important;
         }
         .blog-tiptap-content .ProseMirror h4, .blog-tiptap-preview h4 {
           font-size: 1.1rem !important;
           font-weight: 600 !important;
-          margin: 1rem 0 0.5rem !important;
+          margin-top: 12px !important;
+          margin-bottom: 6px !important;
           color: #1e293b !important;
         }
         .blog-tiptap-content .ProseMirror p, .blog-tiptap-preview p {
-          margin: 0.75rem 0 !important;
-          line-height: 1.75 !important;
+          margin-top: 0 !important;
+          margin-bottom: 8px !important;
+          margin-block-start: 0 !important;
+          margin-block-end: 8px !important;
+          line-height: 1.5 !important;
+        }
+        .blog-tiptap-content .ProseMirror p.is-editor-empty:first-child::before {
+          content: attr(data-placeholder);
+          float: left;
+          color: #94a3b8 !important;
+          pointer-events: none;
+          height: 0;
         }
         .blog-tiptap-content .ProseMirror blockquote, .blog-tiptap-preview blockquote {
           border-left: 4px solid #e5e7eb !important;
