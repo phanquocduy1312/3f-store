@@ -6,6 +6,7 @@ import {
   Coins,
   Gift,
   History,
+  QrCode,
   Settings,
   ShoppingBag,
 } from "lucide-react";
@@ -16,6 +17,7 @@ import { ClubSettingsSection } from "@/components/admin/loyalty/ClubSettingsSect
 import { LoyaltyTransactionsSection } from "@/components/admin/loyalty/LoyaltyTransactionsSection";
 import { MembershipTiersSection } from "@/components/admin/loyalty/MembershipTiersSection";
 import { ShopeeRequestsSection } from "@/components/admin/shopee/ShopeeRequestsSection";
+import { ShopeeQrModal } from "@/components/admin/shopee/shopee-qr-modal";
 import type { LoyaltyRule } from "@/components/admin/loyalty/LoyaltySettingsSection";
 import { API_BASE_URL } from "@/src/config/api";
 import { getAdminLoyaltyRedemptions } from "@/src/services/loyaltyRedemptionsApi";
@@ -45,6 +47,12 @@ export default function ThreeFClubPage() {
   const [searchValue, setSearchValue] = useState("");
   const [selectedDate, setSelectedDate] = useState("all_time");
   const [activeTab, setActiveTab] = useState<MainTab>("shopee");
+  const [showQrModal, setShowQrModal] = useState(false);
+
+  // URL trang tích điểm Shopee phía client (production)
+  const shopeePointUrl = typeof window !== "undefined"
+    ? `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}/3f-club/rewards`
+    : "https://3fstore.vn/3f-club/rewards";
 
   const [requests, setRequests] = useState<ShopeePointRequest[]>([]);
   const [shopeeConnection, setShopeeConnection] = useState<{
@@ -234,31 +242,44 @@ export default function ThreeFClubPage() {
               </p>
             </div>
             
-            <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-[#DCEBFF] shadow-sm shrink-0">
-              <div className="flex flex-col items-end">
-                <span className="text-[11px] font-bold text-[#64748B]">TRẠNG THÁI SHOPEE</span>
-                {shopeeConnection?.connected ? (
-                  <span className="text-[13px] font-black text-[#039855]">
-                    Đã kết nối ({shopeeConnection.shopName || shopeeConnection.shopId})
-                  </span>
-                ) : (
-                  <span className="text-[13px] font-black text-[#64748B]">
-                    Chưa kết nối
-                  </span>
-                )}
-              </div>
+            <div className="flex items-center gap-3 flex-wrap justify-end">
+              {/* QR Share Button */}
               <button
                 type="button"
-                onClick={handleConnectShopee}
-                disabled={connectingShopee}
-                className={`inline-flex h-10 items-center justify-center rounded-xl px-4 text-[13px] font-black transition ${
-                  shopeeConnection?.connected
-                    ? "border border-[#DCEBFF] bg-white text-[#64748B] hover:bg-slate-50"
-                    : "bg-[#0057E7] text-white hover:bg-[#0046b8]"
-                }`}
+                onClick={() => setShowQrModal(true)}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#DCEBFF] bg-white px-4 text-[13px] font-black text-[#0B1F3A] shadow-sm transition hover:bg-[#EEF6FF] hover:border-[#0057E7] hover:text-[#0057E7] active:scale-95"
               >
-                {connectingShopee ? "Đang xử lý..." : shopeeConnection?.connected ? "Kết nối lại" : "Kết nối Shopee"}
+                <QrCode size={16} />
+                Chia sẻ QR tích điểm
               </button>
+
+              {/* Shopee connection status */}
+              <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-[#DCEBFF] shadow-sm shrink-0">
+                <div className="flex flex-col items-end">
+                  <span className="text-[11px] font-bold text-[#64748B]">TRẠNG THÁI SHOPEE</span>
+                  {shopeeConnection?.connected ? (
+                    <span className="text-[13px] font-black text-[#039855]">
+                      Đã kết nối ({shopeeConnection.shopName || shopeeConnection.shopId})
+                    </span>
+                  ) : (
+                    <span className="text-[13px] font-black text-[#64748B]">
+                      Chưa kết nối
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleConnectShopee}
+                  disabled={connectingShopee}
+                  className={`inline-flex h-10 items-center justify-center rounded-xl px-4 text-[13px] font-black transition ${
+                    shopeeConnection?.connected
+                      ? "border border-[#DCEBFF] bg-white text-[#64748B] hover:bg-slate-50"
+                      : "bg-[#0057E7] text-white hover:bg-[#0046b8]"
+                  }`}
+                >
+                  {connectingShopee ? "Đang xử lý..." : shopeeConnection?.connected ? "Kết nối lại" : "Kết nối Shopee"}
+                </button>
+              </div>
             </div>
           </section>
 
@@ -338,6 +359,14 @@ export default function ThreeFClubPage() {
           )}
         </main>
       </div>
+
+      {/* QR Modal */}
+      {showQrModal && (
+        <ShopeeQrModal
+          url={shopeePointUrl}
+          onClose={() => setShowQrModal(false)}
+        />
+      )}
     </div>
   );
 }
