@@ -7,7 +7,7 @@ export interface AdminCustomerListParams {
   status?: 'active' | 'blocked' | 'all';
   phoneVerified?: 'yes' | 'no' | 'all';
   hasOrders?: 'yes' | 'no' | 'all';
-  tier?: 'Silver' | 'Gold' | 'Platinum' | 'all';
+  tier?: 'Member' | 'Silver' | 'Gold' | 'Diamond' | 'all';
 }
 
 export const adminCustomersApi = {

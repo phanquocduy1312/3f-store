@@ -21,7 +21,7 @@ export function AdminCustomersPage() {
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "blocked">("all");
-  const [tierFilter, setTierFilter] = useState<"all" | "Silver" | "Gold" | "Platinum">("all");
+  const [tierFilter, setTierFilter] = useState<"all" | "Member" | "Silver" | "Gold" | "Diamond">("all");
   const [phoneVerifiedFilter, setPhoneVerifiedFilter] = useState<"all" | "yes" | "no">("all");
   const [hasOrdersFilter, setHasOrdersFilter] = useState<"all" | "yes" | "no">("all");
 
@@ -100,6 +100,9 @@ export function AdminCustomersPage() {
     return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(val);
   };
 
+  const getTierOrderCount = (customer: any) => customer.tier_order_count ?? customer.tierOrderCount ?? customer.total_orders ?? 0;
+  const getTierTotalSpent = (customer: any) => customer.tier_total_spent ?? customer.tierTotalSpent ?? customer.total_spent ?? 0;
+
   return (
     <div className="min-h-screen bg-[#F6FAFF] font-sans relative">
       <AdminSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} collapsed={sidebarCollapsed} />
@@ -147,9 +150,10 @@ export function AdminCustomersPage() {
 
               <select className="bg-white border border-[#DCEBFF] rounded-lg px-3 py-2 text-sm" value={tierFilter} onChange={e => setTierFilter(e.target.value as any)}>
                 <option value="all">Tất cả hạng</option>
+                <option value="Member">Member</option>
                 <option value="Silver">Silver</option>
                 <option value="Gold">Gold</option>
-                <option value="Platinum">Platinum</option>
+                <option value="Diamond">Diamond</option>
               </select>
 
               <select className="bg-white border border-[#DCEBFF] rounded-lg px-3 py-2 text-sm" value={phoneVerifiedFilter} onChange={e => setPhoneVerifiedFilter(e.target.value as any)}>
@@ -221,12 +225,22 @@ export function AdminCustomersPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="font-bold text-[#0057E7]">{c.tier || "Silver"}</p>
+                          <p className="font-bold text-[#0057E7]">{c.tier || "Member"}</p>
                           <p className="text-xs text-slate-500">{new Intl.NumberFormat('vi-VN').format(c.total_points || 0)} pts</p>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="font-semibold text-[#0B1F3A]">{c.total_orders || 0} đơn</p>
-                          <p className="text-xs text-slate-500">{formatCurrency(c.total_spent || 0)}</p>
+                          <p
+                            className="font-semibold text-[#0B1F3A]"
+                            title="Số đơn hoàn tất trong 12 tháng dùng để xét hạng 3F Club"
+                          >
+                            {getTierOrderCount(c)} đơn
+                          </p>
+                          <p
+                            className="text-xs text-slate-500"
+                            title="Chi tiêu hoàn tất trong 12 tháng dùng để xét hạng 3F Club"
+                          >
+                            {formatCurrency(getTierTotalSpent(c))}
+                          </p>
                         </td>
                         <td className="px-4 py-3">
                           <p className="text-[#0B1F3A]">{new Date(c.created_at).toLocaleDateString("vi-VN")}</p>

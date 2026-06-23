@@ -9,11 +9,12 @@ import { AiLoading } from "./AiLoading";
 import { AiResult } from "./AiResult";
 import { ProgressBar } from "./ProgressBar";
 import { Mascot } from "./Mascot";
-import { dogQuizSteps, catQuizSteps } from "./quizConfig";
+import { dogQuizSteps, catQuizSteps, type QuizStepConfig } from "./quizConfig";
 import { AiResultData } from "./mockAiResult";
 import { getPetAdviceFromGroq } from "./groqApi";
 import { detectNeeds, detectSeriousWarning, calculateMonthlyBudget, getBudgetSegment } from "./petAdvisorUtils";
 import { createPetApi } from "@/src/api/customerPetsApi";
+import { getAiAdvisorVoucher } from "@/src/api/vouchersApi";
 import { getCustomerToken } from "@/src/api/customerAuthApi";
 
 const CLOSED_KEY = "pet_popup_closed_at";
@@ -35,6 +36,75 @@ const loadState = () => {
     console.error("Failed to load pet advisor state", e);
   }
   return null;
+};
+
+const labelAnswerValue = (
+  step: QuizStepConfig | undefined,
+  answer?: { value: string | string[]; customText?: string }
+) => {
+  if (!answer) return "";
+  const values = Array.isArray(answer.value) ? answer.value : [answer.value];
+  return values.map(value => {
+    if (value === "other") return answer.customText || "Khác";
+    return step?.options?.find(option => option.value === value)?.label || value;
+  }).filter(Boolean).join(", ");
+};
+
+const buildAdvisorInputs = (
+  quizSteps: QuizStepConfig[],
+  answers: Record<string, { value: string | string[]; customText?: string }>,
+  customer: { name: string; phone: string; email: string; petName?: string },
+  overallPetType: "dog" | "cat" | "both" | null,
+  activeFlow: "dog" | "cat" | null
+) => {
+  const problemText = (answers.problem_text?.value as string) || "";
+  const detectedNeeds = detectNeeds(problemText);
+  const purchaseVal = (answers.purchase_amount_range?.value as string) || "";
+  const durationVal = (answers.usage_duration_range?.value as string) || "";
+
+  const purchaseOption = quizSteps
+    .find(step => step.id === "purchase_amount_range")
+    ?.options?.find(option => option.value === purchaseVal);
+  const durationOption = quizSteps
+    .find(step => step.id === "usage_duration_range")
+    ?.options?.find(option => option.value === durationVal);
+
+  let estimatedAmt = purchaseOption?.estimatedAmount || 0;
+  if (!estimatedAmt) {
+    if (purchaseVal === "under_200k") estimatedAmt = 150000;
+    else if (purchaseVal === "200k_500k") estimatedAmt = 350000;
+    else if (purchaseVal === "500k_1m") estimatedAmt = 750000;
+    else if (purchaseVal === "1m_2m") estimatedAmt = 1500000;
+    else if (purchaseVal === "over_2m") estimatedAmt = 2500000;
+  }
+
+  const months = durationOption?.months || 1;
+  const monthlyBudget = calculateMonthlyBudget(estimatedAmt, months);
+
+  return {
+    customer,
+    overall_pet_type: overallPetType,
+    active_flow: activeFlow,
+    problem_text: problemText,
+    detected_needs: detectedNeeds,
+    selected_needs: labelAnswerValue(quizSteps.find(step => step.id === "need"), answers.need)
+      .split(", ")
+      .filter(Boolean),
+    current_food: labelAnswerValue(quizSteps.find(step => step.id === "current_food"), answers.current_food),
+    purchase_amount_label: labelAnswerValue(quizSteps.find(step => step.id === "purchase_amount_range"), answers.purchase_amount_range),
+    usage_duration_label: labelAnswerValue(quizSteps.find(step => step.id === "usage_duration_range"), answers.usage_duration_range),
+    estimated_purchase_amount: estimatedAmt,
+    usage_duration_months: months,
+    monthly_budget: monthlyBudget,
+    budget_segment: getBudgetSegment(monthlyBudget),
+    answers: quizSteps.map(step => ({
+      id: step.id,
+      question: step.question,
+      value: answers[step.id]?.value ?? "",
+      label: labelAnswerValue(step, answers[step.id]),
+      customText: answers[step.id]?.customText || "",
+    })),
+  };
 };
 
 export function PetAdvisorPopup() {
@@ -190,10 +260,16 @@ export function PetAdvisorPopup() {
         activeFlow,
         info
       );
-      setAiResult(result);
+      const aiVoucher = await getAiAdvisorVoucher().catch(() => ({ data: null }));
+      const enrichedResult = {
+        ...result,
+        voucher_code: aiVoucher.data?.code || result.voucher_code,
+        advisor_inputs: buildAdvisorInputs(steps, answers, info, overallPetType, activeFlow),
+      };
+      setAiResult(enrichedResult);
       setStatus("result");
       localStorage.setItem(SUBMITTED_KEY, String(Date.now()));
-      trackEvent("pet_advisor_result_viewed", { summary: result.summary });
+      trackEvent("pet_advisor_result_viewed", { summary: enrichedResult.summary });
 
       // Persist to database if customer is logged in
       const token = getCustomerToken();
@@ -214,7 +290,7 @@ export function PetAdvisorPopup() {
           gender: "unknown",
           healthNotes: answers.problem_text?.value as string || "",
           favoriteFood: foodStr,
-          aiResult: JSON.stringify(result)
+          aiResult: JSON.stringify(enrichedResult)
         });
 
         // Trigger an event to refresh pets list if on PetsPage

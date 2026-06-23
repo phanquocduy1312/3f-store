@@ -17,6 +17,14 @@ import {
   WorkflowStatusSetting,
   WorkflowTransitionSetting
 } from "@/src/api/workflowApi";
+import {
+  deleteAdminOrderShippingMethod,
+  listAdminOrderShippingMethods,
+  saveAdminOrderShippingMethod,
+  toggleAdminOrderShippingMethod,
+  type OrderShippingMethod,
+  type OrderShippingMethodPayload
+} from "@/src/api/orderShippingMethodsApi";
 import { 
   Search, 
   Eye, 
@@ -33,7 +41,10 @@ import {
   Truck,
   X,
   Layers,
-  Sparkles
+  Sparkles,
+  Plus,
+  Settings,
+  Trash2
 } from "lucide-react";
 import { Image } from "@/components/Image";
 
@@ -209,12 +220,16 @@ const getStatusLabel = (status: string, groupKey: string): string => {
 
 export function AdminOrdersPage() {
   const [activeMenu, setActiveMenu] = useState("Đơn hàng");
-  const [activeTab, setActiveTab] = useState<"orders" | "statuses">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "statuses" | "shippingMethods">("orders");
   const [statusConfig, setStatusConfig] = useState<{
     statuses: WorkflowStatusSetting[];
     transitions: WorkflowTransitionSetting[];
   } | null>(null);
   const [isFetchingConfig, setIsFetchingConfig] = useState(false);
+  const [shippingMethods, setShippingMethods] = useState<OrderShippingMethod[]>([]);
+  const [isFetchingShippingMethods, setIsFetchingShippingMethods] = useState(false);
+  const [editingShippingMethod, setEditingShippingMethod] = useState<OrderShippingMethodPayload | null>(null);
+  const [isSavingShippingMethod, setIsSavingShippingMethod] = useState(false);
 
   // Edit status modal state
   const [editingStatus, setEditingStatus] = useState<WorkflowStatusSetting | null>(null);
@@ -238,9 +253,101 @@ export function AdminOrdersPage() {
     }
   };
 
+  const fetchShippingMethods = async () => {
+    setIsFetchingShippingMethods(true);
+    try {
+      const res = await listAdminOrderShippingMethods();
+      if (res.success) {
+        setShippingMethods(res.data);
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Không tải được cấu hình phương thức giao hàng.");
+    } finally {
+      setIsFetchingShippingMethods(false);
+    }
+  };
+
   useEffect(() => {
     fetchStatusConfig();
+    fetchShippingMethods();
   }, []);
+
+  const startCreateShippingMethod = () => {
+    setEditingShippingMethod({
+      methodKey: "",
+      name: "",
+      description: "",
+      fee: 0,
+      isActive: true,
+      sortOrder: (shippingMethods.length + 1) * 10,
+    });
+  };
+
+  const startEditShippingMethod = (method: OrderShippingMethod) => {
+    setEditingShippingMethod({
+      id: method.id,
+      methodKey: method.methodKey,
+      name: method.name,
+      description: method.description || "",
+      fee: method.fee,
+      isActive: method.isActive,
+      sortOrder: method.sortOrder,
+    });
+  };
+
+  const handleSaveShippingMethod = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingShippingMethod) return;
+
+    setIsSavingShippingMethod(true);
+    try {
+      const res = await saveAdminOrderShippingMethod({
+        ...editingShippingMethod,
+        methodKey: editingShippingMethod.methodKey.trim(),
+        name: editingShippingMethod.name.trim(),
+        description: editingShippingMethod.description?.trim() || "",
+        fee: Number(editingShippingMethod.fee || 0),
+        sortOrder: Number(editingShippingMethod.sortOrder || 0),
+      });
+      if (res.success) {
+        toast.success(res.message || "Đã lưu phương thức giao hàng.");
+        setEditingShippingMethod(null);
+        fetchShippingMethods();
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Không lưu được phương thức giao hàng.");
+    } finally {
+      setIsSavingShippingMethod(false);
+    }
+  };
+
+  const handleToggleShippingMethod = async (method: OrderShippingMethod) => {
+    try {
+      const res = await toggleAdminOrderShippingMethod(method.id, !method.isActive);
+      toast.success(res.message || "Đã cập nhật trạng thái phương thức giao hàng.");
+      fetchShippingMethods();
+    } catch (err: any) {
+      toast.error(err.message || "Không cập nhật được phương thức giao hàng.");
+    }
+  };
+
+  const handleDeleteShippingMethod = async (method: OrderShippingMethod) => {
+    const confirmed = window.confirm(`Xóa phương thức "${method.name}"? Chỉ xóa được khi chưa có đơn nào sử dụng.`);
+    if (!confirmed) return;
+
+    try {
+      const res = await deleteAdminOrderShippingMethod(method.id);
+      toast.success(res.message || "Đã xóa phương thức giao hàng.");
+      fetchShippingMethods();
+    } catch (err: any) {
+      toast.error(err.message || "Không xóa được phương thức giao hàng.");
+    }
+  };
+
+  const getShippingMethodName = (methodKey?: string | null) => {
+    const key = methodKey || "";
+    return shippingMethods.find((method) => method.methodKey === key)?.name || SHIPPING_METHOD_MAP[key] || key || "Chưa chọn";
+  };
 
   const getStatusLabel = (status: string, groupKey: string): string => {
     if (statusConfig && statusConfig.statuses) {
@@ -280,7 +387,7 @@ export function AdminOrdersPage() {
               borderColor: color + "30",
               color: color,
             },
-            className: "inline-flex px-2.5 py-0.5 rounded-full border text-[11px] font-black",
+            className: "inline-flex px-2.5 py-0.5 rounded-full border text-[11px] font-black whitespace-nowrap",
           };
         }
       }
@@ -291,21 +398,21 @@ export function AdminOrdersPage() {
       const payMap = PAYMENT_MAP[statusKey] || { label: statusKey, color: "text-gray-700", bg: "bg-gray-50 border-gray-250" };
       return {
         label: payMap.label,
-        className: `inline-flex px-2.5 py-0.5 rounded-full border text-[11px] font-black ${payMap.bg} ${payMap.color}`,
+        className: `inline-flex px-2.5 py-0.5 rounded-full border text-[11px] font-black whitespace-nowrap ${payMap.bg} ${payMap.color}`,
         style: undefined
       };
     } else if (groupKey === "shipping") {
       const shipMap = SHIPPING_STATUS_MAP[statusKey] || { label: statusKey, bg: "bg-gray-50 border-gray-250", text: "text-gray-700" };
       return {
         label: shipMap.label,
-        className: `inline-flex px-2.5 py-0.5 rounded-full border text-[11px] font-black ${shipMap.bg} ${shipMap.text}`,
+        className: `inline-flex px-2.5 py-0.5 rounded-full border text-[11px] font-black whitespace-nowrap ${shipMap.bg} ${shipMap.text}`,
         style: undefined
       };
     } else if (groupKey === "loyalty") {
       const loyalMap = LOYALTY_STATUS_MAP[statusKey] || { label: statusKey, bg: "bg-gray-50 border-gray-250", text: "text-gray-700" };
       return {
         label: loyalMap.label,
-        className: `inline-flex px-2.5 py-0.5 rounded-full border text-[11px] font-black ${loyalMap.bg} ${loyalMap.text}`,
+        className: `inline-flex px-2.5 py-0.5 rounded-full border text-[11px] font-black whitespace-nowrap ${loyalMap.bg} ${loyalMap.text}`,
         style: undefined
       };
     }
@@ -313,7 +420,7 @@ export function AdminOrdersPage() {
     const statMap = STATUS_MAP[statusKey] || { label: fallbackLabel || statusKey, bg: "bg-gray-50 border-gray-250", text: "text-gray-750" };
     return {
       label: statMap.label,
-      className: `inline-flex px-2.5 py-0.5 rounded-full border text-[11px] font-black ${statMap.bg} ${statMap.text}`,
+      className: `inline-flex px-2.5 py-0.5 rounded-full border text-[11px] font-black whitespace-nowrap ${statMap.bg} ${statMap.text}`,
       style: undefined
     };
   };
@@ -326,7 +433,7 @@ export function AdminOrdersPage() {
   });
 
   const [orders, setOrders] = useState<OrderDetail[]>([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
+  const [pagination, setPagination] = useState({ page: 1, limit: 5, total: 0, totalPages: 1 });
   const [isLoading, setIsLoading] = useState(true);
   const [summary, setSummary] = useState<{
     totalOrders: number;
@@ -351,7 +458,7 @@ export function AdminOrdersPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(5);
 
   // Selected Order Detail Modal
   const [selectedOrder, setSelectedOrder] = useState<OrderDetail | null>(null);
@@ -663,6 +770,16 @@ export function AdminOrdersPage() {
             >
               Cấu hình trạng thái
             </button>
+            <button
+              onClick={() => setActiveTab("shippingMethods")}
+              className={`px-5 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition duration-200 ${
+                activeTab === "shippingMethods"
+                  ? "border-[#0057E7] text-[#0057E7] bg-blue-50/10"
+                  : "border-transparent text-gray-500 hover:text-[#0057E7] hover:bg-slate-50"
+              } rounded-t-xl`}
+            >
+              Phương thức giao hàng
+            </button>
           </div>
 
           {activeTab === "orders" ? (
@@ -833,8 +950,8 @@ export function AdminOrdersPage() {
                         <th className="px-6 py-4">Thời gian tạo</th>
                         <th className="px-6 py-4">Phương thức</th>
                         <th className="px-6 py-4">Tổng tiền</th>
-                        <th className="px-6 py-4">Trạng thái</th>
-                        <th className="px-6 py-4">Thanh toán</th>
+                        <th className="px-6 py-4 whitespace-nowrap">Trạng thái</th>
+                        <th className="px-6 py-4 whitespace-nowrap">Thanh toán</th>
                         <th className="px-6 py-4 text-center">Hành động</th>
                       </tr>
                     </thead>
@@ -855,6 +972,7 @@ export function AdminOrdersPage() {
                         orders.map((order) => {
                           const badge = getDynamicStatusBadge(order.order_status, "order", order.order_status);
                           const payBadge = getDynamicStatusBadge(order.payment_status, "payment", order.payment_status);
+                          const shippingLabel = getShippingMethodName(order.shipping_method);
                           
                           return (
                             <tr key={order.id} className="border-b border-[#EEF6FF] hover:bg-slate-50/50 transition">
@@ -867,22 +985,25 @@ export function AdminOrdersPage() {
                                 {new Date(order.created_at).toLocaleString("vi-VN")}
                               </td>
                               <td className="px-6 py-4 font-bold text-gray-600">
-                                {PAYMENT_METHOD_MAP[order.payment_method] || order.payment_method}
+                                <div>{PAYMENT_METHOD_MAP[order.payment_method] || order.payment_method}</div>
+                                <div className="mt-1 text-[11px] font-semibold text-[#64748B]">
+                                  {shippingLabel}
+                                </div>
                               </td>
                               <td className="px-6 py-4 font-black text-[#0B1F3A]">
                                 <div>{(parseFloat(order.total)).toLocaleString("vi-VN")}đ</div>
                                 {(order.coupon_code || order.couponCode) && (
-                                  <div className="text-[10px] text-green-600 font-bold bg-green-50 px-1.5 py-0.5 rounded border border-green-200 mt-1 inline-block" title={`Đã áp dụng mã ${order.coupon_code || order.couponCode}`}>
+                                  <div className="text-[10px] text-green-600 font-bold bg-green-50 px-1.5 py-0.5 rounded border border-green-200 mt-1 inline-block whitespace-nowrap" title={`Đã áp dụng mã ${order.coupon_code || order.couponCode}`}>
                                     Mã: {order.coupon_code || order.couponCode}
                                   </div>
                                 )}
                               </td>
-                              <td className="px-6 py-4">
+                              <td className="px-6 py-4 whitespace-nowrap">
                                 <span className={badge.className} style={badge.style}>
                                   {badge.label}
                                 </span>
                               </td>
-                              <td className="px-6 py-4">
+                              <td className="px-6 py-4 whitespace-nowrap">
                                 <span className={payBadge.className} style={payBadge.style}>
                                   {payBadge.label}
                                 </span>
@@ -1130,16 +1251,15 @@ export function AdminOrdersPage() {
                           }}
                           className="rounded-lg border border-[#DCEBFF] bg-[#F6FAFF] px-2 py-1 text-xs font-bold text-[#0B1F3A] focus:border-[#0057E7] focus:outline-none"
                         >
+                          <option value={5}>5</option>
                           <option value={10}>10</option>
                           <option value={20}>20</option>
                           <option value={50}>50</option>
-                          <option value={100}>100</option>
                         </select>
                       </div>
                     </div>
 
-                    {pagination.totalPages > 1 && (
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                         <button
                           disabled={currentPage <= 1}
                           onClick={() => setCurrentPage(p => p - 1)}
@@ -1159,13 +1279,12 @@ export function AdminOrdersPage() {
                         >
                           Sau
                         </button>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 )}
               </div>
             </>
-          ) : (
+          ) : activeTab === "statuses" ? (
             <div className="space-y-6">
               {/* Summary Header */}
               <div className="rounded-[24px] border border-[#DCEBFF] bg-white p-6 shadow-[0_8px_24px_rgba(6,43,95,0.04)]">
@@ -1329,6 +1448,239 @@ export function AdminOrdersPage() {
                 </p>
               </div>
             </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="rounded-[24px] border border-[#DCEBFF] bg-white p-6 shadow-[0_8px_24px_rgba(6,43,95,0.04)]">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <h2 className="text-base font-black text-[#0B1F3A] flex items-center gap-2">
+                      <Settings size={18} className="text-[#0057E7]" />
+                      Cấu hình phương thức giao hàng
+                    </h2>
+                    <p className="mt-1.5 max-w-3xl text-xs text-[#64748B] leading-relaxed">
+                      Các phương thức đang bật sẽ hiển thị ở trang giỏ hàng. Phí giao hàng tại đây sẽ được dùng để tính tổng tiền khi khách đặt đơn.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={startCreateShippingMethod}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#0057E7] px-4 text-xs font-black text-white shadow-sm transition hover:bg-[#003B7A]"
+                  >
+                    <Plus size={15} />
+                    Thêm phương thức
+                  </button>
+                </div>
+              </div>
+
+              {editingShippingMethod && (
+                <div className="rounded-[24px] border border-[#DCEBFF] bg-white p-6 shadow-[0_8px_24px_rgba(6,43,95,0.04)]">
+                  <div className="mb-4 flex items-center justify-between gap-3 border-b border-[#EEF6FF] pb-3">
+                    <div>
+                      <h3 className="text-sm font-black text-[#0B1F3A]">
+                        {editingShippingMethod.id ? "Sửa phương thức giao hàng" : "Thêm phương thức giao hàng"}
+                      </h3>
+                      <p className="mt-0.5 text-[11px] font-semibold text-[#94A3B8]">
+                        Mã phương thức dùng để lưu vào đơn hàng, không nên đổi khi đã có đơn sử dụng.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditingShippingMethod(null)}
+                      className="rounded-xl border border-[#DCEBFF] px-3 py-2 text-xs font-bold text-[#64748B] hover:bg-slate-50"
+                    >
+                      Đóng
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveShippingMethod} className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+                    <div className="lg:col-span-3">
+                      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.03em] text-[#64748B]">Mã phương thức</label>
+                      <input
+                        required
+                        value={editingShippingMethod.methodKey}
+                        onChange={(e) => setEditingShippingMethod({ ...editingShippingMethod, methodKey: e.target.value.toLowerCase().replace(/\s+/g, "_") })}
+                        placeholder="express"
+                        className="w-full rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-4 py-2.5 text-[13px] font-bold text-[#0B1F3A] focus:border-[#0057E7] focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="lg:col-span-4">
+                      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.03em] text-[#64748B]">Tên hiển thị</label>
+                      <input
+                        required
+                        value={editingShippingMethod.name}
+                        onChange={(e) => setEditingShippingMethod({ ...editingShippingMethod, name: e.target.value })}
+                        placeholder="Giao hàng hỏa tốc"
+                        className="w-full rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-4 py-2.5 text-[13px] font-bold text-[#0B1F3A] focus:border-[#0057E7] focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="lg:col-span-3">
+                      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.03em] text-[#64748B]">Phí giao hàng</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1000}
+                        value={editingShippingMethod.fee}
+                        onChange={(e) => setEditingShippingMethod({ ...editingShippingMethod, fee: Number(e.target.value) })}
+                        className="w-full rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-4 py-2.5 text-[13px] font-bold text-[#0B1F3A] focus:border-[#0057E7] focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="lg:col-span-2">
+                      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.03em] text-[#64748B]">Thứ tự</label>
+                      <input
+                        type="number"
+                        value={editingShippingMethod.sortOrder}
+                        onChange={(e) => setEditingShippingMethod({ ...editingShippingMethod, sortOrder: Number(e.target.value) })}
+                        className="w-full rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-4 py-2.5 text-[13px] font-bold text-[#0B1F3A] focus:border-[#0057E7] focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                    <div className="lg:col-span-10">
+                      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.03em] text-[#64748B]">Mô tả</label>
+                      <input
+                        value={editingShippingMethod.description || ""}
+                        onChange={(e) => setEditingShippingMethod({ ...editingShippingMethod, description: e.target.value })}
+                        placeholder="Nhận hàng trong 2 giờ. Chỉ áp dụng khu vực TP.HCM"
+                        className="w-full rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-4 py-2.5 text-[13px] font-bold text-[#0B1F3A] focus:border-[#0057E7] focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-4 py-2.5 text-xs font-bold text-[#0B1F3A] lg:col-span-2">
+                      <input
+                        type="checkbox"
+                        checked={editingShippingMethod.isActive}
+                        onChange={(e) => setEditingShippingMethod({ ...editingShippingMethod, isActive: e.target.checked })}
+                        className="h-4 w-4 accent-[#0057E7]"
+                      />
+                      Đang bật
+                    </label>
+                    <div className="flex justify-end gap-3 lg:col-span-12">
+                      <button
+                        type="button"
+                        onClick={() => setEditingShippingMethod(null)}
+                        className="rounded-xl border border-[#DCEBFF] px-4 py-2.5 text-xs font-bold text-[#64748B] hover:bg-slate-50"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSavingShippingMethod}
+                        className="rounded-xl bg-[#0057E7] px-5 py-2.5 text-xs font-black text-white transition hover:bg-[#003B7A] disabled:opacity-50"
+                      >
+                        {isSavingShippingMethod ? "Đang lưu..." : "Lưu phương thức"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              <div className="rounded-[24px] border border-[#DCEBFF] bg-white shadow-[0_8px_24px_rgba(6,43,95,0.04)] overflow-hidden">
+                <div className="flex items-center justify-between gap-3 border-b border-[#EEF6FF] px-6 py-4">
+                  <div>
+                    <h3 className="text-sm font-black text-[#0B1F3A]">Danh sách phương thức</h3>
+                    <p className="mt-0.5 text-[11px] font-semibold text-[#94A3B8]">
+                      Hiển thị {shippingMethods.length} phương thức giao hàng
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={fetchShippingMethods}
+                    className="rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-3 py-2 text-xs font-bold text-[#0057E7] hover:bg-white"
+                  >
+                    Tải lại
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[900px] text-left text-[13px]">
+                    <thead>
+                      <tr className="border-b border-[#EEF6FF] bg-slate-50 text-[#64748B]">
+                        <th className="px-6 py-4 font-bold">Phương thức</th>
+                        <th className="px-6 py-4 font-bold">Mô tả</th>
+                        <th className="px-6 py-4 font-bold">Phí</th>
+                        <th className="px-6 py-4 font-bold">Thứ tự</th>
+                        <th className="px-6 py-4 font-bold">Trạng thái</th>
+                        <th className="px-6 py-4 text-right font-bold">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#EEF6FF]">
+                      {isFetchingShippingMethods ? (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-10 text-center text-sm font-bold text-[#94A3B8]">
+                            Đang tải phương thức giao hàng...
+                          </td>
+                        </tr>
+                      ) : shippingMethods.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-10 text-center text-sm font-bold text-[#94A3B8]">
+                            Chưa có phương thức giao hàng nào.
+                          </td>
+                        </tr>
+                      ) : (
+                        shippingMethods.map((method) => (
+                          <tr key={method.id} className="hover:bg-slate-50/60">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-[#0057E7]">
+                                  <Truck size={18} />
+                                </div>
+                                <div>
+                                  <div className="font-black text-[#0B1F3A]">{method.name}</div>
+                                  <div className="font-mono text-[11px] font-bold text-[#94A3B8]">{method.methodKey}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 max-w-md text-xs font-semibold leading-relaxed text-[#64748B]">
+                              {method.description || "Chưa có mô tả"}
+                            </td>
+                            <td className="px-6 py-4 font-black text-[#0B1F3A]">
+                              {method.fee > 0 ? `${method.fee.toLocaleString("vi-VN")}đ` : "Miễn phí"}
+                            </td>
+                            <td className="px-6 py-4 font-bold text-[#64748B]">{method.sortOrder}</td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-black ${
+                                method.isActive
+                                  ? "border-green-200 bg-green-50 text-green-700"
+                                  : "border-slate-200 bg-slate-100 text-slate-500"
+                              }`}>
+                                {method.isActive ? "Đang bật" : "Đã tắt"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => startEditShippingMethod(method)}
+                                  className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-black text-[#0057E7] transition hover:bg-[#0057E7] hover:text-white"
+                                >
+                                  Sửa
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleShippingMethod(method)}
+                                  className={`rounded-lg px-3 py-2 text-xs font-black transition ${
+                                    method.isActive
+                                      ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                                      : "bg-green-50 text-green-700 hover:bg-green-100"
+                                  }`}
+                                >
+                                  {method.isActive ? "Tắt" : "Bật"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteShippingMethod(method)}
+                                  className="grid h-8 w-8 place-items-center rounded-lg bg-red-50 text-red-600 transition hover:bg-red-600 hover:text-white"
+                                  title="Xóa phương thức"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           )}
         </main>
       </div>
@@ -1433,7 +1785,7 @@ export function AdminOrdersPage() {
                         )}
                         <div className="mt-2 text-xs font-semibold text-[#0057E7] bg-blue-50/50 p-2 rounded-lg border border-blue-100 flex items-center justify-between">
                           <span>Phương thức:</span>
-                          <span className="font-black tracking-wide uppercase">{SHIPPING_METHOD_MAP[selectedOrder.shipping_method || "express"] || selectedOrder.shipping_method || "Hỏa tốc"}</span>
+                          <span className="font-black tracking-wide uppercase">{getShippingMethodName(selectedOrder.shipping_method || "express")}</span>
                         </div>
                       </div>
                     </div>

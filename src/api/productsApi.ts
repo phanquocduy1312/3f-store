@@ -114,16 +114,65 @@ export type ProductDetailResponse = {
   data: ApiProduct;
 };
 
+export type ProductReview = {
+  id: number;
+  productId: number;
+  customerId: number;
+  orderId: number;
+  orderItemId: number;
+  orderCode?: string | null;
+  rating: number;
+  content: string;
+  images: string[];
+  verifiedPurchase: boolean;
+  customerName: string;
+  createdAt: string;
+};
+
+export type ProductReviewEligibility = {
+  eligible: boolean;
+  requiresLogin?: boolean;
+  reason?: string | null;
+  completedPurchaseCount?: number;
+  alreadyReviewed?: boolean;
+  orderId?: number;
+  orderItemId?: number;
+  orderCode?: string;
+};
+
+export type ProductReviewsResponse = {
+  success: boolean;
+  data: {
+    items: ProductReview[];
+    summary: {
+      averageRating: number;
+      reviewCount: number;
+    };
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+};
+
 export async function apiJson<T>(path: string, options?: RequestInit): Promise<T> {
   const adminToken = localStorage.getItem("admin_token");
   const customerToken = localStorage.getItem("customer_token");
+  const isAdminRequest = path.startsWith("/api/admin");
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  if (adminToken) {
+
+  if (isAdminRequest && adminToken) {
     headers["Authorization"] = `Bearer ${adminToken}`;
+    headers["X-Admin-Token"] = adminToken;
   } else if (customerToken) {
     headers["Authorization"] = `Bearer ${customerToken}`;
+    headers["X-Customer-Token"] = customerToken;
+  } else if (adminToken) {
+    headers["Authorization"] = `Bearer ${adminToken}`;
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -152,7 +201,11 @@ export async function apiJson<T>(path: string, options?: RequestInit): Promise<T
     }
   }
   if (!response.ok || !data.success) {
-    throw new Error(data?.message || `API error ${response.status || ""}`.trim() || "Không tải được dữ liệu.");
+    const errorObj = new Error(data?.message || `API error ${response.status || ""}`.trim() || "Không tải được dữ liệu.");
+    if (data && typeof data === "object" && data.errors) {
+      (errorObj as any).errors = data.errors;
+    }
+    throw errorObj;
   }
   return data;
 }
@@ -233,11 +286,11 @@ export function mapApiProduct(p: ApiProduct | any): Product {
     image: variant.imageUrl || variant.image_url || mainImage,
     stock: variant.stockQuantity || variant.stock_quantity,
     option1Name: variant.option1Name || variant.option1_name || undefined,
-    option1Value: variant.option1Value || variant.option1_value || undefined,
+    option1Value: (variant.option1Value !== undefined && variant.option1Value !== null) ? String(variant.option1Value) : (variant.option1_value !== undefined && variant.option1_value !== null) ? String(variant.option1_value) : undefined,
     option2Name: variant.option2Name || variant.option2_name || undefined,
-    option2Value: variant.option2Value || variant.option2_value || undefined,
+    option2Value: (variant.option2Value !== undefined && variant.option2Value !== null) ? String(variant.option2Value) : (variant.option2_value !== undefined && variant.option2_value !== null) ? String(variant.option2_value) : undefined,
     option3Name: variant.option3Name || variant.option3_name || undefined,
-    option3Value: variant.option3Value || variant.option3_value || undefined,
+    option3Value: (variant.option3Value !== undefined && variant.option3Value !== null) ? String(variant.option3Value) : (variant.option3_value !== undefined && variant.option3_value !== null) ? String(variant.option3_value) : undefined,
   }));
 
   // Force reviews average and counts to look premium if reviews don't exist yet
@@ -304,6 +357,35 @@ export async function getProductDetail(identifier: string) {
     item: mapApiProduct(response.data),
     rawItem: response.data,
   };
+}
+
+export async function getProductReviews(productId: number, params: { rating?: number; hasImages?: boolean; verifiedOnly?: boolean; page?: number; limit?: number } = {}) {
+  return apiJson<ProductReviewsResponse>(
+    `/api/products/reviews${buildQuery({
+      productId,
+      rating: params.rating,
+      hasImages: params.hasImages ? 1 : undefined,
+      verifiedOnly: params.verifiedOnly ? 1 : undefined,
+      page: params.page,
+      limit: params.limit,
+    })}`,
+  );
+}
+
+export async function getProductReviewEligibility(productId: number) {
+  return apiJson<{ success: boolean; data: ProductReviewEligibility }>(
+    `/api/products/review-eligibility${buildQuery({ productId })}`,
+  );
+}
+
+export async function createProductReview(productId: number, payload: { rating: number; content: string; orderItemId?: number; images?: string[] }) {
+  return apiJson<{ success: boolean; message: string; data: ProductReview }>(
+    `/api/products/reviews${buildQuery({ productId })}`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
 }
 
 export async function getProductCategories() {

@@ -42,6 +42,7 @@ export interface AiResultData {
   warning: string;
   voucher_code: string;
   error?: string;
+  advisor_inputs?: Record<string, any>;
 }
 
 const labelsMap: Record<string, string> = {

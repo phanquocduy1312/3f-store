@@ -60,6 +60,7 @@ export function ProfilePage() {
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [phoneSaving, setPhoneSaving] = useState(false);
+  const [phoneOtpCooldown, setPhoneOtpCooldown] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
@@ -111,6 +112,14 @@ export function ProfilePage() {
     fetchProfile();
   }, []);
 
+  useEffect(() => {
+    if (phoneOtpCooldown <= 0) return;
+    const timer = window.setInterval(() => {
+      setPhoneOtpCooldown(prev => Math.max(prev - 1, 0));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [phoneOtpCooldown]);
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -160,6 +169,8 @@ export function ProfilePage() {
   };
 
   const handleRequestOtp = async () => {
+    if (phoneSaving || phoneOtpCooldown > 0) return;
+
     const phone = newPhone.trim();
     if (!phone || phone.length < 9) {
       toast.error("Số điện thoại không hợp lệ");
@@ -171,9 +182,15 @@ export function ProfilePage() {
       const res = await requestPhoneChangeApi(phone);
       if (res.success) {
         setOtpSent(true);
+        setPhoneOtpCooldown(60);
         toast.success("Mã OTP đã được gửi");
         if (res.devOtp) toast.info(`[DEV OTP]: ${res.devOtp}`, { duration: 10000 });
       } else {
+        const cooldownMatch = (res.message || "").match(/(\d+)\s*giây/i);
+        if (cooldownMatch) {
+          setOtpSent(true);
+          setPhoneOtpCooldown(Number(cooldownMatch[1]));
+        }
         toast.error(res.message || "Không thể gửi OTP");
       }
     } catch (e: any) {
@@ -197,6 +214,7 @@ export function ProfilePage() {
         setOtpSent(false);
         setOtp("");
         setNewPhone("");
+        setPhoneOtpCooldown(0);
         await fetchProfile();
         toast.success("Xác thực số điện thoại thành công. 3F Club đã được mở khóa.");
       } else {
@@ -420,6 +438,8 @@ export function ProfilePage() {
                         onClick={() => {
                           setNewPhone(profile.phone || "");
                           setIsChangingPhone(true);
+                          setOtpSent(false);
+                          setOtp("");
                         }}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-[#0057E7] px-3 py-2 text-xs font-bold text-white hover:bg-blue-700"
                       >
@@ -431,6 +451,9 @@ export function ProfilePage() {
                       onClick={() => {
                         setNewPhone("");
                         setIsChangingPhone(true);
+                        setOtpSent(false);
+                        setOtp("");
+                        setPhoneOtpCooldown(0);
                       }}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCEBFF] bg-white px-3 py-2 text-xs font-bold text-[#0057E7] hover:bg-[#EEF6FF]"
                     >
@@ -456,10 +479,10 @@ export function ProfilePage() {
                         />
                       </div>
                       <div className="flex gap-2">
-                        <button type="button" onClick={handleRequestOtp} disabled={phoneSaving} className="flex h-10 flex-1 items-center justify-center rounded-xl bg-[#0057E7] text-xs font-bold text-white disabled:opacity-60">
-                          {phoneSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gửi OTP"}
+                        <button type="button" onClick={handleRequestOtp} disabled={phoneSaving || phoneOtpCooldown > 0} className="flex h-10 flex-1 items-center justify-center rounded-xl bg-[#0057E7] text-xs font-bold text-white disabled:opacity-60">
+                          {phoneSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : phoneOtpCooldown > 0 ? `Gửi lại sau ${phoneOtpCooldown}s` : "Gửi OTP"}
                         </button>
-                        <button type="button" onClick={() => setIsChangingPhone(false)} className="h-10 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-500">Hủy</button>
+                        <button type="button" onClick={() => { setIsChangingPhone(false); setOtpSent(false); setOtp(""); }} className="h-10 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-500">Hủy</button>
                       </div>
                     </div>
                   ) : (
@@ -476,7 +499,9 @@ export function ProfilePage() {
                         <button type="button" onClick={handleVerifyOtp} disabled={phoneSaving || otp.length !== 6} className="flex h-10 flex-1 items-center justify-center rounded-xl bg-[#0057E7] text-xs font-bold text-white disabled:opacity-60">
                           {phoneSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Xác nhận"}
                         </button>
-                        <button type="button" onClick={() => { setOtpSent(false); setOtp(""); }} className="h-10 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-500">Nhập lại</button>
+                        <button type="button" onClick={handleRequestOtp} disabled={phoneSaving || phoneOtpCooldown > 0} className="h-10 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-500 disabled:opacity-60">
+                          {phoneOtpCooldown > 0 ? `${phoneOtpCooldown}s` : "Gửi lại"}
+                        </button>
                       </div>
                     </div>
                   )}

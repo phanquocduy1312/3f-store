@@ -123,6 +123,18 @@ class ShopeePointRequestController {
                 "otp_provider"      => getenv('OTP_PROVIDER') ?: 'mock'
             ]);
 
+            try {
+                (new \App\Models\AdminNotification())->createNotification(
+                    "Yêu cầu Shopee mới",
+                    "Khách hàng " . $customerName . " (" . $phone . ") vừa gửi yêu cầu tích điểm cho đơn Shopee #" . $shopeeOrderCode,
+                    "shopee_request",
+                    "shopee_point_request",
+                    $requestId
+                );
+            } catch (\Throwable $notiEx) {
+                error_log("Failed to create admin notification for shopee request: " . $notiEx->getMessage());
+            }
+
             Response::json([
                 "success"          => true,
                 "message"          => "3F đã nhận yêu cầu tích điểm từ đơn Shopee của bạn.",

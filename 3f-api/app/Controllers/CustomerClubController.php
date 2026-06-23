@@ -25,8 +25,9 @@ class CustomerClubController {
         $phone = $customer['phone'] ?? '';
         $customerId = $customer['id'];
         $isPhoneVerified = (int)($customer['is_phone_verified'] ?? 0);
+        $hasVerifiedPhone = $isPhoneVerified === 1 || !empty($customer['phone_verified_at']);
 
-        if ($isPhoneVerified !== 1) {
+        if (!$hasVerifiedPhone) {
             Response::json([
                 'success' => true,
                 'data' => [
@@ -48,66 +49,40 @@ class CustomerClubController {
         $usedPoints = $transModel->getUsedBalance($customerId);
         $expiredPoints = $transModel->getExpiredBalance($customerId);
         
-        // Get rolling 12 months stats for tier progress
-        $currentOrders = 0;
-        $currentSpend = 0.00;
-        if (!empty($phone)) {
-            $stmtStats = $db->prepare("
-                SELECT 
-                    COUNT(*) as order_count,
-                    COALESCE(SUM(subtotal - discount), 0) as total_spend
-                FROM orders
-                WHERE (customer_id = :cust_id OR phone = :phone)
-                  AND order_status = 'completed'
-                  AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-            ");
-            $stmtStats->execute([':cust_id' => $customerId, ':phone' => $phone]);
-            $stats = $stmtStats->fetch(PDO::FETCH_ASSOC);
-            $currentOrders = (int)($stats['order_count'] ?? 0);
-            $currentSpend = (float)($stats['total_spend'] ?? 0);
-        }
-
-        $settings = new \App\Models\LoyaltySettings();
-        $diamondSpend = (float)($settings->get('tier_diamond_spend') ?: 10000000);
-        $diamondOrders = (int)($settings->get('tier_diamond_orders') ?: 12);
-        
-        $goldSpend = (float)($settings->get('tier_gold_spend') ?: 5000000);
-        $goldOrders = (int)($settings->get('tier_gold_orders') ?: 6);
-        
-        $silverSpend = (float)($settings->get('tier_silver_spend') ?: 2000000);
-        $silverOrders = (int)($settings->get('tier_silver_orders') ?: 3);
+        $stats = $model->getCompletedOrderStats($customerId);
+        $currentOrders = (int)$stats['order_count'];
+        $currentSpend = (float)$stats['total_spend'];
 
         $nextTier = null;
         $tierName = $profile['tier_name'] ?: 'Member';
-        if ($tierName === 'Member') {
-            $nextTier = [
-                'name' => 'Silver',
-                'minSpend' => $silverSpend,
-                'minOrders' => $silverOrders,
-                'currentSpend' => $currentSpend,
-                'currentOrders' => $currentOrders,
-            ];
-        } elseif ($tierName === 'Silver') {
-            $nextTier = [
-                'name' => 'Gold',
-                'minSpend' => $goldSpend,
-                'minOrders' => $goldOrders,
-                'currentSpend' => $currentSpend,
-                'currentOrders' => $currentOrders,
-            ];
-        } elseif ($tierName === 'Gold') {
-            $nextTier = [
-                'name' => 'Diamond',
-                'minSpend' => $diamondSpend,
-                'minOrders' => $diamondOrders,
-                'currentSpend' => $currentSpend,
-                'currentOrders' => $currentOrders,
-            ];
+        $stmtTiers = $db->prepare("
+            SELECT name, min_spend, min_orders
+            FROM loyalty_tiers
+            WHERE is_active = 1
+            ORDER BY min_spend ASC, min_orders ASC, id ASC
+        ");
+        $stmtTiers->execute();
+        $tiers = $stmtTiers->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($tiers as $tier) {
+            $tierSpend = (float)($tier['min_spend'] ?? 0);
+            $tierOrders = (int)($tier['min_orders'] ?? 0);
+            if (
+                strcasecmp($tier['name'], $tierName) !== 0 &&
+                ($tierSpend > $currentSpend || $tierOrders > $currentOrders)
+            ) {
+                $nextTier = [
+                    'name' => $tier['name'],
+                    'minSpend' => $tierSpend,
+                    'minOrders' => $tierOrders,
+                    'currentSpend' => $currentSpend,
+                    'currentOrders' => $currentOrders,
+                ];
+                break;
+            }
         }
 
-        // Get tier redemption cap percentage
-        $tierKey = strtolower($tierName);
-        $capPercent = (int)($settings->get("tier_{$tierKey}_cap") ?: 10);
+        $capPercent = (int)($profile['redemption_cap_percent'] ?? 10);
+        $settings = new \App\Models\LoyaltySettings();
         $otpRequired = (int)($settings->get('otp_required_redemption') ?: 1) === 1;
 
         Response::json([
@@ -117,7 +92,7 @@ class CustomerClubController {
                 'holdingPoints' => $holdingPoints,
                 'usedPoints' => $usedPoints,
                 'expiredPoints' => $expiredPoints,
-                'phoneVerified' => $isPhoneVerified === 1,
+                'phoneVerified' => $hasVerifiedPhone,
                 'phone' => $phone,
                 'otpRequired' => $otpRequired,
                 'tier' => [

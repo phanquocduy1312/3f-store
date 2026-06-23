@@ -78,6 +78,9 @@ use App\Controllers\AdminDashboardController;
 use App\Controllers\BannerController;
 use App\Controllers\BlogPostController;
 use App\Controllers\WorkflowController;
+use App\Controllers\AdminNotificationController;
+use App\Controllers\ProductReviewController;
+use App\Controllers\OrderShippingMethodController;
 
 
 try {
@@ -101,6 +104,9 @@ try {
     new \App\Models\CustomerWishlist();
     new \App\Models\Banner();
     new \App\Models\BlogPost();
+    new \App\Models\AdminNotification();
+    new \App\Models\ProductReview();
+    new \App\Models\OrderShippingMethod();
 
     // 3. Initialize Router
     $router = new Router();
@@ -115,6 +121,12 @@ try {
     $router->get("/api/admin/dashboard/stats", [AdminDashboardController::class, "getStats"]);
     $router->get("/api/admin/dashboard/revenue-chart", [AdminDashboardController::class, "getRevenueChart"]);
     $router->get("/api/admin/dashboard/task-queue", [AdminDashboardController::class, "getTaskQueue"]);
+
+    // Admin Notifications Routes
+    $router->get("/api/admin/notifications", [AdminNotificationController::class, "list"]);
+    $router->get("/api/admin/notifications/unread-count", [AdminNotificationController::class, "unreadCount"]);
+    $router->post("/api/admin/notifications/mark-read", [AdminNotificationController::class, "markRead"]);
+    $router->post("/api/admin/notifications/delete", [AdminNotificationController::class, "delete"]);
 
     // Admin Customer Management Routes
     $router->get("/api/admin/customers", [AdminCustomerController::class, "list"]);
@@ -202,6 +214,8 @@ try {
     $router->patch("/api/customer/pets/:id", [CustomerPetController::class, "update"]);
     $router->delete("/api/customer/pets/:id", [CustomerPetController::class, "delete"]);
     $router->post("/api/customer/pet-advisor/consult", [CustomerPetController::class, "consult"]);
+    $router->get("/api/admin/pet-advisor/consultations", [CustomerPetController::class, "adminConsultations"]);
+    $router->get("/api/admin/pet-advisor/consultations/detail", [CustomerPetController::class, "adminConsultationDetail"]);
 
     $router->post("/api/shopee/order-scan", [ShopeeOrderScanController::class, "scan"]);
     $router->post("/api/shopee/guest/request-otp", [ShopeeGuestController::class, "requestOtp"]);
@@ -218,6 +232,27 @@ try {
     // Order E-commerce Routes
     $router->post("/api/orders/create", [OrderController::class, "create"]);
     $router->post("/api/coupons/validate", [CouponController::class, "validate"]);
+    $router->get("/api/vouchers/featured", [CouponController::class, "featured"]);
+    $router->get("/api/vouchers/cart-suggestions", [CouponController::class, "cartSuggestions"]);
+    $router->get("/api/vouchers/ai-advisor", [CouponController::class, "aiAdvisor"]);
+    $router->post("/api/vouchers/track", [CouponController::class, "track"]);
+
+    // Shipping Methods Routes
+    $router->get("/api/order-shipping-methods", [OrderShippingMethodController::class, "publicList"]);
+    $router->get("/api/admin/order-shipping-methods", [OrderShippingMethodController::class, "adminList"]);
+    $router->post("/api/admin/order-shipping-methods/save", [OrderShippingMethodController::class, "adminSave"]);
+    $router->post("/api/admin/order-shipping-methods/toggle", [OrderShippingMethodController::class, "adminToggle"]);
+    $router->delete("/api/admin/order-shipping-methods/:id", [OrderShippingMethodController::class, "adminDelete"]);
+
+    // Admin Voucher Routes
+    $router->get("/api/admin/vouchers", [CouponController::class, "adminList"]);
+    $router->get("/api/admin/vouchers/detail", [CouponController::class, "adminDetail"]);
+    $router->post("/api/admin/vouchers", [CouponController::class, "adminSave"]);
+    $router->post("/api/admin/vouchers/update", [CouponController::class, "adminSave"]);
+    $router->post("/api/admin/vouchers/toggle-active", [CouponController::class, "adminToggleActive"]);
+    $router->post("/api/admin/vouchers/delete", [CouponController::class, "adminDelete"]);
+    $router->get("/api/admin/vouchers/stats", [CouponController::class, "adminStats"]);
+
     $router->get("/api/orders/detail", [OrderController::class, "detail"]);
     $router->get("/api/orders/check", [OrderController::class, "check"]);
     $router->get("/api/admin/orders", [OrderController::class, "adminList"]);
@@ -258,6 +293,15 @@ try {
     $router->post("/api/admin/products/toggle-active", [ProductController::class, "adminToggleActive"]);
     $router->post("/api/admin/products/upload-image", [ProductController::class, "adminUploadImage"]);
     $router->post("/api/admin/products/reclassify", [ProductController::class, "adminReclassify"]);
+
+    // Product Reviews Routes
+    $router->get("/api/products/reviews", [ProductReviewController::class, "list"]);
+    $router->get("/api/products/review-eligibility", [ProductReviewController::class, "eligibility"]);
+    $router->post("/api/products/reviews", [ProductReviewController::class, "create"]);
+    $router->get("/api/admin/product-reviews", [ProductReviewController::class, "adminList"]);
+    $router->get("/api/admin/product-reviews/detail", [ProductReviewController::class, "adminDetail"]);
+    $router->put("/api/admin/product-reviews/:id/status", [ProductReviewController::class, "adminUpdateStatus"]);
+    $router->delete("/api/admin/product-reviews/:id", [ProductReviewController::class, "adminDelete"]);
 
     // Admin Category Routes
     $router->get("/api/admin/categories", [ProductController::class, "adminCategoryList"]);

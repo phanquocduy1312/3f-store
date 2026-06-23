@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { getProductDetail, getProducts } from "@/src/api/productsApi";
+import {
+  createProductReview,
+  getProductDetail,
+  getProductReviewEligibility,
+  getProductReviews,
+  getProducts,
+  type ProductReview,
+  type ProductReviewEligibility,
+} from "@/src/api/productsApi";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
 import { addToCart, parsePriceString } from "@/lib/cartHelper";
@@ -12,7 +20,7 @@ import { NewBadge } from "@/components/NewBadge";
 import { 
   Star, ChevronRight, ShoppingCart, Heart, Share2, 
   Minus, Plus, BellRing, Truck, Ticket, Award, RefreshCcw, CheckCircle, ShieldCheck,
-  Fish, BicepsFlexed, Droplets, Eye, HeartHandshake
+  Fish, BicepsFlexed, Droplets, Eye, HeartHandshake, X
 } from "lucide-react";
 import type { Product } from "@/types/store";
 import { useWishlist } from "@/src/context/WishlistContext";
@@ -54,6 +62,21 @@ function isFoodItem(category?: string) {
   return foodKeywords.some(keyword => catLower.includes(keyword));
 }
 
+function formatReviewDate(value?: string) {
+  if (!value) return "";
+  return new Date(value.replace(" ", "T")).toLocaleDateString("vi-VN");
+}
+
+function Stars({ value, size = 16 }: { value: number; size?: number }) {
+  return (
+    <div className="flex text-[#f5b014]">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <Star key={index} size={size} fill={index < Math.round(value) ? "currentColor" : "none"} />
+      ))}
+    </div>
+  );
+}
+
 export function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -78,6 +101,15 @@ export function ProductDetail() {
 
   const [crossSellProducts, setCrossSellProducts] = useState<Product[]>([]);
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
+  const [reviews, setReviews] = useState<ProductReview[]>([]);
+  const [reviewSummary, setReviewSummary] = useState({ averageRating: 0, reviewCount: 0 });
+  const [reviewEligibility, setReviewEligibility] = useState<ProductReviewEligibility | null>(null);
+  const [reviewFilter, setReviewFilter] = useState<"all" | "5" | "images" | "verified">("all");
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewContent, setReviewContent] = useState("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   
   const isFood = isFoodItem(product.category);
   const tabList = isFood 
@@ -153,6 +185,40 @@ export function ProductDetail() {
     if (selectedVariant?.image) setActiveImage(selectedVariant.image);
   }, [selectedVariantId]);
 
+  const loadReviews = () => {
+    if (!product.backendId) return;
+    setIsLoadingReviews(true);
+    const params = {
+      limit: 20,
+      rating: reviewFilter === "5" ? 5 : undefined,
+      hasImages: reviewFilter === "images" ? true : undefined,
+      verifiedOnly: reviewFilter === "verified" ? true : undefined,
+    };
+
+    Promise.all([
+      getProductReviews(product.backendId, params),
+      getProductReviewEligibility(product.backendId).catch(() => null),
+    ])
+      .then(([reviewRes, eligibilityRes]) => {
+        setReviews(reviewRes.data.items);
+        setReviewSummary(reviewRes.data.summary);
+        if (eligibilityRes?.data) {
+          setReviewEligibility(eligibilityRes.data);
+        } else {
+          setReviewEligibility(null);
+        }
+      })
+      .catch((error) => {
+        toast.error(error instanceof Error ? error.message : "Không tải được đánh giá.");
+      })
+      .finally(() => setIsLoadingReviews(false));
+  };
+
+  useEffect(() => {
+    if (!product.backendId) return;
+    loadReviews();
+  }, [product.backendId, reviewFilter]);
+
   useEffect(() => {
     const handleScroll = () => {
       if (tabsRef.current) {
@@ -191,6 +257,49 @@ export function ProductDetail() {
     }
   };
 
+  const openReviewModal = () => {
+    if (reviewEligibility?.requiresLogin) {
+      toast.error("Vui lòng đăng nhập để đánh giá sản phẩm.");
+      navigate("/login");
+      return;
+    }
+    if (!reviewEligibility?.eligible) {
+      toast.error(reviewEligibility?.reason || "Chỉ khách đã mua và đơn hàng hoàn tất mới được đánh giá.");
+      return;
+    }
+    setReviewRating(5);
+    setReviewContent("");
+    setIsReviewModalOpen(true);
+  };
+
+  const submitReview = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!product.backendId) return;
+    if (!reviewEligibility?.eligible) {
+      toast.error(reviewEligibility?.reason || "Chưa đủ điều kiện đánh giá.");
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    try {
+      await createProductReview(product.backendId, {
+        rating: reviewRating,
+        content: reviewContent.trim(),
+        orderItemId: reviewEligibility.orderItemId,
+      });
+      toast.success("Cảm ơn bạn đã đánh giá sản phẩm!");
+      setIsReviewModalOpen(false);
+      loadReviews();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không gửi được đánh giá.");
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  const displayedReviewCount = reviewSummary.reviewCount || product.reviews || 0;
+  const displayedRating = displayedReviewCount > 0 ? (reviewSummary.averageRating || product.rating || 5) : 5;
+
   const currentPriceValue = parsePriceString(selectedVariant?.price ?? product.price);
   const oldPriceValueStr = selectedVariant?.oldPrice ?? (product as any).oldPrice;
   const oldPriceValue = oldPriceValueStr ? parsePriceString(oldPriceValueStr) : 0;
@@ -200,13 +309,9 @@ export function ProductDetail() {
 
   const hasVariants = productVariants.length > 0;
   const isVariantSelected = selectedVariantId !== null;
-  const availableStock = hasVariants
-    ? (selectedVariant ? (selectedVariant.stock ?? 0) : 0)
-    : (product.stock ?? 0);
-  const isOutOfStock = hasVariants
-    ? (isVariantSelected && availableStock <= 0)
-    : (availableStock <= 0);
-  const isButtonDisabled = isOutOfStock || (hasVariants && !isVariantSelected);
+  const availableStock = 999;
+  const isOutOfStock = false;
+  const isButtonDisabled = hasVariants && !isVariantSelected;
 
   const formattedTotalPrice = (currentPriceValue * quantity).toLocaleString("vi-VN") + "đ";
   const formattedOldPrice = oldPriceValue > 0 ? (oldPriceValue * quantity).toLocaleString("vi-VN") + "đ" : null;
@@ -300,12 +405,12 @@ export function ProductDetail() {
             <div className="mb-6 flex flex-wrap items-center gap-3 text-sm">
               <div className="flex items-center gap-1 text-[#f5b014]">
                 {Array.from({length: 5}).map((_, i) => (
-                  <Star key={i} size={15} fill={i < Math.floor(product.rating || 5) ? "currentColor" : "transparent"} color={i < Math.floor(product.rating || 5) ? "currentColor" : "#d1d5db"} strokeWidth={2.5}/>
+                  <Star key={i} size={15} fill={i < Math.floor(displayedRating || 5) ? "currentColor" : "transparent"} color={i < Math.floor(displayedRating || 5) ? "currentColor" : "#d1d5db"} strokeWidth={2.5}/>
                 ))}
               </div>
-              <span className="font-bold text-[rgb(var(--color-ink))]">{(product.rating || 5.0).toFixed(1)}</span>
+              <span className="font-bold text-[rgb(var(--color-ink))]">{(displayedRating || 5.0).toFixed(1)}</span>
               <span className="text-[#d1d5db]">|</span>
-              <span className="font-medium text-[rgb(var(--color-ink-soft))]"><strong className="text-[rgb(var(--color-ink))]">{(product.reviews || 0).toLocaleString("vi-VN")}</strong> đánh giá</span>
+              <span className="font-medium text-[rgb(var(--color-ink-soft))]"><strong className="text-[rgb(var(--color-ink))]">{displayedReviewCount.toLocaleString("vi-VN")}</strong> đánh giá</span>
               <span className="text-[#d1d5db]">|</span>
               <span className="font-medium text-[rgb(var(--color-ink-soft))]">Đã bán <strong className="text-[rgb(var(--color-ink))]">{(product.sold || 0).toLocaleString("vi-VN")}</strong></span>
             </div>
@@ -405,19 +510,7 @@ export function ProductDetail() {
                   <p className="mt-3 text-sm font-semibold text-amber-600">
                     ⚠️ Vui lòng chọn phân loại sản phẩm.
                   </p>
-                ) : (
-                  <p className="mt-3 text-sm font-semibold text-gray-600">
-                    Kho hàng: <span className="font-bold text-[rgb(var(--color-ink))]">{availableStock}</span> sản phẩm sẵn có
-                  </p>
-                )}
-              </div>
-            )}
-
-            {!hasVariants && (
-              <div className="mb-6">
-                <p className="text-sm font-semibold text-gray-600">
-                  Kho hàng: <span className="font-bold text-[rgb(var(--color-ink))]">{availableStock}</span> sản phẩm sẵn có
-                </p>
+                ) : null}
               </div>
             )}
             {/* Quantity & CTA */}
@@ -539,7 +632,7 @@ export function ProductDetail() {
                     className={`relative whitespace-nowrap pb-3 text-[15px] font-bold transition-colors ${isActive ? "text-[rgb(var(--color-primary))]" : "text-[rgb(var(--color-ink-soft))] hover:text-[rgb(var(--color-ink))]"}`}
                   >
                     {tab.label}
-                    {tab.key === "reviews" && ` (${product.reviews || 0})`}
+                    {tab.key === "reviews" && ` (${displayedReviewCount})`}
                     {isActive && <div className="absolute bottom-0 left-0 h-1 w-full rounded-t-full bg-[rgb(var(--color-primary))]"></div>}
                   </button>
                 )
@@ -668,33 +761,60 @@ export function ProductDetail() {
                 <div>
                    <div className="mb-8 flex flex-col md:flex-row gap-8 rounded-[24px] bg-white p-6 shadow-sm border border-[rgb(var(--color-border))]">
                      <div className="flex flex-col items-center justify-center text-center md:w-1/3 md:border-r md:border-[rgb(var(--color-border))]">
-                       <div className="text-[48px] font-black text-[rgb(var(--color-ink))] leading-none">5.0<span className="text-xl text-[rgb(var(--color-ink-soft))]">/5</span></div>
-                       <div className="my-2 flex text-[#f5b014]"><Star fill="currentColor"/><Star fill="currentColor"/><Star fill="currentColor"/><Star fill="currentColor"/><Star fill="currentColor"/></div>
-                       <div className="text-sm text-[rgb(var(--color-ink-soft))]">{product.reviews || 0} đánh giá</div>
-                       <button className="mt-4 rounded-full bg-[rgb(var(--color-primary))] px-6 py-2 text-sm font-bold text-white transition hover:bg-[rgb(var(--color-primary-dark))]">Viết đánh giá</button>
+                       <div className="text-[48px] font-black text-[rgb(var(--color-ink))] leading-none">{displayedRating.toFixed(1)}<span className="text-xl text-[rgb(var(--color-ink-soft))]">/5</span></div>
+                       <div className="my-2"><Stars value={displayedRating} size={22} /></div>
+                       <div className="text-sm text-[rgb(var(--color-ink-soft))]">{displayedReviewCount} đánh giá</div>
+                       <button
+                         onClick={openReviewModal}
+                         className="mt-4 rounded-full bg-[rgb(var(--color-primary))] px-6 py-2 text-sm font-bold text-white transition hover:bg-[rgb(var(--color-primary-dark))]"
+                       >
+                         Viết đánh giá
+                       </button>
+                       {reviewEligibility && !reviewEligibility.eligible && (
+                         <div className="mt-3 max-w-[260px] text-xs font-semibold leading-relaxed text-[rgb(var(--color-ink-soft))]">
+                           {reviewEligibility.reason}
+                         </div>
+                       )}
                      </div>
                      <div className="md:w-2/3 flex flex-wrap gap-2 items-start content-start">
-                       {["Tất cả", "5 sao", "Có hình ảnh", "Đã mua hàng"].map((filter, i) => (
-                         <button key={i} className={`rounded-full px-4 py-1.5 text-[13px] font-bold border transition ${i === 0 ? "bg-[rgb(var(--color-primary-soft))] text-[rgb(var(--color-primary))] border-[rgb(var(--color-primary))]" : "bg-white text-[rgb(var(--color-ink-soft))] border-[rgb(var(--color-border))] hover:border-[rgb(var(--color-primary))]"}`}>{filter}</button>
+                       {[
+                         { key: "all", label: "Tất cả" },
+                         { key: "5", label: "5 sao" },
+                         { key: "images", label: "Có hình ảnh" },
+                         { key: "verified", label: "Đã mua hàng" },
+                       ].map((filter) => (
+                         <button
+                           key={filter.key}
+                           onClick={() => setReviewFilter(filter.key as any)}
+                           className={`rounded-full px-4 py-1.5 text-[13px] font-bold border transition ${reviewFilter === filter.key ? "bg-[rgb(var(--color-primary-soft))] text-[rgb(var(--color-primary))] border-[rgb(var(--color-primary))]" : "bg-white text-[rgb(var(--color-ink-soft))] border-[rgb(var(--color-border))] hover:border-[rgb(var(--color-primary))]"}`}
+                         >
+                           {filter.label}
+                         </button>
                        ))}
                      </div>
                    </div>
 
                    <div className="space-y-6">
-                     {[
-                       { name: "Nguyễn M.", date: "2 ngày trước", text: `Đóng gói sản phẩm ${product.name} rất cẩn thận, giao hàng siêu nhanh luôn. Thú cưng nhà mình rất thích sản phẩm của ${product.brand || "hãng"}, sẽ tiếp tục ủng hộ 3F Store.`, images: [] as string[] },
-                       { name: "Trần Hà", date: "1 tuần trước", text: `Mua ở 3F Store yên tâm hàng chuẩn chính hãng. Sản phẩm chất lượng tốt, date xa, mua lúc có voucher siêu hời.`, images: [] as string[] }
-                     ].map((review: { name: string; date: string; text: string; images?: string[] }, i: number) => (
-                       <div key={i} className="flex gap-4 border-b border-[rgb(var(--color-border))] pb-6">
-                         <div className="h-10 w-10 shrink-0 rounded-full bg-[#f3f4f6] flex items-center justify-center font-bold text-[rgb(var(--color-ink-soft))]">{review.name.charAt(0)}</div>
+                     {isLoadingReviews ? (
+                       <div className="rounded-[20px] border border-[rgb(var(--color-border))] bg-white p-6 text-center text-sm font-bold text-[rgb(var(--color-ink-soft))]">
+                         Đang tải đánh giá...
+                       </div>
+                     ) : reviews.length === 0 ? (
+                       <div className="rounded-[20px] border border-[rgb(var(--color-border))] bg-white p-8 text-center">
+                         <div className="text-base font-black text-[rgb(var(--color-ink))]">Chưa có đánh giá phù hợp</div>
+                         <div className="mt-1 text-sm text-[rgb(var(--color-ink-soft))]">Khách đã mua và có đơn hoàn tất sẽ là người đầu tiên đánh giá sản phẩm này.</div>
+                       </div>
+                     ) : reviews.map((review) => (
+                       <div key={review.id} className="flex gap-4 border-b border-[rgb(var(--color-border))] pb-6">
+                         <div className="h-10 w-10 shrink-0 rounded-full bg-[#f3f4f6] flex items-center justify-center font-bold text-[rgb(var(--color-ink-soft))]">{review.customerName.charAt(0)}</div>
                          <div>
                            <div className="flex items-center gap-2 mb-1">
-                             <div className="font-bold text-[rgb(var(--color-ink))]">{review.name}</div>
-                             <div className="flex items-center gap-1 text-[11px] font-bold text-[#16a34a] bg-[#f0fdf4] px-2 py-0.5 rounded"><CheckCircle size={10}/> Đã mua hàng</div>
-                             <div className="text-xs text-[rgb(var(--color-ink-soft))] ml-auto">{review.date}</div>
+                             <div className="font-bold text-[rgb(var(--color-ink))]">{review.customerName}</div>
+                             {review.verifiedPurchase && <div className="flex items-center gap-1 text-[11px] font-bold text-[#16a34a] bg-[#f0fdf4] px-2 py-0.5 rounded"><CheckCircle size={10}/> Đã mua hàng</div>}
+                             <div className="text-xs text-[rgb(var(--color-ink-soft))] ml-auto">{formatReviewDate(review.createdAt)}</div>
                            </div>
-                           <div className="flex text-[#f5b014] mb-2"><Star size={12} fill="currentColor"/><Star size={12} fill="currentColor"/><Star size={12} fill="currentColor"/><Star size={12} fill="currentColor"/><Star size={12} fill="currentColor"/></div>
-                           <p className="text-sm text-[rgb(var(--color-ink-soft))] mb-3">{review.text}</p>
+                           <div className="mb-2"><Stars value={review.rating} size={12} /></div>
+                           <p className="text-sm text-[rgb(var(--color-ink-soft))] mb-3">{review.content}</p>
                            {review.images && review.images.length > 0 && (
                              <div className="flex gap-2">
                                {review.images.map((img: string, idx: number) => (
@@ -808,6 +928,85 @@ export function ProductDetail() {
         </div>
 
       </div>
+
+      {isReviewModalOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-[24px] bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-black text-[rgb(var(--color-ink))]">Viết đánh giá</h3>
+                <p className="mt-1 text-sm font-semibold text-[rgb(var(--color-ink-soft))]">
+                  Đánh giá cho đơn {reviewEligibility?.orderCode || "đã hoàn tất"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsReviewModalOpen(false)}
+                className="grid h-9 w-9 place-items-center rounded-full bg-[rgb(var(--color-surface-soft))] text-[rgb(var(--color-ink-soft))] transition hover:text-[rgb(var(--color-ink))]"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={submitReview} className="space-y-5">
+              <div>
+                <div className="mb-2 text-sm font-bold text-[rgb(var(--color-ink))]">Chọn số sao</div>
+                <div className="flex gap-2 text-[#f5b014]">
+                  {Array.from({ length: 5 }).map((_, index) => {
+                    const value = index + 1;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setReviewRating(value)}
+                        className="rounded-lg p-1 transition hover:scale-110"
+                        aria-label={`${value} sao`}
+                      >
+                        <Star size={30} fill={value <= reviewRating ? "currentColor" : "none"} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-[rgb(var(--color-ink))]">Nội dung đánh giá</label>
+                <textarea
+                  value={reviewContent}
+                  onChange={(event) => setReviewContent(event.target.value)}
+                  rows={5}
+                  minLength={10}
+                  required
+                  placeholder="Chia sẻ cảm nhận thật về sản phẩm, đóng gói, chất lượng..."
+                  className="w-full resize-none rounded-2xl border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface-soft))] px-4 py-3 text-sm font-semibold text-[rgb(var(--color-ink))] outline-none transition focus:border-[rgb(var(--color-primary))] focus:bg-white"
+                />
+                <p className="mt-1 text-xs font-semibold text-[rgb(var(--color-ink-soft))]">Tối thiểu 10 ký tự. Đánh giá sẽ hiển thị với nhãn Đã mua hàng.</p>
+              </div>
+
+              <div className="rounded-2xl bg-[#f0fdf4] px-4 py-3 text-xs font-bold leading-relaxed text-[#15803d]">
+                Hệ thống chỉ cho phép đánh giá khi tài khoản này đã mua sản phẩm và đơn hàng đã hoàn tất.
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsReviewModalOpen(false)}
+                  className="flex-1 rounded-2xl border border-[rgb(var(--color-border))] bg-white px-5 py-3 text-sm font-black text-[rgb(var(--color-ink-soft))] transition hover:bg-[rgb(var(--color-surface-soft))]"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReview || reviewContent.trim().length < 10}
+                  className="flex-1 rounded-2xl bg-[rgb(var(--color-primary))] px-5 py-3 text-sm font-black text-white transition hover:bg-[rgb(var(--color-primary-dark))] disabled:opacity-50"
+                >
+                  {isSubmittingReview ? "Đang gửi..." : "Gửi đánh giá"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Sticky Bottom Bar for Mobile & Desktop when scrolled far */}
       <div className="fixed bottom-0 left-0 w-full bg-white border-t border-[rgb(var(--color-border))] p-3 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] z-50 transition-transform">

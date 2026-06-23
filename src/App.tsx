@@ -29,6 +29,8 @@ const AdminOrdersPage = lazyPage(() => import("./pages/admin/AdminOrdersPage"), 
 const AdminLogin = lazyPage(() => import("./pages/admin/AdminLogin"), "AdminLogin");
 const AdminCustomersPage = lazyPage(() => import("./pages/admin/AdminCustomersPage"), "AdminCustomersPage");
 const AdminCustomerDetailPage = lazyPage(() => import("./pages/admin/AdminCustomer360Page"), "AdminCustomerDetailPage");
+const AdminPetAdvisorPage = lazyPage(() => import("./pages/admin/AdminPetAdvisorPage"), "AdminPetAdvisorPage");
+const AdminPetAdvisorDetailPage = lazy(() => import("./pages/admin/AdminPetAdvisorDetailPage"));
 
 // Admin Product Pages
 const AdminProductsPage = lazyPage(() => import("./pages/admin/AdminProductsPage"), "AdminProductsPage");
@@ -37,6 +39,8 @@ const AdminCategoriesPage = lazyPage(() => import("./pages/admin/AdminCategories
 const AdminBannersPage = lazyPage(() => import("./pages/admin/AdminBannersPage"), "AdminBannersPage");
 const AdminNewsPage = lazyPage(() => import("./pages/admin/AdminNewsPage"), "AdminNewsPage");
 const AdminNewsEditorPage = lazyPage(() => import("./pages/admin/AdminNewsEditorPage"), "AdminNewsEditorPage");
+const AdminProductReviewsPage = lazyPage(() => import("./pages/admin/AdminProductReviewsPage"), "AdminProductReviewsPage");
+const AdminVouchersPage = lazyPage(() => import("./pages/admin/AdminVouchersPage"), "AdminVouchersPage");
 const BlogList = lazyPage(() => import("./pages/BlogList"), "BlogList");
 const BlogDetail = lazyPage(() => import("./pages/BlogDetail"), "BlogDetail");
 
@@ -127,6 +131,8 @@ export function App() {
             <Route path="/admin/shopee-requests" element={<ShopeeRequestsPage />} />
             <Route path="/admin/loyalty-settings" element={<LoyaltySettingsPage />} />
             <Route path="/admin/3f-club" element={<ThreeFClubPage />} />
+            <Route path="/admin/pet-advisor" element={<AdminPetAdvisorPage />} />
+            <Route path="/admin/pet-advisor/consultation/:id" element={<AdminPetAdvisorDetailPage />} />
             <Route path="/admin/customers" element={<AdminCustomersPage />} />
             <Route path="/admin/customers/:id" element={<AdminCustomerDetailPage />} />
             <Route path="/admin/customers/:id/loyalty" element={<CustomerLoyaltyPage />} />
@@ -135,6 +141,8 @@ export function App() {
             <Route path="/admin/products" element={<AdminProductsPage />} />
             <Route path="/admin/products/create" element={<AdminProductForm />} />
             <Route path="/admin/products/:id" element={<AdminProductForm />} />
+            <Route path="/admin/reviews" element={<AdminProductReviewsPage />} />
+            <Route path="/admin/vouchers" element={<AdminVouchersPage />} />
             <Route path="/admin/categories" element={<AdminCategoriesPage />} />
             <Route path="/admin/banners" element={<AdminBannersPage />} />
             <Route path="/admin/news" element={<AdminNewsPage />} />

@@ -38,7 +38,7 @@ try {
     CREATE TABLE IF NOT EXISTS otp_requests (
         id INT AUTO_INCREMENT PRIMARY KEY,
         phone VARCHAR(30) NOT NULL,
-        purpose ENUM('register_phone', 'redeem_reward', 'use_points', 'change_phone', 'sensitive_action') NOT NULL,
+        purpose ENUM('login', 'register', 'reset_password', 'register_phone', 'redeem_reward', 'use_points', 'change_phone', 'link_phone', 'sensitive_action', 'shopee_point_request', 'shopee_point_guest') NOT NULL,
         otp_hash VARCHAR(256) NOT NULL,
         provider VARCHAR(50) NOT NULL,
         expires_at DATETIME NOT NULL,

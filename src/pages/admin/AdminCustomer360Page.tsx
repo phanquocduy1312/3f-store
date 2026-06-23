@@ -8,7 +8,6 @@ import {
   CircleDollarSign,
   FileText,
   Gift,
-  Heart,
   Mail,
   MapPin,
   Phone,
@@ -17,7 +16,6 @@ import {
   ShoppingBag,
   StickyNote,
   Tag,
-  Ticket,
   User,
   X,
 } from "lucide-react";
@@ -30,11 +28,9 @@ import { CustomerAddressesTab } from "@/components/admin/customers/tabs/Customer
 import { CustomerNotesTab } from "@/components/admin/customers/tabs/CustomerNotesTab";
 import { CustomerOrdersTab } from "@/components/admin/customers/tabs/CustomerOrdersTab";
 import { CustomerOverviewTab } from "@/components/admin/customers/tabs/CustomerOverviewTab";
-import { CustomerPetsTab } from "@/components/admin/customers/tabs/CustomerPetsTab";
 import { CustomerPointsTab } from "@/components/admin/customers/tabs/CustomerPointsTab";
 import { CustomerSessionsTab } from "@/components/admin/customers/tabs/CustomerSessionsTab";
 import { CustomerTimelineTab } from "@/components/admin/customers/tabs/CustomerTimelineTab";
-import { CustomerVouchersTab } from "@/components/admin/customers/tabs/CustomerVouchersTab";
 import { adminCustomersApi } from "../../api/adminCustomersApi";
 
 const tabs = [
@@ -44,8 +40,6 @@ const tabs = [
   { id: "notes", label: "Ghi chú CSKH", icon: StickyNote },
   { id: "timeline", label: "Lịch sử hoạt động", icon: Activity },
   { id: "addresses", label: "Địa chỉ", icon: MapPin },
-  { id: "pets", label: "Thú cưng", icon: Heart },
-  { id: "vouchers", label: "Kho voucher", icon: Ticket },
   { id: "sessions", label: "Bảo mật & phiên", icon: Shield },
 ];
 
@@ -60,7 +54,69 @@ const formatDate = (value?: string | null) => {
 };
 
 const getCustomerName = (customer: any) => customer?.full_name || customer?.name || "Chưa cập nhật tên";
-const getPointBalance = (customer: any) => Number(customer?.point_balance ?? customer?.points ?? customer?.loyalty_points ?? 0);
+const getPointBalance = (customer: any) => Number(customer?.point_balance ?? customer?.points ?? customer?.loyalty_points ?? customer?.total_points ?? 0);
+const getCustomerTier = (customer: any) => customer?.tier || customer?.loyalty_tier || customer?.loyaltyTier || "Member";
+
+type CustomerSummary = {
+  orders: number;
+  tierOrders: number;
+  spent: number;
+  tierSpent: number;
+  points: number;
+  completion: number;
+};
+
+const emptySummary: CustomerSummary = { orders: 0, tierOrders: 0, spent: 0, tierSpent: 0, points: 0, completion: 0 };
+
+const fulfilledArray = <T,>(result: PromiseSettledResult<T[]>): T[] => (
+  result.status === "fulfilled" && Array.isArray(result.value) ? result.value : []
+);
+
+const getOrderStatus = (order: any) => String(order?.order_status ?? order?.status ?? "").toLowerCase();
+
+const getOrderTotal = (order: any) => {
+  const total = Number(order?.total ?? order?.totalAmount ?? order?.total_amount ?? 0);
+  if (total > 0) return total;
+  return Math.max(Number(order?.subtotal ?? 0) - Number(order?.discount ?? 0), 0);
+};
+
+const calculateProfileCompletion = (customer: any, addresses: any[] = [], pets: any[] = []) => {
+  let completion = 10;
+  if (customer?.full_name || customer?.name) completion += 20;
+  if (customer?.email) completion += 20;
+  if (customer?.phone) completion += 20;
+  if (customer?.birthday) completion += 10;
+  if (customer?.gender) completion += 10;
+  if (addresses.length > 0) completion += 5;
+  if (pets.length > 0) completion += 5;
+  return Math.min(100, completion);
+};
+
+const buildCustomerSummary = (
+  customer: any,
+  orders: any[] = [],
+  points: any[] = [],
+  addresses: any[] = [],
+  pets: any[] = []
+): CustomerSummary => {
+  const validOrders = orders.filter(order => !["cancelled", "canceled"].includes(getOrderStatus(order)));
+  const completedOrders = validOrders.filter(order => getOrderStatus(order) === "completed");
+  const fallbackOrders = Number(customer?.total_orders ?? customer?.totalOrders ?? 0);
+  const fallbackSpent = Number(customer?.total_spent ?? customer?.totalSpent ?? 0);
+  const fallbackTierOrders = Number(customer?.tier_order_count ?? customer?.tierOrderCount ?? customer?.completed_orders ?? customer?.completedOrders ?? fallbackOrders);
+  const fallbackTierSpent = Number(customer?.tier_total_spent ?? customer?.tierTotalSpent ?? fallbackSpent);
+  const fallbackCompletion = Number(customer?.profile_completion ?? customer?.profileCompletion ?? 0);
+  const completedSpent = completedOrders.reduce((sum, order) => sum + getOrderTotal(order), 0);
+
+  return {
+    orders: orders.length > 0 ? validOrders.length : fallbackOrders,
+    tierOrders: fallbackTierOrders,
+    spent: orders.length > 0 ? completedSpent : fallbackSpent,
+    tierSpent: fallbackTierSpent,
+    points: points.length > 0 ? points.reduce((sum, item) => sum + Number(item?.points ?? 0), 0) : getPointBalance(customer),
+    completion: Math.max(fallbackCompletion, calculateProfileCompletion(customer, addresses, pets)),
+  };
+};
 
 function KpiCard({ icon, label, value, tone = "blue" }: { icon: React.ReactNode; label: string; value: string | number; tone?: "blue" | "green" | "amber" | "slate" }) {
   const toneClass = {
@@ -90,6 +146,7 @@ export function AdminCustomerDetailPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1200);
   const [activeTab, setActiveTab] = useState("overview");
   const [customer, setCustomer] = useState<any>(null);
+  const [customerSummary, setCustomerSummary] = useState<CustomerSummary>(emptySummary);
   const [loading, setLoading] = useState(true);
   const [confirmBlockId, setConfirmBlockId] = useState<number | null>(null);
   const [blockReason, setBlockReason] = useState("");
@@ -100,8 +157,29 @@ export function AdminCustomerDetailPage() {
     if (!id) return;
     try {
       setLoading(true);
-      const res = await adminCustomersApi.getDetail(Number(id));
-      setCustomer(res);
+      setCustomerSummary(emptySummary);
+      const customerId = Number(id);
+      const [detailResult, ordersResult, pointsResult, addressesResult, petsResult] = await Promise.allSettled([
+        adminCustomersApi.getDetail(customerId),
+        adminCustomersApi.getOrders(customerId),
+        adminCustomersApi.getPoints(customerId),
+        adminCustomersApi.getAddresses(customerId),
+        adminCustomersApi.getPets(customerId),
+      ]);
+
+      if (detailResult.status === "rejected") {
+        throw detailResult.reason;
+      }
+
+      const detail = detailResult.value;
+      setCustomer(detail);
+      setCustomerSummary(buildCustomerSummary(
+        detail,
+        fulfilledArray(ordersResult),
+        fulfilledArray(pointsResult),
+        fulfilledArray(addressesResult),
+        fulfilledArray(petsResult)
+      ));
     } catch (e: any) {
       toast.error(e.message || "Lỗi khi tải chi tiết khách hàng");
       navigate("/admin/customers");
@@ -115,14 +193,9 @@ export function AdminCustomerDetailPage() {
   }, [id]);
 
   const summary = useMemo(() => {
-    if (!customer) return { orders: 0, spent: 0, points: 0, completion: 0 };
-    return {
-      orders: Number(customer.total_orders ?? customer.totalOrders ?? 0),
-      spent: Number(customer.total_spent ?? customer.totalSpent ?? 0),
-      points: getPointBalance(customer),
-      completion: Number(customer.profile_completion ?? customer.profileCompletion ?? 0),
-    };
-  }, [customer]);
+    if (!customer) return emptySummary;
+    return customerSummary;
+  }, [customer, customerSummary]);
 
   const handleToggleStatus = () => {
     if (!customer) return;
@@ -170,6 +243,7 @@ export function AdminCustomerDetailPage() {
 
   const isActive = customer.status === "active";
   const customerName = getCustomerName(customer);
+  const customerTier = getCustomerTier(customer);
 
   return (
     <div className="relative min-h-screen bg-[#F6FAFF] font-sans">
@@ -237,10 +311,11 @@ export function AdminCustomerDetailPage() {
             </div>
           </section>
 
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <KpiCard icon={<ShoppingBag className="h-5 w-5" />} label="Tổng đơn" value={summary.orders} />
-            <KpiCard icon={<CircleDollarSign className="h-5 w-5" />} label="Tổng chi tiêu" value={formatCurrency(summary.spent)} tone="green" />
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <KpiCard icon={<ShoppingBag className="h-5 w-5" />} label="Tổng đơn" value={summary.tierOrders} />
+            <KpiCard icon={<CircleDollarSign className="h-5 w-5" />} label="Tổng chi tiêu" value={formatCurrency(summary.tierSpent)} tone="green" />
             <KpiCard icon={<Gift className="h-5 w-5" />} label="Điểm 3F" value={summary.points.toLocaleString("vi-VN")} tone="amber" />
+            <KpiCard icon={<BadgeCheck className="h-5 w-5" />} label="Hạng 3F" value={customerTier} tone="blue" />
             <KpiCard icon={<FileText className="h-5 w-5" />} label="Hoàn thiện hồ sơ" value={`${summary.completion || 0}%`} tone="slate" />
           </section>
 
@@ -273,12 +348,10 @@ export function AdminCustomerDetailPage() {
             <section className="min-w-0 flex-1 rounded-2xl border border-[#DCEBFF] bg-white p-4 shadow-sm md:p-6">
               {activeTab === "overview" && <CustomerOverviewTab customer={customer} />}
               {activeTab === "orders" && <CustomerOrdersTab customerId={customer.id} />}
-              {activeTab === "club" && <CustomerPointsTab customerId={customer.id} />}
+              {activeTab === "club" && <CustomerPointsTab customerId={customer.id} customerPhone={customer.phone} customerTier={customerTier} totalSpent={summary.tierSpent} totalOrders={summary.tierOrders} />}
               {activeTab === "notes" && <CustomerNotesTab customerId={Number(id)} />}
               {activeTab === "timeline" && <CustomerTimelineTab customerId={Number(id)} />}
               {activeTab === "addresses" && <CustomerAddressesTab customerId={customer.id} />}
-              {activeTab === "pets" && <CustomerPetsTab customerId={customer.id} />}
-              {activeTab === "vouchers" && <CustomerVouchersTab customerId={customer.id} />}
               {activeTab === "sessions" && <CustomerSessionsTab customerId={Number(id)} />}
             </section>
           </div>

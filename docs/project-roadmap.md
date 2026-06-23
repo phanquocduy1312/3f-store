@@ -55,6 +55,7 @@
 - [x] Triển khai hệ thống Quản lý Banner động chuyên nghiệp (database, API CRUD, Admin UI quản lý chiến dịch/lịch chạy/analytics click & views, client homepage integration với Swiper slider & promo cards fallback tự động).
 - [x] Triển khai hệ thống cào tin tức tự động từ 3fstore.vn/tin-tuc và tích hợp Blog/Tin tức động (database, API, trang tin tức chi tiết rich-text HTML và tích hợp trang chủ).
 - [x] Triển khai hệ thống Tin tức chuyên nghiệp đầy đủ nghiệp vụ SEO và trang tin tức làm đẹp (SEO Metadata injector, structured JSON-LD data, Table of Contents, sharing bar, related products slider, circular scroll-to-top, và Admin News Operations Page).
+- [x] Đồng bộ hóa giao diện trang quản lý Tin tức Admin (Admin News UI Synchronization) và trang soạn thảo tin tức theo tiêu chuẩn thiết kế premium đồng bộ của hệ thống quản trị 3F Store.
 - [x] Triển khai hệ thống xác thực OTP đa nhà cung cấp sử dụng Provider Adapter Pattern (Mock, SpeedSMS, FPT, Viettel, Stringee) cùng cơ chế bảo mật (OTP hashing, resend cooldown 60s, daily send limits, max verification attempts lock).
 - [x] Hoàn thiện Công cụ Tích lũy & Đổi điểm 3F Club nâng cấp (tích hợp ledger transaction tracking, CSDL và cài đặt admin, dynamic rolling 12-month tier Member/Silver/Gold/Diamond, cap redemption limits theo hạng, hiển thị banner nhắc nhở xác thực SĐT và tích hợp OTP trước khi đổi điểm).
 - [x] Trang quản lý tài khoản người dùng (Lịch sử đơn hàng, địa chỉ, lịch sử tư vấn AI).
@@ -62,6 +63,11 @@
 - [x] Di chuyển Hạng thành viên 3F Club thành Tab riêng biệt bên trái hiển thị thông tin hạng thành viên động và tiến trình thăng hạng sau khi số điện thoại được xác thực.
 - [x] Khôi phục và khóa tính năng sửa/xóa hạng Diamond tại Quản lý Hạng thành viên Admin làm hạng hệ thống mặc định.
 - [x] Loại bỏ 3 tab: Hạng thành viên, Quà & Voucher, và Cấu hình 3F Club khỏi trang quản trị Admin 3F Club theo kế hoạch tái cấu trúc.
+- [x] Thiết kế lại Giao diện Phân trang Voucher phía Admin (Redesign Voucher Pagination) sang dạng số trang kết hợp co giãn thông minh và hộp chọn số dòng hiển thị tinh gọn.
+- [x] Khắc phục lỗi rớt chữ cột Trạng thái/Thanh toán và ẩn icon xe tải trong cột Phương thức tại trang Quản lý đơn hàng Admin.
+- [x] Đổi tên mục điều hướng trên thanh Sidebar của Admin từ "Voucher / Campaign" thành "Voucher" cho đồng bộ và tinh gọn.
+- [x] Đồng bộ hóa hiển thị Voucher dạng thẻ răng cưa trong kết quả tư vấn AI và ràng buộc chỉ có tối đa 1 voucher hoạt động cho AI Advisor.
+- [x] Triển khai Hệ thống Thông báo Quản trị viên (Admin Notification System) tự động cảnh báo các sự kiện đơn hàng mới, yêu cầu tích điểm Shopee mới, và đánh giá sản phẩm mới kèm dropdown bell icon cao cấp trên Header hiển thị số lượng chưa đọc thời gian thực (polling 60s) và tự động đánh dấu đã đọc khi chuyển hướng tài nguyên tương ứng.
 
 ## Phase 6: 3F Club Phased Implementation (CRM + Loyalty + Automation)
 - [x] Phase 1 — Admin cấu hình cách tính điểm (Hoàn thành)

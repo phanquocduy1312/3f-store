@@ -8,6 +8,20 @@ use App\Core\Database;
 use PDO;
 
 class CustomerPetController {
+    private function ensureDeletedAtColumn($db) {
+        static $checked = false;
+        if ($checked) return;
+        $checked = true;
+
+        try {
+            $stmt = $db->query("SHOW COLUMNS FROM customer_pets LIKE 'deleted_at'");
+            if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+                $db->exec("ALTER TABLE customer_pets ADD COLUMN deleted_at DATETIME NULL");
+            }
+        } catch (\Throwable $e) {
+            error_log("Unable to ensure customer_pets.deleted_at column: " . $e->getMessage());
+        }
+    }
 
     /**
      * GET /api/customer/pets
@@ -15,8 +29,9 @@ class CustomerPetController {
     public function list() {
         $customer = AuthMiddleware::requireCustomer();
         $db = Database::getInstance()->getConnection();
+        $this->ensureDeletedAtColumn($db);
 
-        $stmt = $db->prepare("SELECT * FROM customer_pets WHERE customer_id = ? ORDER BY id DESC");
+        $stmt = $db->prepare("SELECT * FROM customer_pets WHERE customer_id = ? AND deleted_at IS NULL ORDER BY id DESC");
         $stmt->execute([$customer['id']]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -167,16 +182,23 @@ class CustomerPetController {
         $id = (int)Request::query('id');
 
         $db = Database::getInstance()->getConnection();
+        $this->ensureDeletedAtColumn($db);
 
         // Check ownership
-        $stmtCheck = $db->prepare("SELECT id FROM customer_pets WHERE id = ? AND customer_id = ?");
+        $stmtCheck = $db->prepare("SELECT id, ai_result FROM customer_pets WHERE id = ? AND customer_id = ?");
         $stmtCheck->execute([$id, $customer['id']]);
-        if (!$stmtCheck->fetch()) {
+        $pet = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+        if (!$pet) {
             Response::json(['success' => false, 'message' => 'Không tìm thấy hồ sơ thú cưng hoặc bạn không có quyền.'], 404);
         }
 
-        $stmtDelete = $db->prepare("DELETE FROM customer_pets WHERE id = ?");
-        $stmtDelete->execute([$id]);
+        if (!empty($pet['ai_result'])) {
+            $stmtDelete = $db->prepare("UPDATE customer_pets SET deleted_at = NOW(), updated_at = NOW() WHERE id = ? AND customer_id = ?");
+            $stmtDelete->execute([$id, $customer['id']]);
+        } else {
+            $stmtDelete = $db->prepare("DELETE FROM customer_pets WHERE id = ? AND customer_id = ?");
+            $stmtDelete->execute([$id, $customer['id']]);
+        }
 
         Response::json(['success' => true, 'message' => 'Xóa hồ sơ thú cưng thành công!']);
     }
@@ -190,6 +212,45 @@ class CustomerPetController {
         $petType = $input['petType'] ?? 'dog';
         $activeFlow = $input['activeFlow'] ?? null;
         $customerInfo = $input['customer'] ?? [];
+
+        // Fetch active AI Advisor voucher
+        $aiVoucherCode = '3F30K';
+        $aiVoucherValue = '30.000đ';
+        try {
+            $db = Database::getInstance()->getConnection();
+            $now = date('Y-m-d H:i:s');
+            $stmtVoucher = $db->prepare("
+                SELECT code, discount_type, discount_value, max_discount_amount 
+                FROM coupons
+                WHERE is_active = 1
+                  AND show_in_ai_advisor = 1
+                  AND (starts_at IS NULL OR starts_at <= :starts_now)
+                  AND (ends_at IS NULL OR ends_at >= :ends_now)
+                  AND (usage_limit IS NULL OR used_count < usage_limit)
+                ORDER BY sort_order ASC, id DESC
+                LIMIT 1
+            ");
+            $stmtVoucher->execute([
+                ':starts_now' => $now,
+                ':ends_now' => $now,
+            ]);
+            $voucherRow = $stmtVoucher->fetch(PDO::FETCH_ASSOC);
+            if ($voucherRow) {
+                $aiVoucherCode = $voucherRow['code'];
+                $val = (float)$voucherRow['discount_value'];
+                if ($voucherRow['discount_type'] === 'percent') {
+                    $aiVoucherValue = 'Giảm ' . $val . '%' . (!empty($voucherRow['max_discount_amount']) ? ' (Tối đa ' . number_format((float)$voucherRow['max_discount_amount'], 0, ',', '.') . 'đ)' : '');
+                } else if ($voucherRow['discount_type'] === 'free_shipping') {
+                    $aiVoucherValue = 'Freeship ' . number_format($val, 0, ',', '.') . 'đ';
+                } else if ($voucherRow['discount_type'] === 'gift') {
+                    $aiVoucherValue = 'Quà tặng';
+                } else {
+                    $aiVoucherValue = 'Giảm ' . number_format($val, 0, ',', '.') . 'đ';
+                }
+            }
+        } catch (\Exception $e) {
+            // keep default
+        }
 
         // Fetch products from database
         $availableProducts = [];
@@ -295,8 +356,8 @@ class CustomerPetController {
             ],
             'store_context' => [
                 'brand' => '3F Store',
-                'voucher_value' => '30.000đ',
-                'voucher_code' => '3F30K',
+                'voucher_value' => $aiVoucherValue,
+                'voucher_code' => $aiVoucherCode,
                 'product_catalog' => $catalog
             ]
         ];
@@ -329,7 +390,7 @@ Luật mới về nhu cầu:
 - problem_text là mô tả tự do của khách về tình trạng của bé.
 - detected_needs là nhóm nhu cầu đã được hệ thống nhận diện.
 - selected_needs là nhóm khách chọn thêm.
-- Hãy ưu tiên các nhu cầu xuất hiện trong detected_needs và selected_needs.
+- Hãy ưu tiên các nhu cầu xuất hiện trong detected_needs and selected_needs.
 
 Cách chia sản phẩm:
 - recommended_products phải chia theo 3 nhóm:
@@ -343,7 +404,7 @@ An sau:
 - Nếu has_serious_warning = true hoặc problem_text có dấu hiệu nặng như bỏ ăn nhiều ngày, nôn liên tục, tiêu chảy kéo dài, tiểu ra máu, khó thở, co giật, hãy thêm warning khuyên khách đưa bé đến bác sĩ thú y gấp.
 
 CTA:
-- Kết thúc bằng lời kêu gọi dùng voucher 30.000đ, mã 3F30K.
+- Kết thúc bằng lời kêu gọi dùng voucher " . $aiVoucherValue . ", mã " . $aiVoucherCode . ".
 
 Trả về duy nhất định dạng JSON sau:
 {
@@ -372,7 +433,7 @@ Trả về duy nhất định dạng JSON sau:
   ],
   \"warning\": \"Cảnh báo khẩn cấp nếu có, nếu không để rỗng\",
   \"cta\": \"Lời kêu gọi hành động\",
-  \"voucher_code\": \"3F30K\"
+  \"voucher_code\": \"" . $aiVoucherCode . "\"
 }";
 
         $userPrompt = "Dưới đây là thông tin chi tiết về khách hàng và bé cưng:\n" . json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
@@ -465,7 +526,7 @@ Trả về duy nhất định dạng JSON sau:
             'recommended_products' => $mappedRecs,
             'care_tips' => is_array($parsedJson['care_tips'] ?? null) ? $parsedJson['care_tips'] : [],
             'warning' => $parsedJson['warning'] ?? '',
-            'voucher_code' => '3F30K'
+            'voucher_code' => $aiVoucherCode
         ];
 
         Response::json([
@@ -514,5 +575,180 @@ Trả về duy nhất định dạng JSON sau:
             }
         }
         return false;
+    }
+
+    /**
+     * GET /api/admin/pet-advisor/consultations
+     */
+    public function adminConsultations() {
+        try {
+            AuthMiddleware::requireAdmin();
+            $db = Database::getInstance()->getConnection();
+            $this->ensureDeletedAtColumn($db);
+
+            $page = max(1, (int)Request::query('page', 1));
+            $limit = max(1, min(100, (int)Request::query('limit', 20)));
+            $offset = ($page - 1) * $limit;
+
+            $species = Request::query('species', 'all');
+            $q = trim((string)Request::query('q', ''));
+
+            $where = ["p.ai_result IS NOT NULL AND p.ai_result <> ''"];
+            $params = [];
+
+            if ($species !== 'all') {
+                $where[] = "p.species = :species";
+                $params[':species'] = $species;
+            }
+
+            if ($q !== '') {
+                $where[] = "(p.name LIKE :q OR c.full_name LIKE :q OR c.name LIKE :q OR c.phone LIKE :q OR c.email LIKE :q)";
+                $params[':q'] = "%{$q}%";
+            }
+
+            $whereSql = implode(' AND ', $where);
+
+            // Total Count
+            $countStmt = $db->prepare("
+                SELECT COUNT(*) 
+                FROM customer_pets p
+                LEFT JOIN customers c ON c.id = p.customer_id
+                WHERE {$whereSql}
+            ");
+            $countStmt->execute($params);
+            $total = (int)$countStmt->fetchColumn();
+
+            // Unique Customers Count
+            $custStmt = $db->prepare("
+                SELECT COUNT(DISTINCT p.customer_id) 
+                FROM customer_pets p
+                LEFT JOIN customers c ON c.id = p.customer_id
+                WHERE {$whereSql}
+            ");
+            $custStmt->execute($params);
+            $customers = (int)$custStmt->fetchColumn();
+
+            // List Records
+            $stmt = $db->prepare("
+                SELECT 
+                    p.*,
+                    c.full_name AS customer_full_name,
+                    c.name AS customer_name,
+                    c.phone AS customer_phone,
+                    c.email AS customer_email,
+                    c.status AS customer_status
+                FROM customer_pets p
+                LEFT JOIN customers c ON c.id = p.customer_id
+                WHERE {$whereSql}
+                ORDER BY p.created_at DESC, p.id DESC
+                LIMIT :limit OFFSET :offset
+            ");
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Calculate Stats
+            // 1. Species Count (Cats / Dogs)
+            $catStmt = $db->query("SELECT COUNT(*) FROM customer_pets WHERE ai_result IS NOT NULL AND ai_result <> '' AND species = 'cat'");
+            $catCount = (int)$catStmt->fetchColumn();
+
+            $dogStmt = $db->query("SELECT COUNT(*) FROM customer_pets WHERE ai_result IS NOT NULL AND ai_result <> '' AND species = 'dog'");
+            $dogCount = (int)$dogStmt->fetchColumn();
+
+            // 2. Average Monthly Budget & Warning Count
+            $allConsultsStmt = $db->query("SELECT ai_result FROM customer_pets WHERE ai_result IS NOT NULL AND ai_result <> ''");
+            $allConsults = $allConsultsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $warningCount = 0;
+            $totalBudget = 0;
+            $budgetCount = 0;
+
+            foreach ($allConsults as $cRow) {
+                $parsed = json_decode($cRow['ai_result'] ?? '', true);
+                if ($parsed) {
+                    if (!empty($parsed['warning'])) {
+                        $warningCount++;
+                    }
+                    $budget = $parsed['budget_analysis']['monthly_budget'] ?? null;
+                    if ($budget !== null) {
+                        $totalBudget += (float)$budget;
+                        $budgetCount++;
+                    }
+                }
+            }
+
+            $averageMonthlyBudget = $budgetCount > 0 ? (int)round($totalBudget / $budgetCount) : 0;
+
+            $stats = [
+                'species' => [
+                    'cat' => $catCount,
+                    'dog' => $dogCount,
+                ],
+                'warningCount' => $warningCount,
+                'averageMonthlyBudget' => $averageMonthlyBudget,
+            ];
+
+            Response::json([
+                'success' => true,
+                'data' => [
+                    'items' => $rows,
+                    'total' => $total,
+                    'customers' => $customers,
+                    'stats' => $stats,
+                    'totalPages' => max(1, (int)ceil($total / $limit)),
+                ]
+            ], 200);
+
+        } catch (Exception $e) {
+            Response::json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * GET /api/admin/pet-advisor/consultations/detail
+     */
+    public function adminConsultationDetail() {
+        try {
+            AuthMiddleware::requireAdmin();
+            $id = (int)Request::query('id', 0);
+            if ($id <= 0) {
+                Response::json(['success' => false, 'message' => 'Thiếu ID lượt tư vấn.'], 400);
+            }
+
+            $db = Database::getInstance()->getConnection();
+            $this->ensureDeletedAtColumn($db);
+
+            $stmt = $db->prepare("
+                SELECT 
+                    p.*,
+                    c.full_name AS customer_full_name,
+                    c.name AS customer_name,
+                    c.phone AS customer_phone,
+                    c.email AS customer_email,
+                    c.status AS customer_status
+                FROM customer_pets p
+                LEFT JOIN customers c ON c.id = p.customer_id
+                WHERE p.id = ? AND p.ai_result IS NOT NULL AND p.ai_result <> ''
+                LIMIT 1
+            ");
+            $stmt->execute([$id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$row) {
+                Response::json(['success' => false, 'message' => 'Không tìm thấy lượt tư vấn.'], 404);
+            }
+
+            Response::json([
+                'success' => true,
+                'data' => $row
+            ], 200);
+
+        } catch (Exception $e) {
+            Response::json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 }

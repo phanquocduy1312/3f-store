@@ -320,6 +320,35 @@ class LoyaltyProductionModel {
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
+    public function getCompletedOrderStats($customerId) {
+        $resolvedId = $this->resolveCustomerId($customerId);
+        $phone = '';
+
+        $stmtPhone = $this->db->prepare("SELECT phone FROM customers WHERE id = :id LIMIT 1");
+        $stmtPhone->execute([':id' => $resolvedId]);
+        $phone = trim((string)($stmtPhone->fetchColumn() ?: ''));
+
+        $stmtStats = $this->db->prepare("
+            SELECT
+                COUNT(*) AS order_count,
+                COALESCE(SUM(CASE
+                    WHEN total IS NOT NULL AND total > 0 THEN total
+                    ELSE GREATEST(COALESCE(subtotal, 0) - COALESCE(discount, 0), 0)
+                END), 0) AS total_spend
+            FROM orders
+            WHERE (customer_id = :cust_id OR (:phone <> '' AND phone = :phone_match))
+              AND order_status = 'completed'
+              AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+        ");
+        $stmtStats->execute([':cust_id' => $resolvedId, ':phone' => $phone, ':phone_match' => $phone]);
+        $stats = $stmtStats->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'order_count' => (int)($stats['order_count'] ?? 0),
+            'total_spend' => (float)($stats['total_spend'] ?? 0),
+        ];
+    }
+
     private function resolveCustomerId($idOrPhone) {
         if (empty($idOrPhone)) return $idOrPhone;
         
@@ -347,59 +376,49 @@ class LoyaltyProductionModel {
 
     public function calculateCustomerTierName($customerId) {
         $customerId = $this->resolveCustomerId($customerId);
-        $stmtPhone = $this->db->prepare("SELECT phone, is_phone_verified FROM customers WHERE id = :id LIMIT 1");
-        $stmtPhone->execute([':id' => $customerId]);
-        $customer = $stmtPhone->fetch(PDO::FETCH_ASSOC);
-        if (!$customer) {
+        $stmtCustomer = $this->db->prepare("SELECT id FROM customers WHERE id = :id LIMIT 1");
+        $stmtCustomer->execute([':id' => $customerId]);
+        if (!$stmtCustomer->fetch(PDO::FETCH_ASSOC)) {
             return 'Member';
         }
 
-        $phone = $customer['phone'];
-        $isPhoneVerified = (int)($customer['is_phone_verified'] ?? 0);
-
-        if ($isPhoneVerified !== 1) {
-            return 'Member';
-        }
-
-        $stmtStats = $this->db->prepare("
-            SELECT 
-                COUNT(*) as order_count,
-                COALESCE(SUM(subtotal - discount), 0) as total_spend
-            FROM orders
-            WHERE (customer_id = :cust_id OR phone = :phone)
-              AND order_status = 'completed'
-              AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-        ");
-        $stmtStats->execute([':cust_id' => $customerId, ':phone' => $phone]);
-        $stats = $stmtStats->fetch(PDO::FETCH_ASSOC);
+        $stats = $this->getCompletedOrderStats($customerId);
         $orderCount = (int)($stats['order_count'] ?? 0);
         $totalSpend = (float)($stats['total_spend'] ?? 0);
 
-        // Fetch limits from loyalty_tiers
         try {
-            $tiers = $this->db->query("SELECT key_name, min_spend, min_orders FROM loyalty_tiers")->fetchAll(PDO::FETCH_ASSOC);
-            $tierMap = [];
-            foreach ($tiers as $t) {
-                $tierMap[$t['key_name']] = $t;
+            $stmtTiers = $this->db->query("
+                SELECT key_name, name, min_spend, min_orders
+                FROM loyalty_tiers
+                WHERE is_active = 1
+                ORDER BY min_spend DESC, min_orders DESC, id DESC
+            ");
+            $tiers = $stmtTiers->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($tiers as $tier) {
+                $keyName = strtolower((string)($tier['key_name'] ?? ''));
+                if ($keyName === 'member') {
+                    continue;
+                }
+
+                $requiredSpend = (float)($tier['min_spend'] ?? 0);
+                $requiredOrders = (int)($tier['min_orders'] ?? 0);
+                if (
+                    $requiredSpend > 0 &&
+                    $totalSpend >= $requiredSpend &&
+                    $orderCount >= $requiredOrders
+                ) {
+                    return $tier['name'] ?: 'Member';
+                }
             }
         } catch (\Exception $e) {
-            $tierMap = [];
+            // Fall back to hard-coded defaults below if the configurable table is unavailable.
         }
 
-        $diamondSpend = isset($tierMap['diamond']) ? (float)$tierMap['diamond']['min_spend'] : 10000000;
-        $diamondOrders = isset($tierMap['diamond']) ? (int)$tierMap['diamond']['min_orders'] : 12;
-        
-        $goldSpend = isset($tierMap['gold']) ? (float)$tierMap['gold']['min_spend'] : 5000000;
-        $goldOrders = isset($tierMap['gold']) ? (int)$tierMap['gold']['min_orders'] : 6;
-        
-        $silverSpend = isset($tierMap['silver']) ? (float)$tierMap['silver']['min_spend'] : 2000000;
-        $silverOrders = isset($tierMap['silver']) ? (int)$tierMap['silver']['min_orders'] : 3;
-
-        if ($totalSpend >= $diamondSpend || $orderCount >= $diamondOrders) {
+        if ($totalSpend >= 10000000 && $orderCount >= 12) {
             return 'Diamond';
-        } elseif ($totalSpend >= $goldSpend || $orderCount >= $goldOrders) {
+        } elseif ($totalSpend >= 5000000 && $orderCount >= 6) {
             return 'Gold';
-        } elseif ($totalSpend >= $silverSpend || $orderCount >= $silverOrders) {
+        } elseif ($totalSpend >= 2000000 && $orderCount >= 3) {
             return 'Silver';
         }
         return 'Member';

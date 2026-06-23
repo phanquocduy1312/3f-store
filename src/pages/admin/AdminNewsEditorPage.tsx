@@ -154,14 +154,14 @@ export function AdminNewsEditorPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#F6FAFF]">
         <Loader2 className="animate-spin text-slate-800" size={32} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F6FAFF] flex flex-col font-sans">
       {/* Sticky Header */}
       <header className="sticky top-0 z-30 bg-slate-900 text-white px-6 py-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">

@@ -1,5 +1,67 @@
 # Project Changelog
 
+## [2026-06-23]
+### Added
+- Bố cục lại giao diện AI Pet Advisor Admin (Full-width Grid List & Consultation Detail Page):
+  - Chuyển đổi giao diện chia đôi màn hình (split layout) cũ của trang danh sách tư vấn AI thành giao diện hiển thị lưới (grid layout) rộng mở full-width, hiển thị nhiều thông tin trực quan hơn trên mỗi thẻ tư vấn.
+  - Tích hợp thêm nút hành động "Xem chi tiết" với biểu tượng Lucide `Eye` trên từng thẻ để chuyển hướng quản trị viên đến trang thông tin chi tiết riêng biệt.
+  - Xây dựng trang thông tin chi tiết mới [AdminPetAdvisorDetailPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/admin/AdminPetAdvisorDetailPage.tsx) hiển thị chi tiết hồ sơ thú cưng, thông tin khách hàng, câu hỏi quiz và kết luận/cảnh báo của AI.
+  - Đăng ký tuyến đường mới `/admin/pet-advisor/consultation/:id` trong [App.tsx](file:///c:/Users/Admin/Downloads/ccc/src/App.tsx) để định tuyến đến trang chi tiết mới.
+  - Phát triển API backend `/api/admin/pet-advisor/consultations/detail` trong [CustomerPetController.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Controllers/CustomerPetController.php) và đăng ký trong [index.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/public/index.php) để lấy chi tiết của một lượt tư vấn dựa trên ID.
+  - Tiến hành mô đun hóa (modularization) giao diện AI Pet Advisor để tuân thủ quy tắc giới hạn 200 dòng mã mỗi tệp:
+    - Tách các kiểu dữ liệu, hằng số `speciesLabel` và hàm logic xử lý dữ liệu (`parseAdvice`, `formatDate`, `formatMoney`, `listText`, `findAnswer`, `getMeta`) sang tệp tiện ích dùng chung [pet-advisor-helpers.ts](file:///c:/Users/Admin/Downloads/ccc/src/utils/pet-advisor-helpers.ts).
+    - Tách các component hiển thị thẻ và bảng giao diện dùng chung (`KpiCard`, `SummaryCard`, `DetailPanel`, `InfoRow`) sang tệp giao diện dùng chung [pet-advisor-cards.tsx](file:///c:/Users/Admin/Downloads/ccc/src/components/admin/pet-advisor-cards.tsx).
+    - Tách thẻ tư vấn riêng lẻ sang component [pet-advisor-consultation-card.tsx](file:///c:/Users/Admin/Downloads/ccc/src/components/admin/pet-advisor-consultation-card.tsx).
+    - Refactor lại [AdminPetAdvisorPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/admin/AdminPetAdvisorPage.tsx) (còn 174 dòng) và [AdminPetAdvisorDetailPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/admin/AdminPetAdvisorDetailPage.tsx) (còn 193 dòng) giúp tăng tính sạch sẽ, dễ bảo trì và tối ưu dung lượng tệp.
+- Triển khai Hệ thống Thông báo Quản trị viên (Admin Notification System):
+  - Thiết kế bảng CSDL `admin_notifications` lưu trữ thông tin thông báo, loại tài nguyên liên quan (đơn hàng, yêu cầu tích điểm Shopee, đánh giá sản phẩm) và trạng thái đọc.
+  - Viết Model `AdminNotification.php` và Controller `AdminNotificationController.php` cung cấp các API lấy danh sách thông báo, số lượng chưa đọc, đánh dấu đã đọc (đơn lẻ hoặc tất cả), và xóa thông báo.
+  - Đăng ký các API routes và tích hợp pre-instantiation model vào `public/index.php` để chạy di trú tự động ở ngoài phạm vi MySQL transaction nhằm tránh lỗi commit ngầm.
+  - Tích hợp các bộ kích hoạt thông báo (notification triggers) tự động khi xảy ra sự kiện: đặt đơn hàng mới (`OrderController`), gửi yêu cầu tích điểm Shopee mới (`ShopeePointRequestController`), và gửi đánh giá sản phẩm mới (`ProductReviewController`).
+  - Re-architect biểu tượng chuông thông báo trên Header trang Admin (`admin-header.tsx`) với giao diện dropdown menu cao cấp, hiển thị số lượng chưa đọc thời gian thực (được cập nhật qua cơ chế polling mỗi 60 giây).
+  - Tải danh sách 10 thông báo mới nhất kèm icon phân loại trực quan theo loại sự kiện, hỗ trợ thao tác đánh dấu đã đọc riêng lẻ khi click, chuyển hướng điều hướng (redirect) chính xác đến trang quản lý tương ứng, và nút "Đánh dấu tất cả là đã đọc".
+
+### Changed
+- Thiết kế lại Giao diện Phân trang Voucher phía Admin (Redesign Voucher Pagination):
+  - Thay thế giao diện phân trang dạng văn bản "Trang X/Y" và hộp chọn size trang đơn giản bằng một thanh điều hướng phân trang hiện đại và trực quan hơn.
+  - Tích hợp hàm `getPageNumbers` để tự động tính toán và hiển thị danh sách nút số trang kèm dấu chấm lửng `...` co giãn thông minh dựa trên trang hiện tại và tổng số trang.
+  - Thiết kế nút số trang hiện tại với màu nền xanh dương `#0057E7`, chữ trắng và bóng đổ mờ thương hiệu.
+  - Thiết kế các nút số trang thường, nút tiến/lùi có viền mờ cùng hiệu ứng hover đổi màu nhấn thương hiệu và chuyển động mượt mà.
+  - Bố trí hộp chọn số dòng hiển thị ("Số dòng:") tinh gọn, chuyên nghiệp nằm trực tiếp trong thanh tóm tắt hiển thị bản ghi ở bên trái.
+- Bắt buộc đăng nhập để Lưu Voucher (Auth Required for Voucher Copy):
+  - Tích hợp hook `useCustomerAuth()` trong component [VoucherSection.tsx](file:///c:/Users/Admin/Downloads/ccc/components/VoucherSection.tsx) ở trang chủ.
+  - Khi người dùng chưa đăng nhập, nút "SAVE" sẽ không thực hiện sao chép mà hiển thị một Popup/Modal cảnh báo màu sắc premium, yêu cầu đăng nhập và cung cấp nút điều hướng sang trang `/login`.
+  - Cải tiến hàm sao chép với cơ chế fallback tự tạo thẻ textarea tạm thời giúp nút "SAVE" hoạt động cực kỳ ổn định trên mọi trình duyệt và thiết bị di động.
+- Tinh giản danh mục trên Sidebar của Admin (Clean Sidebar Menu):
+  - Loại bỏ các mục "Hồ sơ thú cưng", "Hỗ trợ khách hàng", và "Cài đặt" khỏi menu của thanh Sidebar quản trị viên ([admin-sidebar.tsx](file:///c:/Users/Admin/Downloads/ccc/components/admin/admin-sidebar.tsx)) để tối ưu hóa không gian hiển thị và tập trung vào các chức năng chính.
+- Đổi tên mục điều hướng trên thanh Sidebar của Admin:
+  - Thay đổi tên hiển thị từ "Voucher / Campaign" thành "Voucher" cho đồng bộ và tinh gọn hơn.
+- Đồng bộ hóa hình dạng Voucher và áp dụng quy tắc Duy nhất tại phân hệ Tư vấn AI:
+  - Thiết kế lại hiển thị Voucher trong popup Kết quả tư vấn AI (`AiResult.tsx`) khớp hoàn toàn với cấu trúc thẻ voucher hình răng cưa (`VoucherCard`), hiển thị đầy đủ tiêu đề, mô tả, nhãn, huy hiệu và block màu gradient sang trọng.
+  - Tích hợp gọi API `getAiAdvisorVoucher` từ frontend để hiển thị động thông tin voucher được cấu hình thực tế thay vì hiển thị tĩnh mã voucher mẫu.
+  - Cập nhật logic cào dữ liệu và proxy Groq phía backend (`CustomerPetController.php`) tự động truy vấn CSDL để lấy thông tin mã voucher và mô tả tương ứng truyền vào system prompt cho AI và trả về kết quả động.
+  - Áp dụng quy tắc duy nhất phía backend (`Coupon.php`): khi kích hoạt/lưu một voucher chạy trên Tư vấn AI (`show_in_ai_advisor = 1`), hệ thống tự động tắt cờ `show_in_ai_advisor` của tất cả các voucher khác để đảm bảo chỉ có duy nhất tối đa 1 voucher hoạt động tại một thời điểm.
+
+### Fixed
+- Sửa lỗi trùng lặp sản phẩm trong giỏ hàng (duplicate cart items):
+  - Xây dựng hàm so sánh `isSameCartItem` trong [cartHelper.ts](file:///c:/Users/Admin/Downloads/ccc/lib/cartHelper.ts) hỗ trợ kiểm tra linh hoạt theo mã sản phẩm (`productId`), mã phân loại/biến thể (`variantId`) và văn bản phân loại. Giải quyết triệt để sự khác biệt kiểu dữ liệu (chuỗi vs số) và định dạng khóa định danh (`id` biến thể thô vs khóa phức hợp `productId-variantId` từ chức năng mua lại đơn hàng).
+  - Tích hợp `isSameCartItem` vào các tác vụ `addToCart`, `updateQuantity` và `removeFromCart`.
+  - Cập nhật hàm gọi `addToCart` tại popup Kết quả tư vấn AI [AiResult.tsx](file:///c:/Users/Admin/Downloads/ccc/components/pet-advisor/AiResult.tsx) truyền thêm trường `productId` nhằm đồng nhất cấu trúc dữ liệu với trang Chi tiết sản phẩm và Modal xem nhanh.
+- Tránh rớt/xuống dòng cho nhãn voucher tại bảng đơn hàng Admin:
+  - Bổ sung class `whitespace-nowrap` vào thẻ hiển thị badge mã giảm giá áp dụng (`Mã: ...`) tại [AdminOrdersPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/admin/AdminOrdersPage.tsx) để giữ toàn bộ chuỗi hiển thị voucher luôn nằm trên một dòng.
+- Ẩn thông tin hàng tồn kho và sửa lỗi nhóm thông số/phân loại trống (Option groups & Stock Hide):
+  - Ẩn toàn bộ văn bản hiển thị số lượng tồn kho ("Kho hàng: X sản phẩm" / "Tồn kho: Y sản phẩm") tại trang Chi tiết sản phẩm [ProductDetail.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/ProductDetail.tsx) và Modal xem nhanh [QuickAddToCartModal.tsx](file:///c:/Users/Admin/Downloads/ccc/components/QuickAddToCartModal.tsx).
+  - Tắt cờ báo hết hàng và chặn mua hàng `isOutOfStock` trên giao diện người dùng (thiết lập mặc định là `false`) và bỏ giới hạn số lượng đặt mua dựa trên tồn kho thực tế, cho phép đặt hàng không giới hạn (tối đa 99 sản phẩm/lượt mua).
+  - Tự động lọc bỏ các nhóm tùy chọn/phân loại trống (ví dụ: nhóm "THÔNG SỐ" của các sản phẩm cũ không khai báo giá trị thông số trong các biến thể tương ứng) để tránh việc các nút bấm lựa chọn bị vô hiệu hóa (disabled/faded) ngoài ý muốn, giúp người dùng chọn phân loại và tiến hành mua hàng bình thường.
+  - Ép kiểu dữ liệu (coercion) của các giá trị tùy chọn biến thể (`option1Value`, `option2Value`, `option3Value`) thành kiểu chuỗi (string) trong API mapper [productsApi.ts](file:///c:/Users/Admin/Downloads/ccc/src/api/productsApi.ts) và trong các hàm so sánh ở [QuickAddToCartModal.tsx](file:///c:/Users/Admin/Downloads/ccc/components/QuickAddToCartModal.tsx). Việc này giải quyết triệt để lỗi vô hiệu hóa các nút số (ví dụ: thông số `3` của sản phẩm Mr.vet) do lệch kiểu dữ liệu (số vs chuỗi) khi đối chiếu trạng thái lựa chọn.
+- Sửa lỗi giữ kho nhầm (reserved stock leak) khi đặt đơn hàng thất bại với mã voucher:
+  - Thêm cờ `private static $migrated` vào `Coupon.php` để ngăn chặn việc chạy `ensureSchema()` nhiều lần trong một request. Việc gọi `CREATE TABLE IF NOT EXISTS` bên trong transaction gây ra hiện tượng commit ngầm (implicit commit) trong MySQL, làm mất khả năng rollback các câu lệnh sửa đổi database trước đó khi xảy ra exception.
+  - Tối ưu hóa `OrderController.php` để tái sử dụng instance `$couponModel` từ phạm vi ngoài, loại bỏ việc khởi tạo lại model bên trong transaction block.
+  - Giải phóng kho bị chiếm dụng ngoài ý muốn của sản phẩm Combo Zoi Dog 20kg (Variant ID 896) giúp đưa `reserved_stock` từ 3 về 0 và phục hồi tồn kho khả dụng lên 3.
+- Sửa lỗi rớt chữ cột Trạng thái, Thanh toán và hiển thị icon cột Phương thức tại trang Quản lý Đơn hàng Admin:
+  - Bổ sung `whitespace-nowrap` vào thuộc tính `className` của các ô tiêu đề, ô nội dung dữ liệu và hàm khởi tạo huy hiệu `getDynamicStatusBadge` để chống tràn/rớt dòng chữ cho cột Trạng thái và Thanh toán.
+  - Loại bỏ biểu tượng xe tải (`<Truck />`) khỏi cột Phương thức/Vận chuyển trong danh sách bảng đơn hàng, chỉ hiển thị nhãn phương thức dạng văn bản thuần túy theo yêu cầu thiết kế tối giản.
+
 ## [2026-06-22]
 ### Added
 - Nâng cấp phân hệ Tư vấn AI và Lịch sử tư vấn (AI Consultation History):
@@ -34,11 +96,26 @@
   - Bổ sung nút CTA "Xác thực số điện thoại ngay" trên teaser card, tự động chuyển hướng người dùng sang trang Hồ sơ cá nhân kèm tham số kích hoạt và cuộn mượt mà đến vùng xác thực liên kết liên hệ (`#phone-verification-section`).
 
 ### Changed
+- Đồng bộ hóa giao diện quản lý Tin tức Admin (Admin News UI Synchronization):
+  - Thay đổi màu nền trang từ xám nhạt `bg-[#FAFAFA]` sang màu xanh nhạt `bg-[#F6FAFF]` đồng bộ với các trang Quản lý Sản phẩm, Đơn hàng, và Cấu hình.
+  - Loại bỏ giới hạn chiều rộng trang `max-w-6xl` tại danh sách tin tức, chuyển sang thiết kế co giãn toàn màn hình (fluid layout) cùng khoảng đệm `px-4 sm:px-6 py-6` chuẩn.
+  - Cập nhật kiểu chữ và kích thước tiêu đề trang chính thành `text-2xl font-black text-[#0B1F3A]` và phụ đề thành màu xanh xám `text-[#64748B]`.
+  - Cập nhật thiết kế các nút "Đồng bộ bài viết" (bổ sung hiệu ứng xoay icon và màu nền xanh dịu) và nút "Viết bài mới" (màu xanh dương đậm đặc trưng `#0057E7` với hiệu ứng đổ bóng mờ premium).
+  - Nâng cấp khối Thẻ chỉ số KPI (KPI Cards) sang cấu trúc bo tròn lớn `rounded-[20px]`, viền xanh nhẹ `border-[#DCEBFF]`, và đổ bóng dịu mắt, đồng thời bổ sung các biểu tượng Lucide (`FileText`, `Eye`, `CheckSquare`, `AlertCircle`) tương ứng.
+  - Đồng bộ hóa thanh tab lọc trạng thái tin tức (Tất cả, Đã xuất bản, Bản nháp, Lên lịch, Cần tối ưu SEO) sử dụng màu nhấn xanh dương `#0057E7` cho tab hiện tại và viền dưới `border-[#DCEBFF]`.
+  - Cải tiến giao diện bảng tin tức: sử dụng card viền `border-[#DCEBFF]` với shadow-glass, table headers có màu nền `bg-slate-50/75` và cỡ chữ font-black `text-xs`, nâng font-semibold cho dữ liệu dòng và áp dụng các badge trạng thái/SEO bo góc tròn tinh tế.
+  - Thay thế nút thao tác 3 chấm đơn giản bằng nút tròn solid border có hiệu ứng hover đổi màu thương hiệu, đồng thời tối ưu bóng mờ cho menu dropdown actions.
+  - Cập nhật màu nhấn cho nút phân trang hoạt động từ đen `bg-slate-900` sang xanh dương `#0057E7`.
+  - Bổ sung chân trang (Copyright Footer) chuẩn ở cuối trang quản lý tin tức.
+  - Đồng bộ hóa màu nền của Trang soạn thảo tin tức (`AdminNewsEditorPage.tsx`) sang `bg-[#F6FAFF]` cho cả màn hình tải dữ liệu và nội dung soạn thảo chính.
 - Nâng cấp số lượng sản phẩm gợi ý trong phân hệ Tư vấn AI Pet Advisor:
   - Tăng số lượng đề xuất từ tối đa 6 sản phẩm lên đúng **9 sản phẩm** phù hợp nhất (3 sản phẩm cho mỗi nhóm: Tiết kiệm - saving, Cân bằng - balanced, Cao cấp - premium) theo nhu cầu hiển thị nhiều lựa chọn hơn của khách hàng.
   - Tăng giới hạn số lượng sản phẩm gửi lên AI phân tích từ 20 sản phẩm lên 30 sản phẩm (15 sản phẩm chó, 15 sản phẩm mèo cho luồng chung) để AI có nguồn sản phẩm thực tế dồi dào hơn phục vụ việc lựa chọn chính xác.
 
 ### Fixed
+- Sửa lỗi hiển thị các chỉ số thống kê của khách hàng (Tổng đơn, Tổng chi tiêu, Điểm 3F, Hoàn thiện hồ sơ) bằng 0 ở trang Chi tiết khách hàng Admin:
+  - Cập nhật hàm `adminGetCustomerDetail` trong [Customer.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Models/Customer.php) để truy vấn và tính toán động các giá trị `total_orders`, `total_spent`, `point_balance` (sử dụng `CustomerPointTransactionModel`), và `profile_completion` từ database.
+  - Trả về đồng thời cả khóa snake_case và camelCase để đảm bảo khả năng tương thích cao nhất với các component frontend.
 - Sửa lỗi hệ thống gián đoạn khi thực hiện tư vấn AI và hiển thị danh sách sản phẩm khuyên dùng:
   - Di chuyển hoàn chỉnh logic gọi API Groq từ phía client (frontend) sang proxy an toàn phía backend (`/api/customer/pet-advisor/consult`) để bảo mật API key và phòng ngừa hoàn toàn lỗi 401/403/CORS khi gọi trực tiếp từ trình duyệt.
   - Tự động cập nhật `GROQ_API_KEY` vào tệp cấu hình `.env` của máy chủ staging để loại bỏ hoàn toàn lỗi 401 Unauthorized từ cuộc gọi API của backend.

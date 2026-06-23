@@ -8,7 +8,7 @@ class LoyaltyPointService {
     /**
      * Calculates points based on the active database loyalty settings configurations.
      */
-    public static function calculatePointsFromSettings($eligibleAmount, $source) {
+    public static function calculatePointsFromSettings($eligibleAmount, $source, $customerId = null) {
         $settings = new \App\Models\LoyaltySettings();
         $moneyPerPoint = (int)($settings->get('money_per_point') ?: 200);
         if ($moneyPerPoint <= 0) $moneyPerPoint = 200;
@@ -18,13 +18,20 @@ class LoyaltyPointService {
         
         $basePoints = (int)floor($eligibleAmount / $moneyPerPoint);
         
+        $tierMultiplier = 1.0;
         $campaignMultiplier = 1.0;
         try {
             $productionModel = new \App\Models\LoyaltyProductionModel();
+            if (!empty($customerId)) {
+                $tier = $productionModel->ensureCustomerProfile($customerId);
+                if ($tier && isset($tier['tier_multiplier'])) {
+                    $tierMultiplier = (float)$tier['tier_multiplier'];
+                }
+            }
             $campaignMultiplier = $productionModel->getActiveCampaignMultiplier();
         } catch (\Throwable $e) {}
 
-        $points = (int)floor($basePoints * $channelMultiplier * $campaignMultiplier);
+        $points = (int)floor($basePoints * $channelMultiplier * $tierMultiplier * $campaignMultiplier);
         return $points;
     }
 

@@ -420,6 +420,8 @@ class Order {
             return null;
         }
 
+        $this->syncCreditedOrderToPhonePoints((int)$order['id'], $order);
+
         $order['items'] = (new OrderItem())->getItemsByOrderId((int)$order['id']);
         $order['status_logs'] = $this->getStatusLogs((int)$order['id']);
         
@@ -446,6 +448,8 @@ class Order {
         if (!$order) {
             return null;
         }
+
+        $this->syncCreditedOrderToPhonePoints((int)$order['id'], $order);
 
         $order['items'] = (new OrderItem())->getItemsByOrderId((int)$order['id']);
         $order['status_logs'] = $this->getStatusLogs((int)$order['id']);
@@ -735,7 +739,7 @@ class Order {
     }
 
     public function updateLoyaltyStatus($orderId, $newStatus, $note = null, $changedBy = null, $adminId = null, $customerId = null) {
-        $stmt = $this->db->prepare("SELECT loyalty_status, customer_id, order_code, phone, total, subtotal, discount, loyalty_points_earned, receiver_name, order_source FROM orders WHERE id = :id FOR UPDATE");
+        $stmt = $this->db->prepare("SELECT order_status, loyalty_status, customer_id, order_code, phone, total, subtotal, discount, loyalty_points_earned, receiver_name, order_source FROM orders WHERE id = :id FOR UPDATE");
         $stmt->execute([':id' => (int)$orderId]);
         $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -750,9 +754,14 @@ class Order {
 
         $this->validateTransition('loyalty', $currentStatus, $newStatus, $changedBy);
 
+        if (in_array($newStatus, ['holding', 'credited'], true) && ($order['order_status'] ?? '') !== 'completed') {
+            throw new Exception("Chỉ được cộng điểm khi đơn hàng đã hoàn tất.");
+        }
+
         // Update orders table
         $stmtUpdate = $this->db->prepare("UPDATE orders SET loyalty_status = :status WHERE id = :id");
         $stmtUpdate->execute([':status' => $newStatus, ':id' => (int)$orderId]);
+        $order['loyalty_status'] = $newStatus;
 
         // Log the change
         $this->logStatusChange($orderId, 'loyalty', $currentStatus, $newStatus, $note, $changedBy, $adminId, $customerId);
@@ -816,8 +825,15 @@ class Order {
                 $settings = new \App\Models\LoyaltySettings();
                 $multiplierKey = 'multiplier_' . strtolower($source);
                 $channelMultiplier = (float)($settings->get($multiplierKey) ?: 1.0);
+                $tierMultiplier = 1.0;
+                try {
+                    $tierProfile = (new LoyaltyProductionModel())->ensureCustomerProfile($order['customer_id'], $order['receiver_name']);
+                    $tierMultiplier = (float)($tierProfile['tier_multiplier'] ?? 1.0);
+                } catch (\Throwable $e) {
+                    $tierMultiplier = 1.0;
+                }
 
-                $points = \App\Services\LoyaltyPointService::calculatePointsFromSettings($eligibleAmount, $source);
+                $points = \App\Services\LoyaltyPointService::calculatePointsFromSettings($eligibleAmount, $source, $order['customer_id']);
 
                 if ($points > 0) {
                     $txModel = new \App\Models\LoyaltyPointTransaction();
@@ -829,7 +845,7 @@ class Order {
                         'status' => 'holding',
                         'points' => $points,
                         'eligible_amount' => $eligibleAmount,
-                        'multiplier' => $channelMultiplier,
+                        'multiplier' => $channelMultiplier * $tierMultiplier,
                         'reference_type' => 'order',
                         'reference_id' => $orderId,
                         'reason' => "Tạm giữ điểm từ đơn hàng {$order['order_code']}",
@@ -854,6 +870,7 @@ class Order {
                 // Update balance
                 $loyaltyModel = new LoyaltyProductionModel();
                 $loyaltyModel->ensureCustomerProfile($order['customer_id'], $order['receiver_name']);
+                $this->syncCreditedOrderToPhonePoints($orderId, $order);
             } else {
                 // Check duplicate awards
                 $stmtCheck = $this->db->prepare("
@@ -901,8 +918,15 @@ class Order {
                     $settings = new \App\Models\LoyaltySettings();
                     $multiplierKey = 'multiplier_' . strtolower($source);
                     $channelMultiplier = (float)($settings->get($multiplierKey) ?: 1.0);
+                    $tierMultiplier = 1.0;
+                    try {
+                        $tierProfile = (new LoyaltyProductionModel())->ensureCustomerProfile($order['customer_id'], $order['receiver_name']);
+                        $tierMultiplier = (float)($tierProfile['tier_multiplier'] ?? 1.0);
+                    } catch (\Throwable $e) {
+                        $tierMultiplier = 1.0;
+                    }
 
-                    $points = \App\Services\LoyaltyPointService::calculatePointsFromSettings($eligibleAmount, $source);
+                    $points = \App\Services\LoyaltyPointService::calculatePointsFromSettings($eligibleAmount, $source, $order['customer_id']);
 
                     if ($points > 0) {
                         $txModel = new \App\Models\LoyaltyPointTransaction();
@@ -919,7 +943,7 @@ class Order {
                             'status' => 'available',
                             'points' => $points,
                             'eligible_amount' => $eligibleAmount,
-                            'multiplier' => $channelMultiplier,
+                            'multiplier' => $channelMultiplier * $tierMultiplier,
                             'expires_at' => $expiresAt,
                             'reference_type' => 'order',
                             'reference_id' => $orderId,
@@ -933,6 +957,8 @@ class Order {
 
                         // Update order loyalty_points_earned
                         $this->updateLoyaltyPointsEarned($orderId, $points);
+                        $order['loyalty_points_earned'] = $points;
+                        $this->syncCreditedOrderToPhonePoints($orderId, $order, $points);
                     }
                 }
             }
@@ -983,6 +1009,7 @@ class Order {
                     $loyaltyModel->ensureCustomerProfile($order['customer_id'], $order['receiver_name']);
 
                     // Clear loyalty_points_earned in orders
+                    $this->syncCancelledOrderToPhonePoints($orderId, $order);
                     $this->updateLoyaltyPointsEarned($orderId, 0);
                 }
             }
@@ -997,6 +1024,153 @@ class Order {
             ':points' => (int)$points,
             ':id' => (int)$orderId
         ]);
+    }
+
+    private function syncCreditedOrderToPhonePoints($orderId, array $order, $points = null) {
+        $status = $order['loyalty_status'] ?? null;
+        if ($status !== 'credited') {
+            return false;
+        }
+
+        $phone = trim((string)($order['phone'] ?? $order['customer_phone'] ?? ''));
+        if ($phone === '' && !empty($order['customer_id'])) {
+            $stmtPhone = $this->db->prepare("SELECT phone FROM customers WHERE id = :id LIMIT 1");
+            $stmtPhone->execute([':id' => (int)$order['customer_id']]);
+            $phone = trim((string)($stmtPhone->fetchColumn() ?: ''));
+        }
+
+        if ($phone === '') {
+            return false;
+        }
+
+        $points = $points !== null ? (int)$points : (int)($order['loyalty_points_earned'] ?? 0);
+        if ($points <= 0) {
+            $stmtPoints = $this->db->prepare("
+                SELECT COALESCE(SUM(points), 0)
+                FROM loyalty_point_transactions
+                WHERE order_id = :order_id
+                  AND type = 'earn'
+                  AND status = 'available'
+                  AND points > 0
+            ");
+            $stmtPoints->execute([':order_id' => (int)$orderId]);
+            $points = (int)$stmtPoints->fetchColumn();
+        }
+
+        if ($points <= 0) {
+            return false;
+        }
+
+        $stmtExists = $this->db->prepare("
+            SELECT id
+            FROM customer_point_transactions
+            WHERE customer_phone = :phone
+              AND reference_type = 'order'
+              AND reference_id = :order_id
+              AND points > 0
+            LIMIT 1
+        ");
+        $stmtExists->execute([
+            ':phone' => $phone,
+            ':order_id' => (int)$orderId
+        ]);
+        if ($stmtExists->fetch()) {
+            return false;
+        }
+
+        $pointModel = new CustomerPointTransactionModel();
+        $currentBalance = $pointModel->getBalance($phone);
+        $orderCode = $order['order_code'] ?? ('#' . $orderId);
+        $transactionId = $pointModel->addTransaction(
+            $phone,
+            'earn_website_order',
+            $points,
+            $currentBalance + $points,
+            'order',
+            $orderId,
+            "Cong diem tu don hang {$orderCode}"
+        );
+
+        if (!empty($order['customer_id']) && $transactionId) {
+            $stmtUpdate = $this->db->prepare("UPDATE customer_point_transactions SET customer_id = :customer_id WHERE id = :id");
+            $stmtUpdate->execute([
+                ':customer_id' => (int)$order['customer_id'],
+                ':id' => (int)$transactionId
+            ]);
+        }
+
+        try {
+            (new LoyaltyProductionModel())->ensureCustomerProfile($order['customer_id'] ?: $phone, $order['receiver_name'] ?? null);
+        } catch (\Exception $e) {
+            // The phone ledger is already written; profile sync can be retried on the next read.
+        }
+
+        return true;
+    }
+
+    private function syncCancelledOrderToPhonePoints($orderId, array $order) {
+        $phone = trim((string)($order['phone'] ?? $order['customer_phone'] ?? ''));
+        $points = (int)($order['loyalty_points_earned'] ?? 0);
+        if ($phone === '' || $points <= 0) {
+            return false;
+        }
+
+        $stmtEarn = $this->db->prepare("
+            SELECT id
+            FROM customer_point_transactions
+            WHERE customer_phone = :phone
+              AND reference_type = 'order'
+              AND reference_id = :order_id
+              AND points > 0
+            LIMIT 1
+        ");
+        $stmtEarn->execute([
+            ':phone' => $phone,
+            ':order_id' => (int)$orderId
+        ]);
+        if (!$stmtEarn->fetch()) {
+            return false;
+        }
+
+        $stmtExists = $this->db->prepare("
+            SELECT id
+            FROM customer_point_transactions
+            WHERE customer_phone = :phone
+              AND reference_type = 'order'
+              AND reference_id = :order_id
+              AND points < 0
+            LIMIT 1
+        ");
+        $stmtExists->execute([
+            ':phone' => $phone,
+            ':order_id' => (int)$orderId
+        ]);
+        if ($stmtExists->fetch()) {
+            return false;
+        }
+
+        $pointModel = new CustomerPointTransactionModel();
+        $currentBalance = $pointModel->getBalance($phone);
+        $orderCode = $order['order_code'] ?? ('#' . $orderId);
+        $transactionId = $pointModel->addTransaction(
+            $phone,
+            'cancel_website_order',
+            -$points,
+            $currentBalance - $points,
+            'order',
+            $orderId,
+            "Thu hoi diem do huy don hang {$orderCode}"
+        );
+
+        if (!empty($order['customer_id']) && $transactionId) {
+            $stmtUpdate = $this->db->prepare("UPDATE customer_point_transactions SET customer_id = :customer_id WHERE id = :id");
+            $stmtUpdate->execute([
+                ':customer_id' => (int)$order['customer_id'],
+                ':id' => (int)$transactionId
+            ]);
+        }
+
+        return true;
     }
 
     public function logStatusChange($orderId, $groupKey, $fromStatus, $toStatus, $note = null, $changedBy = null, $adminId = null, $customerId = null, $metadata = null) {

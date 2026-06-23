@@ -5,6 +5,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Models\Customer;
 use App\Models\Order;
+use App\Models\OrderShippingMethod;
 use App\Models\Product;
 use App\Services\InventoryService;
 use App\Services\LoyaltyPointService;
@@ -169,14 +170,19 @@ class OrderController {
                 $couponModel = new \App\Models\Coupon();
                 $couponRes = $couponModel->validateCoupon($couponCode, $subtotal, $customerPhone);
                 if (!$couponRes['success']) {
-                    Response::json(["success" => false, "message" => "Mã giảm giá không còn hợp lệ. Vui lòng kiểm tra lại."], 400);
+                    Response::json(["success" => false, "message" => $couponRes['message']], 400);
                 }
                 $discount = (float)$couponRes['data']['discountAmount'];
                 $couponId = (int)$couponRes['data']['id'];
             }
 
             // Pricing totals
-            $shippingFee = 0.00;
+            $shippingMethodModel = new OrderShippingMethod();
+            $shippingOption = $shippingMethodModel->findByKey($shippingMethod, true);
+            if (!$shippingOption) {
+                Response::json(["success" => false, "message" => "Phương thức giao hàng không hợp lệ hoặc đang tắt."], 400);
+            }
+            $shippingFee = (float)$shippingOption['fee'];
             $total = max(0.00, $subtotal + $shippingFee - $discount);
 
             // Generate Order Code
@@ -235,18 +241,31 @@ class OrderController {
 
                 // Record coupon usage
                 if ($couponId !== null) {
-                    $couponModel = new \App\Models\Coupon();
                     $couponModel->recordUsage($couponId, $orderId, $customerPhone, $discount);
                 }
 
                 $db->commit();
             } catch (Exception $txEx) {
-                $db->rollBack();
+                if ($db->inTransaction()) {
+                    $db->rollBack();
+                }
                 throw $txEx;
             }
 
             // Fetch final details
             $details = $orderModel->getOrderDetails($orderCode);
+
+            try {
+                (new \App\Models\AdminNotification())->createNotification(
+                    "Đơn hàng mới #" . $orderCode,
+                    "Khách hàng " . $customerName . " (" . $customerPhone . ") vừa đặt một đơn hàng mới trị giá " . number_format($total) . "đ",
+                    "order_created",
+                    "order",
+                    $orderCode
+                );
+            } catch (\Throwable $notiEx) {
+                error_log("Failed to create admin notification for order: " . $notiEx->getMessage());
+            }
 
             Response::json(["success" => true, "data" => $details], 201);
 

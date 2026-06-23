@@ -89,7 +89,12 @@ export function QuickAddToCartModal() {
   };
 
   const variants = product?.variants ?? [];
-  const options = product?.options ?? [];
+  const options = (product?.options ?? []).filter((group, index) => {
+    if (index === 0) return variants.some(v => v.option1Value && String(v.option1Value).trim() !== "");
+    if (index === 1) return variants.some(v => v.option2Value && String(v.option2Value).trim() !== "");
+    if (index === 2) return variants.some(v => v.option3Value && String(v.option3Value).trim() !== "");
+    return false;
+  });
   const hasVariants = variants.length > 0;
 
   // Resolve matching variant
@@ -101,15 +106,15 @@ export function QuickAddToCartModal() {
       variants.find((v) => {
         if (options[0]) {
           const val = selectedOptions[options[0].name];
-          if (v.option1Value !== val) return false;
+          if (String(v.option1Value ?? "").trim() !== String(val ?? "").trim()) return false;
         }
         if (options[1]) {
           const val = selectedOptions[options[1].name];
-          if (v.option2Value !== val) return false;
+          if (String(v.option2Value ?? "").trim() !== String(val ?? "").trim()) return false;
         }
         if (options[2]) {
           const val = selectedOptions[options[2].name];
-          if (v.option3Value !== val) return false;
+          if (String(v.option3Value ?? "").trim() !== String(val ?? "").trim()) return false;
         }
         return true;
       }) ?? null
@@ -128,11 +133,8 @@ export function QuickAddToCartModal() {
   const discountPercent = hasDiscount ? Math.round((1 - currentPriceVal / originalPriceVal) * 100) : 0;
 
   const currentSku = selectedVariant?.sku ?? "";
-  const availableStock = hasVariants
-    ? (selectedVariant ? (selectedVariant.stock ?? 0) : 0)
-    : (product?.stock ?? 0);
-
-  const isOutOfStock = isVariantSelected && availableStock <= 0;
+  const availableStock = 999;
+  const isOutOfStock = false;
 
   // Determine if option value is disabled (dependency-aware)
   const isOptionValueDisabled = (groupName: string, value: string) => {
@@ -140,24 +142,24 @@ export function QuickAddToCartModal() {
 
     const testSelection = { ...selectedOptions, [groupName]: value };
 
-    // Find if any variant matching test selection has stock > 0
-    const hasMatchingWithStock = variants.some((v) => {
+    // Find if any variant matching test selection exists
+    const hasMatchingVariant = variants.some((v) => {
       if (options[0]) {
         const sel = testSelection[options[0].name];
-        if (sel && v.option1Value !== sel) return false;
+        if (sel && String(v.option1Value ?? "").trim() !== String(sel ?? "").trim()) return false;
       }
       if (options[1]) {
         const sel = testSelection[options[1].name];
-        if (sel && v.option2Value !== sel) return false;
+        if (sel && String(v.option2Value ?? "").trim() !== String(sel ?? "").trim()) return false;
       }
       if (options[2]) {
         const sel = testSelection[options[2].name];
-        if (sel && v.option3Value !== sel) return false;
+        if (sel && String(v.option3Value ?? "").trim() !== String(sel ?? "").trim()) return false;
       }
-      return (v.stock ?? 0) > 0;
+      return true;
     });
 
-    return !hasMatchingWithStock;
+    return !hasMatchingVariant;
   };
 
   // Option selection handler
@@ -283,17 +285,6 @@ export function QuickAddToCartModal() {
                   </div>
                   <div className="mt-1 flex flex-col gap-0.5 text-xs font-medium text-ink-soft">
                     {currentSku && <span>SKU: {currentSku}</span>}
-                    {isVariantSelected ? (
-                      <span>
-                        Tồn kho:{" "}
-                        <strong className={availableStock > 0 ? "text-ink" : "text-red-500"}>
-                          {availableStock}
-                        </strong>{" "}
-                        sản phẩm
-                      </span>
-                    ) : (
-                      <span className="text-amber-600">Vui lòng chọn phân loại để xem tồn kho</span>
-                    )}
                   </div>
                 </div>
               </div>
@@ -344,7 +335,7 @@ export function QuickAddToCartModal() {
                   <button
                     type="button"
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    disabled={!isVariantSelected || isOutOfStock}
+                    disabled={!isVariantSelected}
                     className="grid h-8 w-8 place-items-center rounded-lg bg-gray-50 text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-50"
                   >
                     <Minus size={14} strokeWidth={3} />
@@ -352,8 +343,8 @@ export function QuickAddToCartModal() {
                   <span className="text-sm font-extrabold text-ink">{quantity}</span>
                   <button
                     type="button"
-                    onClick={() => setQuantity((q) => Math.min(availableStock, q + 1))}
-                    disabled={!isVariantSelected || isOutOfStock || quantity >= availableStock}
+                    onClick={() => setQuantity((q) => Math.min(99, q + 1))}
+                    disabled={!isVariantSelected || quantity >= 99}
                     className="grid h-8 w-8 place-items-center rounded-lg bg-gray-50 text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-50"
                   >
                     <Plus size={14} strokeWidth={3} />
@@ -368,16 +359,11 @@ export function QuickAddToCartModal() {
                     ⚠️ Vui lòng chọn đầy đủ phân loại sản phẩm.
                   </p>
                 )}
-                {isVariantSelected && isOutOfStock && (
-                  <p className="text-center text-xs font-bold text-red-500">
-                    ❌ Phân loại này đã hết hàng hoặc không đủ tồn kho.
-                  </p>
-                )}
 
                 <button
                   type="button"
                   onClick={handleConfirm}
-                  disabled={!isVariantSelected || isOutOfStock}
+                  disabled={!isVariantSelected}
                   className="flex w-full items-center justify-center gap-2 rounded-2xl bg-forest py-4 font-black text-white shadow-lg shadow-forest/20 transition-all hover:bg-forest/90 active:scale-95 disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none disabled:pointer-events-none"
                 >
                   {intent === "add-to-cart" ? (

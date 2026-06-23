@@ -1,11 +1,31 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Check, Copy, Share2, MessageCircle, ShoppingBag, ShoppingCart } from "lucide-react";
+import { Check, Copy, Share2, MessageCircle, ShoppingBag, ShoppingCart, Ticket, PawPrint, Truck, Gift, Bone, Sparkles, CheckCircle2 } from "lucide-react";
 import { AiResultData } from "./mockAiResult";
 import { getProductById } from "@/data/store";
 import { Link, useNavigate } from "react-router-dom";
 import { addToCart, parsePriceString } from "@/lib/cartHelper";
 import { mapApiProduct } from "@/src/api/productsApi";
+import { getAiAdvisorVoucher, type PublicVoucher } from "@/src/api/vouchersApi";
+
+const iconsMap = {
+  ticket: Ticket,
+  paw: PawPrint,
+  truck: Truck,
+  gift: Gift,
+  bone: Bone,
+  sparkles: Sparkles,
+};
+
+const voucherThemeClasses: Record<string, { color: string; bgLight: string; textDark: string }> = {
+  sky: { color: "from-sky-400 to-sky-600", bgLight: "bg-sky-50", textDark: "text-sky-700" },
+  indigo: { color: "from-blue-400 to-indigo-500", bgLight: "bg-blue-50", textDark: "text-indigo-700" },
+  amber: { color: "from-amber-400 to-orange-500", bgLight: "bg-amber-50", textDark: "text-orange-700" },
+  rose: { color: "from-rose-400 to-pink-500", bgLight: "bg-rose-50", textDark: "text-rose-700" },
+  violet: { color: "from-violet-400 to-purple-600", bgLight: "bg-violet-50", textDark: "text-purple-700" },
+  teal: { color: "from-teal-400 to-cyan-600", bgLight: "bg-teal-50", textDark: "text-cyan-700" },
+  red: { color: "from-red-400 to-rose-500", bgLight: "bg-red-50", textDark: "text-red-700" },
+};
 
 interface AiResultProps {
   result: AiResultData;
@@ -30,6 +50,19 @@ export function AiResult({
   const navigate = useNavigate();
   const [selectedProductIds, setSelectedProductIds] = useState<Set<number | string>>(new Set());
   const [showToast, setShowToast] = useState(false);
+  const [voucherData, setVoucherData] = useState<PublicVoucher | null>(null);
+
+  useEffect(() => {
+    getAiAdvisorVoucher()
+      .then((res) => {
+        if (res.success && res.data) {
+          setVoucherData(res.data);
+        }
+      })
+      .catch((err) => {
+        console.error("Lỗi lấy voucher tư vấn AI", err);
+      });
+  }, []);
 
   useEffect(() => {
     if (result.recommended_products) {
@@ -38,7 +71,8 @@ export function AiResult({
   }, [result]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(result.voucher_code || "3F30K");
+    const code = voucherData?.code || result.voucher_code || "3F30K";
+    navigator.clipboard.writeText(code);
     setCopied(true);
     if (onCopyVoucher) onCopyVoucher();
     setTimeout(() => setCopied(false), 2000);
@@ -66,6 +100,7 @@ export function AiResult({
     selectedProducts.forEach(p => {
       addToCart({
         id: String(p.id),
+        productId: String(p.backendId ?? p.sourceProductId ?? p.id),
         name: p.name,
         image: p.image,
         price: parsePriceString(p.price),
@@ -314,23 +349,66 @@ export function AiResult({
         )}
 
         {/* Voucher */}
-        <div className="bg-[#ED4546]/5 border-2 border-dashed border-[#ED4546]/20 rounded-2xl p-4 flex items-center justify-between gap-3">
-          <div className="text-left">
-            <span className="text-[11px] text-[#ED4546] font-bold block uppercase tracking-wider">
-              Voucher của anh/chị
-            </span>
-            <span className="text-[20px] font-black text-ink tracking-wider">
-              {result.voucher_code}
-            </span>
-          </div>
-          <button
-            onClick={handleCopy}
-            className="bg-[#ED4546] hover:bg-[#d93839] text-white py-2 px-4 rounded-xl active:scale-95 transition-all flex items-center gap-1.5 shadow-md shadow-[#ED4546]/10 text-xs font-bold shrink-0"
-          >
-            {copied ? <Check size={14} /> : <Copy size={14} />}
-            <span>{copied ? "Đã copy" : "Copy mã"}</span>
-          </button>
-        </div>
+        {voucherData && (() => {
+          const voucherTitle = voucherData.title;
+          const voucherDescription = voucherData.description || "";
+          const voucherLabel = voucherData.label || "TƯ VẤN AI";
+          const voucherBadge = voucherData.badgeText || "AI Voucher";
+          const voucherTheme = voucherThemeClasses[voucherData.themeColor || "red"] || voucherThemeClasses.red;
+          const VoucherIcon = iconsMap[(voucherData.iconKey || "sparkles") as keyof typeof iconsMap] || Sparkles;
+
+          return (
+            <div className="group relative flex h-[115px] w-full overflow-hidden rounded-xl bg-white shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_16px_32px_rgba(16,133,79,0.12)] sm:h-[140px] sm:rounded-[1.25rem] sm:shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
+              {/* Left Block */}
+              <div className={`relative flex w-[48px] shrink-0 flex-col items-center justify-center bg-gradient-to-br ${voucherTheme.color} text-white sm:w-[110px]`}>
+                <div className="absolute inset-0 hidden overflow-hidden opacity-20 sm:block">
+                  <PawPrint className="absolute -left-2 -top-2 h-10 w-10 rotate-12" />
+                  <PawPrint className="absolute -bottom-3 -right-2 h-[30px] w-[30px] -rotate-12" />
+                </div>
+                <div className="relative z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/20 shadow-sm backdrop-blur-md sm:h-12 sm:w-12">
+                  <VoucherIcon className="h-3.5 w-3.5 sm:h-6 sm:w-6" strokeWidth={2.5} />
+                </div>
+                <div className="relative z-10 mt-3 hidden text-center text-[10px] font-black uppercase tracking-widest text-white/90 sm:block">
+                  {voucherLabel}
+                </div>
+              </div>
+
+              {/* Circle notches - matches background of dialog (white) */}
+              <div className="absolute left-[42px] -top-2 z-10 h-4 w-4 rounded-full bg-white shadow-inner sm:left-[104px] sm:-top-3 sm:h-6 sm:w-6" />
+              <div className="absolute left-[42px] -bottom-2 z-10 h-4 w-4 rounded-full bg-white shadow-inner sm:left-[104px] sm:-bottom-3 sm:h-6 sm:w-6" />
+              <div className="absolute bottom-0 left-[47px] top-0 border-l-[2px] border-dashed border-white/40 sm:left-[109px] sm:border-l-[3px]" />
+
+              {/* Right Block */}
+              <div className="relative flex min-w-0 flex-1 flex-col justify-between p-2.5 pl-3 sm:p-4 sm:pl-6 text-left">
+                <VoucherIcon className={`absolute right-1 top-1 h-10 w-10 opacity-[0.03] sm:right-4 sm:top-4 sm:h-20 sm:w-20 ${voucherTheme.textDark}`} />
+                <div>
+                  <h3 className={`text-[12px] font-black leading-none tracking-tight sm:text-[1.35rem] ${voucherTheme.textDark}`}>
+                    {voucherTitle}
+                  </h3>
+                  <p className="mt-1 line-clamp-2 pr-1 text-[9px] font-medium leading-[1.3] text-ink/70 sm:mt-1.5 sm:pr-2 sm:text-[13px] sm:leading-snug">
+                    {voucherDescription}
+                  </p>
+                </div>
+
+                <div className="mt-1 flex w-full flex-col items-start gap-1.5 sm:mt-0 sm:flex-row sm:items-center sm:justify-between">
+                  <div className={`whitespace-nowrap rounded-full px-1.5 py-0.5 text-[8px] font-bold sm:px-2.5 sm:py-1 sm:text-[10px] ${voucherTheme.bgLight} ${voucherTheme.textDark}`}>
+                    {voucherBadge}
+                  </div>
+                  <button
+                    onClick={handleCopy}
+                    className={`relative z-20 flex h-5 w-full items-center justify-center rounded-full px-2 text-[8px] font-bold uppercase tracking-wider transition-all duration-300 hover:scale-105 active:scale-95 sm:h-8 sm:w-auto sm:px-4 sm:text-[11px] ${
+                      copied ? "bg-sky-500 text-white" : "bg-ink text-white"
+                    }`}
+                    title="Copy voucher"
+                  >
+                    {copied ? <CheckCircle2 className="mr-1 h-3 w-3" /> : <Copy className="mr-1 h-3 w-3" />}
+                    {copied ? "ĐÃ COPY" : "COPY MÃ"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Other CTAs */}
         <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-100">

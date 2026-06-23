@@ -15,6 +15,7 @@ class OtpService {
     public function __construct() {
         $this->db = Database::getInstance()->getConnection();
         $this->legacyOtpModel = new CustomerOtp();
+        $this->ensureOtpPurposeSchema();
 
         $appEnv = getenv('APP_ENV') ?: 'development';
         if (in_array(strtolower($appEnv), ['production', 'staging'])) {
@@ -25,6 +26,48 @@ class OtpService {
         }
     }
 
+    private function ensureOtpPurposeSchema() {
+        try {
+            if ($this->db->getAttribute(\PDO::ATTR_DRIVER_NAME) !== 'mysql') {
+                return;
+            }
+
+            $requiredPurposes = [
+                'login',
+                'register',
+                'reset_password',
+                'register_phone',
+                'redeem_reward',
+                'use_points',
+                'change_phone',
+                'link_phone',
+                'sensitive_action',
+                'shopee_point_request',
+                'shopee_point_guest',
+            ];
+
+            $stmt = $this->db->query("SHOW COLUMNS FROM otp_requests LIKE 'purpose'");
+            $column = $stmt ? $stmt->fetch() : null;
+            $type = isset($column['Type']) ? (string)$column['Type'] : '';
+            $needsAlter = $type === '';
+            foreach ($requiredPurposes as $purpose) {
+                if (strpos($type, "'" . $purpose . "'") === false) {
+                    $needsAlter = true;
+                    break;
+                }
+            }
+
+            if ($needsAlter) {
+                $quoted = array_map(function($purpose) {
+                    return "'" . str_replace("'", "''", $purpose) . "'";
+                }, $requiredPurposes);
+                $this->db->exec("ALTER TABLE otp_requests MODIFY purpose ENUM(" . implode(',', $quoted) . ") NOT NULL");
+            }
+        } catch (Exception $e) {
+            error_log('Failed to ensure otp_requests purpose schema: ' . $e->getMessage());
+        }
+    }
+
     /**
      * Select OTP provider dynamically.
      */
@@ -32,7 +75,7 @@ class OtpService {
         $providerName = getenv('OTP_PROVIDER') ?: 'mock';
         $appEnv = getenv('APP_ENV') ?: 'development';
         if (strtolower($appEnv) === 'production' && strtolower($providerName) === 'mock') {
-            throw new Exception("Mock OTP provider is not allowed on production.");
+            throw new Exception("Chưa cấu hình nhà cung cấp OTP.");
         }
         switch (strtolower($providerName)) {
             case 'speedsms':
@@ -55,21 +98,26 @@ class OtpService {
      * Check if OTP can be resent.
      */
     public function canResend($phone, $purpose) {
+        return $this->getResendWaitSeconds($phone, $purpose) === 0;
+    }
+
+    private function getResendWaitSeconds($phone, $purpose) {
         $cooldownSeconds = (int)(getenv('OTP_RESEND_COOLDOWN_SECONDS') ?: 60);
         $stmt = $this->db->prepare("
-            SELECT created_at FROM otp_requests
+            SELECT GREATEST(0, TIMESTAMPDIFF(SECOND, created_at, NOW())) AS elapsed_seconds
+            FROM otp_requests
             WHERE phone = :phone AND purpose = :purpose
             ORDER BY id DESC LIMIT 1
         ");
         $stmt->execute([':phone' => $phone, ':purpose' => $purpose]);
         $lastRequest = $stmt->fetch();
         if ($lastRequest) {
-            $seconds = time() - strtotime($lastRequest['created_at']);
+            $seconds = (int)($lastRequest['elapsed_seconds'] ?? 0);
             if ($seconds < $cooldownSeconds) {
-                return false;
+                return $cooldownSeconds - $seconds;
             }
         }
-        return true;
+        return 0;
     }
 
     /**
@@ -100,10 +148,11 @@ class OtpService {
             ];
         }
 
-        if (!$this->canResend($phone, $purpose)) {
+        $resendWaitSeconds = $this->getResendWaitSeconds($phone, $purpose);
+        if ($resendWaitSeconds > 0) {
             return [
                 'success' => false,
-                'message' => 'Vui lòng đợi 60 giây trước khi gửi lại mã.',
+                'message' => "Vui lòng đợi {$resendWaitSeconds} giây trước khi gửi lại mã.",
             ];
         }
 
@@ -123,12 +172,16 @@ class OtpService {
         // Generate 6-digit OTP
         $code = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
         $provider = $this->selectProvider();
-        
-        $message = "Ma OTP 3F Store cua ban la: $code. Hieu luc trong 5 phut.";
-        $result = $provider->sendOtp($phone, $message);
 
         // Save to otp_requests
         $expiresMinutes = (int)(getenv('OTP_EXPIRES_MINUTES') ?: 5);
+        $message = "Ma OTP cua ban la {$code}. Ma co hieu luc trong {$expiresMinutes} phut. Khong chia se ma nay cho bat ky ai. 3F Store";
+        $result = $provider->sendOtp($phone, $message, [
+            'purpose' => $purpose,
+            'customer_id' => $customerId,
+            'expires_minutes' => $expiresMinutes,
+        ]);
+
         $expiresAt = date('Y-m-d H:i:s', time() + ($expiresMinutes * 60));
 
         $otpSecret = getenv('OTP_SECRET');
@@ -329,4 +382,3 @@ class OtpService {
         ]);
     }
 }
-

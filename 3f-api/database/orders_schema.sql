@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS coupons (
   code VARCHAR(100) UNIQUE NOT NULL,
   name VARCHAR(255) NOT NULL,
   description TEXT NULL,
-  discount_type ENUM('fixed','percent') NOT NULL,
+  discount_type ENUM('fixed','percent','free_shipping','gift') NOT NULL DEFAULT 'fixed',
   discount_value DECIMAL(12,2) NOT NULL,
   max_discount_amount DECIMAL(12,2) NULL,
   min_order_amount DECIMAL(12,2) DEFAULT 0.00,
@@ -123,6 +123,15 @@ CREATE TABLE IF NOT EXISTS coupons (
   starts_at DATETIME NULL,
   ends_at DATETIME NULL,
   is_active TINYINT(1) DEFAULT 1,
+  show_on_home TINYINT(1) DEFAULT 0,
+  show_in_cart TINYINT(1) DEFAULT 0,
+  show_in_ai_advisor TINYINT(1) DEFAULT 0,
+  display_title VARCHAR(120) NULL,
+  display_label VARCHAR(80) NULL,
+  badge_text VARCHAR(80) NULL,
+  theme_color VARCHAR(40) DEFAULT 'sky',
+  icon_key VARCHAR(40) DEFAULT 'ticket',
+  sort_order INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -136,6 +145,19 @@ CREATE TABLE IF NOT EXISTS coupon_usages (
   used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_usages_coupon (coupon_id),
   INDEX idx_usages_order (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS coupon_events (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  coupon_id INT NULL,
+  code VARCHAR(100) NOT NULL,
+  event_type ENUM('view','copy','apply_success','apply_failed','redeem_order') NOT NULL,
+  customer_phone VARCHAR(50) NULL,
+  metadata_json TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_coupon_events_coupon (coupon_id),
+  INDEX idx_coupon_events_code (code),
+  INDEX idx_coupon_events_type (event_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- New tables for CRM + Loyalty + Automation
@@ -214,4 +236,17 @@ CREATE TABLE IF NOT EXISTS shipping_providers (
   config_json TEXT NULL,
   is_active TINYINT(1) DEFAULT 1,
   sort_order INT DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS order_shipping_methods (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  method_key VARCHAR(50) UNIQUE NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  description TEXT NULL,
+  fee DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_order_shipping_methods_active (is_active, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
