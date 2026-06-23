@@ -125,6 +125,8 @@ try {
     $router->get("/api/admin/dashboard/stats", [AdminDashboardController::class, "getStats"]);
     $router->get("/api/admin/dashboard/revenue-chart", [AdminDashboardController::class, "getRevenueChart"]);
     $router->get("/api/admin/dashboard/task-queue", [AdminDashboardController::class, "getTaskQueue"]);
+    $router->get("/api/admin/dashboard/top-products", [AdminDashboardController::class, "getTopProducts"]);
+    $router->get("/api/admin/dashboard/pet-needs", [AdminDashboardController::class, "getPetNeedsStats"]);
 
     // Admin Notifications Routes
     $router->get("/api/admin/notifications", [AdminNotificationController::class, "list"]);
