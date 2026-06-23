@@ -191,16 +191,17 @@ export function WhyChooseUsSection() {
           transition={{ delay: 0.5 }}
           className="relative z-20 mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5"
         >
-          <Link 
-            to="/ai-chat" 
+          <button 
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-pet-advisor"))}
             className="group flex h-[3.25rem] w-full items-center justify-center gap-2 rounded-full bg-forest px-8 text-[15px] font-bold text-white shadow-[0_8px_20px_rgba(19,72,111,0.25)] transition-all hover:bg-forest-dark hover:shadow-[0_12px_25px_rgba(19,72,111,0.35)] active:scale-95 sm:w-auto"
           >
             <Bot size={18} />
             Hỏi AI tư vấn ngay
             <ChevronRight size={18} className="transition-transform group-hover:translate-x-1" />
-          </Link>
+          </button>
           <Link 
-            to="/club" 
+            to="/account/club" 
             className="group flex h-[3.25rem] w-full items-center justify-center gap-2 rounded-full border-[1.5px] border-forest/20 bg-white px-8 text-[15px] font-bold text-forest shadow-sm transition-all hover:border-forest/40 hover:bg-forest/5 active:scale-95 sm:w-auto"
           >
             <Gift size={18} />

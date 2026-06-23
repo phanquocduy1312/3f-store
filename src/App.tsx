@@ -45,7 +45,7 @@ const BlogList = lazyPage(() => import("./pages/BlogList"), "BlogList");
 const BlogDetail = lazyPage(() => import("./pages/BlogDetail"), "BlogDetail");
 const AboutPage = lazyPage(() => import("./pages/AboutPage"), "AboutPage");
 const ContactPage = lazyPage(() => import("./pages/ContactPage"), "ContactPage");
-
+const VerifyRegistration = lazyPage(() => import("./pages/client/VerifyRegistrationPage"), "VerifyRegistrationPage");
 
 
 // Client Account Pages
@@ -108,6 +108,7 @@ export function App() {
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/verify-registration" element={<VerifyRegistration />} />
           <Route path="/tin-tuc" element={<BlogList />} />
           <Route path="/tin-tuc/:slug" element={<BlogDetail />} />
           <Route path="/about" element={<AboutPage />} />

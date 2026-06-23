@@ -2,6 +2,14 @@
 
 ## [2026-06-23]
 ### Added
+- Triển khai luồng đăng ký tài khoản khách hàng bằng email verification link:
+  - Xây dựng bảng tạm `pending_registrations` lưu trữ thông tin đăng ký (email, họ tên, điện thoại, mật khẩu băm, hash của token, expires_at) bằng cơ chế tự tạo schema động ở backend.
+  - Cập nhật hàm `registerEmail()` trong [CustomerAuthController.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Controllers/CustomerAuthController.php) để lưu thông tin tạm thời và gửi email xác thực thay vì tạo tài khoản ngay lập tức.
+  - Triển khai API xác thực `POST /api/customer/auth/verify-registration` xử lý tạo tài khoản chính thức trong bảng `customers` (với `email_verified_at = NOW()`), tự động đăng nhập và xóa bản ghi tạm thời trong database transaction.
+  - Triển khai API gửi lại mã xác thực `POST /api/customer/auth/resend-registration-verification` tích hợp giới hạn thời gian chờ 60 giây và giới hạn 5 lần gửi mỗi ngày để chống spam.
+  - Refactor dịch vụ gửi email [EmailService.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Services/EmailService.php) tích hợp với [SmtpClient.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Services/SmtpClient.php) để giảm độ dài tệp tin dưới 200 dòng mã theo tiêu chuẩn.
+  - Tạo trang `/verify-registration` ([VerifyRegistrationPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/client/VerifyRegistrationPage.tsx)) xử lý nhận token từ link email, gọi API kích hoạt, tự động đăng nhập và redirect về trang cá nhân.
+  - Nâng cấp trang Đăng ký [Register.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/Register.tsx) hiển thị thẻ hướng dẫn mở hòm thư email, nút gửi lại email và liên kết verify đặc biệt dành riêng cho môi trường phát triển (development).
 - Thiết kế và triển khai trang Liên hệ / Contact (/contact và /lien-he) mới và API Backend:
   - Xây dựng trang đích [ContactPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/ContactPage.tsx) chính của khách hàng tích hợp SEO Metadata động và bố cục hai cột responsive.
   - Tách giao diện ContactPage thành các component nhỏ dưới 200 dòng mã để bảo vệ giới hạn tệp:

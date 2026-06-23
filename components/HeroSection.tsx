@@ -136,7 +136,10 @@ export function HeroSection() {
           </div>
 
           {/* Top Right Banner - AI Pet Advisor */}
-          <Link to="#" className="relative flex overflow-hidden rounded-[1rem] sm:rounded-[2rem] shadow-glass-sm group h-[160px] xs:h-[180px] sm:h-full w-full border border-[rgb(var(--color-border))] transition-all duration-500 hover:shadow-[0_10px_30px_rgba(0,0,0,0.15)]">
+          <div 
+            onClick={() => window.dispatchEvent(new CustomEvent("open-pet-advisor"))}
+            className="cursor-pointer relative flex overflow-hidden rounded-[1rem] sm:rounded-[2rem] shadow-glass-sm group h-[160px] xs:h-[180px] sm:h-full w-full border border-[rgb(var(--color-border))] transition-all duration-500 hover:shadow-[0_10px_30px_rgba(0,0,0,0.15)]"
+          >
             <div className="absolute inset-0 z-0">
               <Image
                 src="/assets/images/AI.png"
@@ -163,7 +166,7 @@ export function HeroSection() {
                 <ChevronRight size={12} className="text-[#1A1A1A] sm:w-4 sm:h-4" strokeWidth={3} />
               </button>
             </div>
-          </Link>
+          </div>
 
           {/* Bottom Right Banner - Custom Promotional Card */}
           <Link to="/register" className="relative flex overflow-hidden rounded-[1rem] sm:rounded-[2rem] shadow-glass-sm group h-[160px] xs:h-[180px] sm:h-full w-full border border-[rgb(var(--color-border))] transition-all duration-500 hover:shadow-[0_10px_30px_rgba(0,0,0,0.15)]">

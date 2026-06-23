@@ -70,6 +70,8 @@
 - [x] Triển khai Hệ thống Thông báo Quản trị viên (Admin Notification System) tự động cảnh báo các sự kiện đơn hàng mới, yêu cầu tích điểm Shopee mới, và đánh giá sản phẩm mới kèm dropdown bell icon cao cấp trên Header hiển thị số lượng chưa đọc thời gian thực (polling 60s) và tự động đánh dấu đã đọc khi chuyển hướng tài nguyên tương ứng.
 - [x] Thiết kế và triển khai lại trang Giới thiệu / About (/about và /gioi-thieu) mang phong cách pet store ấm áp, tin cậy, gần gũi, tối ưu đa kênh và liên hệ, tích hợp điều hướng mượt mà ở Header và Footer.
 - [x] Thiết kế và triển khai lại trang Liên hệ / Contact (/contact và /lien-he) mang phong cách pet store ấm áp, tin cậy, gần gũi, tích hợp API lưu trữ tin nhắn contact_messages MySQL và chống spam Honeypot.
+- [x] Triển khai luồng đăng ký tài khoản khách hàng bằng email xác thực (email verification link) bảo mật với bảng tạm pending_registrations, SMTP socket client và trang xử lý xác thực tự động đăng nhập.
+
 
 ## Phase 6: 3F Club Phased Implementation (CRM + Loyalty + Automation)
 - [x] Phase 1 — Admin cấu hình cách tính điểm (Hoàn thành)

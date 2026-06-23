@@ -5,11 +5,10 @@ import { registerEmail } from "@/src/api/customerAuthApi";
 import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
 
 interface RegisterFormProps {
-  onSuccess?: () => void;
+  onSuccess?: (registeredEmail: string, devVerifyUrl?: string) => void;
 }
 
 export function RegisterForm({ onSuccess }: RegisterFormProps) {
-  const { login } = useCustomerAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,15 +63,9 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
     setIsLoading(true);
     try {
       const res = await registerEmail({ fullName: fullName.trim(), email, password, passwordConfirmation, acceptTerms: agreeTerms });
-      if (res.success && res.data) {
-        login(res.data.token, res.data.customer);
-        const hasPhone = !!res.data.customer.phone;
-        toast.success(
-          hasPhone
-            ? "Đăng ký thành công!"
-            : "Đăng ký thành công! Bạn có thể bổ sung số điện thoại để tích điểm 3F Club."
-        );
-        if (onSuccess) onSuccess();
+      if (res.success) {
+        toast.success(res.message || "Yêu cầu đăng ký thành công. Vui lòng xác thực email.");
+        if (onSuccess) onSuccess(email, res.devVerifyUrl);
       } else {
         toast.error(res.message || "Đăng ký thất bại.");
         if (res.message?.includes("Email")) setErrors({ email: res.message });
