@@ -244,12 +244,12 @@ export function DeliveryForm({
               onChange={(e) => handleWardInputChange(e.target.value)}
               onFocus={() => setShowWardSuggestions(true)}
               onBlur={() => setTimeout(() => setShowWardSuggestions(false), 200)}
-              disabled={!provinceCode}
+              disabled={!provinceName.trim()}
               placeholder={
                 isLoadingWards 
                   ? "Đang tải danh sách..." 
-                  : !provinceCode 
-                    ? "Vui lòng chọn Tỉnh/Thành phố trước" 
+                  : !provinceName.trim() 
+                    ? "Vui lòng nhập Tỉnh/Thành phố trước" 
                     : "Nhập Phường / Xã..."
               }
               className="w-full rounded-xl border border-forest/15 bg-white px-3 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30 disabled:opacity-55"
