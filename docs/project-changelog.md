@@ -2,6 +2,21 @@
 
 ## [2026-06-23]
 ### Added
+- Thiết kế và triển khai trang Giới thiệu / About (/about và /gioi-thieu) mới:
+  - Xây dựng trang đích [AboutPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/AboutPage.tsx) chính của khách hàng tích hợp SEO Metadata động (tiêu đề, thẻ mô tả) và thanh điều hướng Breadcrumb.
+  - Mô đun hóa giao diện AboutPage thành các component nhỏ dưới 200 dòng mã để bảo vệ giới hạn tệp:
+    - [AboutHero.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutHero.tsx): Tiêu đề thương hiệu ấm áp, ảnh hero dog/cat, nút mua sắm và tư vấn.
+    - [AboutIntro.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutIntro.tsx): Giới thiệu cửa hàng chuyên chó mèo, nguồn gốc chất lượng chọn lọc.
+    - [AboutCategories.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutCategories.tsx): Giới thiệu 8 danh mục sản phẩm (thức ăn, pate, cát, chăm sóc sức khỏe, làm đẹp).
+    - [AboutWhyChooseUs.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutWhyChooseUs.tsx): Lợi ích/cam kết của cửa hàng (hàng chính hãng, bảo quản chuẩn, hỗ trợ chu đáo).
+    - [AboutConsulting.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutConsulting.tsx): Mô tả tư vấn dinh dưỡng theo tuổi, giống, cân nặng và lời khuyên y tế/bác sĩ thú y.
+    - [AboutChannels.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutChannels.tsx): Cung cấp liên kết mua sắm đa kênh (Website, Shopee, Zalo tư vấn, Cửa hàng offline).
+    - [AboutStoreInfo.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutStoreInfo.tsx): Thông tin pháp lý (Công ty, MST, Hotline, Address, Email) và bản đồ Google Maps tích hợp.
+    - [AboutCTA.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutCTA.tsx): Khung hành động cuối trang chuyển hướng đến chat Zalo hoặc mua sắm.
+  - Đồng bộ hóa điều hướng trong [Header.tsx](file:///c:/Users/Admin/Downloads/ccc/components/Header.tsx) ("Về chúng tôi" -> `/about`, "Liên hệ" -> `/about#store-info`).
+  - Đồng bộ hóa liên kết trong [Footer.tsx](file:///c:/Users/Admin/Downloads/ccc/components/Footer.tsx) ("Giới thiệu" -> `/about`, "Liên hệ" -> `/about#store-info` với smooth scroll).
+  - Đăng ký các tuyến đường `/about` và `/gioi-thieu` trong [App.tsx](file:///c:/Users/Admin/Downloads/ccc/src/App.tsx).
+  - Tự động tạo và lưu trữ 4 tệp ảnh minh họa pet store chất lượng cao (`about-hero.png`, `about-products.png`, `about-consulting.png`, `about-delivery.png`) vào thư mục `public/images/about/`.
 - Bố cục lại giao diện AI Pet Advisor Admin (Full-width Grid List & Consultation Detail Page):
   - Chuyển đổi giao diện chia đôi màn hình (split layout) cũ của trang danh sách tư vấn AI thành giao diện hiển thị lưới (grid layout) rộng mở full-width, hiển thị nhiều thông tin trực quan hơn trên mỗi thẻ tư vấn.
   - Tích hợp thêm nút hành động "Xem chi tiết" với biểu tượng Lucide `Eye` trên từng thẻ để chuyển hướng quản trị viên đến trang thông tin chi tiết riêng biệt.

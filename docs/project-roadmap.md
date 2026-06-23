@@ -68,6 +68,7 @@
 - [x] Đổi tên mục điều hướng trên thanh Sidebar của Admin từ "Voucher / Campaign" thành "Voucher" cho đồng bộ và tinh gọn.
 - [x] Đồng bộ hóa hiển thị Voucher dạng thẻ răng cưa trong kết quả tư vấn AI và ràng buộc chỉ có tối đa 1 voucher hoạt động cho AI Advisor.
 - [x] Triển khai Hệ thống Thông báo Quản trị viên (Admin Notification System) tự động cảnh báo các sự kiện đơn hàng mới, yêu cầu tích điểm Shopee mới, và đánh giá sản phẩm mới kèm dropdown bell icon cao cấp trên Header hiển thị số lượng chưa đọc thời gian thực (polling 60s) và tự động đánh dấu đã đọc khi chuyển hướng tài nguyên tương ứng.
+- [x] Thiết kế và triển khai lại trang Giới thiệu / About (/about và /gioi-thieu) mang phong cách pet store ấm áp, tin cậy, gần gũi, tối ưu đa kênh và liên hệ, tích hợp điều hướng mượt mà ở Header và Footer.
 
 ## Phase 6: 3F Club Phased Implementation (CRM + Loyalty + Automation)
 - [x] Phase 1 — Admin cấu hình cách tính điểm (Hoàn thành)

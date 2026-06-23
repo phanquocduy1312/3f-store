@@ -43,6 +43,8 @@ const AdminProductReviewsPage = lazyPage(() => import("./pages/admin/AdminProduc
 const AdminVouchersPage = lazyPage(() => import("./pages/admin/AdminVouchersPage"), "AdminVouchersPage");
 const BlogList = lazyPage(() => import("./pages/BlogList"), "BlogList");
 const BlogDetail = lazyPage(() => import("./pages/BlogDetail"), "BlogDetail");
+const AboutPage = lazyPage(() => import("./pages/AboutPage"), "AboutPage");
+
 
 // Client Account Pages
 import { AccountLayout } from "./pages/client/account/AccountShell";
@@ -106,6 +108,8 @@ export function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/tin-tuc" element={<BlogList />} />
           <Route path="/tin-tuc/:slug" element={<BlogDetail />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/gioi-thieu" element={<AboutPage />} />
           
           {/* Protected Client Routes */}
           <Route element={<CustomerRouteGuard />}>
