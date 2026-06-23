@@ -43,6 +43,9 @@
   - Áp dụng quy tắc duy nhất phía backend (`Coupon.php`): khi kích hoạt/lưu một voucher chạy trên Tư vấn AI (`show_in_ai_advisor = 1`), hệ thống tự động tắt cờ `show_in_ai_advisor` của tất cả các voucher khác để đảm bảo chỉ có duy nhất tối đa 1 voucher hoạt động tại một thời điểm.
 
 ### Fixed
+- Khắc phục lỗi chọn phân loại nhưng không chọn được thông số khiến không đặt hàng được tại Modal Xem Nhanh:
+  - Tự động ẩn các nhóm tùy chọn/thông số (ví dụ: nhóm "THÔNG SỐ") nếu tất cả các giá trị tùy chọn trong nhóm đó đều bị vô hiệu hóa (disabled) dưới lựa chọn phân loại hiện tại.
+  - Cập nhật hàm tìm kiếm biến thể `getSelectedVariant` và kiểm tra tính đầy đủ của lựa chọn chỉ kiểm tra các nhóm tùy chọn đang hiển thị/áp dụng (applicable groups), bỏ qua và chấp nhận giá trị rỗng/null cho các nhóm tùy chọn bị ẩn. Việc này giúp khách hàng chọn phân loại và đặt hàng/mua ngay lập tức mà không bị chặn lại bởi các nhóm thông số không hoạt động.
 - Sửa lỗi trùng lặp sản phẩm trong giỏ hàng (duplicate cart items):
   - Xây dựng hàm so sánh `isSameCartItem` trong [cartHelper.ts](file:///c:/Users/Admin/Downloads/ccc/lib/cartHelper.ts) hỗ trợ kiểm tra linh hoạt theo mã sản phẩm (`productId`), mã phân loại/biến thể (`variantId`) và văn bản phân loại. Giải quyết triệt để sự khác biệt kiểu dữ liệu (chuỗi vs số) và định dạng khóa định danh (`id` biến thể thô vs khóa phức hợp `productId-variantId` từ chức năng mua lại đơn hàng).
   - Tích hợp `isSameCartItem` vào các tác vụ `addToCart`, `updateQuantity` và `removeFromCart`.
