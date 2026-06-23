@@ -472,7 +472,7 @@ class AdminDashboardController {
             SELECT 
                 oi.product_id,
                 p.name,
-                p.image,
+                p.main_image_url as image,
                 p.min_price,
                 SUM(oi.quantity) as sold,
                 SUM(oi.price * oi.quantity) as revenue
@@ -481,7 +481,7 @@ class AdminDashboardController {
             JOIN products p ON p.id = oi.product_id
             WHERE o.order_status IN ('confirmed', 'packing', 'shipping', 'completed')
               AND o.created_at BETWEEN :start AND :end
-            GROUP BY oi.product_id, p.name, p.image, p.min_price
+            GROUP BY oi.product_id, p.name, p.main_image_url, p.min_price
             ORDER BY sold DESC, revenue DESC
             LIMIT :limit
         ";
@@ -503,7 +503,7 @@ class AdminDashboardController {
                 SELECT 
                     id as product_id,
                     name,
-                    image,
+                    main_image_url as image,
                     min_price,
                     sold_count as sold_count
                 FROM products
