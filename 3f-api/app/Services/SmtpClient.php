@@ -119,11 +119,14 @@ class SmtpClient {
         $headers = [
             "MIME-Version: 1.0",
             "Content-Type: text/html; charset=UTF-8",
+            "Content-Transfer-Encoding: 8bit",
             "From: =?UTF-8?B?" . base64_encode($fromName) . "?= <" . $from . ">",
             "To: <" . $to . ">",
             "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=",
             "Date: " . date('r'),
-            "Message-ID: <" . md5(uniqid(microtime())) . "@" . ($host) . ">"
+            "Message-ID: <" . md5(uniqid(microtime())) . "@" . ($host) . ">",
+            "Auto-Submitted: auto-generated",
+            "X-Mailer: PHP/" . phpversion()
         ];
         
         $body = implode("\r\n", $headers) . "\r\n\r\n" . $htmlMessage . "\r\n.";

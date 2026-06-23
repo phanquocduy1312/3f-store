@@ -39,12 +39,12 @@ class EmailService {
                 <div class='logo'>3F Store</div>
                 <h2>Chào bạn {$fullName},</h2>
                 <p>Cảm ơn bạn đã đăng ký tài khoản tại 3F Store - Cửa hàng thú cưng chuyên chó/mèo hàng đầu.</p>
-                <p>Vui lòng nhấn vào nút dưới đây để kích thực tài khoản của bạn. Liên kết này chỉ có hiệu lực trong vòng 60 phút:</p>
+                <p>Vui lòng nhấn vào nút dưới đây để xác thực tài khoản của bạn. Liên kết này chỉ có hiệu lực trong vòng 60 phút:</p>
                 <div style='text-align: center;'>
                     <a href='{$verifyUrl}' class='btn'>Xác thực tài khoản</a>
                 </div>
-                <p>Nếu nút bấm trên không hoạt động, bạn có thể sao chép liên kết dưới đây dán vào thanh địa chỉ trình duyệt:</p>
-                <p style='word-break: break-all; font-size: 13px; color: #0057E7;'>{$verifyUrl}</p>
+                <p>Nếu nút bấm trên không hoạt động, bạn có thể nhấn trực tiếp vào liên kết bên dưới:</p>
+                <p style='word-break: break-all; font-size: 13px;'><a href='{$verifyUrl}' style='color: #0057E7; text-decoration: underline;'>Kích hoạt tài khoản của bạn tại đây</a></p>
                 <p style='font-size: 13px; color: #64748b; font-style: italic;'>Nếu bạn không thực hiện yêu cầu đăng ký này, vui lòng bỏ qua email.</p>
                 <div class='footer'>
                     Đây là email tự động từ hệ thống của 3F Store. Vui lòng không trả lời trực tiếp email này.
