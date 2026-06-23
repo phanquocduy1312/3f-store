@@ -88,33 +88,96 @@ export function QuickAddToCartModal() {
     setIsOpen(false);
   };
 
+  const isEmptyValue = (val: any): boolean => {
+    if (val === null || val === undefined) return true;
+    const s = String(val).trim();
+    return s === "" || s.toLowerCase() === "null";
+  };
+
   const variants = product?.variants ?? [];
   const options = (product?.options ?? []).filter((group, index) => {
-    if (index === 0) return variants.some(v => v.option1Value && String(v.option1Value).trim() !== "");
-    if (index === 1) return variants.some(v => v.option2Value && String(v.option2Value).trim() !== "");
-    if (index === 2) return variants.some(v => v.option3Value && String(v.option3Value).trim() !== "");
+    if (index === 0) return variants.some(v => !isEmptyValue(v.option1Value));
+    if (index === 1) return variants.some(v => !isEmptyValue(v.option2Value));
+    if (index === 2) return variants.some(v => !isEmptyValue(v.option3Value));
     return false;
   });
   const hasVariants = variants.length > 0;
 
+  // Determine which option groups are applicable under the current selection
+  const getApplicableOptionsForSelection = (selection: Record<string, string>) => {
+    const applicable: typeof options = [];
+    
+    for (let i = 0; i < options.length; i++) {
+      const group = options[i];
+      if (i === 0) {
+        applicable.push(group);
+        continue;
+      }
+      
+      const hasValidVariant = variants.some((v) => {
+        const valAtCurrentIndex = i === 1 ? v.option2Value : v.option3Value;
+        if (isEmptyValue(valAtCurrentIndex)) return false;
+        
+        // Must match all selections of previous applicable groups
+        for (const appGroup of applicable) {
+          const selVal = selection[appGroup.name];
+          if (!selVal) continue; // If not selected, we don't restrict by it
+          
+          const appIndex = options.indexOf(appGroup);
+          const vVal = appIndex === 0 ? v.option1Value : appIndex === 1 ? v.option2Value : v.option3Value;
+          if (String(vVal ?? "").trim() !== String(selVal).trim()) return false;
+        }
+        return true;
+      });
+      
+      if (hasValidVariant) {
+        applicable.push(group);
+      }
+    }
+    
+    return applicable;
+  };
+
+  const getApplicableOptions = () => getApplicableOptionsForSelection(selectedOptions);
+  const applicableOptions = getApplicableOptions();
+
   // Resolve matching variant
   const getSelectedVariant = (): ProductVariant | null => {
     if (!hasVariants) return null;
-    if (Object.keys(selectedOptions).length < options.length) return null;
+    
+    const applicable = getApplicableOptions();
+    for (const appGroup of applicable) {
+      if (!selectedOptions[appGroup.name]) return null;
+    }
 
     return (
       variants.find((v) => {
         if (options[0]) {
           const val = selectedOptions[options[0].name];
-          if (String(v.option1Value ?? "").trim() !== String(val ?? "").trim()) return false;
+          const isApp = applicable.some(a => a.name === options[0].name);
+          if (isApp) {
+            if (String(v.option1Value ?? "").trim() !== String(val ?? "").trim()) return false;
+          } else {
+            if (!isEmptyValue(v.option1Value)) return false;
+          }
         }
         if (options[1]) {
           const val = selectedOptions[options[1].name];
-          if (String(v.option2Value ?? "").trim() !== String(val ?? "").trim()) return false;
+          const isApp = applicable.some(a => a.name === options[1].name);
+          if (isApp) {
+            if (String(v.option2Value ?? "").trim() !== String(val ?? "").trim()) return false;
+          } else {
+            if (!isEmptyValue(v.option2Value)) return false;
+          }
         }
         if (options[2]) {
           const val = selectedOptions[options[2].name];
-          if (String(v.option3Value ?? "").trim() !== String(val ?? "").trim()) return false;
+          const isApp = applicable.some(a => a.name === options[2].name);
+          if (isApp) {
+            if (String(v.option3Value ?? "").trim() !== String(val ?? "").trim()) return false;
+          } else {
+            if (!isEmptyValue(v.option3Value)) return false;
+          }
         }
         return true;
       }) ?? null
@@ -165,13 +228,23 @@ export function QuickAddToCartModal() {
   // Option selection handler
   const handleSelectOption = (groupName: string, value: string) => {
     const nextSelection = { ...selectedOptions, [groupName]: value };
-    setSelectedOptions(nextSelection);
+    
+    // Clean up selections for option groups that are no longer applicable
+    const applicable = getApplicableOptionsForSelection(nextSelection);
+    const cleanedSelection: Record<string, string> = {};
+    for (const app of applicable) {
+      if (nextSelection[app.name] !== undefined) {
+        cleanedSelection[app.name] = nextSelection[app.name];
+      }
+    }
+    
+    setSelectedOptions(cleanedSelection);
 
     // Resolve variant-specific image if matching variant or subset variant has one
     const matched = variants.find((v) => {
-      if (groupName === options[0]?.name && v.option1Value !== value) return false;
-      if (groupName === options[1]?.name && v.option2Value !== value) return false;
-      if (groupName === options[2]?.name && v.option3Value !== value) return false;
+      if (options[0] && groupName === options[0].name && String(v.option1Value ?? "").trim() !== String(value ?? "").trim()) return false;
+      if (options[1] && groupName === options[1].name && String(v.option2Value ?? "").trim() !== String(value ?? "").trim()) return false;
+      if (options[2] && groupName === options[2].name && String(v.option3Value ?? "").trim() !== String(value ?? "").trim()) return false;
       return true;
     });
     if (matched?.image) {
@@ -290,9 +363,9 @@ export function QuickAddToCartModal() {
               </div>
 
               {/* Variant Selections */}
-              {options.length > 0 && (
+              {applicableOptions.length > 0 && (
                 <div className="flex flex-col gap-4 border-t border-gray-50 pt-4">
-                  {options.map((group) => {
+                  {applicableOptions.map((group) => {
                     const selectedVal = selectedOptions[group.name];
                     return (
                       <div key={group.name} className="flex flex-col gap-2">
