@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
 import { AboutHero } from "@/components/about/AboutHero";
 import { AboutIntro } from "@/components/about/AboutIntro";
 import { AboutCategories } from "@/components/about/AboutCategories";
@@ -29,19 +28,6 @@ export function AboutPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {/* Breadcrumbs navigation */}
-      <div className="bg-cream-soft/50 py-4 border-b border-forest/5">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center gap-2 text-xs font-semibold text-ink/50 sm:text-sm">
-            <Link to="/" className="transition hover:text-forest">
-              Trang chủ
-            </Link>
-            <span>/</span>
-            <span className="text-forest">Giới thiệu 3F Store</span>
-          </nav>
-        </div>
-      </div>
-
       {/* About Page Sections */}
       <AboutHero />
       <AboutIntro />
