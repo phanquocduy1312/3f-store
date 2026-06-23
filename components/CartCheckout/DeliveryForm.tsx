@@ -41,18 +41,18 @@ export function DeliveryForm({
   const [isLoadingWards, setIsLoadingWards] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const [provinceInput, setProvinceInput] = useState(provinceName);
-  const [wardInput, setWardInput] = useState(wardName);
+  const [provinceInput, setProvinceInput] = useState(provinceName || "");
+  const [wardInput, setWardInput] = useState(wardName || "");
   const [showProvinceSuggestions, setShowProvinceSuggestions] = useState(false);
   const [showWardSuggestions, setShowWardSuggestions] = useState(false);
 
   // Sync inputs with parent state
   useEffect(() => {
-    setProvinceInput(provinceName);
+    setProvinceInput(provinceName || "");
   }, [provinceName]);
 
   useEffect(() => {
-    setWardInput(wardName);
+    setWardInput(wardName || "");
   }, [wardName]);
 
   // Load provinces on mount
@@ -212,7 +212,7 @@ export function DeliveryForm({
               onFocus={() => setShowProvinceSuggestions(true)}
               onBlur={() => setTimeout(() => setShowProvinceSuggestions(false), 200)}
               placeholder={isLoadingProvinces ? "Đang tải danh sách..." : "Nhập Tỉnh / Thành phố..."}
-              className="w-full rounded-xl border border-forest/15 bg-white px-3 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30 disabled:opacity-55"
+              className="w-full rounded-xl border border-forest/15 bg-white px-3 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed disabled:opacity-70"
               required
             />
             {showProvinceSuggestions && filteredProvinces.length > 0 && (
@@ -242,7 +242,11 @@ export function DeliveryForm({
               type="text"
               value={wardInput}
               onChange={(e) => handleWardInputChange(e.target.value)}
-              onFocus={() => setShowWardSuggestions(true)}
+              onFocus={() => {
+                if (provinceInput.trim()) {
+                  setShowWardSuggestions(true);
+                }
+              }}
               onBlur={() => setTimeout(() => setShowWardSuggestions(false), 200)}
               disabled={!provinceInput.trim()}
               placeholder={
@@ -252,7 +256,7 @@ export function DeliveryForm({
                     ? "Vui lòng nhập Tỉnh/Thành phố trước" 
                     : "Nhập Phường / Xã..."
               }
-              className="w-full rounded-xl border border-forest/15 bg-white px-3 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30 disabled:opacity-55"
+              className="w-full rounded-xl border border-forest/15 bg-white px-3 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed disabled:opacity-70"
               required
             />
             {showWardSuggestions && filteredWards.length > 0 && (
