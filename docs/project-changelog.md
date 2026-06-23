@@ -26,7 +26,7 @@
   - Thay thế các hộp chọn `<select>` cứng nhắc bằng ô nhập văn bản `<input type="text">` linh hoạt giúp người dùng không bao giờ bị chặn đặt hàng nếu danh sách tỉnh/xã từ API bị thiếu hoặc tải chậm.
   - Tích hợp bộ tìm kiếm không dấu (accent-insensitive) và bỏ dấu tiếng Việt động, tự động lọc và gợi ý danh sách 10 kết quả phù hợp nhất dưới dạng danh sách thả nổi khi người dùng gõ phím.
   - Khi click chọn kết quả gợi ý, hệ thống tự động ánh xạ mã tỉnh/xã tương ứng, cập nhật trường text và tải dữ liệu phường/xã liên quan mà không làm thay đổi các trục xác thực khác.
-  - Cấu hình ô nhập Phường/Xã chỉ bị vô hiệu hóa (disabled) khi ô Tỉnh/Thành phố hoàn toàn trống; ô Phường/Xã sẽ tự động mở khóa ngay khi người dùng bắt đầu gõ ký tự đầu tiên của Tỉnh/Thành phố.
+  - Cấu hình ô nhập Phường/Xã chỉ bị vô hiệu hóa (disabled) khi ô Tỉnh/Thành phố hoàn toàn trống (được liên kết đồng bộ với trạng thái nhập liệu `provinceInput` tức thời); ô Phường/Xã sẽ tự động mở khóa ngay khi người dùng bắt đầu gõ ký tự đầu tiên và khóa lại lập tức khi người dùng xóa sạch ô nhập tỉnh.
 - Đồng bộ hóa thiết kế của 2 nút Thêm vào giỏ và Mua ngay ở trang Chi tiết sản phẩm:
   - Thay đổi chiều cao từ `h-[60px]` thô kệch thành `h-[52px]` gọn gàng, khớp hoàn hảo với chiều cao của ô chọn số lượng mua bên cạnh.
   - Bổ sung và cập nhật thuộc tính bo góc từ góc nhọn mặc định thành bo tròn nhẹ `rounded-[14px]` đồng bộ hoàn toàn với thiết kế của 2 nút tại thanh sticky bottom bar cố định ở dưới.

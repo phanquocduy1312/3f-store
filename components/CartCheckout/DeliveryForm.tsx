@@ -244,11 +244,11 @@ export function DeliveryForm({
               onChange={(e) => handleWardInputChange(e.target.value)}
               onFocus={() => setShowWardSuggestions(true)}
               onBlur={() => setTimeout(() => setShowWardSuggestions(false), 200)}
-              disabled={!provinceName.trim()}
+              disabled={!provinceInput.trim()}
               placeholder={
                 isLoadingWards 
                   ? "Đang tải danh sách..." 
-                  : !provinceName.trim() 
+                  : !provinceInput.trim() 
                     ? "Vui lòng nhập Tỉnh/Thành phố trước" 
                     : "Nhập Phường / Xã..."
               }
