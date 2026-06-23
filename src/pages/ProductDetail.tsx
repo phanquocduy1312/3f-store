@@ -536,7 +536,7 @@ export function ProductDetail() {
                   {isOutOfStock ? (
                     <button 
                       disabled 
-                      className="flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] bg-gray-200 px-6 text-[17px] font-black text-gray-400 cursor-not-allowed border border-gray-300"
+                      className="flex h-[52px] flex-1 items-center justify-center gap-2.5 rounded-[14px] bg-gray-200 px-6 text-[14px] font-black text-gray-400 cursor-not-allowed border border-gray-300"
                     >
                       Hết hàng
                     </button>
@@ -545,21 +545,21 @@ export function ProductDetail() {
                       <button 
                         onClick={() => handleAddToCart(false)}
                         disabled={isButtonDisabled}
-                        className={`flex h-[60px] flex-1 items-center justify-center gap-2 px-3 text-[15px] font-black py-4 transition ${
+                        className={`flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[14px] px-3 text-[14px] font-black transition ${
                           isButtonDisabled
                             ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 shadow-none"
-                            : "bg-[rgb(var(--color-primary-soft))] text-[rgb(var(--color-primary))] shadow-lg hover:bg-[rgb(var(--color-primary-muted))] hover:shadow-xl"
+                            : "bg-[rgb(var(--color-primary-soft))] text-[rgb(var(--color-primary))] shadow-md shadow-[rgb(var(--color-primary))]/10 hover:bg-[rgb(var(--color-primary-muted))] hover:shadow-lg"
                         }`}
                       >
-                        <ShoppingCart size={20} strokeWidth={2.5}/> Thêm vào giỏ 
+                        <ShoppingCart size={18} strokeWidth={2.5}/> Thêm vào giỏ 
                       </button>
                       <button 
                         onClick={() => handleAddToCart(true)}
                         disabled={isButtonDisabled}
-                        className={`flex h-[60px] flex-1 items-center justify-center gap-2 px-3 text-[15px] font-black text-white py-4 transition ${
+                        className={`flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[14px] px-3 text-[14px] font-black text-white transition ${
                           isButtonDisabled
                             ? "bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300 shadow-none"
-                            : "bg-[rgb(var(--color-primary))] shadow-lg shadow-[rgb(var(--color-primary))]/30 hover:bg-[rgb(var(--color-primary-dark))] hover:shadow-xl"
+                            : "bg-[rgb(var(--color-primary))] shadow-md shadow-[rgb(var(--color-primary))]/20 hover:bg-[rgb(var(--color-primary-dark))] hover:shadow-lg"
                         }`}
                       >
                         Mua ngay

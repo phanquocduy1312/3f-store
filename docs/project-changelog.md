@@ -22,6 +22,10 @@
   - Tải danh sách 10 thông báo mới nhất kèm icon phân loại trực quan theo loại sự kiện, hỗ trợ thao tác đánh dấu đã đọc riêng lẻ khi click, chuyển hướng điều hướng (redirect) chính xác đến trang quản lý tương ứng, và nút "Đánh dấu tất cả là đã đọc".
 
 ### Changed
+- Đồng bộ hóa thiết kế của 2 nút Thêm vào giỏ và Mua ngay ở trang Chi tiết sản phẩm:
+  - Thay đổi chiều cao từ `h-[60px]` thô kệch thành `h-[52px]` gọn gàng, khớp hoàn hảo với chiều cao của ô chọn số lượng mua bên cạnh.
+  - Bổ sung và cập nhật thuộc tính bo góc từ góc nhọn mặc định thành bo tròn nhẹ `rounded-[14px]` đồng bộ hoàn toàn với thiết kế của 2 nút tại thanh sticky bottom bar cố định ở dưới.
+  - Tinh chỉnh kích thước văn bản từ `text-[15px]` thành `text-[14px]` và tối ưu bóng đổ mờ để giao diện trông chuyên nghiệp, thanh thoát hơn.
 - Thiết kế lại Giao diện Phân trang Voucher phía Admin (Redesign Voucher Pagination):
   - Thay thế giao diện phân trang dạng văn bản "Trang X/Y" và hộp chọn size trang đơn giản bằng một thanh điều hướng phân trang hiện đại và trực quan hơn.
   - Tích hợp hàm `getPageNumbers` để tự động tính toán và hiển thị danh sách nút số trang kèm dấu chấm lửng `...` co giãn thông minh dựa trên trang hiện tại và tổng số trang.
