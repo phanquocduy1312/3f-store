@@ -32,9 +32,9 @@
 - [x] Remove stock text display from `QuickAddToCartModal.tsx` and `ProductDetail.tsx`
 - [x] Adjust quantity limits in `QuickAddToCartModal.tsx` to default max of 99
 - [x] Coerce `option1Value`, `option2Value`, `option3Value` to string in `productsApi.ts`'s `mapApiProduct`
-- [/] Dynamically compute and hide non-applicable option groups in `QuickAddToCartModal.tsx`
-- [/] Update variant selection validation to only check applicable option groups in `QuickAddToCartModal.tsx`
-- [ ] Verify compilation using `npx tsc --noEmit`
+- [x] Dynamically compute and hide non-applicable option groups in `QuickAddToCartModal.tsx`
+- [x] Update variant selection validation to only check applicable option groups in `QuickAddToCartModal.tsx`
+- [x] Verify compilation using `npx tsc --noEmit`
 
 ## Success Criteria
 - Empty option groups (like "THÔNG SỐ") are hidden.

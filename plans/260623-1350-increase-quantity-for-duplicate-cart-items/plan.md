@@ -1,7 +1,7 @@
 ---
 title: Increase Quantity for Duplicate Cart Items & Admin UI Tweaks & Hide Stock & Coerce Options
 description: Prevent duplicate cart entries when adding the same product variant, optimize the voucher label layout in the admin order list, hide/optimize stock/option groups on the frontend, and coerce options to string to fix disabled state.
-status: in-progress
+status: completed
 priority: high
 effort: low
 branch: main
@@ -21,7 +21,7 @@ This plan outlines the design and implementation steps to ensure that adding the
 - **Description**: Add type-safe and format-safe matching in `lib/cartHelper.ts`, update `AiResult.tsx` to pass the product ID, and fix the voucher wrapping in `AdminOrdersPage.tsx`.
 
 ### Phase 2: Hide Stock and Filter Empty Specification Groups & Coerce Options
-- **Status**: Planning
+- **Status**: Completed
 - **File**: [phase-02-hide-stock-and-filter-specifications.md](file:///c:/Users/Admin/Downloads/ccc/plans/260623-1350-increase-quantity-for-duplicate-cart-items/phase-02-hide-stock-and-filter-specifications.md)
 - **Description**: Filter empty option groups, disable frontend stock checks, remove stock quantity text displays, and coerce variant option values to strings to fix disabled states.
 
