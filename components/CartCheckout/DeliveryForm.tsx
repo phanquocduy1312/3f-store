@@ -41,6 +41,20 @@ export function DeliveryForm({
   const [isLoadingWards, setIsLoadingWards] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  const [provinceInput, setProvinceInput] = useState(provinceName);
+  const [wardInput, setWardInput] = useState(wardName);
+  const [showProvinceSuggestions, setShowProvinceSuggestions] = useState(false);
+  const [showWardSuggestions, setShowWardSuggestions] = useState(false);
+
+  // Sync inputs with parent state
+  useEffect(() => {
+    setProvinceInput(provinceName);
+  }, [provinceName]);
+
+  useEffect(() => {
+    setWardInput(wardName);
+  }, [wardName]);
+
   // Load provinces on mount
   useEffect(() => {
     const fetchProvinces = async () => {
@@ -57,20 +71,6 @@ export function DeliveryForm({
     };
     fetchProvinces();
   }, []);
-
-  // Handle province selection from dropdown
-  const handleProvinceSelect = (codeStr: string) => {
-    setProvinceCode(codeStr);
-    setWardCode("");
-    setWardName("");
-    setWards([]);
-    if (!codeStr) {
-      setProvinceName("");
-      return;
-    }
-    const selected = provinces.find(p => String(p.code) === codeStr);
-    setProvinceName(selected ? selected.name : "");
-  };
 
   // Reactively fetch wards when provinceCode changes
   useEffect(() => {
@@ -93,15 +93,59 @@ export function DeliveryForm({
     fetchWards();
   }, [provinceCode]);
 
-  const handleWardChange = (codeStr: string) => {
-    setWardCode(codeStr);
-    if (!codeStr) {
-      setWardName("");
-      return;
-    }
-    const selected = wards.find(w => String(w.code) === codeStr);
-    setWardName(selected ? selected.name : "");
+  const removeAccents = (str: string) => {
+    return str
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D");
   };
+
+  const handleProvinceInputChange = (value: string) => {
+    setProvinceInput(value);
+    setProvinceName(value);
+    setProvinceCode("");
+    setWardCode("");
+    setWardName("");
+    setWardInput("");
+    setWards([]);
+    setShowProvinceSuggestions(true);
+
+    const matched = provinces.find(p => p.name.trim().toLowerCase() === value.trim().toLowerCase());
+    if (matched) {
+      setProvinceCode(String(matched.code));
+      setProvinceName(matched.name);
+    }
+  };
+
+  const handleWardInputChange = (value: string) => {
+    setWardInput(value);
+    setWardName(value);
+    setWardCode("");
+    setShowWardSuggestions(true);
+
+    const matched = wards.find(w => w.name.trim().toLowerCase() === value.trim().toLowerCase());
+    if (matched) {
+      setWardCode(String(matched.code));
+      setWardName(matched.name);
+    }
+  };
+
+  const filteredProvinces = provinceInput.trim() === ""
+    ? provinces.slice(0, 10)
+    : provinces.filter(p => {
+        const normName = removeAccents(p.name.toLowerCase());
+        const normInput = removeAccents(provinceInput.toLowerCase());
+        return normName.includes(normInput);
+      });
+
+  const filteredWards = wardInput.trim() === ""
+    ? wards.slice(0, 10)
+    : wards.filter(w => {
+        const normName = removeAccents(w.name.toLowerCase());
+        const normInput = removeAccents(wardInput.toLowerCase());
+        return normName.includes(normInput);
+      });
 
   return (
     <div className="space-y-6">
@@ -159,43 +203,77 @@ export function DeliveryForm({
         )}
 
         <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
-          <div>
+          <div className="relative">
             <label className="mb-1 block text-[11px] sm:text-xs font-bold text-ink/70">Tỉnh / Thành phố *</label>
-            <select
-              value={provinceCode}
-              onChange={(e) => handleProvinceSelect(e.target.value)}
-              disabled={isLoadingProvinces}
+            <input
+              type="text"
+              value={provinceInput}
+              onChange={(e) => handleProvinceInputChange(e.target.value)}
+              onFocus={() => setShowProvinceSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowProvinceSuggestions(false), 200)}
+              placeholder={isLoadingProvinces ? "Đang tải danh sách..." : "Nhập Tỉnh / Thành phố..."}
               className="w-full rounded-xl border border-forest/15 bg-white px-3 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30 disabled:opacity-55"
               required
-            >
-              <option value="">{isLoadingProvinces ? "Đang tải danh sách..." : "Chọn Tỉnh / Thành phố"}</option>
-              {provinces.map((p) => (
-                <option key={p.code} value={p.code}>{p.name}</option>
-              ))}
-            </select>
+            />
+            {showProvinceSuggestions && filteredProvinces.length > 0 && (
+              <div className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl">
+                {filteredProvinces.map((p) => (
+                  <button
+                    key={p.code}
+                    type="button"
+                    onClick={() => {
+                      setProvinceCode(String(p.code));
+                      setProvinceName(p.name);
+                      setProvinceInput(p.name);
+                      setShowProvinceSuggestions(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-xs sm:text-sm text-ink hover:bg-forest/5 hover:text-forest transition-colors font-semibold"
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div>
+          <div className="relative">
             <label className="mb-1 block text-[11px] sm:text-xs font-bold text-ink/70">Phường / Xã *</label>
-            <select
-              value={wardCode}
-              onChange={(e) => handleWardChange(e.target.value)}
-              disabled={!provinceCode || isLoadingWards}
-              className="w-full rounded-xl border border-forest/15 bg-white px-3 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30 disabled:opacity-55"
-              required
-            >
-              <option value="">
-                {isLoadingWards 
+            <input
+              type="text"
+              value={wardInput}
+              onChange={(e) => handleWardInputChange(e.target.value)}
+              onFocus={() => setShowWardSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowWardSuggestions(false), 200)}
+              disabled={!provinceCode}
+              placeholder={
+                isLoadingWards 
                   ? "Đang tải danh sách..." 
                   : !provinceCode 
                     ? "Vui lòng chọn Tỉnh/Thành phố trước" 
-                    : "Chọn Phường / Xã"
-                }
-              </option>
-              {wards.map((w) => (
-                <option key={w.code} value={w.code}>{w.name}</option>
-              ))}
-            </select>
+                    : "Nhập Phường / Xã..."
+              }
+              className="w-full rounded-xl border border-forest/15 bg-white px-3 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:border-forest/60 focus:ring-1 focus:ring-forest/30 disabled:opacity-55"
+              required
+            />
+            {showWardSuggestions && filteredWards.length > 0 && (
+              <div className="absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl">
+                {filteredWards.map((w) => (
+                  <button
+                    key={w.code}
+                    type="button"
+                    onClick={() => {
+                      setWardCode(String(w.code));
+                      setWardName(w.name);
+                      setWardInput(w.name);
+                      setShowWardSuggestions(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-xs sm:text-sm text-ink hover:bg-forest/5 hover:text-forest transition-colors font-semibold"
+                  >
+                    {w.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="sm:col-span-2">
