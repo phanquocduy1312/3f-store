@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, Loader2, Plus, RefreshCcw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Loader2, RefreshCcw } from "lucide-react";
 import { ShopeeActionModal } from "@/components/admin/shopee/ShopeeActionModal";
 import { ShopeeFilters } from "@/components/admin/shopee/ShopeeFilters";
-import { ShopeeManualRequestModal } from "@/components/admin/shopee/ShopeeManualRequestModal";
 import { ShopeeRequestDetailModal } from "@/components/admin/shopee/ShopeeRequestDetailModal";
 import { ShopeeRequestTable } from "@/components/admin/shopee/ShopeeRequestTable";
 import { ShopeeStats } from "@/components/admin/shopee/ShopeeStats";
@@ -131,6 +130,9 @@ function mapApiRowToRequest(row: any): ShopeePointRequest {
     verifiedAt: row.verifiedAt || undefined,
     verificationNote: row.verificationNote || undefined,
     source: row.source || undefined,
+    otpVerified: row.otpVerified !== undefined ? Number(row.otpVerified) : undefined,
+    otpVerifiedAt: row.otpVerifiedAt || undefined,
+    otpProvider: row.otpProvider || undefined,
   };
 }
 
@@ -171,11 +173,9 @@ export function ShopeeRequestsSection({
   const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [modalValue, setModalValue] = useState("");
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [verifyingIds, setVerifyingIds] = useState<Set<string>>(new Set());
   const [isBulkVerifying, setIsBulkVerifying] = useState(false);
-  const createButtonRef = useRef<HTMLButtonElement>(null);
   const { toasts, toast, removeToast } = useToast();
 
   const loadRequests = useCallback(async () => {
@@ -238,6 +238,9 @@ export function ShopeeRequestsSection({
               apiBuyerId: data.scan ? data.scan.extractedPhone : undefined,
               apiCreateTime: data.scan ? data.scan.extractedOrderDate : undefined,
               apiCompleteTime: data.scan ? data.scan.extractedOrderDate : undefined,
+              otpVerified: data.otpVerified !== undefined ? Number(data.otpVerified) : undefined,
+              otpVerifiedAt: data.otpVerifiedAt || undefined,
+              otpProvider: data.otpProvider || undefined,
             };
             setDetailedRequest(mapped);
           }
@@ -475,32 +478,6 @@ export function ShopeeRequestsSection({
     await handleVerifySingle(selectedRequestId);
   }, [selectedRequestId, handleVerifySingle]);
 
-  const handleCreateManualRequest = async (
-    newRequestData: Omit<ShopeePointRequest, "id" | "createdAt" | "updatedAt">
-  ) => {
-    setIsLoading(true);
-    try {
-      await createShopeePointRequest({
-        phone: newRequestData.phone,
-        email: newRequestData.email || "",
-        customerName: newRequestData.customerName || "",
-        zalo: newRequestData.zalo || "",
-        shopeeOrderCode: newRequestData.shopeeOrderCode,
-        orderAmount: newRequestData.customerInputAmount,
-        imageId: null,
-        scanId: null,
-      });
-      toast.success("Tạo yêu cầu tích điểm thành công.");
-      setIsManualModalOpen(false);
-      await loadRequests();
-    } catch (err: any) {
-      toast.error(err?.message || "Không thể tạo yêu cầu.");
-    } finally {
-      setIsLoading(false);
-    }
-    setTimeout(() => { createButtonRef.current?.focus(); }, 100);
-  };
-
   const resetFilters = () => {
     setSearch("");
     setStatusFilter("all");
@@ -534,23 +511,6 @@ export function ShopeeRequestsSection({
             ) : (
               <><RefreshCcw className="h-4 w-4" /> Đối chiếu hàng loạt{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}</>
             )}
-          </button>
-          <button
-            type="button"
-            onClick={() => toast.warning("Tính năng xuất danh sách sẽ nối backend sau.")}
-            className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#DCEBFF] bg-white px-5 text-[14px] font-bold text-[#0057E7] transition hover:bg-[#F6FAFF]"
-          >
-            <Download className="h-4 w-4" />
-            Xuất danh sách
-          </button>
-          <button
-            ref={createButtonRef}
-            type="button"
-            onClick={() => setIsManualModalOpen(true)}
-            className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#0057E7] px-5 text-[14px] font-bold text-white transition hover:bg-[#003B7A]"
-          >
-            <Plus className="h-4 w-4" />
-            Tạo yêu cầu thủ công
           </button>
         </div>
       </section>
@@ -615,12 +575,7 @@ export function ShopeeRequestsSection({
         onConfirm={handleConfirmModal}
       />
 
-      <ShopeeManualRequestModal
-        open={isManualModalOpen}
-        onClose={() => setIsManualModalOpen(false)}
-        onSubmit={handleCreateManualRequest}
-        existingRequests={requests}
-      />
+
 
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>

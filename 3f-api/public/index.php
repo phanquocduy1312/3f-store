@@ -73,6 +73,16 @@ use App\Controllers\CustomerOrderController;
 use App\Controllers\CustomerClubController;
 use App\Controllers\CustomerSecurityController;
 use App\Controllers\CustomerPetController;
+use App\Controllers\CustomerWishlistController;
+use App\Controllers\AdminDashboardController;
+use App\Controllers\BannerController;
+use App\Controllers\BlogPostController;
+use App\Controllers\WorkflowController;
+use App\Controllers\AdminNotificationController;
+use App\Controllers\ProductReviewController;
+use App\Controllers\OrderShippingMethodController;
+use App\Controllers\ContactController;
+
 
 try {
     // 0. Pre-instantiate models to run database migrations outside of transactions
@@ -92,6 +102,13 @@ try {
     new \App\Models\ShopeeTokenModel();
     new \App\Models\CustomerSession();
     new \App\Models\CustomerOtp();
+    new \App\Models\CustomerWishlist();
+    new \App\Models\Banner();
+    new \App\Models\BlogPost();
+    new \App\Models\AdminNotification();
+    new \App\Models\ProductReview();
+    new \App\Models\OrderShippingMethod();
+    new \App\Models\ContactMessage();
 
     // 3. Initialize Router
     $router = new Router();
@@ -101,6 +118,17 @@ try {
     $router->post("/api/admin/auth/logout", [AdminAuthController::class, "logout"]);
     $router->get("/api/admin/auth/me", [AdminAuthController::class, "me"]);
     $router->post("/api/admin/auth/bootstrap", [AdminAuthController::class, "bootstrap"]);
+
+    // Admin Dashboard Routes
+    $router->get("/api/admin/dashboard/stats", [AdminDashboardController::class, "getStats"]);
+    $router->get("/api/admin/dashboard/revenue-chart", [AdminDashboardController::class, "getRevenueChart"]);
+    $router->get("/api/admin/dashboard/task-queue", [AdminDashboardController::class, "getTaskQueue"]);
+
+    // Admin Notifications Routes
+    $router->get("/api/admin/notifications", [AdminNotificationController::class, "list"]);
+    $router->get("/api/admin/notifications/unread-count", [AdminNotificationController::class, "unreadCount"]);
+    $router->post("/api/admin/notifications/mark-read", [AdminNotificationController::class, "markRead"]);
+    $router->post("/api/admin/notifications/delete", [AdminNotificationController::class, "delete"]);
 
     // Admin Customer Management Routes
     $router->get("/api/admin/customers", [AdminCustomerController::class, "list"]);
@@ -130,6 +158,10 @@ try {
     $router->post("/api/customer/auth/login-password", [CustomerAuthController::class, "loginPassword"]);
     $router->post("/api/customer/auth/request-otp", [CustomerAuthController::class, "requestOtp"]);
     $router->post("/api/customer/auth/verify-otp", [CustomerAuthController::class, "verifyOtp"]);
+    
+    // Customer OTP Endpoints
+    $router->post("/api/customer/otp/send", [\App\Controllers\OtpController::class, "send"]);
+    $router->post("/api/customer/otp/verify", [\App\Controllers\OtpController::class, "verify"]);
     $router->post("/api/customer/auth/complete-phone-register", [CustomerAuthController::class, "completePhoneRegister"]);
     $router->get("/api/customer/auth/me", [CustomerAuthController::class, "me"]);
     $router->post("/api/customer/auth/logout", [CustomerAuthController::class, "logout"]);
@@ -141,7 +173,16 @@ try {
     $router->patch("/api/customer/profile", [CustomerProfileController::class, "patchProfile"]);
     $router->post("/api/customer/profile/request-phone-change", [CustomerProfileController::class, "requestPhoneChange"]);
     $router->post("/api/customer/profile/verify-phone-change", [CustomerProfileController::class, "verifyPhoneChange"]);
+    $router->post("/api/customer/profile/request-email-verification", [CustomerProfileController::class, "requestEmailVerification"]);
+    $router->post("/api/customer/profile/verify-email", [CustomerProfileController::class, "verifyEmail"]);
     $router->post("/api/customer/profile/upload-avatar", [CustomerProfileController::class, "uploadAvatar"]);
+
+    // Customer Wishlist Routes
+    $router->get("/api/customer/wishlist", [CustomerWishlistController::class, "getWishlist"]);
+    $router->post("/api/customer/wishlist/toggle", [CustomerWishlistController::class, "toggleWishlist"]);
+    $router->post("/api/customer/wishlist/sync", [CustomerWishlistController::class, "syncWishlist"]);
+    $router->get("/api/run-wishlist-migration", [CustomerWishlistController::class, "runWishlistMigration"]);
+    $router->get("/api/run-workflow-migration", [WorkflowController::class, "runWorkflowMigration"]);
 
     // Customer Address Book Routes
     $router->get("/api/customer/addresses", [CustomerAddressController::class, "list"]);
@@ -174,6 +215,9 @@ try {
     $router->post("/api/customer/pets", [CustomerPetController::class, "create"]);
     $router->patch("/api/customer/pets/:id", [CustomerPetController::class, "update"]);
     $router->delete("/api/customer/pets/:id", [CustomerPetController::class, "delete"]);
+    $router->post("/api/customer/pet-advisor/consult", [CustomerPetController::class, "consult"]);
+    $router->get("/api/admin/pet-advisor/consultations", [CustomerPetController::class, "adminConsultations"]);
+    $router->get("/api/admin/pet-advisor/consultations/detail", [CustomerPetController::class, "adminConsultationDetail"]);
 
     $router->post("/api/shopee/order-scan", [ShopeeOrderScanController::class, "scan"]);
     $router->post("/api/shopee/guest/request-otp", [ShopeeGuestController::class, "requestOtp"]);
@@ -190,11 +234,54 @@ try {
     // Order E-commerce Routes
     $router->post("/api/orders/create", [OrderController::class, "create"]);
     $router->post("/api/coupons/validate", [CouponController::class, "validate"]);
+    $router->get("/api/vouchers/featured", [CouponController::class, "featured"]);
+    $router->get("/api/vouchers/cart-suggestions", [CouponController::class, "cartSuggestions"]);
+    $router->get("/api/vouchers/ai-advisor", [CouponController::class, "aiAdvisor"]);
+    $router->post("/api/vouchers/track", [CouponController::class, "track"]);
+
+    // Shipping Methods Routes
+    $router->get("/api/order-shipping-methods", [OrderShippingMethodController::class, "publicList"]);
+    $router->get("/api/admin/order-shipping-methods", [OrderShippingMethodController::class, "adminList"]);
+    $router->post("/api/admin/order-shipping-methods/save", [OrderShippingMethodController::class, "adminSave"]);
+    $router->post("/api/admin/order-shipping-methods/toggle", [OrderShippingMethodController::class, "adminToggle"]);
+    $router->delete("/api/admin/order-shipping-methods/:id", [OrderShippingMethodController::class, "adminDelete"]);
+
+    // Admin Voucher Routes
+    $router->get("/api/admin/vouchers", [CouponController::class, "adminList"]);
+    $router->get("/api/admin/vouchers/detail", [CouponController::class, "adminDetail"]);
+    $router->post("/api/admin/vouchers", [CouponController::class, "adminSave"]);
+    $router->post("/api/admin/vouchers/update", [CouponController::class, "adminSave"]);
+    $router->post("/api/admin/vouchers/toggle-active", [CouponController::class, "adminToggleActive"]);
+    $router->post("/api/admin/vouchers/delete", [CouponController::class, "adminDelete"]);
+    $router->get("/api/admin/vouchers/stats", [CouponController::class, "adminStats"]);
+
     $router->get("/api/orders/detail", [OrderController::class, "detail"]);
     $router->get("/api/orders/check", [OrderController::class, "check"]);
     $router->get("/api/admin/orders", [OrderController::class, "adminList"]);
     $router->post("/api/admin/orders/update-status", [OrderController::class, "adminUpdateStatus"]);
     $router->post("/api/admin/orders/mark-paid", [OrderController::class, "adminMarkPaid"]);
+    $router->get("/api/admin/orders/:id/allowed-transitions", [WorkflowController::class, "orderAllowedTransitions"]);
+    $router->get("/api/admin/orders/status-config", [WorkflowController::class, "getOrderStatusConfig"]);
+    $router->put("/api/admin/orders/status-config/statuses/:id", [WorkflowController::class, "updateOrderStatusConfig"]);
+    $router->put("/api/admin/orders/status-config/transitions/:id", [WorkflowController::class, "updateOrderTransitionConfig"]);
+
+    // Workflow Configuration Settings Routes
+    $router->get("/api/admin/workflows/statuses", [WorkflowController::class, "listStatuses"]);
+    $router->post("/api/admin/workflows/statuses/save", [WorkflowController::class, "saveStatus"]);
+    $router->post("/api/admin/workflows/statuses/delete", [WorkflowController::class, "deleteStatus"]);
+    $router->get("/api/admin/workflows/transitions", [WorkflowController::class, "listTransitions"]);
+    $router->post("/api/admin/workflows/transitions/save", [WorkflowController::class, "saveTransition"]);
+    $router->post("/api/admin/workflows/transitions/delete", [WorkflowController::class, "deleteTransition"]);
+    $router->get("/api/admin/workflows/automation-rules", [WorkflowController::class, "listAutomationRules"]);
+    $router->post("/api/admin/workflows/automation-rules/save", [WorkflowController::class, "saveAutomationRule"]);
+    $router->post("/api/admin/workflows/automation-rules/delete", [WorkflowController::class, "deleteAutomationRule"]);
+    $router->get("/api/admin/workflows/shipping-providers", [WorkflowController::class, "listShippingProviders"]);
+    $router->post("/api/admin/workflows/shipping-providers/save", [WorkflowController::class, "saveShippingProvider"]);
+    $router->post("/api/admin/workflows/shipping-providers/delete", [WorkflowController::class, "deleteShippingProvider"]);
+    $router->get("/api/admin/workflows/notification-channels", [WorkflowController::class, "listNotificationChannels"]);
+    $router->post("/api/admin/workflows/notification-channels/save", [WorkflowController::class, "saveNotificationChannel"]);
+    $router->post("/api/admin/workflows/notification-channels/delete", [WorkflowController::class, "deleteNotificationChannel"]);
+
 
     // Product Catalog Routes
     $router->get("/api/products", [ProductController::class, "list"]);
@@ -209,11 +296,41 @@ try {
     $router->post("/api/admin/products/upload-image", [ProductController::class, "adminUploadImage"]);
     $router->post("/api/admin/products/reclassify", [ProductController::class, "adminReclassify"]);
 
+    // Product Reviews Routes
+    $router->get("/api/products/reviews", [ProductReviewController::class, "list"]);
+    $router->get("/api/products/review-eligibility", [ProductReviewController::class, "eligibility"]);
+    $router->post("/api/products/reviews", [ProductReviewController::class, "create"]);
+    $router->get("/api/admin/product-reviews", [ProductReviewController::class, "adminList"]);
+    $router->get("/api/admin/product-reviews/detail", [ProductReviewController::class, "adminDetail"]);
+    $router->put("/api/admin/product-reviews/:id/status", [ProductReviewController::class, "adminUpdateStatus"]);
+    $router->delete("/api/admin/product-reviews/:id", [ProductReviewController::class, "adminDelete"]);
+
     // Admin Category Routes
     $router->get("/api/admin/categories", [ProductController::class, "adminCategoryList"]);
     $router->post("/api/admin/categories/save", [ProductController::class, "adminCategorySave"]);
     $router->post("/api/admin/categories/toggle-active", [ProductController::class, "adminCategoryToggleActive"]);
     $router->delete("/api/admin/categories/:id", [ProductController::class, "adminCategoryDelete"]);
+
+    // Banners Routes
+    $router->get("/api/banners", [BannerController::class, "getActiveBanners"]);
+    $router->post("/api/banners/:id/click", [BannerController::class, "trackClick"]);
+    $router->post("/api/banners/:id/impression", [BannerController::class, "trackImpression"]);
+    $router->get("/api/admin/banners", [BannerController::class, "adminList"]);
+    $router->post("/api/admin/banners/upload-image", [BannerController::class, "adminUploadImage"]);
+    $router->get("/api/admin/banners/:id", [BannerController::class, "adminDetail"]);
+    $router->post("/api/admin/banners", [BannerController::class, "adminCreate"]);
+    $router->put("/api/admin/banners/:id", [BannerController::class, "adminUpdate"]);
+    $router->delete("/api/admin/banners/:id", [BannerController::class, "adminDelete"]);
+
+    // Blog Posts Routes
+    $router->get("/api/blog-posts", [BlogPostController::class, "getList"]);
+    $router->get("/api/blog-posts/:slug", [BlogPostController::class, "getDetail"]);
+    $router->get("/api/admin/blog-posts/crawl", [BlogPostController::class, "adminCrawl"]);
+    $router->get("/api/admin/blog-posts/:id", [BlogPostController::class, "adminGetDetail"]);
+    $router->post("/api/admin/blog-posts", [BlogPostController::class, "adminCreate"]);
+    $router->put("/api/admin/blog-posts/:id", [BlogPostController::class, "adminUpdate"]);
+    $router->delete("/api/admin/blog-posts/:id", [BlogPostController::class, "adminDelete"]);
+    $router->post("/api/admin/blog-posts/upload", [BlogPostController::class, "adminUploadImage"]);
 
     // Shopee OAuth Sandbox Routes
     $router->get("/api/admin/shopee/auth-url", [ShopeeAuthController::class, "getAuthUrl"]);
@@ -223,6 +340,11 @@ try {
     $router->get("/api/admin/shopee/connection-status", [ShopeeAuthController::class, "connectionStatus"]);
 
     // Loyalty Rule Config Routes
+    $router->get("/api/admin/loyalty/settings", [LoyaltyController::class, "getSettings"]);
+    $router->post("/api/admin/loyalty/settings", [LoyaltyController::class, "saveSettings"]);
+    $router->get("/api/admin/3f-club/settings", [LoyaltyController::class, "getSettings"]);
+    $router->put("/api/admin/3f-club/settings", [LoyaltyController::class, "saveSettings"]);
+    $router->post("/api/admin/3f-club/settings", [LoyaltyController::class, "saveSettings"]);
     $router->get("/api/admin/loyalty/point-rules", [LoyaltyController::class, "list"]);
     $router->post("/api/admin/loyalty/point-rules", [LoyaltyController::class, "create"]);
     $router->post("/api/admin/loyalty/point-rules/update", [LoyaltyController::class, "update"]);
@@ -247,10 +369,15 @@ try {
     $router->post("/api/admin/loyalty/redemptions/fulfill", [LoyaltyController::class, "fulfillRedemption"]);
     $router->get("/api/admin/loyalty/transactions", [LoyaltyController::class, "listTransactionsAdmin"]);
     $router->get("/api/loyalty/transactions", [LoyaltyController::class, "listTransactionsClient"]);
+    $router->get("/api/loyalty/tiers", [LoyaltyController::class, "listLoyaltyTiersPublic"]);
+    $router->get("/api/loyalty/point-rules/shopee", [LoyaltyController::class, "getShopeePointRulePublic"]);
     $router->get("/api/admin/loyalty/voucher-pool", [LoyaltyController::class, "listVoucherPool"]);
     $router->post("/api/admin/loyalty/voucher-pool/import", [LoyaltyController::class, "importVoucherPool"]);
     $router->get("/api/admin/loyalty/tiers", [LoyaltyController::class, "listTiers"]);
     $router->post("/api/admin/loyalty/tiers/save", [LoyaltyController::class, "saveTier"]);
+    $router->get("/api/admin/3f-club/tiers", [LoyaltyController::class, "listLoyaltyTiers"]);
+    $router->put("/api/admin/3f-club/tiers/:id", [LoyaltyController::class, "updateLoyaltyTier"]);
+    $router->post("/api/admin/3f-club/tiers/:id", [LoyaltyController::class, "updateLoyaltyTier"]);
     $router->post("/api/admin/loyalty/tiers/active", [LoyaltyController::class, "setTierActive"]);
     $router->get("/api/admin/loyalty/tiers/preview", [LoyaltyController::class, "previewTier"]);
     $router->get("/api/admin/loyalty/campaigns", [LoyaltyController::class, "listCampaigns"]);
@@ -261,6 +388,7 @@ try {
     $router->get("/api/admin/customers/loyalty", [LoyaltyController::class, "customerLoyaltyProfile"]);
     $router->get("/api/customer/tier", [LoyaltyController::class, "customerTier"]);
     $router->get("/api/customer/rewards/history", [LoyaltyController::class, "customerRewardHistory"]);
+    $router->post("/api/contact", [ContactController::class, "submit"]);
 
     // 5. Dispatch Request
     $router->dispatch();

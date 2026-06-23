@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { adminCustomersApi, AdminCustomerListParams } from "../../api/adminCustomersApi";
-import { Search, Filter, ShieldAlert, CheckCircle2, XCircle, Eye, ShieldOff, SearchX, Download } from "lucide-react";
+import { Search, Filter, ShieldAlert, CheckCircle2, XCircle, Eye, ShieldOff, SearchX } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -21,7 +21,7 @@ export function AdminCustomersPage() {
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "blocked">("all");
-  const [tierFilter, setTierFilter] = useState<"all" | "Silver" | "Gold" | "Platinum">("all");
+  const [tierFilter, setTierFilter] = useState<"all" | "Member" | "Silver" | "Gold" | "Diamond">("all");
   const [phoneVerifiedFilter, setPhoneVerifiedFilter] = useState<"all" | "yes" | "no">("all");
   const [hasOrdersFilter, setHasOrdersFilter] = useState<"all" | "yes" | "no">("all");
 
@@ -63,31 +63,6 @@ export function AdminCustomersPage() {
     setPage(1);
   }, [searchValue, statusFilter, tierFilter, phoneVerifiedFilter, hasOrdersFilter]);
 
-  const handleExportCsv = async () => {
-    try {
-      const params: AdminCustomerListParams = {
-        q: searchValue,
-        status: statusFilter,
-        tier: tierFilter,
-        phoneVerified: phoneVerifiedFilter,
-        hasOrders: hasOrdersFilter
-      };
-      const toastId = toast.loading("Đang chuẩn bị file CSV...");
-      const blob = await adminCustomersApi.exportCsvBlob(params);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `customers_export_${new Date().getTime()}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
-      toast.success("Xuất CSV thành công", { id: toastId });
-    } catch (err: any) {
-      toast.error(err.message || "Lỗi khi xuất CSV");
-    }
-  };
-
   const handleToggleStatus = async (id: number, currentStatus: string) => {
     if (currentStatus === "active") {
       setConfirmBlockId(id);
@@ -125,6 +100,9 @@ export function AdminCustomersPage() {
     return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(val);
   };
 
+  const getTierOrderCount = (customer: any) => customer.tier_order_count ?? customer.tierOrderCount ?? customer.total_orders ?? 0;
+  const getTierTotalSpent = (customer: any) => customer.tier_total_spent ?? customer.tierTotalSpent ?? customer.total_spent ?? 0;
+
   return (
     <div className="min-h-screen bg-[#F6FAFF] font-sans relative">
       <AdminSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} collapsed={sidebarCollapsed} />
@@ -147,13 +125,6 @@ export function AdminCustomersPage() {
                 <p className="text-xs text-slate-500 font-semibold">Tổng khách hàng</p>
                 <p className="text-lg font-black text-[#0B1F3A]">{total}</p>
               </div>
-              <button 
-                onClick={handleExportCsv}
-                className="flex items-center gap-2 px-4 py-3 bg-[#0B1F3A] text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm"
-              >
-                <Download size={18} />
-                <span className="hidden sm:inline">Xuất CSV</span>
-              </button>
             </div>
           </div>
 
@@ -179,9 +150,10 @@ export function AdminCustomersPage() {
 
               <select className="bg-white border border-[#DCEBFF] rounded-lg px-3 py-2 text-sm" value={tierFilter} onChange={e => setTierFilter(e.target.value as any)}>
                 <option value="all">Tất cả hạng</option>
+                <option value="Member">Member</option>
                 <option value="Silver">Silver</option>
                 <option value="Gold">Gold</option>
-                <option value="Platinum">Platinum</option>
+                <option value="Diamond">Diamond</option>
               </select>
 
               <select className="bg-white border border-[#DCEBFF] rounded-lg px-3 py-2 text-sm" value={phoneVerifiedFilter} onChange={e => setPhoneVerifiedFilter(e.target.value as any)}>
@@ -245,20 +217,30 @@ export function AdminCustomersPage() {
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-1 text-xs">
                             <span className={`flex items-center gap-1 ${c.phone_verified_at ? 'text-green-600' : 'text-slate-400'}`}>
-                              <CheckCircle2 size={12} /> SĐT
+                              {c.phone_verified_at ? <CheckCircle2 size={12} /> : <XCircle size={12} />} SĐT
                             </span>
                             <span className={`flex items-center gap-1 ${c.email_verified_at ? 'text-green-600' : 'text-slate-400'}`}>
-                              <CheckCircle2 size={12} /> Email
+                              {c.email_verified_at ? <CheckCircle2 size={12} /> : <XCircle size={12} />} Email
                             </span>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="font-bold text-[#0057E7]">{c.tier || "Silver"}</p>
+                          <p className="font-bold text-[#0057E7]">{c.tier || "Member"}</p>
                           <p className="text-xs text-slate-500">{new Intl.NumberFormat('vi-VN').format(c.total_points || 0)} pts</p>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="font-semibold text-[#0B1F3A]">{c.total_orders || 0} đơn</p>
-                          <p className="text-xs text-slate-500">{formatCurrency(c.total_spent || 0)}</p>
+                          <p
+                            className="font-semibold text-[#0B1F3A]"
+                            title="Số đơn hoàn tất trong 12 tháng dùng để xét hạng 3F Club"
+                          >
+                            {getTierOrderCount(c)} đơn
+                          </p>
+                          <p
+                            className="text-xs text-slate-500"
+                            title="Chi tiêu hoàn tất trong 12 tháng dùng để xét hạng 3F Club"
+                          >
+                            {formatCurrency(getTierTotalSpent(c))}
+                          </p>
                         </td>
                         <td className="px-4 py-3">
                           <p className="text-[#0B1F3A]">{new Date(c.created_at).toLocaleDateString("vi-VN")}</p>

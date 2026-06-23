@@ -12,7 +12,9 @@ import { addToCart, parsePriceString } from "@/lib/cartHelper";
 import { toast } from "sonner";
 
 function getPriceValue(price: string) {
-  return Number(price.replace(/\D/g, "")) || 0;
+  if (!price) return 0;
+  const cleanPrice = price.split("-")[0].trim();
+  return Number(cleanPrice.replace(/\D/g, "")) || 0;
 }
 
 function getProductMeta(product: Product, petType: "cat" | "dog") {

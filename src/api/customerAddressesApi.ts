@@ -14,6 +14,8 @@ export interface AddressData {
   receiverPhone: string;
   provinceCode: string;
   provinceName: string;
+  district?: string;
+  districtCode?: string;
   wardCode: string;
   wardName: string;
   addressLine: string;

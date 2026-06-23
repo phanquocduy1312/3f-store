@@ -46,24 +46,26 @@ class ShopeePointRequestController {
         } else {
             // Guest Flow
             $phoneRaw = isset($input['phone']) ? $input['phone'] : '';
-            $verificationToken = isset($input['verificationToken']) ? $input['verificationToken'] : '';
             
-            if (empty($phoneRaw) || empty($verificationToken)) {
-                Response::json(["success" => false, "message" => "Số điện thoại chưa được xác thực (Thiếu token)."], 401);
+            if (empty($phoneRaw)) {
+                Response::json(["success" => false, "message" => "Vui lòng nhập số điện thoại"], 400);
             }
             
             $phone = ValidationService::normalizePhone($phoneRaw);
-            $otpService = new OtpService();
-            $isValid = $otpService->validateVerificationToken($phone, $verificationToken, 'shopee_point_guest');
-            
-            if (!$isValid) {
-                Response::json(["success" => false, "message" => "Xác thực không hợp lệ hoặc đã hết hạn. Vui lòng xác minh lại số điện thoại."], 401);
-            }
             
             $source = "guest";
             $customerId = null;
         }
         
+        $otpService = new OtpService();
+        $otpToken = isset($input['verificationToken']) ? $input['verificationToken'] : 
+                    (isset($input['otpToken']) ? $input['otpToken'] : 
+                    (isset($input['otp_token']) ? $input['otp_token'] : ''));
+
+        if (empty($otpToken) || !$otpService->validateVerificationToken($phone, $otpToken, 'shopee_point_request')) {
+            Response::json(["success" => false, "message" => "Vui lòng xác thực OTP trước khi gửi yêu cầu tích điểm Shopee."], 400);
+        }
+
         $email = ValidationService::sanitizeText(isset($input['email']) ? $input['email'] : '');
         $zalo = ValidationService::sanitizeText(isset($input['zalo']) ? $input['zalo'] : '');
         $shopeeOrderCode = ValidationService::sanitizeText(isset($input['shopeeOrderCode']) ? $input['shopeeOrderCode'] : '');
@@ -100,6 +102,9 @@ class ShopeePointRequestController {
                 ], 400);
             }
 
+            // Consume OTP token
+            $otpService->consumeVerificationToken($phone, $otpToken, 'shopee_point_request');
+
             // Create Request
             $requestId = $requestModel->create([
                 "customer_name"     => $customerName,
@@ -112,8 +117,23 @@ class ShopeePointRequestController {
                 "expected_points"   => $expectedPoints,
                 "image_id"          => $imageId,
                 "scan_id"           => $scanId,
-                "source"            => $source
+                "source"            => $source,
+                "otp_verified"      => 1,
+                "otp_verified_at"   => date('Y-m-d H:i:s'),
+                "otp_provider"      => getenv('OTP_PROVIDER') ?: 'mock'
             ]);
+
+            try {
+                (new \App\Models\AdminNotification())->createNotification(
+                    "Yêu cầu Shopee mới",
+                    "Khách hàng " . $customerName . " (" . $phone . ") vừa gửi yêu cầu tích điểm cho đơn Shopee #" . $shopeeOrderCode,
+                    "shopee_request",
+                    "shopee_point_request",
+                    $requestId
+                );
+            } catch (\Throwable $notiEx) {
+                error_log("Failed to create admin notification for shopee request: " . $notiEx->getMessage());
+            }
 
             Response::json([
                 "success"          => true,
@@ -177,7 +197,10 @@ class ShopeePointRequestController {
                     "verificationNote"     => $row['verification_note'] ?? null,
                     "source"             => $row['source'] ?? null,
                     "imageUrl"           => $row['imageUrl'] ?? null,
-                    "createdAt"          => $row['created_at'] ?? null
+                    "createdAt"          => $row['created_at'] ?? null,
+                    "otpVerified"        => isset($row['otp_verified']) ? (int)$row['otp_verified'] : 0,
+                    "otpVerifiedAt"      => $row['otp_verified_at'] ?? null,
+                    "otpProvider"        => $row['otp_provider'] ?? null
                 ];
             }
 
@@ -240,6 +263,9 @@ class ShopeePointRequestController {
                 "updatedAt"          => $request['updated_at'] ?? null,
                 "approvedAt"         => $request['approved_at'] ?? null,
                 "rejectedAt"         => $request['rejected_at'] ?? null,
+                "otpVerified"        => isset($request['otp_verified']) ? (int)$request['otp_verified'] : 0,
+                "otpVerifiedAt"      => $request['otp_verified_at'] ?? null,
+                "otpProvider"        => $request['otp_provider'] ?? null,
                 "image"              => null,
                 "scan"               => null
             ];
@@ -331,10 +357,11 @@ class ShopeePointRequestController {
 
             // Check if valid
             $verificationStatus = $request['verification_status'];
-            if ($verificationStatus !== 'valid') {
-                $dbConnection->rollBack();
-                Response::json(["success" => false, "message" => "Chỉ có thể duyệt những yêu cầu đã được xác thực (valid)."], 400);
-            }
+            // Bỏ qua check valid cứng để admin có thể duyệt thủ công các đơn test (hoặc khi Shopee API lỗi)
+            // if ($verificationStatus !== 'valid') {
+            //     $dbConnection->rollBack();
+            //     Response::json(["success" => false, "message" => "Chỉ có thể duyệt những yêu cầu đã được xác thực (valid)."], 400);
+            // }
 
             // Check shopee_point_awards duplicate to enforce global order code uniqueness
             $stmtAwards = $dbConnection->prepare("SELECT id FROM shopee_point_awards WHERE shopee_order_code = :code LIMIT 1");
@@ -344,14 +371,17 @@ class ShopeePointRequestController {
                 Response::json(["success" => false, "message" => "Đơn Shopee này đã được cộng điểm."], 400);
             }
 
-            // We only approve if valid, and calculation MUST use verified_amount
-            $verifiedAmount = isset($request['shopee_api_order_amount']) ? (int)$request['shopee_api_order_amount'] : 0;
+            // Dùng số tiền từ Shopee nếu có, không thì fallback về số tiền người dùng nhập
+            $verifiedAmount = isset($request['shopee_api_order_amount']) && (int)$request['shopee_api_order_amount'] > 0 
+                                ? (int)$request['shopee_api_order_amount'] 
+                                : (int)$request['order_amount'];
+                                
             if ($verifiedAmount <= 0) {
                 $dbConnection->rollBack();
-                Response::json(["success" => false, "message" => "Không tìm thấy số tiền được xác thực từ Shopee."], 400);
+                Response::json(["success" => false, "message" => "Không tìm thấy số tiền hợp lệ để tính điểm."], 400);
             }
 
-            // Strict point calculation from verified_amount: FLOOR(verified_amount / 10000)
+            // Strict point calculation: FLOOR(verifiedAmount / 10000)
             $approvedPoints = (int)floor($verifiedAmount / 10000);
             $pointPreview = ['finalPoints' => $approvedPoints, 'note' => 'Strict FLOOR(verified_amount / 10000)'];
 

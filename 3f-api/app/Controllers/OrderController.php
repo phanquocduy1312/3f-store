@@ -5,6 +5,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Models\Customer;
 use App\Models\Order;
+use App\Models\OrderShippingMethod;
 use App\Models\Product;
 use App\Services\InventoryService;
 use App\Services\LoyaltyPointService;
@@ -169,14 +170,19 @@ class OrderController {
                 $couponModel = new \App\Models\Coupon();
                 $couponRes = $couponModel->validateCoupon($couponCode, $subtotal, $customerPhone);
                 if (!$couponRes['success']) {
-                    Response::json(["success" => false, "message" => "Mã giảm giá không còn hợp lệ. Vui lòng kiểm tra lại."], 400);
+                    Response::json(["success" => false, "message" => $couponRes['message']], 400);
                 }
                 $discount = (float)$couponRes['data']['discountAmount'];
                 $couponId = (int)$couponRes['data']['id'];
             }
 
             // Pricing totals
-            $shippingFee = 0.00;
+            $shippingMethodModel = new OrderShippingMethod();
+            $shippingOption = $shippingMethodModel->findByKey($shippingMethod, true);
+            if (!$shippingOption) {
+                Response::json(["success" => false, "message" => "Phương thức giao hàng không hợp lệ hoặc đang tắt."], 400);
+            }
+            $shippingFee = (float)$shippingOption['fee'];
             $total = max(0.00, $subtotal + $shippingFee - $discount);
 
             // Generate Order Code
@@ -235,18 +241,31 @@ class OrderController {
 
                 // Record coupon usage
                 if ($couponId !== null) {
-                    $couponModel = new \App\Models\Coupon();
                     $couponModel->recordUsage($couponId, $orderId, $customerPhone, $discount);
                 }
 
                 $db->commit();
             } catch (Exception $txEx) {
-                $db->rollBack();
+                if ($db->inTransaction()) {
+                    $db->rollBack();
+                }
                 throw $txEx;
             }
 
             // Fetch final details
             $details = $orderModel->getOrderDetails($orderCode);
+
+            try {
+                (new \App\Models\AdminNotification())->createNotification(
+                    "Đơn hàng mới #" . $orderCode,
+                    "Khách hàng " . $customerName . " (" . $customerPhone . ") vừa đặt một đơn hàng mới trị giá " . number_format($total) . "đ",
+                    "order_created",
+                    "order",
+                    $orderCode
+                );
+            } catch (\Throwable $notiEx) {
+                error_log("Failed to create admin notification for order: " . $notiEx->getMessage());
+            }
 
             Response::json(["success" => true, "data" => $details], 201);
 
@@ -339,29 +358,16 @@ class OrderController {
             $input = Request::json();
             $orderId = isset($input['orderId']) ? (int)$input['orderId'] : 0;
             $newStatus = trim($input['newStatus'] ?? '');
+            $groupKey = trim($input['groupKey'] ?? 'order');
             $note = trim($input['note'] ?? '');
 
             if ($orderId <= 0 || $newStatus === '') {
                 Response::json(["success" => false, "message" => "Thiếu ID đơn hàng hoặc trạng thái mới."], 400);
             }
 
-            if (empty($note)) {
-                if ($newStatus === 'confirmed') {
-                    $note = "Admin xác nhận đơn hàng";
-                } elseif ($newStatus === 'packing') {
-                    $note = "Đơn chuyển sang chuẩn bị hàng";
-                } elseif ($newStatus === 'shipping') {
-                    $note = "Đơn bắt đầu giao hàng";
-                } elseif ($newStatus === 'completed') {
-                    $note = "Đơn hoàn tất, đã trừ tồn kho và cộng điểm 3F Club";
-                } elseif ($newStatus === 'cancelled') {
-                    $note = "Đơn đã hủy, tồn kho đã giữ được giải phóng";
-                }
-            } else {
-                if ($newStatus === 'cancelled') {
-                    $note = "Đơn đã hủy, tồn kho đã giữ được giải phóng. Lý do: " . $note;
-                }
-            }
+            // Retrieve current admin
+            $currentAdmin = AuthMiddleware::getCurrentAdmin();
+            $adminId = $currentAdmin ? $currentAdmin['id'] : null;
 
             $db = \App\Core\Database::getInstance()->getConnection();
             $orderModel = new Order();
@@ -374,93 +380,73 @@ class OrderController {
                     throw new Exception("Không tìm thấy đơn hàng.");
                 }
 
-                $currentStatus = $order['order_status'];
-
-                // Block any operation if order is already completed or cancelled
-                if ($currentStatus === 'completed' || $currentStatus === 'cancelled') {
-                    throw new Exception("Không thể chuyển trạng thái đơn hàng không đúng trình tự.");
+                // Get from_status based on groupKey
+                $fromStatus = '';
+                if ($groupKey === 'order') {
+                    $fromStatus = $order['order_status'];
+                } elseif ($groupKey === 'payment') {
+                    $fromStatus = $order['payment_status'];
+                } elseif ($groupKey === 'shipping') {
+                    $fromStatus = $order['shipping_status'] ?? 'no_shipment';
+                } elseif ($groupKey === 'loyalty') {
+                    $fromStatus = $order['loyalty_status'] ?? 'not_earned';
+                } else {
+                    throw new Exception("Nhóm trạng thái không hợp lệ.");
                 }
 
-                // Double adjustment protection
-                if ($currentStatus === $newStatus) {
+                // If no change, return early
+                if ($fromStatus === $newStatus) {
                     $db->commit();
                     Response::json(["success" => true, "message" => "Đơn hàng đã ở trạng thái này."], 200);
                     return;
                 }
 
-                // Update status in orders table (validates transitions internally)
-                $orderModel->updateOrderStatus($orderId, $newStatus, $note, 'admin');
+                // Handle changes
+                if ($groupKey === 'order') {
+                    // Update main status
+                    $orderModel->updateOrderStatus($orderId, $newStatus, $note, 'admin', $adminId);
 
-                // Stock Adjustment Logic
-                if ($newStatus === 'cancelled' && $currentStatus === 'pending') {
-                    // Release reserved stock
-                    InventoryService::releaseStock($db, $order['items'], $order['order_code']);
-                } elseif ($newStatus === 'completed' && $currentStatus === 'shipping') {
-                    // Fulfill reserved stock
-                    InventoryService::fulfillStock($db, $order['items'], $order['order_code']);
+                    // Side effects for completing/cancelling
+                    if ($newStatus === 'completed') {
+                        // Fulfill stock
+                        InventoryService::fulfillStock($db, $order['items'], $order['order_code']);
 
-                    // Calculate and Award Loyalty Points
-                    $phone = $order['phone'];
-                    
-                    // Check if already awarded
-                    $stmtCheck = $db->prepare("
-                        SELECT id FROM customer_point_transactions 
-                        WHERE customer_phone = :phone 
-                          AND type = 'earn_web_order' 
-                          AND reference_type = 'order' 
-                          AND reference_id = :order_id
-                    ");
-                    $stmtCheck->execute([
-                        ':phone' => $phone,
-                        ':order_id' => $orderId
-                    ]);
-                    $exists = $stmtCheck->fetch();
+                        // Transition loyalty to credited
+                        $orderModel->updateLoyaltyStatus($orderId, 'credited', 'Tự động duyệt cộng điểm khi hoàn tất đơn', 'system', $adminId);
 
-                    if (!$exists) {
-                        // Calculate points via LoyaltyPointService
-                        $preview = LoyaltyPointService::previewPoints((int)$order['total'], $phone, "web_store", false);
-                        $points = (int)$preview['finalPoints'];
+                        // Auto mark COD paid
+                        if ($order['payment_method'] === 'cod' && $order['payment_status'] !== 'paid') {
+                            $orderModel->updatePaymentStatus($orderId, 'paid', 'Thanh toán COD khi hoàn tất đơn', 'system', $adminId);
+                        }
+                    } elseif ($newStatus === 'cancelled') {
+                        // Release stock
+                        InventoryService::releaseStock($db, $order['items'], $order['order_code']);
 
-                        if ($points > 0) {
-                            $txModel = new CustomerPointTransactionModel();
-                            $txModel->addTransaction(
-                                $phone,
-                                'earn_web_order',
-                                $points,
-                                null,
-                                'order',
-                                $orderId,
-                                "Cộng điểm từ đơn web {$order['order_code']}"
-                            );
-
-                            // Update balance/profile
-                            $loyaltyModel = new LoyaltyProductionModel();
-                            $loyaltyModel->ensureCustomerProfile($phone, $order['receiver_name']);
-
-                            // Save to orders table
-                            $orderModel->updateLoyaltyPointsEarned($orderId, $points);
+                        // Transition loyalty to cancelled
+                        if (in_array($order['loyalty_status'], ['holding', 'credited', 'pending_review'], true)) {
+                            $orderModel->updateLoyaltyStatus($orderId, 'cancelled', 'Tự động hủy/thu hồi điểm khi đơn hàng bị hủy', 'system', $adminId);
                         }
                     }
-
-                    // Auto mark paid for COD on completion
-                    if ($order['payment_method'] === 'cod' && $order['payment_status'] !== 'paid') {
-                        $orderModel->updatePaymentStatus($orderId, 'paid', 'Thanh toán COD khi hoàn tất đơn', 'system');
-                    }
+                } elseif ($groupKey === 'payment') {
+                    $orderModel->updatePaymentStatus($orderId, $newStatus, $note, 'admin', $adminId);
+                } elseif ($groupKey === 'shipping') {
+                    $orderModel->updateShippingStatus($orderId, $newStatus, $note, 'admin', $adminId);
+                } elseif ($groupKey === 'loyalty') {
+                    $orderModel->updateLoyaltyStatus($orderId, $newStatus, $note, 'admin', $adminId);
                 }
 
                 $db->commit();
 
                 // Write Audit Log
-                $currentAdmin = AuthMiddleware::getCurrentAdmin();
-                $adminId = $currentAdmin ? $currentAdmin['id'] : null;
                 AuditLog::write($adminId, 'update_order_status', 'orders', $orderId, [
                     'order_code' => $order['order_code'],
-                    'from_status' => $currentStatus,
+                    'group_key' => $groupKey,
+                    'from_status' => $fromStatus,
                     'to_status' => $newStatus,
                     'note' => $note
                 ]);
 
-                Response::json(["success" => true, "message" => "Cập nhật trạng thái đơn hàng thành công."], 200);
+                Response::json(["success" => true, "message" => "Cập nhật trạng thái thành công."], 200);
 
             } catch (Exception $txEx) {
                 $db->rollBack();

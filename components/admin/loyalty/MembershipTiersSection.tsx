@@ -24,6 +24,9 @@ import { ToastContainer, useToast } from "@/components/ui/toast-notification";
 type TierFormState = {
   name: string;
   minPoints: string;
+  minSpend: string;
+  minOrders: string;
+  redemptionCapPercent: string;
   multiplier: string;
   color: string;
   benefits: string;
@@ -35,6 +38,9 @@ type TierFormErrors = Partial<Record<keyof TierFormState, string>>;
 type PreviewState = {
   name: string;
   minPoints: number;
+  minSpend: number;
+  minOrders: number;
+  redemptionCapPercent: number;
   multiplier: number;
   color: string;
   benefits: string[];
@@ -53,6 +59,9 @@ const DEFAULT_TIER_SET = [
   {
     name: "Silver",
     minPoints: 0,
+    min_spend: 2000000,
+    min_orders: 3,
+    redemption_cap_percent: 10,
     multiplier: 1,
     color: "#94A3B8",
     benefits: "Hạng mặc định cho khách hàng mới.\nTích điểm theo hệ số x1.",
@@ -61,6 +70,9 @@ const DEFAULT_TIER_SET = [
   {
     name: "Gold",
     minPoints: 5000,
+    min_spend: 5000000,
+    min_orders: 6,
+    redemption_cap_percent: 15,
     multiplier: 1.2,
     color: "#F59E0B",
     benefits: "Tích điểm x1.2 khi mua hàng.\nƯu tiên đổi quà trong các chương trình 3F Club.",
@@ -69,6 +81,9 @@ const DEFAULT_TIER_SET = [
   {
     name: "Platinum",
     minPoints: 15000,
+    min_spend: 10000000,
+    min_orders: 12,
+    redemption_cap_percent: 20,
     multiplier: 1.5,
     color: "#06B6D4",
     benefits: "Tích điểm x1.5 khi mua hàng.\nƯu tiên nhận quà và ưu đãi đặc biệt từ 3F Store.",
@@ -79,6 +94,9 @@ const DEFAULT_TIER_SET = [
 const INITIAL_FORM: TierFormState = {
   name: "",
   minPoints: "0",
+  minSpend: "0",
+  minOrders: "0",
+  redemptionCapPercent: "10",
   multiplier: "1",
   color: "#F59E0B",
   benefits: "",
@@ -115,9 +133,7 @@ export function MembershipTiersSection() {
 
   const visibleTiers = useMemo(
     () =>
-      [...tiers]
-        .filter((tier) => tier.name?.trim().toLowerCase() !== "diamond")
-        .sort((a, b) => Number(a.min_points) - Number(b.min_points)),
+      [...tiers].sort((a, b) => Number(a.min_spend || 0) - Number(b.min_spend || 0)),
     [tiers],
   );
 
@@ -129,6 +145,9 @@ export function MembershipTiersSection() {
   const modalPreview = useMemo<PreviewState>(() => {
     const previewName = form.name.trim() || "Tên hạng";
     const minPoints = Number(form.minPoints) || 0;
+    const minSpend = Number(form.minSpend) || 0;
+    const minOrders = Number(form.minOrders) || 0;
+    const redemptionCapPercent = Number(form.redemptionCapPercent) || 10;
     const multiplier = Number(form.multiplier) || 1;
     const color = isHexColor(form.color) ? form.color : "#CBD5E1";
     const benefits = splitEditableBenefits(form.benefits);
@@ -136,6 +155,9 @@ export function MembershipTiersSection() {
     return {
       name: previewName,
       minPoints,
+      minSpend,
+      minOrders,
+      redemptionCapPercent,
       multiplier,
       color,
       benefits,
@@ -178,6 +200,9 @@ export function MembershipTiersSection() {
     setForm({
       name: tier.name || "",
       minPoints: String(Number(tier.min_points) || 0),
+      minSpend: String(Number(tier.min_spend) || 0),
+      minOrders: String(Number(tier.min_orders) || 0),
+      redemptionCapPercent: String(Number(tier.redemption_cap_percent) || 10),
       multiplier: String(Number(tier.multiplier) || 1),
       color: tier.color || "#F59E0B",
       benefits: tier.benefits || "",
@@ -196,13 +221,15 @@ export function MembershipTiersSection() {
     const nextErrors: TierFormErrors = {};
     const normalizedName = form.name.trim();
     const normalizedNameLower = normalizedName.toLowerCase();
-    const minPoints = Number(form.minPoints);
+    const minSpend = Number(form.minSpend);
+    const minOrders = Number(form.minOrders);
+    const redemptionCapPercent = Number(form.redemptionCapPercent);
     const multiplier = Number(form.multiplier);
 
     if (!normalizedName) {
       nextErrors.name = "Vui lòng nhập tên hạng thành viên.";
     } else if (normalizedNameLower === "diamond") {
-      nextErrors.name = "3F Club không sử dụng hạng Diamond.";
+      nextErrors.name = "Hạng Diamond là cấu hình mặc định hệ thống, không thể tạo mới.";
     } else if (
       tierNames.includes(normalizedNameLower) &&
       editingTier?.name.trim().toLowerCase() !== normalizedNameLower
@@ -210,10 +237,22 @@ export function MembershipTiersSection() {
       nextErrors.name = "Tên hạng đã tồn tại. Vui lòng dùng tên khác.";
     }
 
-    if (form.minPoints.trim() === "") {
-      nextErrors.minPoints = "Vui lòng nhập điểm tối thiểu.";
-    } else if (!Number.isFinite(minPoints) || minPoints < 0) {
-      nextErrors.minPoints = "Điểm tối thiểu phải lớn hơn hoặc bằng 0.";
+    if (form.minSpend.trim() === "") {
+      nextErrors.minSpend = "Vui lòng nhập chi tiêu 12 tháng.";
+    } else if (!Number.isFinite(minSpend) || minSpend < 0) {
+      nextErrors.minSpend = "Chi tiêu không được âm.";
+    }
+
+    if (form.minOrders.trim() === "") {
+      nextErrors.minOrders = "Vui lòng nhập số đơn hoàn tất.";
+    } else if (!Number.isFinite(minOrders) || minOrders < 0) {
+      nextErrors.minOrders = "Số đơn không được âm.";
+    }
+
+    if (form.redemptionCapPercent.trim() === "") {
+      nextErrors.redemptionCapPercent = "Vui lòng nhập giới hạn dùng điểm.";
+    } else if (!Number.isFinite(redemptionCapPercent) || redemptionCapPercent <= 0 || redemptionCapPercent > 100) {
+      nextErrors.redemptionCapPercent = "Giới hạn dùng điểm phải từ 1% đến 100%.";
     }
 
     if (form.multiplier.trim() === "") {
@@ -239,6 +278,9 @@ export function MembershipTiersSection() {
         id: editingTier?.id,
         name: form.name.trim(),
         minPoints: Number(form.minPoints),
+        min_spend: Number(form.minSpend),
+        min_orders: Number(form.minOrders),
+        redemption_cap_percent: Number(form.redemptionCapPercent),
         multiplier: Number(form.multiplier),
         color: form.color,
         benefits: normalizeBenefits(form.benefits),
@@ -353,24 +395,7 @@ export function MembershipTiersSection() {
                     Thiết lập hệ số nhân điểm cho từng nhóm khách hàng thân thiết.
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCreateDefaultSet}
-                    className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#DCEBFF] bg-white px-4 text-[14px] font-bold text-[#0057E7] transition hover:bg-[#F7FBFF]"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Tạo bộ hạng mặc định
-                  </button>
-                  <button
-                    type="button"
-                    onClick={openCreateModal}
-                    className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#0057E7] px-4 text-[14px] font-bold text-white transition hover:bg-[#0048C7]"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Thêm hạng
-                  </button>
-                </div>
+                {/* Tiers are pre-defined by the system. Adding new tiers is disabled. */}
               </div>
             </div>
 
@@ -383,71 +408,73 @@ export function MembershipTiersSection() {
             ) : (
               <>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[920px]">
+                  <table className="w-full min-w-[700px]">
                     <thead>
-                      <tr className="border-b border-[#E8F1FF] bg-[#FAFCFF] text-left text-[13px] font-black text-[#4B6385]">
-                        <th className="px-5 py-4">Hạng</th>
-                        <th className="px-4 py-4">Điểm tối thiểu</th>
-                        <th className="px-4 py-4">Hệ số nhân điểm</th>
-                        <th className="px-4 py-4">Màu</th>
-                        <th className="px-4 py-4">Quyền lợi</th>
-                        <th className="px-4 py-4">Trạng thái</th>
-                        <th className="px-5 py-4 text-right">Thao tác</th>
+                      <tr className="border-b border-[#E8F1FF] bg-[#FAFCFF] text-left text-[11px] font-bold text-[#4B6385]">
+                        <th className="px-3 py-3">Hạng</th>
+                        <th className="px-2 py-3">Chi tiêu 12 tháng</th>
+                        <th className="px-2 py-3">Số đơn tối thiểu</th>
+                        <th className="px-2 py-3">Giới hạn dùng điểm</th>
+                        <th className="px-2 py-3">Hệ số nhân điểm</th>
+                        <th className="px-2 py-3">Màu</th>
+                        <th className="px-2 py-3">Quyền lợi</th>
+                        <th className="px-2 py-3">Trạng thái</th>
+                        <th className="px-3 py-3 text-right">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#EEF4FF]">
                       {visibleTiers.map((tier) => (
-                        <tr key={tier.id} className="align-top">
-                          <td className="px-5 py-5">
-                            <div className="flex items-center gap-3">
-                              <TierMedal color={tier.color || "#94A3B8"} />
+                        <tr key={tier.id} className="align-middle">
+                          <td className="px-3 py-3">
+                            <div className="flex items-center gap-2">
+                              <TierMedal name={tier.name} color={tier.color || "#94A3B8"} />
                               <div>
-                                <div className="text-[18px] font-black text-[#0B1F3A]">{tier.name}</div>
+                                <div className="text-[14px] font-bold text-[#0B1F3A]">{tier.name}</div>
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-5 text-[15px] font-bold text-[#0B1F3A]">
-                            {formatPoints(Number(tier.min_points))}
+                          <td className="px-2 py-3 text-[13px] font-semibold text-[#0B1F3A]">
+                            {Number(tier.min_spend || 0).toLocaleString("vi-VN")}đ
                           </td>
-                          <td className="px-4 py-5 text-[15px] font-bold text-[#0B1F3A]">
+                          <td className="px-2 py-3 text-[13px] font-semibold text-[#0B1F3A]">
+                            {Number(tier.min_orders || 0)} đơn
+                          </td>
+                          <td className="px-2 py-3 text-[13px] font-semibold text-[#0B1F3A]">
+                            {Number(tier.redemption_cap_percent || 10)}%
+                          </td>
+                          <td className="px-2 py-3 text-[13px] font-semibold text-[#0B1F3A]">
                             x{Number(tier.multiplier).toFixed(1)}
                           </td>
-                          <td className="px-4 py-5">
-                            <div className="flex items-center gap-2">
+                          <td className="px-2 py-3">
+                            <div className="flex items-center gap-1.5">
                               <span
-                                className="h-3.5 w-3.5 rounded-full border border-white shadow-[0_0_0_1px_rgba(148,163,184,0.22)]"
+                                className="h-2.5 w-2.5 rounded-full border border-white shadow-[0_0_0_1px_rgba(148,163,184,0.22)]"
                                 style={{ backgroundColor: tier.color || "#94A3B8" }}
                               />
-                              <span className="text-[14px] font-bold text-[#4B6385]">
+                              <span className="text-[11px] font-medium text-[#4B6385]">
                                 {(tier.color || "#94A3B8").toUpperCase()}
                               </span>
                             </div>
                           </td>
-                          <td className="px-4 py-5">
-                            <ul className="space-y-1 text-[14px] font-semibold leading-6 text-[#0B1F3A]">
+                          <td className="px-2 py-3 max-w-[220px]">
+                            <ul className="space-y-0.5 text-[12px] font-medium leading-5 text-[#0B1F3A]">
                               {splitBenefits(tier.benefits).map((benefit, index) => (
-                                <li key={`${tier.id}-${index}`} className="flex gap-2">
-                                  <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#94A3B8]" />
+                                <li key={`${tier.id}-${index}`} className="flex gap-1.5 items-start">
+                                  <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[#94A3B8]" />
                                   <span>{benefit}</span>
                                 </li>
                               ))}
                             </ul>
                           </td>
-                          <td className="px-4 py-5">
+                          <td className="px-2 py-3">
                             <StatusBadge active={Number(tier.is_active) === 1} />
                           </td>
-                          <td className="px-5 py-5">
+                          <td className="px-3 py-3">
                             <div className="flex justify-end gap-2">
                               <IconButton
                                 label="Sửa hạng"
-                                icon={<Pencil className="h-4 w-4" />}
+                                icon={<Pencil className="h-3.5 w-3.5" />}
                                 onClick={() => openEditModal(tier)}
-                              />
-                              <IconButton
-                                label={Number(tier.is_active) === 1 ? "Tắt hạng" : "Kích hoạt hạng"}
-                                icon={<Trash2 className="h-4 w-4" />}
-                                onClick={() => handleToggleTier(tier)}
-                                tone={Number(tier.is_active) === 1 ? "danger" : "neutral"}
                               />
                             </div>
                           </td>
@@ -472,7 +499,7 @@ export function MembershipTiersSection() {
           </section>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 xl:sticky xl:top-20 xl:self-start">
           <section className="rounded-[24px] border border-[#DCEBFF] bg-white p-5 shadow-[0_8px_24px_rgba(6,43,95,0.05)]">
             <h3 className="text-[18px] font-black text-[#0B1F3A]">Kiểm tra hạng khách hàng</h3>
             <p className="mt-2 text-[14px] font-semibold leading-6 text-[#64748B]">
@@ -679,17 +706,50 @@ function TierModal({
                 />
 
                 <Field
-                  label="Điểm tối thiểu *"
-                  error={errors.minPoints}
-                  helper="Khách đạt từ số điểm này sẽ thuộc hạng này."
+                  label="Chi tiêu 12 tháng (VND) *"
+                  error={errors.minSpend}
+                  helper="Số tiền chi tiêu hợp lệ tối thiểu trong 12 tháng."
                   input={
                     <input
                       type="number"
                       min="0"
-                      value={form.minPoints}
-                      onChange={(e) => onChange("minPoints", e.target.value)}
-                      placeholder="Ví dụ: 5000"
-                      className={inputClassName(errors.minPoints)}
+                      value={form.minSpend}
+                      onChange={(e) => onChange("minSpend", e.target.value)}
+                      placeholder="Ví dụ: 2000000"
+                      className={inputClassName(errors.minSpend)}
+                    />
+                  }
+                />
+
+                <Field
+                  label="Số đơn hoàn tất *"
+                  error={errors.minOrders}
+                  helper="Số đơn hàng hoàn thành tối thiểu trong 12 tháng."
+                  input={
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.minOrders}
+                      onChange={(e) => onChange("minOrders", e.target.value)}
+                      placeholder="Ví dụ: 3"
+                      className={inputClassName(errors.minOrders)}
+                    />
+                  }
+                />
+
+                <Field
+                  label="Giới hạn dùng điểm (%) *"
+                  error={errors.redemptionCapPercent}
+                  helper="Tỷ lệ thanh toán bằng điểm tối đa cho mỗi đơn hàng."
+                  input={
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={form.redemptionCapPercent}
+                      onChange={(e) => onChange("redemptionCapPercent", e.target.value)}
+                      placeholder="Ví dụ: 10"
+                      className={inputClassName(errors.redemptionCapPercent)}
                     />
                   }
                 />
@@ -797,11 +857,17 @@ function TierModal({
                 <div className="text-[14px] font-black uppercase tracking-[0.04em] text-[#64748B]">Xem trước</div>
                 <div className="mt-4 rounded-[22px] border border-[#E8F1FF] bg-white p-5">
                   <div className="flex items-center gap-3">
-                    <TierMedal color={preview.color} large />
+                    <TierMedal name={preview.name} color={preview.color} large />
                     <div className="min-w-0">
                       <div className="truncate text-[18px] font-black text-[#0B1F3A]">{preview.name}</div>
-                      <div className="mt-1 text-[14px] font-semibold text-[#64748B]">
-                        Điểm tối thiểu: {formatPoints(preview.minPoints)}
+                      <div className="mt-1 text-[13px] font-semibold text-[#64748B]">
+                        Chi tiêu 12 tháng: {preview.minSpend.toLocaleString("vi-VN")}đ
+                      </div>
+                      <div className="text-[13px] font-semibold text-[#64748B]">
+                        Số đơn tối thiểu: {preview.minOrders} đơn
+                      </div>
+                      <div className="text-[13px] font-semibold text-[#64748B]">
+                        Hạn mức dùng điểm: {preview.redemptionCapPercent}%
                       </div>
                     </div>
                   </div>
@@ -936,7 +1002,7 @@ function CheckerResultCard({ result }: { result: any }) {
   return (
     <div className="mt-4 rounded-[20px] border border-[#F8E7BF] bg-[#FFFDF7] p-4">
       <div className="flex items-center gap-3">
-        <TierMedal color={color} />
+        <TierMedal name={tierName} color={color} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3">
             <div className="truncate text-[20px] font-black text-[#0B1F3A]">{tierName}</div>
@@ -946,7 +1012,19 @@ function CheckerResultCard({ result }: { result: any }) {
           </div>
         </div>
       </div>
-      <div className="mt-4 space-y-2 text-[14px] font-semibold text-[#4B6385]">
+      <div className="mt-4 space-y-2 text-[13px] font-semibold text-[#4B6385]">
+        {result.customer_name && (
+          <div className="flex items-center justify-between gap-4">
+            <span>Khách hàng</span>
+            <span className="font-bold text-[#0B1F3A]">{result.customer_name}</span>
+          </div>
+        )}
+        {result.phone && (
+          <div className="flex items-center justify-between gap-4">
+            <span>Số điện thoại</span>
+            <span className="font-bold text-[#0B1F3A]">{result.phone}</span>
+          </div>
+        )}
         <div className="flex items-center justify-between gap-4">
           <span>Điểm hiện tại</span>
           <span className="font-black text-[#0B1F3A]">{formatPoints(currentPoints)}</span>
@@ -960,15 +1038,42 @@ function CheckerResultCard({ result }: { result: any }) {
   );
 }
 
-function TierMedal({ color, large = false }: { color: string; large?: boolean }) {
+const getTierBadgeImage = (name: string): string => {
+  const lowercaseName = name.toLowerCase().trim();
+  if (lowercaseName.includes("diamond")) {
+    return "/assets/images/badge_platinum.png";
+  }
+  if (lowercaseName.includes("platinum")) {
+    return "/assets/images/badge_platinum.png";
+  }
+  if (lowercaseName.includes("gold")) {
+    return "/assets/images/badge_gold.png";
+  }
+  if (lowercaseName.includes("silver")) {
+    return "/assets/images/badge_silver.png";
+  }
+  if (lowercaseName.includes("member")) {
+    return "/assets/images/badge_member.png";
+  }
+  return "/assets/images/badge_member.png";
+};
+
+function TierMedal({ name, color, large = false }: { name: string; color: string; large?: boolean }) {
+  const badgeSrc = getTierBadgeImage(name);
   return (
     <div
-      className={`flex shrink-0 items-center justify-center rounded-2xl text-white shadow-[0_8px_20px_rgba(15,23,42,0.18)] ${
-        large ? "h-14 w-14" : "h-9 w-9"
+      className={`flex shrink-0 items-center justify-center rounded-2xl bg-white p-1.5 shadow-[0_4px_12px_rgba(15,23,42,0.06)] border border-slate-100/60 ${
+        large ? "h-16 w-16" : "h-9 w-9"
       }`}
-      style={{ background: `linear-gradient(135deg, ${color}, ${mixColor(color, "#ffffff", 0.2)})` }}
     >
-      <Award className={large ? "h-7 w-7" : "h-[18px] w-[18px]"} />
+      <img
+        src={badgeSrc}
+        alt={name}
+        className="h-full w-full object-contain"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = "/assets/images/badge_member.png";
+        }}
+      />
     </div>
   );
 }
@@ -976,7 +1081,7 @@ function TierMedal({ color, large = false }: { color: string; large?: boolean })
 function StatusBadge({ active }: { active: boolean }) {
   return (
     <span
-      className={`inline-flex rounded-full px-3 py-1 text-[13px] font-black ${
+      className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ${
         active ? "bg-[#E8FFF0] text-[#16A34A]" : "bg-[#F2F4F7] text-[#667085]"
       }`}
     >
@@ -990,20 +1095,25 @@ function IconButton({
   icon,
   onClick,
   tone = "neutral",
+  disabled = false,
 }: {
   label: string;
   icon: ReactNode;
   onClick: () => void;
   tone?: "neutral" | "danger";
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-label={label}
       title={label}
-      className={`flex h-10 w-10 items-center justify-center rounded-2xl border transition ${
-        tone === "danger"
+      className={`flex h-8 w-8 items-center justify-center rounded-xl border transition ${
+        disabled
+          ? "border-[#E2E8F0] text-slate-300 bg-slate-50 cursor-not-allowed"
+          : tone === "danger"
           ? "border-[#FECACA] text-[#F04438] hover:bg-[#FFF5F5]"
           : "border-[#DCEBFF] text-[#2563EB] hover:bg-[#F7FBFF]"
       }`}

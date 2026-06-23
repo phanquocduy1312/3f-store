@@ -168,12 +168,23 @@ function getValidationIssues(formData: AdminProductSavePayload): ValidationIssue
     formData.variants.forEach((v, i) => {
       if (!v.sku.trim()) {
         issues.push({ tab: "variants", field: `variants.${i}.sku`, message: `Biến thể #${i + 1}: SKU không được trống`, severity: "error" });
+      } else {
+        // Check duplicate SKU
+        const isDuplicate = formData.variants.some((otherV, otherIdx) => otherIdx !== i && otherV.sku.trim().toLowerCase() === v.sku.trim().toLowerCase());
+        if (isDuplicate) {
+          issues.push({
+            tab: "variants",
+            field: `variants.${i}.sku`,
+            message: `Biến thể #${i + 1}: SKU bị trùng`,
+            severity: "error"
+          });
+        }
       }
       if (v.price <= 0) {
-        issues.push({ tab: "variants", field: `variants.${i}.price`, message: `Biến thể #${i + 1} (${v.sku || "SKU?"}): Giá bán phải lớn hơn 0`, severity: "error" });
+        issues.push({ tab: "variants", field: `variants.${i}.price`, message: `Biến thể #${i + 1}: Giá bán phải lớn hơn 0`, severity: "error" });
       }
       if (v.originalPrice !== null && v.originalPrice !== undefined && v.originalPrice < v.price) {
-        issues.push({ tab: "variants", field: `variants.${i}.originalPrice`, message: `Biến thể #${i + 1}: Giá gốc phải ≥ giá bán`, severity: "error" });
+        issues.push({ tab: "variants", field: `variants.${i}.originalPrice`, message: `Biến thể #${i + 1}: Giá niêm yết phải lớn hơn hoặc bằng giá bán.`, severity: "error" });
       }
       if (v.stockQuantity < 0) {
         issues.push({ tab: "variants", field: `variants.${i}.stockQuantity`, message: `Biến thể #${i + 1}: Tồn kho không được âm`, severity: "error" });
@@ -186,7 +197,7 @@ function getValidationIssues(formData: AdminProductSavePayload): ValidationIssue
 
   // Images — warning only
   if (formData.galleryImages.length === 0) {
-    issues.push({ tab: "images", message: "Chưa có ảnh. Khách hàng sẽ thấy ảnh mặc định.", severity: "warning" });
+    issues.push({ tab: "images", field: "product-image-upload", message: "Chưa có ảnh. Khách hàng sẽ thấy ảnh mặc định nếu bạn không thêm ảnh.", severity: "warning" });
   }
 
   return issues;
@@ -384,6 +395,21 @@ export function AdminProductForm() {
     }
   }, [formData.name, isEditMode, isSlugManuallyEdited]);
 
+  // Auto-initialize default variant if empty
+  useEffect(() => {
+    if (!loading && formData.variants.length === 0) {
+      setFormData((prev) => {
+        if (prev.variants.length === 0) {
+          return {
+            ...prev,
+            variants: [createBlankVariant(0, prev.name, prev.brand || "")],
+          };
+        }
+        return prev;
+      });
+    }
+  }, [loading, formData.variants.length]);
+
   // Prevent accidental navigation when dirty
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -475,6 +501,52 @@ export function AdminProductForm() {
       return { ...prev, variants: updated };
     });
     markDirty();
+  };
+
+  const handleIssueClick = (issue: ValidationIssue) => {
+    setActiveTab(issue.tab);
+    if (issue.field) {
+      setTimeout(() => {
+        const element = document.getElementById(issue.field!);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          element.focus?.();
+        }
+      }, 100);
+    }
+  };
+
+  const handleAddClassification = () => {
+    setFormData((prev) => {
+      const updated = [...prev.variants];
+      if (updated.length === 0) {
+        updated.push(createBlankVariant(0, prev.name, prev.brand || ""));
+      }
+      updated[0] = {
+        ...updated[0],
+        option1Name: "Quy cách",
+      };
+      return { ...prev, variants: updated };
+    });
+    markDirty();
+    toast.success("Đã kích hoạt phân loại sản phẩm. Hãy chọn hoặc nhập thuộc tính phân loại.");
+  };
+
+  const handleRemoveClassification = () => {
+    if (!window.confirm("Hệ thống sẽ xóa tất cả phân loại của các biến thể. Bạn có chắc chắn?")) return;
+    setFormData((prev) => ({
+      ...prev,
+      variants: prev.variants.map((v) => ({
+        ...v,
+        option1Name: "",
+        option1Value: "",
+        option2Name: "",
+        option2Value: "",
+        variantName: "Mặc định",
+      })),
+    }));
+    markDirty();
+    toast.success("Đã xóa tất cả phân loại.");
   };
 
   // ── Image handlers ────────────────────────────────────────────────────────
@@ -610,7 +682,7 @@ export function AdminProductForm() {
     if (hasBlockingErrors(issues)) {
       const firstError = issues.find((i) => i.severity === "error");
       if (firstError) {
-        setActiveTab(firstError.tab);
+        handleIssueClick(firstError);
         toast.error(firstError.message);
       }
       return;
@@ -780,6 +852,7 @@ export function AdminProductForm() {
                     <FormField label="Tên sản phẩm" required error={backendErrors["name"]}>
                       <input
                         type="text"
+                        id="name"
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
@@ -875,6 +948,7 @@ export function AdminProductForm() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <FormField label="Danh mục" required error={backendErrors["category"] || (!formData.categoryId && isDirty ? "Chưa chọn danh mục" : "")}>
                         <select
+                          id="categoryId"
                           name="categoryId"
                           value={formData.categoryId || ""}
                           onChange={handleInputChange}
@@ -937,19 +1011,38 @@ export function AdminProductForm() {
 
                 {/* ── Tab: Biến thể & Tồn kho ──────────────────────────── */}
                 {activeTab === "variants" && (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {/* Header actions */}
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold">
-                        <AlertTriangle className="h-4 w-4 text-orange-400 shrink-0" />
-                        <span>Tên biến thể tự ghép từ giá trị phân loại.</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                      <div>
+                        <h3 className="text-sm font-black text-[#0B1F3A] uppercase tracking-wider">Biến thể sản phẩm</h3>
+                        <p className="text-xs text-slate-400 font-semibold mt-0.5">
+                          Quản lý SKU, giá bán và tồn kho cho từng biến thể.
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {formData.variants.some((v) => v.option1Name || v.option1Value || v.option2Name || v.option2Value) ? (
+                          <button
+                            type="button"
+                            onClick={handleRemoveClassification}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all border border-red-100"
+                          >
+                            Bỏ phân loại
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleAddClassification}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-[#0057E7] bg-blue-50 hover:bg-blue-100 rounded-xl transition-all border border-blue-100"
+                          >
+                            Thêm phân loại
+                          </button>
+                        )}
                         {formData.variants.length > 0 && (
                           <button
                             type="button"
                             onClick={generateSkuForAll}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all border border-slate-200"
                           >
                             <Wand2 className="h-3.5 w-3.5" />
                             Tự tạo SKU
@@ -958,7 +1051,7 @@ export function AdminProductForm() {
                         <button
                           type="button"
                           onClick={addVariant}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-[#0057E7] bg-[#EEF6FF] hover:bg-[#DCEBFF] rounded-xl transition-all"
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-white bg-[#0057E7] hover:bg-[#0047C4] rounded-xl transition-all shadow-[0_4px_10px_rgba(0,87,231,0.15)]"
                         >
                           <Plus className="h-3.5 w-3.5" />
                           Thêm biến thể
@@ -966,59 +1059,267 @@ export function AdminProductForm() {
                       </div>
                     </div>
 
-                    {/* Empty state */}
-                    {formData.variants.length === 0 ? (
-                      <div className="border border-dashed border-slate-300 rounded-2xl p-12 text-center flex flex-col items-center gap-4">
-                        <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center">
-                          <Tag className="h-7 w-7 text-slate-300" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-black text-slate-500">Chưa có biến thể nào</p>
-                          <p className="text-xs text-slate-400 mt-1">Thêm ít nhất 1 biến thể để bán sản phẩm.</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={addVariant}
-                          className="flex items-center gap-2 px-5 py-2.5 text-sm font-black text-white bg-[#0057E7] hover:bg-[#0047C4] rounded-xl transition-all shadow-[0_4px_15px_rgba(0,87,231,0.2)]"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Thêm biến thể đầu tiên
-                        </button>
-                      </div>
-                    ) : (
-                      /* Variant table */
-                      <div className="overflow-x-auto border border-slate-100 rounded-2xl">
-                        <table className="w-full text-left border-collapse text-xs" style={{ minWidth: 900 }}>
-                          <thead>
-                            <tr className="bg-slate-50 border-b border-slate-100 text-slate-400 uppercase tracking-wider font-black">
-                              <th className="px-3 py-3 min-w-[180px]">SKU <span className="text-red-500">*</span></th>
-                              <th className="px-3 py-3 min-w-[160px]">Tên biến thể</th>
-                              <th className="px-3 py-3 min-w-[180px]">Phân loại 1</th>
-                              <th className="px-3 py-3 min-w-[180px]">Phân loại 2</th>
-                              <th className="px-3 py-3 text-right min-w-[180px]">Giá bán (khách thanh toán) <span className="text-red-500">*</span></th>
-                              <th className="px-3 py-3 text-right min-w-[180px]">Giá gốc / Giá niêm yết</th>
-                              <th className="px-3 py-3 text-center min-w-[100px]">Tồn kho <span className="text-red-500">*</span></th>
-                              <th className="px-3 py-3 text-center min-w-[70px]">Bật</th>
-                              <th className="px-3 py-3 text-center min-w-[70px]">Xoá</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-50 text-[#0B1F3A]">
-                            {formData.variants.map((v, idx) => (
-                              <VariantRow
-                                key={idx}
-                                variant={v}
-                                index={idx}
-                                productName={formData.name}
-                                brand={formData.brand || ""}
-                                onFieldChange={handleVariantChange}
-                                onRemove={removeVariant}
-                                onGenerateSku={generateSkuForOne}
-                              />
-                            ))}
-                          </tbody>
-                        </table>
+                    {formData.variants.some((v) => v.option1Name || v.option1Value || v.option2Name || v.option2Value) && (
+                      <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold py-1">
+                        <AlertTriangle className="h-4 w-4 text-orange-400 shrink-0" />
+                        <span>Tên biến thể được ghép từ giá trị phân loại.</span>
                       </div>
                     )}
+
+                    {/* Variant Cards */}
+                    <div className="space-y-4">
+                      {formData.variants.map((v, idx) => {
+                        const hasErr = validationIssues.some(
+                          (issue) =>
+                            issue.tab === "variants" &&
+                            issue.severity === "error" &&
+                            issue.field?.startsWith(`variants.${idx}.`)
+                        );
+                        
+                        const hasClassification = formData.variants.some(
+                          (v) => v.option1Name || v.option1Value || v.option2Name || v.option2Value
+                        );
+
+                        const displayName = buildVariantName(v);
+                        
+                        const skuErr = validationIssues.find(issue => issue.field === `variants.${idx}.sku`);
+                        const priceErr = validationIssues.find(issue => issue.field === `variants.${idx}.price`);
+                        const origPriceErr = validationIssues.find(issue => issue.field === `variants.${idx}.originalPrice`);
+                        const stockErr = validationIssues.find(issue => issue.field === `variants.${idx}.stockQuantity`);
+
+                        const hasDiscount = !origPriceErr && !!v.originalPrice && v.originalPrice > v.price && v.price > 0;
+                        const discountPercent = hasDiscount ? Math.round(((Number(v.originalPrice) - v.price) / Number(v.originalPrice)) * 100) : 0;
+                        const savingAmount = hasDiscount ? Number(v.originalPrice) - v.price : 0;
+
+                        return (
+                          <div
+                            key={idx}
+                            className={`bg-white border rounded-2xl p-5 transition-all space-y-4 ${
+                              hasErr ? "border-red-400 ring-2 ring-red-100 shadow-red-100/50" : "border-slate-200 shadow-sm"
+                            }`}
+                          >
+                            {/* Card Header */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-slate-400 uppercase tracking-wider">
+                                  Biến thể #{idx + 1}
+                                </span>
+                                <span className="text-sm font-extrabold text-[#0B1F3A]">
+                                  {displayName || "Mặc định"}
+                                </span>
+                                {v.sku && (
+                                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-black uppercase">
+                                    {v.sku}
+                                  </span>
+                                )}
+                                <span
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-black ${
+                                    v.isActive ? "bg-green-50 text-green-600 border border-green-100" : "bg-slate-50 text-slate-400 border border-slate-100"
+                                  }`}
+                                >
+                                  {v.isActive ? "Đang bật" : "Đang tắt"}
+                                </span>
+                                {hasErr && (
+                                  <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-600 text-[10px] font-black border border-red-100 animate-pulse">
+                                    Cần sửa
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* Toggle + Delete */}
+                              <div className="flex items-center gap-3">
+                                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                                  <input
+                                    type="checkbox"
+                                    checked={!!v.isActive}
+                                    onChange={(e) => handleVariantChange(idx, "isActive", e.target.checked)}
+                                    className="sr-only peer"
+                                  />
+                                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-green-500 transition-colors" />
+                                  <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
+                                </label>
+                                
+                                {v.hasOrderHistory ? (
+                                  <span
+                                    className="h-8 w-8 rounded-lg hover:bg-orange-50 text-orange-400 flex items-center justify-center transition-colors cursor-help"
+                                    title="Biến thể đã có đơn hàng. Hệ thống sẽ chỉ ẩn biến thể."
+                                  >
+                                    <AlertTriangle className="h-4 w-4" />
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeVariant(idx)}
+                                    className="h-8 w-8 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 flex items-center justify-center transition-colors"
+                                    title="Xóa biến thể"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Grid Content */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {/* SKU */}
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <label htmlFor={`variants.${idx}.sku`} className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                                    SKU <span className="text-red-500">*</span>
+                                  </label>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => generateSkuForOne(idx)}
+                                      className="text-[10px] font-black text-[#0057E7] hover:underline"
+                                    >
+                                      Tạo SKU
+                                    </button>
+                                    {v.sku && (
+                                      <>
+                                        <span className="text-slate-300">|</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => { navigator.clipboard.writeText(v.sku); toast.success("Đã copy SKU!"); }}
+                                          className="text-[10px] font-black text-slate-400 hover:text-[#0057E7]"
+                                        >
+                                          Copy
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                                <input
+                                  type="text"
+                                  id={`variants.${idx}.sku`}
+                                  placeholder="3F-ABC-001"
+                                  value={v.sku}
+                                  onChange={(e) => handleVariantChange(idx, "sku", e.target.value.toUpperCase())}
+                                  className={`w-full px-3 py-2 text-sm font-semibold border rounded-xl focus:outline-none focus:ring-1 focus:ring-[#0057E7] uppercase ${
+                                    skuErr ? "border-red-400 bg-red-50" : "border-slate-200"
+                                  }`}
+                                />
+                                {skuErr && <p className="text-[10px] text-red-500 font-semibold mt-1">{skuErr.message}</p>}
+                              </div>
+
+                              {/* Variant name */}
+                              <div className="space-y-1">
+                                <label htmlFor={`variants.${idx}.variantName`} className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                                  Tên biến thể
+                                </label>
+                                <input
+                                  type="text"
+                                  id={`variants.${idx}.variantName`}
+                                  placeholder="Tên biến thể"
+                                  value={v.variantName || ""}
+                                  onChange={(e) => handleVariantChange(idx, "variantName", e.target.value)}
+                                  className="w-full px-3 py-2 text-sm font-semibold border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#0057E7]"
+                                />
+                              </div>
+
+                              {/* Phân loại 1 & 2 (Conditional) */}
+                              {hasClassification && (
+                                <>
+                                  <div className="space-y-1">
+                                    <OptionSelect
+                                      label="Phân loại 1"
+                                      optionName={v.option1Name || ""}
+                                      optionValue={v.option1Value || ""}
+                                      onNameChange={(val) => handleVariantChange(idx, "option1Name", val)}
+                                      onValueChange={(val) => handleVariantChange(idx, "option1Value", val)}
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <OptionSelect
+                                      label="Phân loại 2"
+                                      optionName={v.option2Name || ""}
+                                      optionValue={v.option2Value || ""}
+                                      onNameChange={(val) => handleVariantChange(idx, "option2Name", val)}
+                                      onValueChange={(val) => handleVariantChange(idx, "option2Value", val)}
+                                    />
+                                  </div>
+                                </>
+                              )}
+
+                              {/* Giá bán thực tế */}
+                              <div className="space-y-1">
+                                <label htmlFor={`variants.${idx}.price`} className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                                  Giá bán thực tế <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="number"
+                                  id={`variants.${idx}.price`}
+                                  min={0}
+                                  step="any"
+                                  placeholder="0"
+                                  value={v.price || ""}
+                                  onChange={(e) => handleVariantChange(idx, "price", parseFloat(e.target.value) || 0)}
+                                  className={`w-full px-3 py-2 text-sm font-black text-[#0057E7] border rounded-xl focus:outline-none focus:ring-1 focus:ring-[#0057E7] ${
+                                    priceErr ? "border-red-400 bg-red-50" : "border-slate-200"
+                                  }`}
+                                />
+                                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Giá khách thanh toán. {v.price > 0 && `(Xem trước: ${formatVnd(v.price)})`}</p>
+                                {priceErr && <p className="text-[10px] text-red-500 font-semibold mt-1">{priceErr.message}</p>}
+                              </div>
+
+                              {/* Giá niêm yết */}
+                              <div className="space-y-1">
+                                <label htmlFor={`variants.${idx}.originalPrice`} className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                                  Giá niêm yết / Giá trước khuyến mãi
+                                </label>
+                                <input
+                                  type="number"
+                                  id={`variants.${idx}.originalPrice`}
+                                  min={0}
+                                  step="any"
+                                  placeholder="Không giảm"
+                                  value={v.originalPrice === null || v.originalPrice === undefined ? "" : v.originalPrice}
+                                  onChange={(e) =>
+                                    handleVariantChange(idx, "originalPrice", e.target.value === "" ? null : parseFloat(e.target.value) || null)
+                                  }
+                                  className={`w-full px-3 py-2 text-sm font-semibold border rounded-xl focus:outline-none focus:ring-1 focus:ring-[#0057E7] ${
+                                    origPriceErr ? "border-red-400 bg-red-50" : "border-slate-200"
+                                  }`}
+                                />
+                                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                  Có thể bỏ trống nếu không giảm giá. {v.originalPrice ? `(Xem trước: ${formatVnd(v.originalPrice)})` : ""}
+                                </p>
+                                {origPriceErr && <p className="text-[10px] text-red-500 font-semibold mt-1">{origPriceErr.message}</p>}
+                                {hasDiscount && (
+                                  <div className="mt-1.5 flex flex-wrap gap-1">
+                                    <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-black text-emerald-600 border border-emerald-100">
+                                      Đang giảm {discountPercent}%
+                                    </span>
+                                    <span className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[9px] font-black text-blue-600 border border-blue-100">
+                                      Tiết kiệm {formatVnd(savingAmount)}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Tồn kho */}
+                              <div className="space-y-1 md:col-span-2">
+                                <label htmlFor={`variants.${idx}.stockQuantity`} className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                                  Tồn kho <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="number"
+                                  id={`variants.${idx}.stockQuantity`}
+                                  min={0}
+                                  placeholder="0"
+                                  value={v.stockQuantity}
+                                  onChange={(e) => handleVariantChange(idx, "stockQuantity", parseInt(e.target.value) || 0)}
+                                  className={`w-full md:w-1/2 px-3 py-2 text-sm font-semibold border rounded-xl focus:outline-none focus:ring-1 focus:ring-[#0057E7] ${
+                                    stockErr ? "border-red-400 bg-red-50" : "border-slate-200"
+                                  }`}
+                                />
+                                {stockErr && <p className="text-[10px] text-red-500 font-semibold mt-1">{stockErr.message}</p>}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
@@ -1183,7 +1484,7 @@ export function AdminProductForm() {
             </div>
 
             {/* ── Right col: Save panel ──────────────────────────────── */}
-            <div className="lg:col-span-3 space-y-4 sticky top-6">
+            <div className="lg:col-span-3 space-y-4 sticky top-24 z-20">
               <div className="bg-white border border-[#DCEBFF] p-5 rounded-3xl shadow-sm space-y-4">
                 <h3 className="font-black text-xs text-[#0B1F3A] uppercase tracking-wider border-b border-slate-100 pb-3">
                   Thao tác
@@ -1209,7 +1510,7 @@ export function AdminProductForm() {
                       <button
                         key={i}
                         type="button"
-                        onClick={() => setActiveTab(issue.tab)}
+                        onClick={() => handleIssueClick(issue)}
                         className={`w-full text-left flex items-start gap-2 px-2 py-1.5 rounded-lg text-[10px] font-semibold transition-all hover:bg-slate-50 ${
                           issue.severity === "error" ? "text-red-600" : "text-yellow-600"
                         }`}
@@ -1363,206 +1664,7 @@ function ToggleCard({ name, checked, onChange, title, description, activeColor }
   );
 }
 
-// ─── VariantRow ───────────────────────────────────────────────────────────────
-interface VariantRowProps {
-  variant: AdminProductVariantPayload;
-  index: number;
-  productName: string;
-  brand: string;
-  onFieldChange: (idx: number, field: keyof AdminProductVariantPayload, val: any) => void;
-  onRemove: (idx: number) => void;
-  onGenerateSku: (idx: number) => void;
-}
-
-function VariantRow({ variant: v, index: idx, productName, brand, onFieldChange, onRemove, onGenerateSku }: VariantRowProps) {
-  const skuErr = !v.sku.trim();
-  const priceErr = v.price <= 0;
-  const origPriceErr = v.originalPrice !== null && v.originalPrice !== undefined && v.originalPrice < v.price;
-  const stockErr = v.stockQuantity < 0;
-  const hasDiscount = !origPriceErr && !!v.originalPrice && v.originalPrice > v.price && v.price > 0;
-  const discountPercent = hasDiscount ? Math.round(((Number(v.originalPrice) - v.price) / Number(v.originalPrice)) * 100) : 0;
-  const savingAmount = hasDiscount ? Number(v.originalPrice) - v.price : 0;
-
-  return (
-    <tr className="hover:bg-slate-50/50 align-top">
-      {/* SKU */}
-      <td className="px-2 py-2">
-        <div className="flex items-center gap-1">
-          <input
-            type="text"
-            placeholder="SKU-XXXX"
-            value={v.sku}
-            onChange={(e) => onFieldChange(idx, "sku", e.target.value.toUpperCase())}
-            className={`flex-1 min-w-[130px] px-2 py-1.5 border rounded-lg text-xs font-black uppercase focus:outline-none focus:ring-1 focus:ring-[#0057E7] ${
-              skuErr ? "border-red-400 bg-red-50" : "border-slate-200"
-            }`}
-          />
-          {/* Auto-gen SKU */}
-          <button
-            type="button"
-            onClick={() => onGenerateSku(idx)}
-            title="Tự tạo SKU"
-            className="h-6 w-6 shrink-0 rounded-md hover:bg-slate-100 flex items-center justify-center border border-slate-200 transition-colors"
-          >
-            <Wand2 className="h-3 w-3 text-slate-400 hover:text-[#0057E7]" />
-          </button>
-          {/* Copy SKU */}
-          {v.sku && (
-            <button
-              type="button"
-              onClick={() => { navigator.clipboard.writeText(v.sku); toast.success("Đã copy SKU!"); }}
-              title="Copy SKU"
-              className="h-6 w-6 shrink-0 rounded-md hover:bg-slate-100 flex items-center justify-center border border-slate-200 transition-colors"
-            >
-              <Copy className="h-3 w-3 text-slate-400 hover:text-[#0057E7]" />
-            </button>
-          )}
-        </div>
-        {skuErr && <div className="text-[9px] text-red-500 font-bold mt-0.5">SKU bắt buộc</div>}
-        {v.hasOrderHistory && (
-          <div className="text-[9px] text-orange-500 font-bold mt-0.5 flex items-center gap-0.5">
-            <AlertTriangle className="h-2.5 w-2.5" /> Đã có đơn hàng
-          </div>
-        )}
-      </td>
-
-      {/* Variant name */}
-      <td className="px-2 py-2">
-        <input
-          type="text"
-          placeholder="Tự sinh từ option"
-          value={v.variantName || ""}
-          onChange={(e) => onFieldChange(idx, "variantName", e.target.value)}
-          className="w-full min-w-[140px] px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-[#0B1F3A] focus:outline-none focus:ring-1 focus:ring-[#0057E7]"
-        />
-      </td>
-
-      {/* Option 1 */}
-      <td className="px-2 py-2 min-w-[170px]">
-        <OptionSelect
-          label="Option 1"
-          optionName={v.option1Name || ""}
-          optionValue={v.option1Value || ""}
-          onNameChange={(val) => onFieldChange(idx, "option1Name", val)}
-          onValueChange={(val) => onFieldChange(idx, "option1Value", val)}
-        />
-      </td>
-
-      {/* Option 2 */}
-      <td className="px-2 py-2 min-w-[170px]">
-        <OptionSelect
-          label="Option 2"
-          optionName={v.option2Name || ""}
-          optionValue={v.option2Value || ""}
-          onNameChange={(val) => onFieldChange(idx, "option2Name", val)}
-          onValueChange={(val) => onFieldChange(idx, "option2Value", val)}
-        />
-      </td>
-
-      {/* Price */}
-      <td className="px-2 py-2">
-        <div className="mb-1 text-[9px] font-black uppercase tracking-wide text-slate-400">Giá thực tế khách mua</div>
-        <input
-          type="number"
-          min={0}
-          step="any"
-          placeholder="0"
-          value={v.price || ""}
-          onChange={(e) => onFieldChange(idx, "price", parseFloat(e.target.value) || 0)}
-          className={`w-full min-w-[110px] px-2 py-1.5 text-right font-black text-[#0057E7] border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0057E7] ${
-            priceErr ? "border-red-400 bg-red-50" : "border-slate-200"
-          }`}
-        />
-        {v.price > 0 && (
-          <div className="text-[10px] text-right text-[#0057E7] font-black mt-0.5">Khách thanh toán: {formatVnd(v.price)}</div>
-        )}
-        {!priceErr && <div className="text-[9px] text-slate-400 font-semibold mt-0.5">Giá bán phải lớn hơn 0.</div>}
-        {priceErr && <div className="text-[9px] text-red-500 font-bold mt-0.5">Giá bán phải lớn hơn 0.</div>}
-      </td>
-
-      {/* Original price */}
-      <td className="px-2 py-2">
-        <div className="mb-1 text-[9px] font-black uppercase tracking-wide text-slate-400">Giá tham chiếu trước khuyến mãi</div>
-        <input
-          type="number"
-          min={0}
-          step="any"
-          placeholder="Không giảm"
-          value={v.originalPrice === null || v.originalPrice === undefined ? "" : v.originalPrice}
-          onChange={(e) =>
-            onFieldChange(idx, "originalPrice", e.target.value === "" ? null : parseFloat(e.target.value) || null)
-          }
-          className={`w-full min-w-[100px] px-2 py-1.5 text-right text-slate-400 border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0057E7] ${
-            origPriceErr ? "border-red-400 bg-red-50" : "border-slate-200"
-          }`}
-        />
-        {origPriceErr && <div className="text-[9px] text-red-500 font-bold mt-0.5">Giá gốc phải lớn hơn hoặc bằng giá bán.</div>}
-        {!origPriceErr && v.originalPrice && v.originalPrice > 0 && (
-          <div className="text-[10px] text-right text-slate-400 font-bold mt-0.5">Giá niêm yết: {formatVnd(v.originalPrice)}</div>
-        )}
-        {!v.originalPrice && (
-          <div className="text-[9px] text-slate-400 font-semibold mt-0.5">Bỏ trống nếu không có giảm giá.</div>
-        )}
-        {hasDiscount && (
-          <div className="mt-1 flex flex-wrap justify-end gap-1">
-            <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-black text-emerald-600 border border-emerald-100">
-              Đang giảm {discountPercent}%
-            </span>
-            <span className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[9px] font-black text-blue-600 border border-blue-100">
-              Tiết kiệm {formatVnd(savingAmount)}
-            </span>
-          </div>
-        )}
-      </td>
-
-      {/* Stock */}
-      <td className="px-2 py-2 text-center">
-        <input
-          type="number"
-          min={0}
-          placeholder="0"
-          value={v.stockQuantity}
-          onChange={(e) => onFieldChange(idx, "stockQuantity", parseInt(e.target.value) || 0)}
-          className={`w-20 px-2 py-1.5 text-center border rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0057E7] ${
-            stockErr ? "border-red-400 bg-red-50" : "border-slate-200"
-          }`}
-        />
-        {stockErr && <div className="text-[9px] text-red-500 font-bold mt-0.5">Không âm</div>}
-      </td>
-
-      {/* Toggle active */}
-      <td className="px-2 py-2 text-center">
-        <input
-          type="checkbox"
-          checked={!!v.isActive}
-          onChange={(e) => onFieldChange(idx, "isActive", e.target.checked)}
-          className="h-4 w-4 rounded border-slate-300 text-[#0057E7] focus:ring-[#0057E7] cursor-pointer"
-        />
-      </td>
-
-      {/* Delete */}
-      <td className="px-2 py-2 text-center">
-        {v.hasOrderHistory ? (
-          <div
-            className="h-8 w-8 mx-auto flex items-center justify-center text-orange-400 cursor-help"
-            title="Đã có đơn hàng — chỉ có thể ẩn."
-          >
-            <AlertTriangle className="h-4 w-4" />
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => onRemove(idx)}
-            className="h-8 w-8 mx-auto rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 flex items-center justify-center transition-colors"
-            title="Xóa biến thể"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </td>
-    </tr>
-  );
-}
+// VariantRow has been replaced by the variant cards structure above
 
 // ─── ImageCard ────────────────────────────────────────────────────────────────
 interface ImageCardProps {

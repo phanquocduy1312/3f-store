@@ -8,6 +8,21 @@ use App\Helpers\AuthMiddleware;
 use App\Models\AuditLog;
 
 class AdminCustomerController {
+    private function ensurePetDeletedAtColumn($db) {
+        static $checked = false;
+        if ($checked) return;
+        $checked = true;
+
+        try {
+            $stmt = $db->query("SHOW COLUMNS FROM customer_pets LIKE 'deleted_at'");
+            if (!$stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $db->exec("ALTER TABLE customer_pets ADD COLUMN deleted_at DATETIME NULL");
+            }
+        } catch (\Throwable $e) {
+            error_log("Unable to ensure customer_pets.deleted_at column: " . $e->getMessage());
+        }
+    }
+
     public function list() {
         $admin = AuthMiddleware::requireAdmin();
         
@@ -141,6 +156,132 @@ class AdminCustomerController {
         Response::json(["success" => true, "data" => $pets]);
     }
 
+    public function getPetAdvisorConsultations() {
+        $admin = AuthMiddleware::requireAdmin();
+        $page = max(1, (int)Request::input('page', 1));
+        $limit = min(100, max(10, (int)Request::input('limit', 20)));
+        $offset = ($page - 1) * $limit;
+        $q = trim((string)Request::input('q', ''));
+        $species = trim((string)Request::input('species', 'all'));
+
+        $db = \App\Core\Database::getInstance()->getConnection();
+        $this->ensurePetDeletedAtColumn($db);
+        $where = ["cp.ai_result IS NOT NULL", "cp.ai_result <> ''"];
+        $params = [];
+
+        if ($q !== '') {
+            $where[] = "(cp.name LIKE :q OR cp.breed LIKE :q OR cp.health_notes LIKE :q OR cp.favorite_food LIKE :q OR c.full_name LIKE :q OR c.name LIKE :q OR c.phone LIKE :q OR c.email LIKE :q)";
+            $params[':q'] = '%' . $q . '%';
+        }
+
+        if (in_array($species, ['cat', 'dog', 'other'], true)) {
+            $where[] = "cp.species = :species";
+            $params[':species'] = $species;
+        }
+
+        $whereSql = implode(' AND ', $where);
+        $countStmt = $db->prepare("
+            SELECT COUNT(*) AS total, COUNT(DISTINCT cp.customer_id) AS customers
+            FROM customer_pets cp
+            LEFT JOIN customers c ON c.id = cp.customer_id
+            WHERE {$whereSql}
+        ");
+        foreach ($params as $key => $value) {
+            $countStmt->bindValue($key, $value);
+        }
+        $countStmt->execute();
+        $counts = $countStmt->fetch(\PDO::FETCH_ASSOC) ?: ['total' => 0, 'customers' => 0];
+
+        $statsStmt = $db->prepare("
+            SELECT cp.species, cp.ai_result
+            FROM customer_pets cp
+            LEFT JOIN customers c ON c.id = cp.customer_id
+            WHERE {$whereSql}
+        ");
+        foreach ($params as $key => $value) {
+            $statsStmt->bindValue($key, $value);
+        }
+        $statsStmt->execute();
+        $speciesStats = ['cat' => 0, 'dog' => 0, 'other' => 0];
+        $warningCount = 0;
+        $budgetSum = 0;
+        $budgetCount = 0;
+        while ($row = $statsStmt->fetch(\PDO::FETCH_ASSOC)) {
+            $rowSpecies = $row['species'] ?: 'other';
+            if (!isset($speciesStats[$rowSpecies])) {
+                $rowSpecies = 'other';
+            }
+            $speciesStats[$rowSpecies]++;
+
+            $parsed = json_decode($row['ai_result'] ?? '', true);
+            if (is_array($parsed)) {
+                if (!empty($parsed['warning'])) {
+                    $warningCount++;
+                }
+                $budget = $parsed['advisor_inputs']['monthly_budget']
+                    ?? $parsed['budget_analysis']['monthly_budget']
+                    ?? null;
+                if (is_numeric($budget) && (float)$budget > 0) {
+                    $budgetSum += (float)$budget;
+                    $budgetCount++;
+                }
+            }
+        }
+
+        $stmt = $db->prepare("
+            SELECT
+                cp.id,
+                cp.customer_id,
+                cp.name,
+                cp.species,
+                cp.breed,
+                cp.gender,
+                cp.birthday,
+                cp.weight_kg,
+                cp.health_notes,
+                cp.allergies,
+                cp.favorite_food,
+                cp.avatar_url,
+                cp.ai_result,
+                cp.deleted_at,
+                cp.created_at,
+                cp.updated_at,
+                c.full_name AS customer_full_name,
+                c.name AS customer_name,
+                c.phone AS customer_phone,
+                c.email AS customer_email,
+                c.status AS customer_status
+            FROM customer_pets cp
+            LEFT JOIN customers c ON c.id = cp.customer_id
+            WHERE {$whereSql}
+            ORDER BY cp.created_at DESC, cp.id DESC
+            LIMIT :limit OFFSET :offset
+        ");
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        Response::json([
+            "success" => true,
+            "data" => [
+                "items" => $stmt->fetchAll(\PDO::FETCH_ASSOC),
+                "total" => (int)$counts['total'],
+                "customers" => (int)$counts['customers'],
+                "stats" => [
+                    "species" => $speciesStats,
+                    "warningCount" => $warningCount,
+                    "averageMonthlyBudget" => $budgetCount > 0 ? (int)round($budgetSum / $budgetCount) : 0
+                ],
+                "page" => $page,
+                "limit" => $limit,
+                "totalPages" => max(1, (int)ceil(((int)$counts['total']) / $limit))
+            ]
+        ]);
+    }
+
     public function getSessions() {
         $id = Request::query('id') ?? $_GET['id'] ?? null;
         $admin = AuthMiddleware::requireAdmin();
@@ -265,6 +406,10 @@ class AdminCustomerController {
         $customer = $customerModel->findById($id);
         if (!$customer) {
             Response::json(["success" => false, "message" => "Không tìm thấy khách hàng"], 404);
+        }
+
+        if (empty($customer['phone'])) {
+            Response::json(["success" => false, "message" => "Khách hàng chưa có số điện thoại. Vui lòng cập nhật số điện thoại trước khi cộng điểm."], 400);
         }
 
         $ptModel = new \App\Models\CustomerPointTransactionModel();

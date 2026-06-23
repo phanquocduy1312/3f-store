@@ -22,6 +22,7 @@ export function Home() {
 						badgeSilver: "/assets/images/badge_silver.png",
 						badgeGold: "/assets/images/badge_gold.png",
 						badgePlatinum: "/assets/images/badge_platinum.png",
+						badgeDiamond: "/assets/images/badge_diamond.png",
 						petHero: "/assets/images/dog_cat_heart_rbg.png",
 						pawBlue: "/assets/images/icon_paw_blue.png",
 						pawLight: "/assets/images/icon_paw_light.png",

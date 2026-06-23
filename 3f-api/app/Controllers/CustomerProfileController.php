@@ -228,6 +228,74 @@ class CustomerProfileController {
     }
 
     /**
+     * POST /api/customer/profile/request-email-verification
+     */
+    public function requestEmailVerification() {
+        $customer = AuthMiddleware::requireCustomer();
+        $email = trim(Request::input('email', ''));
+
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Response::json(['success' => false, 'message' => 'Email không hợp lệ.'], 400);
+        }
+
+        // Must be current email
+        if ($email !== $customer['email']) {
+            Response::json(['success' => false, 'message' => 'Email không khớp với hồ sơ.'], 400);
+        }
+
+        $otpService = new OtpService();
+        $result = $otpService->requestEmailOtp($email, 'verify_email');
+
+        if (!$result['success']) {
+            Response::json(['success' => false, 'message' => $result['message']], 429);
+        }
+
+        $response = ['success' => true, 'message' => $result['message']];
+        if (isset($result['devOtp'])) {
+            $response['devOtp'] = $result['devOtp'];
+        }
+        Response::json($response);
+    }
+
+    /**
+     * POST /api/customer/profile/verify-email
+     */
+    public function verifyEmail() {
+        $customer = AuthMiddleware::requireCustomer();
+        $email = trim(Request::input('email', ''));
+        $otp = trim(Request::input('otp', ''));
+
+        if (empty($email) || empty($otp)) {
+            Response::json(['success' => false, 'message' => 'Vui lòng nhập đầy đủ thông tin.'], 400);
+        }
+
+        if ($email !== $customer['email']) {
+            Response::json(['success' => false, 'message' => 'Email không khớp với hồ sơ.'], 400);
+        }
+
+        $otpService = new OtpService();
+        $result = $otpService->verifyOtp($email, $otp, 'verify_email');
+
+        if (!$result['success']) {
+            Response::json(['success' => false, 'message' => $result['error']], 400);
+        }
+
+        $db = Database::getInstance()->getConnection();
+
+        try {
+            $stmt = $db->prepare("UPDATE customers SET email_verified_at = NOW(), updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$customer['id']]);
+
+            Response::json([
+                'success' => true,
+                'message' => 'Xác thực Email thành công!'
+            ]);
+        } catch (\Exception $e) {
+            Response::json(['success' => false, 'message' => 'Đã xảy ra lỗi: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * POST /api/customer/profile/upload-avatar
      */
     public function uploadAvatar() {

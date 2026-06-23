@@ -63,15 +63,23 @@ class ShopeeService {
      *
      * @param string $code
      * @param string|int $shopId
+     * @param string|int|null $mainAccountId
      * @return array
      */
-    public function getAccessToken($code, $shopId) {
+    public function getAccessToken($code, $shopId = null, $mainAccountId = null) {
         $path = '/api/v2/auth/token/get';
         $body = [
-            'code'       => $code,
-            'partner_id' => (int)$this->partnerId,
-            'shop_id'    => (int)$shopId
+            'code' => $code,
+            'partner_id' => (int)$this->partnerId
         ];
+        
+        if ($shopId) {
+            $body['shop_id'] = (int)$shopId;
+        } elseif ($mainAccountId) {
+            $body['main_account_id'] = (int)$mainAccountId;
+        } else {
+            throw new \Exception("Either shop_id or main_account_id must be provided to get access token");
+        }
         return $this->request($path, 'POST', $body);
     }
 

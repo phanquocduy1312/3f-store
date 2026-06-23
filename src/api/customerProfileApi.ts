@@ -75,6 +75,24 @@ export async function verifyPhoneChangeApi(phone: string, otp: string): Promise<
   return res.json();
 }
 
+export async function requestEmailVerificationApi(email: string): Promise<{ success: boolean; message?: string; devOtp?: string }> {
+  const res = await fetch(buildApiUrl("/api/customer/profile/request-email-verification"), {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ email }),
+  });
+  return res.json();
+}
+
+export async function verifyEmailVerificationApi(email: string, otp: string): Promise<{ success: boolean; message?: string }> {
+  const res = await fetch(buildApiUrl("/api/customer/profile/verify-email"), {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ email, otp }),
+  });
+  return res.json();
+}
+
 export async function uploadAvatarApi(file: File): Promise<{ success: boolean; message?: string; avatarUrl?: string }> {
   const token = getCustomerToken();
   const headers: Record<string, string> = {};

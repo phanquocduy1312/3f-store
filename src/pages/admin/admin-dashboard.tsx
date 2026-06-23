@@ -4,11 +4,10 @@ import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminKpiCard } from "@/components/admin/admin-kpi-card";
 import { AdminTaskQueue } from "@/components/admin/admin-task-queue";
 import { AdminRevenueChart } from "@/components/admin/admin-revenue-chart";
-import { AdminSourceDonutChart } from "@/components/admin/admin-source-donut-chart";
 import { AdminTopProducts } from "@/components/admin/admin-top-products";
 import { AdminPetNeedsStats } from "@/components/admin/admin-pet-needs-stats";
-import { AdminAiLeadList } from "@/components/admin/admin-ai-lead-list";
 import { AdminShopeeRequestList } from "@/components/admin/admin-shopee-request-list";
+import { adminDashboardApi, DashboardStatsResponse } from "../../api/adminDashboardApi";
 
 interface KpiData {
   title: string;
@@ -29,6 +28,8 @@ export function AdminDashboard() {
   });
   const [searchValue, setSearchValue] = useState("");
   const [selectedDate, setSelectedDate] = useState("today");
+  const [stats, setStats] = useState<DashboardStatsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const handleResize = () => {
@@ -44,70 +45,98 @@ export function AdminDashboard() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+
+    adminDashboardApi.getStats(selectedDate)
+      .then(res => {
+        if (!isMounted) return;
+        setStats(res);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Failed to load dashboard stats", err);
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedDate]);
+
+  const getPeriodSuffix = () => {
+    switch (selectedDate) {
+      case "this_week": return "tuần này";
+      case "this_month": return "tháng này";
+      case "this_year": return "năm nay";
+      case "all_time": return "tất cả thời gian";
+      case "today":
+      default:
+        return "hôm nay";
+    }
+  };
+
+  const getComparisonLabel = () => {
+    switch (selectedDate) {
+      case "this_week": return "so với tuần trước";
+      case "this_month": return "so với tháng trước";
+      case "this_year": return "so với năm trước";
+      case "all_time": return "";
+      case "today":
+      default:
+        return "so với hôm qua";
+    }
+  };
+
   const kpis: KpiData[] = [
     {
-      title: "Doanh thu hôm nay",
-      value: "28.450.000đ",
-      change: "+18.6%",
-      trend: "up",
+      title: `Doanh thu ${getPeriodSuffix()}`,
+      value: stats?.revenue.value ?? "0đ",
+      change: stats?.revenue.change ?? "0%",
+      trend: stats?.revenue.trend ?? "up",
       icon: "wallet",
-      formula: "Tổng giá trị đơn hàng website trong ngày, chỉ tính đơn paid / processing / completed, không tính đơn cancelled."
+      formula: "Tổng doanh thu bán hàng thực tế trong kỳ sau khi đã trừ giảm giá."
     },
     {
-      title: "Đơn hàng hôm nay",
-      value: "156",
-      change: "+14.3%",
-      trend: "up",
+      title: `Số đơn ${getPeriodSuffix()}`,
+      value: stats?.orders.value ?? "0",
+      change: stats?.orders.change ?? "0%",
+      trend: stats?.orders.trend ?? "up",
       icon: "cart",
-      formula: "Số đơn hàng website được tạo trong ngày, không tính đơn đã hủy."
+      formula: "Số đơn hàng website được tạo trong kỳ."
     },
     {
-      title: "Tỷ lệ chuyển đổi",
-      value: "2.35%",
-      change: "+0.35%",
-      trend: "up",
-      icon: "trending-up",
-      formula: "Số đơn hàng chia cho số lượt truy cập website trong cùng khoảng thời gian."
+      title: "Đơn chờ xác nhận",
+      value: stats?.pending.value ?? "0",
+      change: stats?.pending.change ?? "0",
+      trend: stats?.pending.trend ?? "up",
+      icon: "clock",
+      formula: "Số đơn hàng mới đang chờ duyệt thanh toán hoặc xác nhận thông tin."
     },
     {
-      title: "Giá trị đơn trung bình",
-      value: "182.371đ",
-      change: "+6.8%",
-      trend: "up",
-      icon: "receipt",
-      formula: "Doanh thu chia cho số đơn hàng trong cùng khoảng thời gian."
+      title: "Đơn đang giao",
+      value: stats?.shipping.value ?? "0",
+      change: stats?.shipping.change ?? "0%",
+      trend: stats?.shipping.trend ?? "up",
+      icon: "truck",
+      formula: "Số đơn hàng đang được đối tác vận chuyển giao tới khách hàng."
     },
     {
-      title: "Lead tư vấn mới",
-      value: "72",
-      change: "+21.4%",
-      trend: "up",
-      icon: "bot",
-      formula: "Số khách để lại thông tin qua AI Pet Advisor trong ngày."
-    },
-    {
-      title: "Shopee chờ duyệt",
-      value: "18",
-      change: "-5",
-      trend: "down",
-      icon: "shopee",
-      formula: "Số yêu cầu quy đổi điểm Shopee có trạng thái pending."
-    },
-    {
-      title: "Khách hàng mới",
-      value: "61",
-      change: "+12.2%",
-      trend: "up",
+      title: `Khách hàng mới ${getPeriodSuffix()}`,
+      value: stats?.newCustomers.value ?? "0",
+      change: stats?.newCustomers.change ?? "0%",
+      trend: stats?.newCustomers.trend ?? "up",
       icon: "users",
-      formula: "Số khách hàng có SĐT mới được tạo trong CRM trong ngày."
+      formula: "Số tài khoản khách hàng mới đăng ký trong kỳ."
     },
     {
-      title: "Điểm 3F Club đã cộng",
-      value: "6.240",
-      change: "+22.1%",
-      trend: "up",
+      title: `Điểm 3F Club đã cộng ${getPeriodSuffix()}`,
+      value: stats?.points.value ?? "0",
+      change: stats?.points.change ?? "0%",
+      trend: stats?.points.trend ?? "up",
       icon: "gift",
-      formula: "Tổng điểm earn đã được duyệt và cộng vào tài khoản 3F Club trong ngày."
+      formula: "Tổng điểm earn đã được duyệt và cộng vào tài khoản 3F Club trong kỳ."
     }
   ];
 
@@ -150,13 +179,13 @@ export function AdminDashboard() {
             <div>
               <h1 className="text-[24px] sm:text-[26px] font-black text-[#0B1F3A]">Dashboard</h1>
               <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-[#64748B]">
-                Tổng quan vận hành 3F Store hôm nay
+                Tổng quan vận hành 3F Store {getPeriodSuffix()}
               </p>
             </div>
           </div>
 
           {/* Row 1: KPI Cards */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 shrink-0">
             {kpis.map((kpi, idx) => (
               <AdminKpiCard 
                 key={idx}
@@ -166,6 +195,7 @@ export function AdminDashboard() {
                 trend={kpi.trend}
                 iconName={kpi.icon}
                 formula={kpi.formula}
+                comparisonLabel={getComparisonLabel()}
               />
             ))}
           </section>
@@ -176,25 +206,15 @@ export function AdminDashboard() {
               <AdminTaskQueue />
             </div>
             <div className="lg:col-span-8 h-full">
-              <AdminRevenueChart />
+              <AdminRevenueChart filter={selectedDate} />
             </div>
           </section>
 
-          {/* Row 3: Nguồn đơn hàng + Lead tư vấn + Shopee */}
+          {/* Row 3: Shopee + Sản phẩm + Nhu cầu thú cưng */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-5 shrink-0">
-            <div className="h-full">
-              <AdminSourceDonutChart />
-            </div>
-            <div className="h-full">
-              <AdminAiLeadList searchValue={searchValue} />
-            </div>
             <div className="h-full">
               <AdminShopeeRequestList searchValue={searchValue} />
             </div>
-          </section>
-
-          {/* Row 4: Sản phẩm + Nhu cầu thú cưng */}
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-5 shrink-0">
             <div className="h-full">
               <AdminTopProducts />
             </div>

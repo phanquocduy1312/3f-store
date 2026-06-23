@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
 import { buildImageUrl } from "@/src/config/api";
 import { 
-  User, MapPin, ClipboardList, Award, Ticket, ShieldAlert, Heart, LogOut, CheckCircle2, UserCircle 
+  User, MapPin, ClipboardList, Award, Ticket, ShieldAlert, Heart, LogOut, CheckCircle2, UserCircle, Sparkles 
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,7 +25,7 @@ export function AccountLayout() {
     { path: "/account/club", label: "3F Club Loyalty", icon: Award },
     { path: "/account/vouchers", label: "Voucher của tôi", icon: Ticket },
     { path: "/account/security", label: "Bảo mật tài khoản", icon: ShieldAlert },
-    { path: "/account/pets", label: "Hồ sơ thú cưng", icon: Heart },
+    { path: "/account/pets", label: "Tư vấn AI", icon: Sparkles },
   ];
 
   const currentPath = location.pathname;

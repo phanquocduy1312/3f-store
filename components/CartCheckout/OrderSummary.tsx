@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { Ticket, Percent, ArrowRight, CreditCard, Banknote, Landmark } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Ticket, Percent, ArrowRight, CreditCard, Banknote, Landmark, Tag } from "lucide-react";
 import { formatPrice } from "@/lib/cartHelper";
+import { getCartVoucherSuggestions, type PublicVoucher } from "@/src/api/vouchersApi";
 
 interface OrderSummaryProps {
   subtotal: number;
@@ -11,6 +12,7 @@ interface OrderSummaryProps {
   isSubmitting: boolean;
   paymentMethod: string;
   setPaymentMethod: (v: string) => void;
+  shippingFee?: number;
 }
 
 export function OrderSummary({
@@ -21,14 +23,30 @@ export function OrderSummary({
   onSubmit,
   isSubmitting,
   paymentMethod,
-  setPaymentMethod
+  setPaymentMethod,
+  shippingFee = 0
 }: OrderSummaryProps) {
   const [couponInput, setCouponInput] = useState("");
   const [couponError, setCouponError] = useState("");
   const [isValidating, setIsValidating] = useState(false);
+  const [suggestions, setSuggestions] = useState<PublicVoucher[]>([]);
 
-  const handleApply = async () => {
-    const trimmed = couponInput.trim();
+  useEffect(() => {
+    let alive = true;
+    getCartVoucherSuggestions()
+      .then((res) => {
+        if (alive) setSuggestions(res.data || []);
+      })
+      .catch(() => {
+        if (alive) setSuggestions([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const handleApply = async (code = couponInput) => {
+    const trimmed = code.trim();
     if (!trimmed) return;
     setIsValidating(true);
     setCouponError("");
@@ -42,7 +60,6 @@ export function OrderSummary({
   };
 
   const discountAmount = appliedVoucher ? appliedVoucher.discountAmount : 0;
-  const shippingFee = 0; // Hardcoded to 0 for production business requirement
   const finalTotal = Math.max(0, subtotal + shippingFee - discountAmount);
 
   return (
@@ -93,7 +110,7 @@ export function OrderSummary({
               />
               <button
                 type="button"
-                onClick={handleApply}
+                onClick={() => handleApply()}
                 disabled={!couponInput.trim() || isValidating}
                 className="shrink-0 rounded-xl bg-forest px-4 text-xs font-bold text-white shadow-soft transition hover:bg-forest/90 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
               >
@@ -104,6 +121,31 @@ export function OrderSummary({
               <p className="text-[11px] font-bold text-red-500 mt-1 pl-1">
                 {couponError}
               </p>
+            )}
+            {suggestions.length > 0 && (
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-forest/70">
+                  <Tag size={12} />
+                  Gợi ý voucher
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {suggestions.map((voucher) => (
+                    <button
+                      key={`${voucher.id}-${voucher.code}`}
+                      type="button"
+                      onClick={() => handleApply(voucher.code)}
+                      disabled={isValidating}
+                      className="min-w-[145px] rounded-xl border border-forest/15 bg-forest/5 px-3 py-2 text-left transition hover:border-forest/40 hover:bg-forest/10 disabled:opacity-60"
+                      title={voucher.description || voucher.name}
+                    >
+                      <div className="text-xs font-black text-forest">{voucher.code}</div>
+                      <div className="mt-0.5 line-clamp-1 text-[10px] font-semibold text-gray-500">
+                        {voucher.description || voucher.title}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         )}

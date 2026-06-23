@@ -260,134 +260,157 @@ export function LoyaltySettingsSection({
                 </div>
               </div>
               {activeRule && (
-                <span className="inline-flex rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-black text-green-600">
+                <span className="inline-flex rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-black text-green-600 shrink-0">
                   Đang hoạt động
                 </span>
               )}
             </div>
 
-            <div className="mt-6 space-y-4">
-              <div>
-                <label className="block text-[12px] font-bold uppercase tracking-[0.03em] text-[#64748B]">Tên quy tắc</label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ví dụ: Cấu hình quy đổi Shopee default"
-                  className="mt-2 w-full rounded-2xl border border-[#DCEBFF] bg-[#F6FAFF] px-4 py-3 text-[14px] font-bold text-[#0B1F3A] transition focus:border-[#0057E7] focus:bg-white focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="mt-6 space-y-8">
+              {/* Group 1: Cơ bản */}
+              <div className="space-y-4">
+                <h3 className="text-[14px] font-black uppercase text-[#0B1F3A] flex items-center gap-2 border-b border-[#EEF6FF] pb-2">
+                  1. Thông tin cơ bản
+                </h3>
                 <div>
-                  <label className="block text-[12px] font-bold uppercase tracking-[0.03em] text-[#64748B]">
-                    1 Điểm tương ứng số tiền (VND)
-                  </label>
+                  <label className="block text-[12px] font-bold tracking-wide text-[#64748B]">Tên quy tắc</label>
                   <input
-                    type="number"
+                    type="text"
                     required
-                    min="1"
-                    value={moneyPerPoint}
-                    onChange={(e) => setMoneyPerPoint(Number(e.target.value))}
-                    className="mt-2 w-full rounded-2xl border border-[#DCEBFF] bg-[#F6FAFF] px-4 py-3 text-[14px] font-bold text-[#0B1F3A] transition focus:border-[#0057E7] focus:bg-white focus:outline-none"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ví dụ: Cấu hình quy đổi Shopee default"
+                    className="mt-1.5 w-full rounded-xl border border-[#DCEBFF] bg-[#F8FBFF] px-4 py-3 text-[14px] font-bold text-[#0B1F3A] transition focus:border-[#0057E7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0057E7]/10"
                   />
-                  <span className="mt-1 block text-[11px] text-[#94A3B8]">Ví dụ: 10000 nghĩa là 10.000đ = 1 điểm.</span>
-                </div>
-
-                <div>
-                  <label className="block text-[12px] font-bold uppercase tracking-[0.03em] text-[#64748B]">Phương thức làm tròn</label>
-                  <select
-                    value={roundingMode}
-                    onChange={(e) => setRoundingMode(e.target.value as RoundingMode)}
-                    className="mt-2 w-full rounded-2xl border border-[#DCEBFF] bg-[#F6FAFF] px-4 py-3 text-[14px] font-bold text-[#0B1F3A] transition focus:border-[#0057E7] focus:bg-white focus:outline-none"
-                  >
-                    <option value="floor">Làm tròn xuống (floor)</option>
-                    <option value="round">Làm tròn gần nhất (round)</option>
-                    <option value="ceil">Làm tròn lên (ceil)</option>
-                  </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className="block text-[12px] font-bold uppercase tracking-[0.03em] text-[#64748B]">Đơn tối thiểu (VND)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={minOrderAmount}
-                    onChange={(e) => setMinOrderAmount(Number(e.target.value))}
-                    className="mt-2 w-full rounded-2xl border border-[#DCEBFF] bg-[#F6FAFF] px-4 py-3 text-[14px] font-bold text-[#0B1F3A] transition focus:border-[#0057E7] focus:bg-white focus:outline-none"
-                  />
-                  <span className="mt-1 block text-[11px] text-[#94A3B8]">Đơn hàng phải đạt số tiền này để được tích điểm.</span>
-                </div>
+              {/* Group 2: Tỉ lệ quy đổi */}
+              <div className="space-y-4">
+                <h3 className="text-[14px] font-black uppercase text-[#0B1F3A] flex items-center gap-2 border-b border-[#EEF6FF] pb-2">
+                  2. Công thức quy đổi
+                </h3>
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <div>
+                    <label className="block text-[12px] font-bold tracking-wide text-[#64748B]">
+                      1 Điểm tương ứng số tiền (VND)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      value={moneyPerPoint}
+                      onChange={(e) => setMoneyPerPoint(Number(e.target.value))}
+                      className="mt-1.5 w-full rounded-xl border border-[#DCEBFF] bg-[#F8FBFF] px-4 py-3 text-[14px] font-bold text-[#0B1F3A] transition focus:border-[#0057E7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0057E7]/10"
+                    />
+                    <span className="mt-1.5 block text-[11px] font-medium text-[#64748B]">Ví dụ: 10000 đ = 1 điểm.</span>
+                  </div>
 
-                <div>
-                  <label className="block text-[12px] font-bold uppercase tracking-[0.03em] text-[#64748B]">
-                    Hệ số nhân điểm (Multiplier)
+                  <div>
+                    <label className="block text-[12px] font-bold tracking-wide text-[#64748B]">Phương thức làm tròn</label>
+                    <select
+                      value={roundingMode}
+                      onChange={(e) => setRoundingMode(e.target.value as RoundingMode)}
+                      className="mt-1.5 w-full rounded-xl border border-[#DCEBFF] bg-[#F8FBFF] px-4 py-3 text-[14px] font-bold text-[#0B1F3A] transition focus:border-[#0057E7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0057E7]/10 cursor-pointer"
+                    >
+                      <option value="floor">Làm tròn xuống (ưu tiên)</option>
+                      <option value="round">Làm tròn gần nhất</option>
+                      <option value="ceil">Làm tròn lên</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Group 3: Điều kiện & Giới hạn */}
+              <div className="space-y-4">
+                <h3 className="text-[14px] font-black uppercase text-[#0B1F3A] flex items-center gap-2 border-b border-[#EEF6FF] pb-2">
+                  3. Điều kiện & Giới hạn
+                </h3>
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <div>
+                    <label className="block text-[12px] font-bold tracking-wide text-[#64748B]">Đơn tối thiểu (VND)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={minOrderAmount}
+                      onChange={(e) => setMinOrderAmount(Number(e.target.value))}
+                      className="mt-1.5 w-full rounded-xl border border-[#DCEBFF] bg-[#F8FBFF] px-4 py-3 text-[14px] font-bold text-[#0B1F3A] transition focus:border-[#0057E7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0057E7]/10"
+                    />
+                    <span className="mt-1.5 block text-[11px] font-medium text-[#64748B]">Chỉ tính điểm khi tổng tiền {'>='} mức này.</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-bold tracking-wide text-[#64748B]">
+                      Hệ số nhân (Multiplier)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={multiplier}
+                      onChange={(e) => setMultiplier(Number(e.target.value))}
+                      className="mt-1.5 w-full rounded-xl border border-[#DCEBFF] bg-[#F8FBFF] px-4 py-3 text-[14px] font-bold text-[#0B1F3A] transition focus:border-[#0057E7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0057E7]/10"
+                    />
+                    <span className="mt-1.5 block text-[11px] font-medium text-[#64748B]">Nhân đôi điểm = 2.0. Mặc định là 1.0.</span>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-[12px] font-bold tracking-wide text-[#64748B]">
+                      Giới hạn điểm tối đa mỗi đơn (Để trống = Không giới hạn)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={maxPointsPerOrder}
+                      onChange={(e) => setMaxPointsPerOrder(e.target.value === "" ? "" : Number(e.target.value))}
+                      placeholder="Không giới hạn"
+                      className="mt-1.5 w-full rounded-xl border border-[#DCEBFF] bg-[#F8FBFF] px-4 py-3 text-[14px] font-bold text-[#0B1F3A] transition focus:border-[#0057E7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0057E7]/10"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Toggle */}
+              <div className="mt-6 rounded-xl bg-blue-50/50 p-4 border border-blue-100/50">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="isActive"
+                    checked={isActive}
+                    onChange={(e) => setIsActive(e.target.checked)}
+                    className="h-5 w-5 rounded border-[#DCEBFF] text-[#0057E7] focus:ring-[#0057E7] cursor-pointer"
+                  />
+                  <label htmlFor="isActive" className="text-[14px] font-bold text-[#0B1F3A] cursor-pointer select-none">
+                    Kích hoạt áp dụng quy tắc này ngay lập tức
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={multiplier}
-                    onChange={(e) => setMultiplier(Number(e.target.value))}
-                    className="mt-2 w-full rounded-2xl border border-[#DCEBFF] bg-[#F6FAFF] px-4 py-3 text-[14px] font-bold text-[#0B1F3A] transition focus:border-[#0057E7] focus:bg-white focus:outline-none"
-                  />
-                  <span className="mt-1 block text-[11px] text-[#94A3B8]">Hệ số nhân số điểm nhận được (Ví dụ: 1.00 hoặc 1.50).</span>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-[12px] font-bold uppercase tracking-[0.03em] text-[#64748B]">
-                  Giới hạn điểm tối đa mỗi đơn (Không giới hạn nếu để trống)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={maxPointsPerOrder}
-                  onChange={(e) => setMaxPointsPerOrder(e.target.value === "" ? "" : Number(e.target.value))}
-                  placeholder="Không giới hạn"
-                  className="mt-2 w-full rounded-2xl border border-[#DCEBFF] bg-[#F6FAFF] px-4 py-3 text-[14px] font-bold text-[#0B1F3A] transition focus:border-[#0057E7] focus:bg-white focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center gap-3 pt-2">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
-                  className="h-4 w-4 rounded border-[#DCEBFF] text-[#0057E7] focus:ring-[#0057E7]"
-                />
-                <label htmlFor="isActive" className="text-[13px] font-bold text-[#0B1F3A] cursor-pointer select-none">
-                  Kích hoạt áp dụng quy tắc này ngay lập tức
-                </label>
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end gap-3 border-t border-[#EEF6FF] pt-4">
-              {activeRule && (
-                <button
-                  type="button"
-                  onClick={() => fetchRules()}
-                  className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#DCEBFF] bg-white px-5 text-[14px] font-bold text-[#64748B] transition hover:bg-[#F6FAFF]"
-                >
-                  <RefreshCcw className="h-4 w-4" />
-                  Hủy thay đổi
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#0057E7] px-5 text-[14px] font-bold text-white shadow-[0_8px_18px_rgba(0,87,231,0.22)] transition hover:bg-[#003B7A] disabled:opacity-60"
-              >
-                {isSubmitting ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Đang lưu...</>
-                ) : (
-                  <><Save className="h-4 w-4" /> Lưu cấu hình</>
+            <div className="mt-8">
+              <div className="flex justify-end gap-3 border-t border-[#EEF6FF] pt-5">
+                {activeRule && (
+                  <button
+                    type="button"
+                    onClick={() => fetchRules()}
+                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#DCEBFF] bg-white px-5 text-[14px] font-bold text-[#64748B] transition hover:bg-[#F8FBFF]"
+                  >
+                    <RefreshCcw className="h-4 w-4" />
+                    Hủy thay đổi
+                  </button>
                 )}
-              </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#0057E7] px-5 text-[14px] font-bold text-white shadow-[0_8px_18px_rgba(0,87,231,0.22)] transition hover:bg-[#003B7A] disabled:opacity-60"
+                >
+                  {isSubmitting ? (
+                    <><Loader2 className="h-5 w-5 animate-spin" /> Đang lưu...</>
+                  ) : (
+                    <><Save className="h-5 w-5" /> Lưu cấu hình</>
+                  )}
+                </button>
+              </div>
             </div>
           </section>
         </form>
@@ -405,7 +428,7 @@ export function LoyaltySettingsSection({
               </div>
             </div>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-6 space-y-5">
               <div>
                 <label className="block text-[12px] font-bold uppercase tracking-[0.03em] text-[#64748B]">Số tiền đơn hàng (VND)</label>
                 <div className="relative mt-2">
@@ -414,9 +437,9 @@ export function LoyaltySettingsSection({
                     value={previewAmount}
                     onChange={(e) => setPreviewAmount(e.target.value === "" ? "" : Number(e.target.value))}
                     placeholder="Ví dụ: 20050000"
-                    className="w-full rounded-2xl border border-[#DCEBFF] bg-[#F6FAFF] py-3 pl-4 pr-12 text-[14px] font-bold text-[#0B1F3A] transition focus:border-[#0057E7] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#DCEBFF] bg-[#F8FBFF] py-3.5 pl-4 pr-12 text-[15px] font-black text-[#0B1F3A] transition focus:border-[#0057E7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0057E7]/10"
                   />
-                  <span className="absolute right-4 top-3.5 text-[14px] font-bold text-[#94A3B8]">đ</span>
+                  <span className="absolute right-4 top-3.5 text-[15px] font-bold text-[#94A3B8]">đ</span>
                 </div>
               </div>
 
@@ -424,42 +447,44 @@ export function LoyaltySettingsSection({
                 type="button"
                 disabled={isPreviewing}
                 onClick={handleCalculatePreview}
-                className="flex w-full h-11 items-center justify-center gap-2 rounded-2xl bg-[#0057E7] text-[14px] font-bold text-white shadow-[0_8px_18px_rgba(0,87,231,0.22)] transition hover:bg-[#003B7A] disabled:opacity-60"
+                className="flex w-full h-12 items-center justify-center gap-2 rounded-xl bg-[#0057E7] text-[15px] font-bold text-white shadow-[0_8px_18px_rgba(0,87,231,0.22)] transition hover:bg-[#003B7A] disabled:opacity-60"
               >
                 {isPreviewing ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Đang tính...</>
+                  <><Loader2 className="h-5 w-5 animate-spin" /> Đang tính...</>
                 ) : (
                   "Tính thử điểm"
                 )}
               </button>
 
               {previewResult !== null && (
-                <div className="mt-6 rounded-2xl border border-[#DCEBFF] bg-[#F8FBFF] p-4 space-y-3">
+                <div className="mt-6 rounded-xl border border-[#DCEBFF] bg-[#F8FBFF] p-5 space-y-4">
                   <div className="flex justify-between items-center text-[13px] font-semibold text-[#64748B]">
                     <span>Số tiền thử nghiệm:</span>
-                    <span className="font-bold text-[#0B1F3A]">{formatVND(previewResult.amount)}</span>
+                    <span className="font-bold text-[#0B1F3A] text-[14px]">{formatVND(previewResult.amount)}</span>
                   </div>
                   
-                  <div className="flex justify-between items-center border-t border-[#EEF6FF] pt-3">
+                  <div className="flex justify-between items-center border-t border-[#EEF6FF] pt-4">
                     <span className="text-[13px] font-semibold text-[#64748B]">Điểm tích lũy dự kiến:</span>
-                    <div className="flex items-center gap-1.5 text-lg font-black text-[#0057E7]">
-                      <Coins className="h-5 w-5" />
+                    <div className="flex items-center gap-1.5 text-xl font-black text-[#0057E7]">
+                      <Coins className="h-6 w-6" />
                       <span>{previewResult.points} điểm</span>
                     </div>
                   </div>
 
                   {previewResult.rule ? (
-                    <div className="border-t border-[#EEF6FF] pt-3 text-[11px] text-[#94A3B8] leading-relaxed">
-                      <p className="font-bold text-[#64748B] mb-1">Quy tắc đang áp dụng:</p>
-                      <p>- Quy tắc: {previewResult.rule.name}</p>
-                      <p>- Tỉ lệ: {formatVND(previewResult.rule.moneyPerPoint)} = 1 điểm</p>
-                      <p>- Làm tròn: {previewResult.rule.roundingMode}</p>
-                      {previewResult.rule.minOrderAmount > 0 && <p>- Đơn tối thiểu: {formatVND(previewResult.rule.minOrderAmount)}</p>}
-                      {previewResult.rule.multiplier !== 1 && <p>- Hệ số nhân: x{previewResult.rule.multiplier}</p>}
-                      {previewResult.rule.maxPointsPerOrder !== null && <p>- Giới hạn tối đa: {previewResult.rule.maxPointsPerOrder} điểm/đơn</p>}
+                    <div className="border-t border-[#EEF6FF] pt-4 text-[12px] text-[#64748B] leading-relaxed">
+                      <p className="font-bold text-[#0B1F3A] mb-1.5">Quy tắc đang áp dụng:</p>
+                      <ul className="space-y-1 list-disc pl-4">
+                        <li><span className="font-medium">Tên quy tắc:</span> {previewResult.rule.name}</li>
+                        <li><span className="font-medium">Tỉ lệ quy đổi:</span> {formatVND(previewResult.rule.moneyPerPoint)} = 1 điểm</li>
+                        <li><span className="font-medium">Cách làm tròn:</span> {previewResult.rule.roundingMode}</li>
+                        {previewResult.rule.minOrderAmount > 0 && <li><span className="font-medium">Đơn tối thiểu:</span> {formatVND(previewResult.rule.minOrderAmount)}</li>}
+                        {previewResult.rule.multiplier !== 1 && <li><span className="font-medium">Hệ số nhân:</span> x{previewResult.rule.multiplier}</li>}
+                        {previewResult.rule.maxPointsPerOrder !== null && <li><span className="font-medium">Giới hạn tối đa:</span> {previewResult.rule.maxPointsPerOrder} điểm/đơn</li>}
+                      </ul>
                     </div>
                   ) : (
-                    <div className="border-t border-[#EEF6FF] pt-3 text-[11px] text-[#F59E0B] font-bold">
+                    <div className="border-t border-[#EEF6FF] pt-4 text-[12px] text-[#F59E0B] font-bold">
                       * Chưa có quy tắc cấu hình trong hệ thống, đang dùng quy tắc mặc định (10.000đ = 1 điểm, làm tròn xuống).
                     </div>
                   )}

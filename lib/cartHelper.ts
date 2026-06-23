@@ -36,9 +36,44 @@ export function saveCart(cart: CartItem[]): void {
   }
 }
 
+export function isSameCartItem(
+  a: CartItem | Omit<CartItem, "quantity">,
+  b: CartItem | Omit<CartItem, "quantity">
+): boolean {
+  // 1. Check if both have product ID
+  if (a.productId && b.productId) {
+    const sameProduct = String(a.productId).trim() === String(b.productId).trim();
+    if (!sameProduct) return false;
+
+    // Check variant ID if both have them
+    if (a.variantId && b.variantId) {
+      return String(a.variantId).trim() === String(b.variantId).trim();
+    }
+
+    // Check variant text
+    const variantA = String(a.variant || "").trim().toLowerCase();
+    const variantB = String(b.variant || "").trim().toLowerCase();
+    return variantA === variantB;
+  }
+
+  // 2. Fallback to matching item ID and variant
+  const idA = String(a.id).trim().toLowerCase();
+  const idB = String(b.id).trim().toLowerCase();
+
+  const sameId = !!(
+    idA === idB ||
+    (a.productId && idB.startsWith(String(a.productId) + "-")) ||
+    (b.productId && idA.startsWith(String(b.productId) + "-"))
+  );
+
+  const variantA = String(a.variant || "").trim().toLowerCase();
+  const variantB = String(b.variant || "").trim().toLowerCase();
+  return sameId && variantA === variantB;
+}
+
 export function addToCart(item: Omit<CartItem, "quantity">, quantity: number): void {
   const cart = getCart();
-  const existing = cart.find(i => i.id === item.id && i.variant === item.variant);
+  const existing = cart.find(i => isSameCartItem(i, item));
 
   if (existing) {
     existing.quantity += quantity;
@@ -51,7 +86,10 @@ export function addToCart(item: Omit<CartItem, "quantity">, quantity: number): v
 
 export function updateQuantity(id: string, variant: string, quantity: number): void {
   const cart = getCart();
-  const index = cart.findIndex(i => i.id === id && i.variant === variant);
+  // Find index using a robust match logic equivalent
+  const index = cart.findIndex(i => 
+    isSameCartItem(i, { id, variant, name: "", image: "", price: 0 })
+  );
 
   if (index > -1) {
     if (quantity <= 0) {
@@ -65,7 +103,9 @@ export function updateQuantity(id: string, variant: string, quantity: number): v
 
 export function removeFromCart(id: string, variant: string): void {
   const cart = getCart();
-  const filtered = cart.filter(i => !(i.id === id && i.variant === variant));
+  const filtered = cart.filter(i => 
+    !isSameCartItem(i, { id, variant, name: "", image: "", price: 0 })
+  );
   saveCart(filtered);
 }
 
@@ -81,10 +121,11 @@ export function getCartTotal(): number {
   return getCart().reduce((sum, item) => sum + item.price * item.quantity, 0);
 }
 
-// Convert format "23.000đ" or "23.000" to number 23000
+// Convert format "23.000đ" or "23.000" to number 23000 (handles ranges by taking first price)
 export function parsePriceString(priceStr: string | undefined | null): number {
   if (!priceStr) return 0;
-  const clean = priceStr.replace(/[^0-9]/g, "");
+  const cleanPrice = priceStr.split("-")[0].trim();
+  const clean = cleanPrice.replace(/[^0-9]/g, "");
   return parseInt(clean, 10) || 0;
 }
 

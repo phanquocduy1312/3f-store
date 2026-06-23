@@ -3,10 +3,28 @@
 import { Image } from "@/components/Image";
 import { Facebook, Instagram, Music2 } from "lucide-react";
 import { footerColumns, socialLinks } from "@/data/store";
+import { Link } from "react-router-dom";
 
 const socialIcons = [Facebook, Instagram, Music2];
 
 export function Footer() {
+  const getLinkHref = (link: string) => {
+    if (link === "Giới thiệu") return "/about";
+    if (link === "Liên hệ") return "/contact";
+    return "#";
+  };
+
+  const handleLinkScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith("/about#")) {
+      const elementId = href.split("#")[1];
+      const target = document.getElementById(elementId);
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  };
+
   return (
     <footer className="bg-forest text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.1fr_1.9fr] lg:px-8">
@@ -34,13 +52,27 @@ export function Footer() {
             <div key={column.title}>
               <h3 className="font-black">{column.title}</h3>
               <ul className="mt-4 space-y-3 text-sm text-white/64">
-                {column.links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="transition hover:text-white">
-                      {link}
-                    </a>
-                  </li>
-                ))}
+                {column.links.map((link) => {
+                  const href = getLinkHref(link);
+                  const isExternalOrHash = href.startsWith("#");
+                  return (
+                    <li key={link}>
+                      {isExternalOrHash ? (
+                        <a href={href} className="transition hover:text-white">
+                          {link}
+                        </a>
+                      ) : (
+                        <Link 
+                          to={href} 
+                          onClick={(e) => handleLinkScroll(e, href)}
+                          className="transition hover:text-white"
+                        >
+                          {link}
+                        </Link>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}

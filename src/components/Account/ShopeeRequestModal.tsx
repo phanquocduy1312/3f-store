@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Send, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
-import { requestGuestOtpApi, verifyGuestOtpApi } from "@/src/services/shopeePointApi";
+import { API_BASE_URL } from "@/src/config/api";
 
 interface ShopeeRequestModalProps {
   onClose: () => void;
@@ -12,39 +12,45 @@ interface ShopeeRequestModalProps {
 export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalProps) {
   const { customer } = useCustomerAuth();
   
-  // Step 1: Input Phone (for guests)
-  // Step 2: Input OTP (for guests)
-  // Step 3: Input Order Details (for logged-in & guests)
-  const [step, setStep] = useState(customer ? 3 : 1);
+  // Step 1: Input details (Phone, Order Code, Order Amount, Note)
+  // Step 2: Input OTP & Submit request
+  const [step, setStep] = useState(1);
   
-  // Guest Fields
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(customer?.phone || "");
   const [otp, setOtp] = useState("");
-  const [verificationToken, setVerificationToken] = useState("");
-
   const [shopeeOrderCode, setShopeeOrderCode] = useState("");
   const [orderAmount, setOrderAmount] = useState("");
   const [note, setNote] = useState("");
+  
   const [isLoading, setIsLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
-  const handleRequestOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phone) {
-      toast.warning("Vui lòng nhập số điện thoại.");
-      return;
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(timer);
     }
+  }, [cooldown]);
+
+  const triggerOtpSend = async (phoneToUse: string) => {
     setIsLoading(true);
     try {
-      const res = await requestGuestOtpApi(phone);
-      if (res.success) {
-        toast.success("Mã OTP đã được gửi đến số điện thoại của bạn.");
-        // Dev helper
-        if (res.devOtp) {
-          console.log("DEV OTP:", res.devOtp);
-          toast.info(`[DEV] Mã OTP là: ${res.devOtp}`);
-        }
-        setStep(2);
+      const res = await fetch(`${API_BASE_URL}/api/customer/otp/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phoneToUse, purpose: "shopee_point_request" }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data?.message || "Không gửi được mã xác nhận");
       }
+      
+      toast.success("Mã OTP đã được gửi đến số điện thoại của bạn.");
+      if (data.devOtp) {
+        toast.info(`[DEV] Mã OTP là: ${data.devOtp}`);
+      }
+      setCooldown(60);
+      setStep(2);
     } catch (err: any) {
       toast.error(err.message || "Lỗi khi gửi OTP.");
     } finally {
@@ -52,29 +58,12 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
+  const handleDetailsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!otp) {
-      toast.warning("Vui lòng nhập mã OTP.");
+    if (!phone) {
+      toast.warning("Vui lòng nhập số điện thoại.");
       return;
     }
-    setIsLoading(true);
-    try {
-      const res = await verifyGuestOtpApi(phone, otp);
-      if (res.success && res.data) {
-        setVerificationToken(res.data.verificationToken);
-        toast.success("Xác thực thành công!");
-        setStep(3);
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Mã OTP không đúng.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
     if (!shopeeOrderCode || !orderAmount) {
       toast.warning("Vui lòng nhập đầy đủ mã đơn hàng và số tiền.");
       return;
@@ -86,27 +75,53 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
       return;
     }
 
+    await triggerOtpSend(phone);
+  };
+
+  const handleVerifyAndSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp) {
+      toast.warning("Vui lòng nhập mã OTP.");
+      return;
+    }
     setIsLoading(true);
     try {
-      // We will use createShopeePointRequest from shopeePointApi since it supports the new payload
+      // 1. Verify OTP
+      const resVerify = await fetch(`${API_BASE_URL}/api/customer/otp/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, purpose: "shopee_point_request", code: otp }),
+      });
+      const dataVerify = await resVerify.json();
+      if (!resVerify.ok || !dataVerify.success) {
+        throw new Error(dataVerify?.message || "Mã OTP không đúng.");
+      }
+      
+      const verificationToken = dataVerify.data?.verificationToken;
+      if (!verificationToken) {
+        throw new Error("Không lấy được token xác thực.");
+      }
+
+      // 2. Submit Request
+      const amountNum = parseFloat(orderAmount.replace(/[^0-9]/g, ""));
       const { createShopeePointRequest } = await import("@/src/services/shopeePointApi");
-      const res = await createShopeePointRequest({
+      const resSubmit = await createShopeePointRequest({
         shopeeOrderCode,
         orderAmount: amountNum,
-        phone: customer ? undefined : phone,
-        verificationToken: customer ? undefined : verificationToken,
+        phone,
+        verificationToken,
         note
-      } as any); // Type cast due to "note" not strictly defined but accepted
+      } as any);
 
-      if (res.success) {
+      if (resSubmit.success) {
         toast.success("Gửi yêu cầu tích điểm thành công! 3F sẽ phê duyệt sớm nhất.");
         onSuccess();
         onClose();
       } else {
-        toast.error(res.message || "Không thể gửi yêu cầu.");
+        toast.error(resSubmit.message || "Không thể gửi yêu cầu.");
       }
-    } catch {
-      toast.error("Lỗi kết nối.");
+    } catch (err: any) {
+      toast.error(err.message || "Xác thực mã OTP thất bại.");
     } finally {
       setIsLoading(false);
     }
@@ -121,14 +136,13 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
         <div className="text-center space-y-1">
           <h3 className="text-base font-black text-ink">Yêu cầu tích điểm Shopee</h3>
           <p className="text-xs text-gray-400 font-semibold">
-            {step === 1 ? "Nhập số điện thoại của bạn để nhận mã OTP." : 
-             step === 2 ? "Nhập mã OTP được gửi đến số điện thoại của bạn." : 
-             "Tích điểm 3F Club bằng cách nhập thông tin hóa đơn đơn hàng Shopee của bạn."}
+            {step === 1 ? "Tích điểm 3F Club bằng cách nhập thông tin hóa đơn đơn hàng Shopee của bạn." : 
+             "Nhập mã OTP được gửi đến số điện thoại của bạn."}
           </p>
         </div>
 
         {step === 1 && (
-          <form onSubmit={handleRequestOtp} className="space-y-4">
+          <form onSubmit={handleDetailsSubmit} className="space-y-4">
             <div>
               <label className="mb-1 block text-[10px] font-bold text-gray-400 uppercase">Số điện thoại *</label>
               <input 
@@ -140,15 +154,61 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
                 required 
               />
             </div>
+
+            <div>
+              <label className="mb-1 block text-[10px] font-bold text-gray-400 uppercase">Mã đơn hàng Shopee *</label>
+              <input 
+                type="text" 
+                value={shopeeOrderCode} 
+                onChange={(e) => setShopeeOrderCode(e.target.value)} 
+                placeholder="VD: 241208XXXXXXXX" 
+                className="w-full rounded-2xl border border-[#E0EBF7] px-4 py-3 text-xs outline-none focus:border-forest" 
+                required 
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-[10px] font-bold text-gray-400 uppercase">Số tiền đơn hàng *</label>
+              <input 
+                type="text" 
+                value={orderAmount} 
+                onChange={(e) => setOrderAmount(e.target.value)} 
+                placeholder="VD: 150.000" 
+                className="w-full rounded-2xl border border-[#E0EBF7] px-4 py-3 text-xs outline-none focus:border-forest" 
+                required 
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-[10px] font-bold text-gray-400 uppercase">Ghi chú (Tùy chọn)</label>
+              <textarea 
+                value={note} 
+                onChange={(e) => setNote(e.target.value)} 
+                placeholder="Nhập ghi chú gửi Admin nếu có..." 
+                rows={2}
+                className="w-full rounded-2xl border border-[#E0EBF7] px-4 py-3 text-xs outline-none focus:border-forest resize-none" 
+              />
+            </div>
+
+            <div className="rounded-xl bg-amber-50 p-3 border border-amber-100 flex gap-2">
+              <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-amber-700 leading-relaxed font-semibold">
+                Điểm sẽ được cộng sau khi Admin phê duyệt hóa đơn. Vui lòng nhập thông tin chính xác để tránh bị từ chối duyệt.
+              </p>
+            </div>
+
             <div className="flex justify-end gap-3 pt-2">
               <button type="button" onClick={onClose} className="rounded-full border border-gray-200 px-5 py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-50">Hủy</button>
-              <button type="submit" disabled={isLoading} className="rounded-full bg-forest px-6 py-2.5 text-xs font-bold text-white shadow-soft hover:bg-forest/90 flex items-center gap-1.5">{isLoading ? "Đang gửi..." : "Tiếp tục"}</button>
+              <button type="submit" disabled={isLoading} className="rounded-full bg-forest px-6 py-2.5 text-xs font-bold text-white shadow-soft hover:bg-forest/90 flex items-center gap-1.5">{isLoading ? "Đang xử lý..." : "Tiếp tục"}</button>
             </div>
           </form>
         )}
 
         {step === 2 && (
-          <form onSubmit={handleVerifyOtp} className="space-y-4">
+          <form onSubmit={handleVerifyAndSubmit} className="space-y-4">
+            <div className="text-xs text-gray-600 font-semibold text-center leading-relaxed">
+              Mã xác thực gồm 6 chữ số đã được gửi đến số điện thoại <span className="font-bold text-ink">{phone}</span>.
+            </div>
             <div>
               <label className="mb-1 block text-[10px] font-bold text-gray-400 uppercase">Mã OTP *</label>
               <input 
@@ -161,66 +221,44 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
                 required 
               />
             </div>
+            
+            <div className="flex justify-between items-center text-xs text-gray-500 font-semibold py-1">
+              {cooldown > 0 ? (
+                <span>Gửi lại mã sau {cooldown}s</span>
+              ) : (
+                <button 
+                  type="button" 
+                  onClick={() => triggerOtpSend(phone)} 
+                  disabled={isLoading}
+                  className="text-forest hover:underline focus:outline-none"
+                >
+                  Gửi lại mã
+                </button>
+              )}
+            </div>
+
             <div className="flex justify-end gap-3 pt-2">
-              <button type="button" onClick={() => setStep(1)} className="rounded-full border border-gray-200 px-5 py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-50">Quay lại</button>
-              <button type="submit" disabled={isLoading} className="rounded-full bg-forest px-6 py-2.5 text-xs font-bold text-white shadow-soft hover:bg-forest/90 flex items-center gap-1.5">{isLoading ? "Đang xác thực..." : "Xác thực"}</button>
+              <button 
+                type="button" 
+                onClick={() => setStep(1)} 
+                className="rounded-full border border-gray-200 px-5 py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-50"
+              >
+                Quay lại
+              </button>
+              <button 
+                type="submit" 
+                disabled={isLoading} 
+                className="rounded-full bg-forest px-6 py-2.5 text-xs font-bold text-white shadow-soft hover:bg-forest/90 flex items-center gap-1.5"
+              >
+                {isLoading ? "Đang xử lý..." : "Xác thực & Gửi"}
+              </button>
             </div>
           </form>
-        )}
-
-        {step === 3 && (
-          <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1 block text-[10px] font-bold text-gray-400 uppercase">Mã đơn hàng Shopee *</label>
-            <input 
-              type="text" 
-              value={shopeeOrderCode} 
-              onChange={(e) => setShopeeOrderCode(e.target.value)} 
-              placeholder="VD: 241208XXXXXXXX" 
-              className="w-full rounded-2xl border border-[#E0EBF7] px-4 py-3 text-xs outline-none focus:border-forest" 
-              required 
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-[10px] font-bold text-gray-400 uppercase">Số tiền đơn hàng *</label>
-            <input 
-              type="text" 
-              value={orderAmount} 
-              onChange={(e) => setOrderAmount(e.target.value)} 
-              placeholder="VD: 150.000" 
-              className="w-full rounded-2xl border border-[#E0EBF7] px-4 py-3 text-xs outline-none focus:border-forest" 
-              required 
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-[10px] font-bold text-gray-400 uppercase">Ghi chú (Tùy chọn)</label>
-            <textarea 
-              value={note} 
-              onChange={(e) => setNote(e.target.value)} 
-              placeholder="Nhập ghi chú gửi Admin nếu có..." 
-              rows={2}
-              className="w-full rounded-2xl border border-[#E0EBF7] px-4 py-3 text-xs outline-none focus:border-forest resize-none" 
-            />
-          </div>
-
-          <div className="rounded-xl bg-amber-50 p-3 border border-amber-100 flex gap-2">
-            <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-[10px] text-amber-700 leading-relaxed font-semibold">
-              Điểm sẽ được cộng sau khi Admin phê duyệt hóa đơn. Vui lòng nhập thông tin chính xác để tránh bị từ chối duyệt.
-            </p>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="rounded-full border border-gray-200 px-5 py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-50">Hủy</button>
-            <button type="submit" disabled={isLoading} className="rounded-full bg-forest px-6 py-2.5 text-xs font-bold text-white shadow-soft hover:bg-forest/90 flex items-center gap-1.5"><Send size={12} /> {isLoading ? "Đang gửi..." : "Gửi yêu cầu"}</button>
-          </div>
-        </form>
         )}
 
       </div>
     </div>
   );
 }
+
 export default ShopeeRequestModal;

@@ -7,7 +7,19 @@ const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 };
 
-export function CustomerPointsTab({ customerId }: { customerId: number }) {
+export function CustomerPointsTab({
+  customerId,
+  customerPhone,
+  customerTier = "Member",
+  totalSpent = 0,
+  totalOrders = 0,
+}: {
+  customerId: number;
+  customerPhone?: string | null;
+  customerTier?: string;
+  totalSpent?: number;
+  totalOrders?: number;
+}) {
   const [pointsList, setPointsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -78,6 +90,21 @@ export function CustomerPointsTab({ customerId }: { customerId: number }) {
 
   return (
     <div className="space-y-6 relative">
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className="rounded-2xl border border-[#DCEBFF] bg-[#F8FBFF] p-4">
+          <div className="text-xs font-bold uppercase text-slate-400">Hạng hiện tại</div>
+          <div className="mt-1 text-2xl font-black text-[#0057E7]">{customerTier}</div>
+        </div>
+        <div className="rounded-2xl border border-[#DCEBFF] bg-white p-4">
+          <div className="text-xs font-bold uppercase text-slate-400">Chi tiêu xét hạng</div>
+          <div className="mt-1 text-lg font-black text-[#0B1F3A]">{formatCurrency(totalSpent)}</div>
+        </div>
+        <div className="rounded-2xl border border-[#DCEBFF] bg-white p-4">
+          <div className="text-xs font-bold uppercase text-slate-400">Đơn xét hạng</div>
+          <div className="mt-1 text-lg font-black text-[#0B1F3A]">{totalOrders.toLocaleString("vi-VN")} đơn</div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
         <h2 className="text-lg font-black text-[#0B1F3A]">Điểm thưởng 3F Club</h2>
         <div className="flex items-center gap-3">
@@ -85,7 +112,13 @@ export function CustomerPointsTab({ customerId }: { customerId: number }) {
             Tổng điểm: {formatCurrency(totalPoints).replace('đ', '')}
           </div>
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              if (!customerPhone) {
+                toast.error("Khách hàng chưa có số điện thoại. Vui lòng cập nhật số điện thoại trước khi cộng điểm.");
+                return;
+              }
+              setIsModalOpen(true);
+            }}
             className="flex items-center gap-2 px-4 py-1.5 bg-[#0B1F3A] text-white font-bold rounded-lg hover:bg-slate-800 transition-colors text-sm"
           >
             <PlusCircle size={16} /> Điều chỉnh

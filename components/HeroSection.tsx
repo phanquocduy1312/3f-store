@@ -1,10 +1,13 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Star, Bone, ShoppingBag, Heart, PawPrint } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, PawPrint } from "lucide-react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Link } from "react-router-dom";
 import { Image } from "@/components/Image";
+import { getActiveBanners, trackBannerClick, type Banner } from "@/src/api/bannersApi";
+import { buildApiUrl } from "@/src/config/api";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -17,6 +20,36 @@ const heroBanners = [
 ];
 
 export function HeroSection() {
+  const [sliderBanners, setSliderBanners] = useState<Banner[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    getActiveBanners("home_hero_slider")
+      .then(res => {
+        if (!isMounted) return;
+        if (res.success && res.data) {
+          setSliderBanners(res.data);
+
+          // Track impressions once per page load in the background
+          res.data.forEach(b => {
+            fetch(buildApiUrl(`/api/banners/${b.id}/impression`), { method: "POST" }).catch(() => {});
+          });
+        }
+      })
+      .catch(err => {
+        console.error("Failed to load banners from API", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleBannerClick = (id: number) => {
+    trackBannerClick(id).catch(() => {});
+  };
+
   return (
     <section className="relative overflow-hidden bg-[#F5F9FF] pt-4 pb-0">
       {/* Decorative paw prints matching sections below */}
@@ -41,18 +74,45 @@ export function HeroSection() {
               pagination={{ clickable: true, el: ".hero-pagination" }}
               className="h-[200px] sm:h-[350px] lg:h-full w-full"
             >
-              {heroBanners.slice(0, 3).map((banner, index) => (
-                <SwiperSlide key={banner} className="h-full w-full">
-                  <Image
-                    src={banner}
-                    alt={`Banner trang chu ${index + 1}`}
-                    width={1600}
-                    height={900}
-                    priority={index === 0}
-                    className="h-full w-full object-cover transition-transform duration-[10000ms] hover:scale-105"
-                  />
-                </SwiperSlide>
-              ))}
+              {sliderBanners.length > 0 ? (
+                sliderBanners.map((banner, index) => (
+                  <SwiperSlide key={banner.id} className="h-full w-full">
+                    <Link
+                      to={banner.link_url || "#"}
+                      onClick={() => handleBannerClick(banner.id)}
+                      className="block h-full w-full relative"
+                    >
+                      <Image
+                        src={banner.image_url}
+                        alt={banner.title || `Banner trang chu ${index + 1}`}
+                        width={1600}
+                        height={900}
+                        priority={index === 0}
+                        className="h-full w-full object-cover transition-transform duration-[10000ms] hover:scale-105"
+                      />
+                      {(banner.title || banner.subtitle) && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent z-10 flex flex-col justify-end p-6 text-white">
+                          {banner.title && <h3 className="text-xl sm:text-3xl font-black mb-1 drop-shadow">{banner.title}</h3>}
+                          {banner.subtitle && <p className="text-sm sm:text-base opacity-90 drop-shadow">{banner.subtitle}</p>}
+                        </div>
+                      )}
+                    </Link>
+                  </SwiperSlide>
+                ))
+              ) : (
+                heroBanners.slice(0, 3).map((banner, index) => (
+                  <SwiperSlide key={banner} className="h-full w-full">
+                    <Image
+                      src={banner}
+                      alt={`Banner trang chu ${index + 1}`}
+                      width={1600}
+                      height={900}
+                      priority={index === 0}
+                      className="h-full w-full object-cover transition-transform duration-[10000ms] hover:scale-105"
+                    />
+                  </SwiperSlide>
+                ))
+              )}
             </Swiper>
 
             {/* Custom Navigation */}
@@ -77,7 +137,6 @@ export function HeroSection() {
 
           {/* Top Right Banner - AI Pet Advisor */}
           <Link to="#" className="relative flex overflow-hidden rounded-[1rem] sm:rounded-[2rem] shadow-glass-sm group h-[160px] xs:h-[180px] sm:h-full w-full border border-[rgb(var(--color-border))] transition-all duration-500 hover:shadow-[0_10px_30px_rgba(0,0,0,0.15)]">
-            {/* Background Image */}
             <div className="absolute inset-0 z-0">
               <Image
                 src="/assets/images/AI.png"
@@ -88,7 +147,6 @@ export function HeroSection() {
               />
             </div>
             
-            {/* Content Overlay */}
             <div className="relative z-20 flex-1 flex flex-col justify-end h-full w-full p-3 sm:p-5 lg:p-6">
               <div>
                 <h3 className="text-[13px] sm:text-[20px] xl:text-[24px] font-black leading-[1.15] mb-1 text-white tracking-tight drop-shadow-sm">
@@ -109,7 +167,6 @@ export function HeroSection() {
 
           {/* Bottom Right Banner - Custom Promotional Card */}
           <Link to="/register" className="relative flex overflow-hidden rounded-[1rem] sm:rounded-[2rem] shadow-glass-sm group h-[160px] xs:h-[180px] sm:h-full w-full border border-[rgb(var(--color-border))] transition-all duration-500 hover:shadow-[0_10px_30px_rgba(0,0,0,0.15)]">
-            {/* Background Image */}
             <div className="absolute inset-0 z-0">
               <Image
                 src="/assets/images/voucher.png"
@@ -120,7 +177,6 @@ export function HeroSection() {
               />
             </div>
             
-            {/* Content Overlay */}
             <div className="relative z-20 flex-1 flex flex-col justify-end h-full w-full p-3 sm:p-5 lg:p-6">
               <div>
                 <h3 className="text-[13px] sm:text-[20px] xl:text-[23px] font-black leading-[1.15] mb-1 text-white tracking-tight drop-shadow-sm">

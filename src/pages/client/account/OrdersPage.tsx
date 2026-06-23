@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AlertCircle,
@@ -35,17 +35,27 @@ const tabs = [
 
 const statusMeta: Record<string, { label: string; className: string }> = {
   pending: { label: "Chờ xác nhận", className: "bg-amber-50 text-amber-700 border-amber-100" },
+  pending_confirmation: { label: "Chờ xác nhận", className: "bg-amber-50 text-amber-700 border-amber-100" },
   confirmed: { label: "Đã xác nhận", className: "bg-blue-50 text-blue-700 border-blue-100" },
+  pending_payment: { label: "Chờ thanh toán", className: "bg-yellow-50 text-yellow-700 border-yellow-100" },
+  paid_or_cod: { label: "Đã thanh toán / COD", className: "bg-emerald-50 text-emerald-700 border-emerald-100" },
   packing: { label: "Đang đóng gói", className: "bg-indigo-50 text-indigo-700 border-indigo-100" },
+  preparing: { label: "Đang chuẩn bị", className: "bg-indigo-50 text-indigo-700 border-indigo-100" },
+  awaiting_pickup_or_booking: { label: "Đang chuẩn bị", className: "bg-indigo-50 text-indigo-700 border-indigo-100" },
   shipping: { label: "Đang giao", className: "bg-purple-50 text-purple-700 border-purple-100" },
+  delivered: { label: "Giao thành công", className: "bg-green-50 text-green-700 border-green-100" },
   completed: { label: "Hoàn tất", className: "bg-green-50 text-green-700 border-green-100" },
-  cancelled: { label: "Đã hủy", className: "bg-red-50 text-red-700 border-red-100" },
+  return_requested: { label: "Yêu cầu đổi / trả", className: "bg-rose-50 text-rose-700 border-rose-100" },
+  return_completed: { label: "Đã đổi trả xong", className: "bg-red-50 text-red-700 border-red-100" },
+  cancelled: { label: "Đã hủy", className: "bg-red-50 text-red-750 border-red-150" },
 };
 
 const paymentMeta: Record<string, { label: string; className: string }> = {
   unpaid: { label: "Chưa thanh toán", className: "text-amber-700 bg-amber-50" },
   pending: { label: "Chờ xác nhận", className: "text-blue-700 bg-blue-50" },
   paid: { label: "Đã thanh toán", className: "text-green-700 bg-green-50" },
+  cod: { label: "COD thanh toán sau", className: "text-blue-700 bg-blue-50" },
+  payment_failed: { label: "Thanh toán lỗi", className: "text-red-700 bg-red-50" },
   refunded: { label: "Đã hoàn tiền", className: "text-slate-700 bg-slate-100" },
 };
 
@@ -200,7 +210,11 @@ export function OrdersPage() {
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
       if (activeTab === "all") return true;
-      if (activeTab === "processing") return ["confirmed", "packing"].includes(order.order_status);
+      if (activeTab === "pending") return ["pending", "pending_confirmation"].includes(order.order_status);
+      if (activeTab === "processing") return ["confirmed", "packing", "preparing", "awaiting_pickup_or_booking"].includes(order.order_status);
+      if (activeTab === "shipping") return ["shipping", "delivered"].includes(order.order_status);
+      if (activeTab === "completed") return ["completed", "return_completed"].includes(order.order_status);
+      if (activeTab === "cancelled") return ["cancelled"].includes(order.order_status);
       return order.order_status === activeTab;
     });
   }, [orders, activeTab]);

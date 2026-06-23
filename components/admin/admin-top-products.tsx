@@ -12,7 +12,7 @@ interface ProductItem {
 }
 
 function money(value: number) {
-  return `${value.toLocaleString("vi-VN")}d`;
+  return `${value.toLocaleString("vi-VN")}đ`;
 }
 
 export function AdminTopProducts() {
@@ -48,15 +48,15 @@ export function AdminTopProducts() {
 
   const headerAction = (
     <button className="flex items-center gap-1.5 bg-[#F6FAFF] border border-[#DCEBFF] text-[#062B5F] text-[12px] font-bold px-3 py-1.5 rounded-xl transition hover:bg-[#EEF6FF]">
-      <span>7 ngay qua</span>
+      <span>7 ngày qua</span>
       <ChevronDown size={14} />
     </button>
   );
 
   return (
     <AdminCard
-      title="Top san pham ban chay"
-      subtitle="San pham co doanh so cao nhat"
+      title="Top sản phẩm bán chạy"
+      subtitle="Sản phẩm có doanh số cao nhất"
       action={headerAction}
       className="h-[360px] flex flex-col"
     >
@@ -83,7 +83,7 @@ export function AdminTopProducts() {
 
             <div className="min-w-0 flex-1">
               <h5 className="text-[13.5px] font-bold text-[#0B1F3A] line-clamp-2 leading-tight">{prod.name}</h5>
-              <p className="text-xs text-[#64748B] mt-0.5">Da ban: {prod.sold}</p>
+              <p className="text-xs text-[#64748B] mt-0.5">Đã bán: {prod.sold}</p>
             </div>
 
             <span className="text-[14px] font-black text-[#0B1F3A] text-right shrink-0">

@@ -5,17 +5,15 @@ import {
   CheckSquare,
   FileText,
   Gift,
-  Heart,
   LayoutDashboard,
   Package,
   Layers,
-  PhoneCall,
-  Settings,
   ShoppingBag,
   Sparkles,
   Tag,
   Users,
   LogOut,
+  MessageSquareText,
 } from "lucide-react";
 import { adminLogout } from "@/src/api/productsApi";
 
@@ -36,18 +34,18 @@ type MenuItem = {
 
 const menuItems: MenuItem[] = [
   { name: "Dashboard", icon: LayoutDashboard, path: "/admin" },
-  { name: "Đơn hàng", icon: ShoppingBag, hasChevron: true, path: "/admin/orders" },
+  { name: "Đơn hàng", icon: ShoppingBag, path: "/admin/orders" },
   { name: "Khách hàng", icon: Users, path: "/admin/customers" },
-  { name: "Hồ sơ thú cưng", icon: Heart },
-  { name: "AI Pet Advisor", icon: Sparkles, badge: "AI" },
+  { name: "AI Pet Advisor", icon: Sparkles, badge: "AI", path: "/admin/pet-advisor" },
   { name: "3F Club", icon: Gift, path: "/admin/3f-club" },
   { name: "Sản phẩm", icon: Package, path: "/admin/products" },
+  { name: "Đánh giá", icon: MessageSquareText, path: "/admin/reviews" },
   { name: "Danh mục", icon: Layers, path: "/admin/categories" },
-  { name: "Voucher / Campaign", icon: Tag, hasChevron: true },
-  { name: "Nội dung / SEO", icon: FileText, hasChevron: true },
+  { name: "Quản lý Banner", icon: FileText, path: "/admin/banners" },
+  { name: "Quản lý Tin tức", icon: FileText, path: "/admin/news" },
+  { name: "Voucher", icon: Tag, path: "/admin/vouchers" },
   { name: "Báo cáo", icon: BarChart3, hasChevron: true },
-  { name: "Hỗ trợ khách hàng", icon: PhoneCall },
-  { name: "Cài đặt", icon: Settings, hasChevron: true },
+  { name: "Cấu hình Workflow", icon: CheckSquare, path: "/admin/settings/workflows" },
 ];
 
 export function AdminSidebar({ activeMenu, setActiveMenu, collapsed }: AdminSidebarProps) {
@@ -97,6 +95,10 @@ export function AdminSidebar({ activeMenu, setActiveMenu, collapsed }: AdminSide
 
       <nav className="no-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-4">
         {menuItems.map((item) => {
+          // Hide "Cấu hình Workflow" from normal admin (only allow role === "super_admin" or "dev")
+          if (item.path === "/admin/settings/workflows" && adminRole !== "super_admin" && adminRole !== "dev") {
+            return null;
+          }
           const Icon = item.icon;
           const isRouteActive = item.path ? location.pathname === item.path : false;
           const isActive = isRouteActive || activeMenu === item.name;

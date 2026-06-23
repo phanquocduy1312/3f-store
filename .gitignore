@@ -33,3 +33,6 @@ coverage/
 # generated/import source files
 *.xlsx
 public/assets/glb-backup/
+
+# scratch files
+scratch/

@@ -29,6 +29,7 @@ export type ThreeFClubAssets = Partial<{
 	badgeSilver: string;
 	badgeGold: string;
 	badgePlatinum: string;
+	badgeDiamond: string;
 	petHero: string;
 	pawBlue: string;
 	pawLight: string;
@@ -55,6 +56,7 @@ const DEFAULT_ASSETS: ThreeFClubAssets = {
 	badgeSilver: "/assets/images/3f-club/badge_silver.png",
 	badgeGold: "/assets/images/3f-club/badge_gold.png",
 	badgePlatinum: "/assets/images/3f-club/badge_platinum.png",
+	badgeDiamond: "/assets/images/badge_diamond.png",
 	petHero: "/assets/images/3f-club/ref_pet_hero_transparent_attempt.png",
 	pawBlue: "/assets/images/3f-club/icon_paw_blue.png",
 	pawLight: "/assets/images/3f-club/icon_paw_light.png",
@@ -386,6 +388,36 @@ function ThreeFClub({
 }: ThreeFClubProps) {
 	const a = { ...DEFAULT_ASSETS, ...assets };
 
+	const [shopeeRate, setShopeeRate] = useState<number>(200);
+	const [dynamicTiers, setDynamicTiers] = useState<any[]>([]);
+
+	useEffect(() => {
+		let isMounted = true;
+		const fetchConfigs = async () => {
+			try {
+				const { API_BASE_URL } = await import("@/src/config/api");
+				const [rateRes, tiersRes] = await Promise.all([
+					fetch(`${API_BASE_URL}/api/loyalty/point-rules/shopee`).then(r => r.json()),
+					fetch(`${API_BASE_URL}/api/loyalty/tiers`).then(r => r.json())
+				]);
+				if (isMounted) {
+					if (rateRes.success && rateRes.data && rateRes.data.moneyPerPoint) {
+						setShopeeRate(rateRes.data.moneyPerPoint);
+					}
+					if (tiersRes.success && Array.isArray(tiersRes.data)) {
+						setDynamicTiers(tiersRes.data);
+					}
+				}
+			} catch (err) {
+				console.error("Failed to fetch loyalty public configs:", err);
+			}
+		};
+		fetchConfigs();
+		return () => {
+			isMounted = false;
+		};
+	}, []);
+
 	const [form, setForm] = useState({
 		phone: "",
 		email: "",
@@ -449,7 +481,7 @@ function ThreeFClub({
 
 	const calculateEstimatedPoints = (value?: string | number) => {
 		const amountVal = normalizeAmount(value || 0);
-		return Math.floor(amountVal / 10000);
+		return Math.floor(amountVal / shopeeRate);
 	};
 
 	const validatePhone = (value: string) => {
@@ -642,48 +674,46 @@ function ThreeFClub({
 		{
 			tone: "silver",
 			name: "SILVER",
-			range: "0 - 1.999 điểm",
+			range: "2.000.000đ",
 			badge: a.badgeSilver,
 			action: "Đăng ký ngay",
 			benefits: [
-				"Tích điểm mỗi đơn hàng",
-				"Voucher chào mừng",
-				"Ưu đãi sinh nhật cho bé",
-				"Nhận tư vấn AI",
+				"Tích điểm tốt hơn trên kênh riêng.",
+				"Được dùng điểm tối đa 10% giá trị đơn.",
+				"Có voucher chăm sóc định kỳ.",
 			],
 		},
 		{
 			tone: "gold",
 			name: "GOLD",
-			range: "2.000 - 5.999 điểm",
+			range: "5.000.000đ",
 			badge: a.badgeGold,
 			action: "Tham gia Gold",
 			benefits: [
-				"Giảm thêm 3%",
-				"Freeship đơn đủ điều kiện",
-				"Quà sinh nhật hấp dẫn",
-				"Ưu tiên ưu đãi độc quyền",
+				"Ưu đãi riêng cho combo lớn.",
+				"Được dùng điểm tối đa 15% giá trị đơn.",
+				"Được nhắc lịch mua lại theo lịch ăn / cát / pate của pet.",
+				"Được ưu tiên nhận deal sớm.",
 			],
 		},
 		{
 			tone: "platinum",
-			name: "PLATINUM",
-			range: "6.000+ điểm",
-			badge: a.badgePlatinum,
-			action: "Lên hạng Platinum",
+			name: "DIAMOND",
+			range: "10.000.000đ",
+			badge: a.badgePlatinum || "/assets/images/badge_platinum.png",
+			action: "Lên hạng Diamond",
 			benefits: [
-				"Giảm thêm 5%",
-				"Freeship toàn quốc",
-				"Quà VIP cho Boss",
-				"Ưu tiên xử lý đơn hàng",
-				"Ưu đãi riêng theo hồ sơ thú cưng",
+				"Nhóm chăm sóc riêng / ưu tiên CSKH.",
+				"Được dùng điểm tối đa 20% giá trị đơn.",
+				"Có deal riêng cho khách nuôi nhiều bé.",
+				"Được ưu tiên giữ hàng, deal hot hoặc sản phẩm mới.",
 			],
 		},
 	];
 
 	const topBenefits = [
 		{
-			text: "100.000đ = 1 điểm",
+			text: `${shopeeRate.toLocaleString("vi-VN")}đ = 1 điểm`,
 			src: a.pointsIcon,
 			fallback: <CircleDollarSign size={30} strokeWidth={2.4} />,
 		},

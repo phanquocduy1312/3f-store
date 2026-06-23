@@ -155,15 +155,19 @@ export async function redeemLoyaltyReward(payload: {
   phone: string;
   customerName: string;
   rewardId: number;
+  verificationToken?: string;
 }): Promise<{
   success: boolean;
   message: string;
   redemptionId: number;
   pointsSpent: number;
   remainingPoints: number;
+  voucherCode?: string | null;
 }> {
+  const token = localStorage.getItem("customer_token");
   return apiJson("/api/loyalty/rewards/redeem", {
     method: "POST",
+    headers: token ? { "Authorization": `Bearer ${token}` } : {},
     body: JSON.stringify(payload),
   });
 }

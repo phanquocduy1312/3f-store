@@ -3,13 +3,14 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronRight, Menu, ShoppingCart, User, Heart, Sparkles, LogOut, Package, Award, Phone as PhoneIcon, Ticket } from "lucide-react";
+import { ChevronDown, ChevronRight, Menu, ShoppingCart, User, Heart, Sparkles, LogOut } from "lucide-react";
 import { Image } from "@/components/Image";
 import { getCartCount } from "@/lib/cartHelper";
 import { MobileNavigationDrawer } from "./mobile-navigation-drawer";
 import { ProductSearchBox } from "@/src/components/ProductSearchBox";
 import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
 import { getProductCategories } from "@/src/api/productsApi";
+import { useWishlist } from "@/src/context/WishlistContext";
 
 type Product = {
   id: string;
@@ -40,14 +41,14 @@ const navigationData: MenuItem[] = [
   },
   {
     label: "Thông tin",
-    href: "#",
+    href: "/about",
     subItems: [
-      { label: "Về chúng tôi", href: "#" },
-      { label: "Liên hệ", href: "#" },
+      { label: "Về chúng tôi", href: "/about" },
+      { label: "Liên hệ", href: "/contact" },
     ],
   },
   { label: "Kiểm tra đơn hàng", href: "/order-check" },
-  { label: "3F Club", href: "/3f-club/rewards" },
+  { label: "Tin tức", href: "/tin-tuc" },
 ];
 
 const SubMenuItem = ({ item }: { item: MenuItem }) => {
@@ -160,32 +161,11 @@ function AccountMenu() {
               <p className="text-[11px] font-semibold text-ink/50 truncate">{customer?.email || customer?.phone}</p>
             </div>
 
-            {/* Phone warning */}
-            {!customer?.phone && (
-              <Link to="/account" onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2.5 px-4 py-2.5 bg-honey/10 text-honey-dark text-xs font-bold hover:bg-honey/20 transition">
-                <PhoneIcon size={14} />
-                <span>Bổ sung SĐT để tích điểm 3F Club</span>
-              </Link>
-            )}
-
             {/* Menu items */}
             <div className="py-1">
               <Link to="/account" onClick={() => setIsOpen(false)}
                 className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink/80 hover:bg-forest/5 hover:text-forest transition">
                 <User size={16} /> Tài khoản của tôi
-              </Link>
-              <Link to="/account/orders" onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink/80 hover:bg-forest/5 hover:text-forest transition">
-                <Package size={16} /> Đơn hàng của tôi
-              </Link>
-              <Link to="/account/club" onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink/80 hover:bg-forest/5 hover:text-forest transition">
-                <Award size={16} /> Điểm 3F Club
-              </Link>
-              <Link to="/account/vouchers" onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink/80 hover:bg-forest/5 hover:text-forest transition">
-                <Ticket size={16} /> Voucher của tôi
               </Link>
             </div>
 
@@ -207,7 +187,10 @@ export function Header() {
   const [cartCount, setCartCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isLoggedIn } = useCustomerAuth();
+  const { wishlist } = useWishlist();
   const [navData, setNavData] = useState<MenuItem[]>(navigationData);
+  
+  const wishlistCount = wishlist.length;
 
   useEffect(() => {
     setCartCount(getCartCount());
@@ -300,9 +283,16 @@ export function Header() {
               </button>
 
               <Link to="/wishlist"
-                className="flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3"
+                className="relative flex flex-col items-center justify-center gap-1 rounded-xl px-2.5 py-2 text-forest transition hover:bg-white/80 sm:px-3"
                 aria-label="Yêu thích">
-                <Heart size={24} strokeWidth={2} />
+                <div className="relative">
+                  <Heart size={24} strokeWidth={2} />
+                  {wishlistCount > 0 ? (
+                    <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#E11D48] text-[10px] font-black text-white ring-2 ring-white">
+                      {wishlistCount}
+                    </span>
+                  ) : null}
+                </div>
                 <span className="hidden text-[0.72rem] font-bold text-forest/90 sm:block">Yêu thích</span>
               </Link>
 

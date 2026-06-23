@@ -1,5 +1,288 @@
 # Project Changelog
 
+## [2026-06-23]
+### Added
+- Thiết kế và triển khai trang Liên hệ / Contact (/contact và /lien-he) mới và API Backend:
+  - Xây dựng trang đích [ContactPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/ContactPage.tsx) chính của khách hàng tích hợp SEO Metadata động và bố cục hai cột responsive.
+  - Tách giao diện ContactPage thành các component nhỏ dưới 200 dòng mã để bảo vệ giới hạn tệp:
+    - [ContactHero.tsx](file:///c:/Users/Admin/Downloads/ccc/components/contact/ContactHero.tsx): Tiêu đề liên hệ, ảnh hero, nút gọi điện, tư vấn và xem bản đồ.
+    - [ContactQuickCards.tsx](file:///c:/Users/Admin/Downloads/ccc/components/contact/ContactQuickCards.tsx): Lưới thẻ thông tin liên lạc nhanh (Hotline, Email, Địa chỉ, Shopee).
+    - [ContactForm.tsx](file:///c:/Users/Admin/Downloads/ccc/components/contact/ContactForm.tsx): Form thu thập thông tin tích hợp kiểm tra số điện thoại Việt Nam regex, chống double-submit và Honeypot ẩn `company_website` chống spam.
+    - [ContactLocation.tsx](file:///c:/Users/Admin/Downloads/ccc/components/contact/ContactLocation.tsx): Bản đồ Google Maps iframe responsive và nút mở Google Maps ngoài.
+    - [ContactSupportTopics.tsx](file:///c:/Users/Admin/Downloads/ccc/components/contact/ContactSupportTopics.tsx): Danh sách các lĩnh vực hỗ trợ (thức ăn, cát, đơn hàng, bảo hành).
+    - [ContactFaq.tsx](file:///c:/Users/Admin/Downloads/ccc/components/contact/ContactFaq.tsx): Accordion hỏi đáp nhanh với 5 câu hỏi thường gặp đúng nghiệp vụ pet store.
+    - [ContactCTA.tsx](file:///c:/Users/Admin/Downloads/ccc/components/contact/ContactCTA.tsx): Khung hành động cuối trang cuộn tới form hoặc xem sản phẩm.
+  - Xây dựng Model [ContactMessage.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Models/ContactMessage.php) tự động tạo bảng `contact_messages` trong MySQL.
+  - Xây dựng Controller [ContactController.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Controllers/ContactController.php) xử lý route `POST /api/contact`, kiểm tra Honeypot, validate dữ liệu đầu vào và lưu trữ tin nhắn.
+  - Đăng ký API route public trong [index.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/public/index.php).
+  - Kết nối và đồng bộ hóa điều hướng trong [Header.tsx](file:///c:/Users/Admin/Downloads/ccc/components/Header.tsx) ("Liên hệ" -> `/contact`) và [Footer.tsx](file:///c:/Users/Admin/Downloads/ccc/components/Footer.tsx) ("Liên hệ" -> `/contact`).
+  - Tự động tạo và lưu trữ 4 tệp ảnh minh họa pet store contact (`contact-hero.png`, `contact-store.png`, `contact-support.png`, `contact-location.png`) vào thư mục `public/images/contact/`.
+- Thiết kế và triển khai trang Giới thiệu / About (/about và /gioi-thieu) mới:
+  - Xây dựng trang đích [AboutPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/AboutPage.tsx) chính của khách hàng tích hợp SEO Metadata động (tiêu đề, thẻ mô tả) và thanh điều hướng Breadcrumb.
+  - Mô đun hóa giao diện AboutPage thành các component nhỏ dưới 200 dòng mã để bảo vệ giới hạn tệp:
+    - [AboutHero.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutHero.tsx): Tiêu đề thương hiệu ấm áp, ảnh hero dog/cat, nút mua sắm và tư vấn.
+    - [AboutIntro.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutIntro.tsx): Giới thiệu cửa hàng chuyên chó mèo, nguồn gốc chất lượng chọn lọc.
+    - [AboutCategories.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutCategories.tsx): Giới thiệu 8 danh mục sản phẩm (thức ăn, pate, cát, chăm sóc sức khỏe, làm đẹp).
+    - [AboutWhyChooseUs.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutWhyChooseUs.tsx): Lợi ích/cam kết của cửa hàng (hàng chính hãng, bảo quản chuẩn, hỗ trợ chu đáo).
+    - [AboutConsulting.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutConsulting.tsx): Mô tả tư vấn dinh dưỡng theo tuổi, giống, cân nặng và lời khuyên y tế/bác sĩ thú y.
+    - [AboutChannels.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutChannels.tsx): Cung cấp liên kết mua sắm đa kênh (Website, Shopee, Zalo tư vấn, Cửa hàng offline).
+    - [AboutStoreInfo.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutStoreInfo.tsx): Thông tin pháp lý (Công ty, MST, Hotline, Address, Email) và bản đồ Google Maps tích hợp.
+    - [AboutCTA.tsx](file:///c:/Users/Admin/Downloads/ccc/components/about/AboutCTA.tsx): Khung hành động cuối trang chuyển hướng đến chat Zalo hoặc mua sắm.
+  - Đồng bộ hóa điều hướng trong [Header.tsx](file:///c:/Users/Admin/Downloads/ccc/components/Header.tsx) ("Về chúng tôi" -> `/about`, "Liên hệ" -> `/about#store-info`).
+  - Đồng bộ hóa liên kết trong [Footer.tsx](file:///c:/Users/Admin/Downloads/ccc/components/Footer.tsx) ("Giới thiệu" -> `/about`, "Liên hệ" -> `/about#store-info` với smooth scroll).
+  - Đăng ký các tuyến đường `/about` và `/gioi-thieu` trong [App.tsx](file:///c:/Users/Admin/Downloads/ccc/src/App.tsx).
+  - Tự động tạo và lưu trữ 4 tệp ảnh minh họa pet store chất lượng cao (`about-hero.png`, `about-products.png`, `about-consulting.png`, `about-delivery.png`) vào thư mục `public/images/about/`.
+- Bố cục lại giao diện AI Pet Advisor Admin (Full-width Grid List & Consultation Detail Page):
+  - Chuyển đổi giao diện chia đôi màn hình (split layout) cũ của trang danh sách tư vấn AI thành giao diện hiển thị lưới (grid layout) rộng mở full-width, hiển thị nhiều thông tin trực quan hơn trên mỗi thẻ tư vấn.
+  - Tích hợp thêm nút hành động "Xem chi tiết" với biểu tượng Lucide `Eye` trên từng thẻ để chuyển hướng quản trị viên đến trang thông tin chi tiết riêng biệt.
+  - Xây dựng trang thông tin chi tiết mới [AdminPetAdvisorDetailPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/admin/AdminPetAdvisorDetailPage.tsx) hiển thị chi tiết hồ sơ thú cưng, thông tin khách hàng, câu hỏi quiz và kết luận/cảnh báo của AI.
+  - Đăng ký tuyến đường mới `/admin/pet-advisor/consultation/:id` trong [App.tsx](file:///c:/Users/Admin/Downloads/ccc/src/App.tsx) để định tuyến đến trang chi tiết mới.
+  - Phát triển API backend `/api/admin/pet-advisor/consultations/detail` trong [CustomerPetController.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Controllers/CustomerPetController.php) và đăng ký trong [index.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/public/index.php) để lấy chi tiết của một lượt tư vấn dựa trên ID.
+  - Tiến hành mô đun hóa (modularization) giao diện AI Pet Advisor để tuân thủ quy tắc giới hạn 200 dòng mã mỗi tệp:
+    - Tách các kiểu dữ liệu, hằng số `speciesLabel` và hàm logic xử lý dữ liệu (`parseAdvice`, `formatDate`, `formatMoney`, `listText`, `findAnswer`, `getMeta`) sang tệp tiện ích dùng chung [pet-advisor-helpers.ts](file:///c:/Users/Admin/Downloads/ccc/src/utils/pet-advisor-helpers.ts).
+    - Tách các component hiển thị thẻ và bảng giao diện dùng chung (`KpiCard`, `SummaryCard`, `DetailPanel`, `InfoRow`) sang tệp giao diện dùng chung [pet-advisor-cards.tsx](file:///c:/Users/Admin/Downloads/ccc/src/components/admin/pet-advisor-cards.tsx).
+    - Tách thẻ tư vấn riêng lẻ sang component [pet-advisor-consultation-card.tsx](file:///c:/Users/Admin/Downloads/ccc/src/components/admin/pet-advisor-consultation-card.tsx).
+    - Refactor lại [AdminPetAdvisorPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/admin/AdminPetAdvisorPage.tsx) (còn 174 dòng) và [AdminPetAdvisorDetailPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/admin/AdminPetAdvisorDetailPage.tsx) (còn 193 dòng) giúp tăng tính sạch sẽ, dễ bảo trì và tối ưu dung lượng tệp.
+- Triển khai Hệ thống Thông báo Quản trị viên (Admin Notification System):
+  - Thiết kế bảng CSDL `admin_notifications` lưu trữ thông tin thông báo, loại tài nguyên liên quan (đơn hàng, yêu cầu tích điểm Shopee, đánh giá sản phẩm) và trạng thái đọc.
+  - Viết Model `AdminNotification.php` và Controller `AdminNotificationController.php` cung cấp các API lấy danh sách thông báo, số lượng chưa đọc, đánh dấu đã đọc (đơn lẻ hoặc tất cả), và xóa thông báo.
+  - Đăng ký các API routes và tích hợp pre-instantiation model vào `public/index.php` để chạy di trú tự động ở ngoài phạm vi MySQL transaction nhằm tránh lỗi commit ngầm.
+  - Tích hợp các bộ kích hoạt thông báo (notification triggers) tự động khi xảy ra sự kiện: đặt đơn hàng mới (`OrderController`), gửi yêu cầu tích điểm Shopee mới (`ShopeePointRequestController`), và gửi đánh giá sản phẩm mới (`ProductReviewController`).
+  - Re-architect biểu tượng chuông thông báo trên Header trang Admin (`admin-header.tsx`) với giao diện dropdown menu cao cấp, hiển thị số lượng chưa đọc thời gian thực (được cập nhật qua cơ chế polling mỗi 60 giây).
+  - Tải danh sách 10 thông báo mới nhất kèm icon phân loại trực quan theo loại sự kiện, hỗ trợ thao tác đánh dấu đã đọc riêng lẻ khi click, chuyển hướng điều hướng (redirect) chính xác đến trang quản lý tương ứng, và nút "Đánh dấu tất cả là đã đọc".
+
+### Changed
+- Nâng cấp ô nhập địa chỉ Tỉnh/Thành phố và Phường/Xã ở trang thanh toán sang Input Text tự động gợi ý (Autocomplete):
+  - Thay thế các hộp chọn `<select>` cứng nhắc bằng ô nhập văn bản `<input type="text">` linh hoạt giúp người dùng không bao giờ bị chặn đặt hàng nếu danh sách tỉnh/xã từ API bị thiếu hoặc tải chậm.
+  - Tích hợp bộ tìm kiếm không dấu (accent-insensitive) và bỏ dấu tiếng Việt động, tự động lọc và gợi ý danh sách 10 kết quả phù hợp nhất dưới dạng danh sách thả nổi khi người dùng gõ phím.
+  - Khi click chọn kết quả gợi ý, hệ thống tự động ánh xạ mã tỉnh/xã tương ứng, cập nhật trường text và tải dữ liệu phường/xã liên quan mà không làm thay đổi các trục xác thực khác.
+  - Cấu hình ô nhập Phường/Xã chỉ bị vô hiệu hóa (disabled) khi ô Tỉnh/Thành phố hoàn toàn trống (được liên kết đồng bộ với trạng thái nhập liệu `provinceInput` tức thời); ô Phường/Xã sẽ tự động mở khóa ngay khi người dùng bắt đầu gõ ký tự đầu tiên và khóa lại lập tức khi người dùng xóa sạch ô nhập tỉnh. Đồng thời bổ sung các lớp CSS vô hiệu hóa giao diện (`disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed`) để ô input có màu nền xám mờ và biểu tượng con trỏ cấm rõ rệt, ngăn chặn hoàn toàn tương tác và hiển thị menu gợi ý khi chưa chọn tỉnh.
+- Đồng bộ hóa thiết kế của 2 nút Thêm vào giỏ và Mua ngay ở trang Chi tiết sản phẩm:
+  - Thay đổi chiều cao từ `h-[60px]` thô kệch thành `h-[52px]` gọn gàng, khớp hoàn hảo với chiều cao của ô chọn số lượng mua bên cạnh.
+  - Bổ sung và cập nhật thuộc tính bo góc từ góc nhọn mặc định thành bo tròn nhẹ `rounded-[14px]` đồng bộ hoàn toàn với thiết kế của 2 nút tại thanh sticky bottom bar cố định ở dưới.
+  - Tinh chỉnh kích thước văn bản từ `text-[15px]` thành `text-[14px]` và tối ưu bóng đổ mờ để giao diện trông chuyên nghiệp, thanh thoát hơn.
+- Thiết kế lại Giao diện Phân trang Voucher phía Admin (Redesign Voucher Pagination):
+  - Thay thế giao diện phân trang dạng văn bản "Trang X/Y" và hộp chọn size trang đơn giản bằng một thanh điều hướng phân trang hiện đại và trực quan hơn.
+  - Tích hợp hàm `getPageNumbers` để tự động tính toán và hiển thị danh sách nút số trang kèm dấu chấm lửng `...` co giãn thông minh dựa trên trang hiện tại và tổng số trang.
+  - Thiết kế nút số trang hiện tại với màu nền xanh dương `#0057E7`, chữ trắng và bóng đổ mờ thương hiệu.
+  - Thiết kế các nút số trang thường, nút tiến/lùi có viền mờ cùng hiệu ứng hover đổi màu nhấn thương hiệu và chuyển động mượt mà.
+  - Bố trí hộp chọn số dòng hiển thị ("Số dòng:") tinh gọn, chuyên nghiệp nằm trực tiếp trong thanh tóm tắt hiển thị bản ghi ở bên trái.
+- Bắt buộc đăng nhập để Lưu Voucher (Auth Required for Voucher Copy):
+  - Tích hợp hook `useCustomerAuth()` trong component [VoucherSection.tsx](file:///c:/Users/Admin/Downloads/ccc/components/VoucherSection.tsx) ở trang chủ.
+  - Khi người dùng chưa đăng nhập, nút "SAVE" sẽ không thực hiện sao chép mà hiển thị một Popup/Modal cảnh báo màu sắc premium, yêu cầu đăng nhập và cung cấp nút điều hướng sang trang `/login`.
+  - Cải tiến hàm sao chép với cơ chế fallback tự tạo thẻ textarea tạm thời giúp nút "SAVE" hoạt động cực kỳ ổn định trên mọi trình duyệt và thiết bị di động.
+- Tinh giản danh mục trên Sidebar của Admin (Clean Sidebar Menu):
+  - Loại bỏ các mục "Hồ sơ thú cưng", "Hỗ trợ khách hàng", và "Cài đặt" khỏi menu của thanh Sidebar quản trị viên ([admin-sidebar.tsx](file:///c:/Users/Admin/Downloads/ccc/components/admin/admin-sidebar.tsx)) để tối ưu hóa không gian hiển thị và tập trung vào các chức năng chính.
+- Đổi tên mục điều hướng trên thanh Sidebar của Admin:
+  - Thay đổi tên hiển thị từ "Voucher / Campaign" thành "Voucher" cho đồng bộ và tinh gọn hơn.
+- Đồng bộ hóa hình dạng Voucher và áp dụng quy tắc Duy nhất tại phân hệ Tư vấn AI:
+  - Thiết kế lại hiển thị Voucher trong popup Kết quả tư vấn AI (`AiResult.tsx`) khớp hoàn toàn với cấu trúc thẻ voucher hình răng cưa (`VoucherCard`), hiển thị đầy đủ tiêu đề, mô tả, nhãn, huy hiệu và block màu gradient sang trọng.
+  - Tích hợp gọi API `getAiAdvisorVoucher` từ frontend để hiển thị động thông tin voucher được cấu hình thực tế thay vì hiển thị tĩnh mã voucher mẫu.
+  - Cập nhật logic cào dữ liệu và proxy Groq phía backend (`CustomerPetController.php`) tự động truy vấn CSDL để lấy thông tin mã voucher và mô tả tương ứng truyền vào system prompt cho AI và trả về kết quả động.
+  - Áp dụng quy tắc duy nhất phía backend (`Coupon.php`): khi kích hoạt/lưu một voucher chạy trên Tư vấn AI (`show_in_ai_advisor = 1`), hệ thống tự động tắt cờ `show_in_ai_advisor` của tất cả các voucher khác để đảm bảo chỉ có duy nhất tối đa 1 voucher hoạt động tại một thời điểm.
+
+### Fixed
+- Khắc phục lỗi chọn phân loại nhưng không chọn được thông số khiến không đặt hàng được tại Modal Xem Nhanh:
+  - Tự động ẩn các nhóm tùy chọn/thông số (ví dụ: nhóm "THÔNG SỐ") nếu tất cả các giá trị tùy chọn trong nhóm đó đều bị vô hiệu hóa (disabled) dưới lựa chọn phân loại hiện tại.
+  - Cập nhật hàm tìm kiếm biến thể `getSelectedVariant` và kiểm tra tính đầy đủ của lựa chọn chỉ kiểm tra các nhóm tùy chọn đang hiển thị/áp dụng (applicable groups), bỏ qua và chấp nhận giá trị rỗng/null cho các nhóm tùy chọn bị ẩn. Việc này giúp khách hàng chọn phân loại và đặt hàng/mua ngay lập tức mà không bị chặn lại bởi các nhóm thông số không hoạt động.
+- Sửa lỗi trùng lặp sản phẩm trong giỏ hàng (duplicate cart items):
+  - Xây dựng hàm so sánh `isSameCartItem` trong [cartHelper.ts](file:///c:/Users/Admin/Downloads/ccc/lib/cartHelper.ts) hỗ trợ kiểm tra linh hoạt theo mã sản phẩm (`productId`), mã phân loại/biến thể (`variantId`) và văn bản phân loại. Giải quyết triệt để sự khác biệt kiểu dữ liệu (chuỗi vs số) và định dạng khóa định danh (`id` biến thể thô vs khóa phức hợp `productId-variantId` từ chức năng mua lại đơn hàng).
+  - Tích hợp `isSameCartItem` vào các tác vụ `addToCart`, `updateQuantity` và `removeFromCart`.
+  - Cập nhật hàm gọi `addToCart` tại popup Kết quả tư vấn AI [AiResult.tsx](file:///c:/Users/Admin/Downloads/ccc/components/pet-advisor/AiResult.tsx) truyền thêm trường `productId` nhằm đồng nhất cấu trúc dữ liệu với trang Chi tiết sản phẩm và Modal xem nhanh.
+- Tránh rớt/xuống dòng cho nhãn voucher tại bảng đơn hàng Admin:
+  - Bổ sung class `whitespace-nowrap` vào thẻ hiển thị badge mã giảm giá áp dụng (`Mã: ...`) tại [AdminOrdersPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/admin/AdminOrdersPage.tsx) để giữ toàn bộ chuỗi hiển thị voucher luôn nằm trên một dòng.
+- Ẩn thông tin hàng tồn kho và sửa lỗi nhóm thông số/phân loại trống (Option groups & Stock Hide):
+  - Ẩn toàn bộ văn bản hiển thị số lượng tồn kho ("Kho hàng: X sản phẩm" / "Tồn kho: Y sản phẩm") tại trang Chi tiết sản phẩm [ProductDetail.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/ProductDetail.tsx) và Modal xem nhanh [QuickAddToCartModal.tsx](file:///c:/Users/Admin/Downloads/ccc/components/QuickAddToCartModal.tsx).
+  - Tắt cờ báo hết hàng và chặn mua hàng `isOutOfStock` trên giao diện người dùng (thiết lập mặc định là `false`) và bỏ giới hạn số lượng đặt mua dựa trên tồn kho thực tế, cho phép đặt hàng không giới hạn (tối đa 99 sản phẩm/lượt mua).
+  - Tự động lọc bỏ các nhóm tùy chọn/phân loại trống (ví dụ: nhóm "THÔNG SỐ" của các sản phẩm cũ không khai báo giá trị thông số trong các biến thể tương ứng) để tránh việc các nút bấm lựa chọn bị vô hiệu hóa (disabled/faded) ngoài ý muốn, giúp người dùng chọn phân loại và tiến hành mua hàng bình thường.
+  - Ép kiểu dữ liệu (coercion) của các giá trị tùy chọn biến thể (`option1Value`, `option2Value`, `option3Value`) thành kiểu chuỗi (string) trong API mapper [productsApi.ts](file:///c:/Users/Admin/Downloads/ccc/src/api/productsApi.ts) và trong các hàm so sánh ở [QuickAddToCartModal.tsx](file:///c:/Users/Admin/Downloads/ccc/components/QuickAddToCartModal.tsx). Việc này giải quyết triệt để lỗi vô hiệu hóa các nút số (ví dụ: thông số `3` của sản phẩm Mr.vet) do lệch kiểu dữ liệu (số vs chuỗi) khi đối chiếu trạng thái lựa chọn.
+- Sửa lỗi giữ kho nhầm (reserved stock leak) khi đặt đơn hàng thất bại với mã voucher:
+  - Thêm cờ `private static $migrated` vào `Coupon.php` để ngăn chặn việc chạy `ensureSchema()` nhiều lần trong một request. Việc gọi `CREATE TABLE IF NOT EXISTS` bên trong transaction gây ra hiện tượng commit ngầm (implicit commit) trong MySQL, làm mất khả năng rollback các câu lệnh sửa đổi database trước đó khi xảy ra exception.
+  - Tối ưu hóa `OrderController.php` để tái sử dụng instance `$couponModel` từ phạm vi ngoài, loại bỏ việc khởi tạo lại model bên trong transaction block.
+  - Giải phóng kho bị chiếm dụng ngoài ý muốn của sản phẩm Combo Zoi Dog 20kg (Variant ID 896) giúp đưa `reserved_stock` từ 3 về 0 và phục hồi tồn kho khả dụng lên 3.
+- Sửa lỗi rớt chữ cột Trạng thái, Thanh toán và hiển thị icon cột Phương thức tại trang Quản lý Đơn hàng Admin:
+  - Bổ sung `whitespace-nowrap` vào thuộc tính `className` của các ô tiêu đề, ô nội dung dữ liệu và hàm khởi tạo huy hiệu `getDynamicStatusBadge` để chống tràn/rớt dòng chữ cho cột Trạng thái và Thanh toán.
+  - Loại bỏ biểu tượng xe tải (`<Truck />`) khỏi cột Phương thức/Vận chuyển trong danh sách bảng đơn hàng, chỉ hiển thị nhãn phương thức dạng văn bản thuần túy theo yêu cầu thiết kế tối giản.
+
+## [2026-06-22]
+### Added
+- Nâng cấp phân hệ Tư vấn AI và Lịch sử tư vấn (AI Consultation History):
+  - Hỗ trợ tải `GROQ_API_KEY` động từ biến môi trường `import.meta.env.VITE_GROQ_API_KEY` trước khi sử dụng key fallback cũ, giúp giải quyết lỗi 401 dễ dàng qua việc cập nhật `.env`.
+  - Chuyển đổi trang Hồ sơ thú cưng thành giao diện "Lịch sử tư vấn dinh dưỡng" chuyên biệt.
+  - Loại bỏ hoàn toàn chức năng tạo/sửa thủ công hồ sơ thú cưng cũ để tập trung hoàn toàn vào lịch sử tư vấn AI.
+  - Redesign giao diện danh sách thẻ tư vấn hiển thị rõ ràng: Tên thú cưng, Loài, Giống, Ngày tư vấn (createdAt thực tế lấy từ API), và kết luận tư vấn AI.
+  - Cải tiến PetAdviceModal hiển thị thêm phần "Thông tin đầu vào của bé" (loài, giống, cân nặng, thức ăn hiện tại, vấn đề sức khỏe) ngay phía trên Lời khuyên dinh dưỡng để người dùng tiện theo dõi ngữ cảnh tư vấn.
+  - Cập nhật model và controller phía backend (CustomerPetController.php) hỗ trợ trả về trường createdAt thời gian thực từ database.
+- Thiết kế lại Giao diện Biến thể & Tồn kho phía Admin (Redesign Product Variants & Inventory Tab):
+  - Thay thế bảng biến thể rộng hiện tại (đòi hỏi cuộn ngang) bằng danh sách Thẻ Biến thể (Variant Cards) thông thoáng, trực quan và thân thiện với người dùng.
+  - Thiết kế bố cục Thẻ Biến thể tự động co giãn 2 cột trên Desktop và xếp chồng 1 cột trên Mobile.
+  - Hiển thị đầy đủ tiêu đề "Biến thể #X" (hoặc "Biến thể mặc định" khi không có phân loại), nhãn SKU, trạng thái Bật/Tắt dạng badge, toggle kích hoạt, nút xóa (vô hiệu hóa kèm icon cảnh báo nếu có lịch sử đơn hàng), viền đỏ cảnh báo và huy hiệu "Cần sửa" khi có lỗi.
+  - Tích hợp tính năng đối chiếu và click nhảy nhanh trực tiếp từ thanh sidebar lỗi sang trường input bị lỗi tương ứng (bao gồm cả Tên sản phẩm, Danh mục, Ảnh và các trường biến thể) thông qua ID động và bộ hẹn giờ cuộn mượt.
+  - Bổ sung nút "Thêm phân loại" / "Bỏ phân loại" tại Action Bar trên cùng giúp kích hoạt hoặc gỡ bỏ các tùy chọn Phân loại 1/Phân loại 2 linh hoạt, tự động ẩn giao diện phân loại khi cả 2 tùy chọn trống.
+  - Nâng cấp bộ tạo SKU tự động riêng lẻ cho từng biến thể và nút tạo SKU hàng loạt toàn cục.
+  - Bổ sung kiểm tra trùng lặp SKU trong danh sách lỗi validation, đồng thời đổi tên các nhãn giá thành "Giá bán thực tế" (Giá khách thanh toán) và "Giá niêm yết / Giá trước khuyến mãi" (Có thể bỏ trống).
+  - Chuyển cảnh báo thiếu ảnh thành dạng cảnh báo không chặn lưu (warning severity), giúp admin lưu sản phẩm thành công dù chưa thêm hình ảnh.
+  - Loại bỏ hoàn toàn các nút "Tạo yêu cầu thủ công" (manual request creation), "Xuất danh sách" (export list) và modal drawer tạo thủ công tương ứng trên trang Yêu cầu Shopee của 3F Club.
+- Triển khai Cấu hình Hạng thành viên Admin 3F Club (Phase 2 - Admin Membership Tiers Configuration):
+  - Tích hợp bảng CSDL `loyalty_tiers` động thay thế cho các cấu hình cứng trước đây.
+  - Xây dựng model `LoyaltyTier` phục vụ việc truy vấn dữ liệu và cập nhật cấu hình linh hoạt.
+  - Cung cấp các API `GET /api/admin/3f-club/tiers` và `PUT /api/admin/3f-club/tiers/:id` với cơ chế validate nghiêm ngặt (redemption cap <= 100%, spend/orders >= 0, multiplier >= 1.0).
+  - Cải tiến giao diện quản lý Admin `MembershipTiersSection` liên kết trực tiếp với CSDL thực tế, loại bỏ tính năng tạo thêm hạng mới hoặc xóa các hạng hệ thống để đảm bảo tính nhất quán (Diamond được cấu hình read-only hoàn toàn).
+  - Cập nhật luồng tính toán thăng hạng trong `LoyaltyProductionModel` để áp dụng động các điều kiện được lưu trong CSDL.
+  - Refactored the modal preview card layout in `MembershipTiersSection` to render spend, orders, and redemption cap values instead of legacy minPoints.
+- Di chuyển Hạng thành viên 3F Club thành Tab riêng biệt bên trái (Dedicated 3F Club Navigation Tab):
+  - Chuyển toàn bộ các thành phần hiển thị 3F Club từ trang Hồ sơ cá nhân (`/account/profile`) sang một Tab riêng biệt "Thành viên 3F Club" ở thanh điều hướng bên trái (`/account/club`).
+  - Hiển thị thông tin hạng thành viên động (Member, Silver, Gold, Diamond) trực quan kèm hệ số nhân điểm (multiplier) và hạn mức thanh toán (cap percent) tại giao diện Tab mới sau khi số điện thoại được xác thực.
+  - Tích hợp thanh tiến trình kép hiển thị điều kiện thăng hạng động rolling 12 tháng (gồm doanh thu chi tiêu và số lượng đơn hàng cần đạt) trực tiếp lấy từ API `/api/customer/club/summary`.
+  - Triển khai giao diện Locked Teaser Card với thiết kế nét đứt tinh tế và biểu tượng Lock khi tài khoản chưa xác thực số điện thoại ở Tab mới.
+  - Bổ sung nút CTA "Xác thực số điện thoại ngay" trên teaser card, tự động chuyển hướng người dùng sang trang Hồ sơ cá nhân kèm tham số kích hoạt và cuộn mượt mà đến vùng xác thực liên kết liên hệ (`#phone-verification-section`).
+
+### Changed
+- Đồng bộ hóa giao diện quản lý Tin tức Admin (Admin News UI Synchronization):
+  - Thay đổi màu nền trang từ xám nhạt `bg-[#FAFAFA]` sang màu xanh nhạt `bg-[#F6FAFF]` đồng bộ với các trang Quản lý Sản phẩm, Đơn hàng, và Cấu hình.
+  - Loại bỏ giới hạn chiều rộng trang `max-w-6xl` tại danh sách tin tức, chuyển sang thiết kế co giãn toàn màn hình (fluid layout) cùng khoảng đệm `px-4 sm:px-6 py-6` chuẩn.
+  - Cập nhật kiểu chữ và kích thước tiêu đề trang chính thành `text-2xl font-black text-[#0B1F3A]` và phụ đề thành màu xanh xám `text-[#64748B]`.
+  - Cập nhật thiết kế các nút "Đồng bộ bài viết" (bổ sung hiệu ứng xoay icon và màu nền xanh dịu) và nút "Viết bài mới" (màu xanh dương đậm đặc trưng `#0057E7` với hiệu ứng đổ bóng mờ premium).
+  - Nâng cấp khối Thẻ chỉ số KPI (KPI Cards) sang cấu trúc bo tròn lớn `rounded-[20px]`, viền xanh nhẹ `border-[#DCEBFF]`, và đổ bóng dịu mắt, đồng thời bổ sung các biểu tượng Lucide (`FileText`, `Eye`, `CheckSquare`, `AlertCircle`) tương ứng.
+  - Đồng bộ hóa thanh tab lọc trạng thái tin tức (Tất cả, Đã xuất bản, Bản nháp, Lên lịch, Cần tối ưu SEO) sử dụng màu nhấn xanh dương `#0057E7` cho tab hiện tại và viền dưới `border-[#DCEBFF]`.
+  - Cải tiến giao diện bảng tin tức: sử dụng card viền `border-[#DCEBFF]` với shadow-glass, table headers có màu nền `bg-slate-50/75` và cỡ chữ font-black `text-xs`, nâng font-semibold cho dữ liệu dòng và áp dụng các badge trạng thái/SEO bo góc tròn tinh tế.
+  - Thay thế nút thao tác 3 chấm đơn giản bằng nút tròn solid border có hiệu ứng hover đổi màu thương hiệu, đồng thời tối ưu bóng mờ cho menu dropdown actions.
+  - Cập nhật màu nhấn cho nút phân trang hoạt động từ đen `bg-slate-900` sang xanh dương `#0057E7`.
+  - Bổ sung chân trang (Copyright Footer) chuẩn ở cuối trang quản lý tin tức.
+  - Đồng bộ hóa màu nền của Trang soạn thảo tin tức (`AdminNewsEditorPage.tsx`) sang `bg-[#F6FAFF]` cho cả màn hình tải dữ liệu và nội dung soạn thảo chính.
+- Nâng cấp số lượng sản phẩm gợi ý trong phân hệ Tư vấn AI Pet Advisor:
+  - Tăng số lượng đề xuất từ tối đa 6 sản phẩm lên đúng **9 sản phẩm** phù hợp nhất (3 sản phẩm cho mỗi nhóm: Tiết kiệm - saving, Cân bằng - balanced, Cao cấp - premium) theo nhu cầu hiển thị nhiều lựa chọn hơn của khách hàng.
+  - Tăng giới hạn số lượng sản phẩm gửi lên AI phân tích từ 20 sản phẩm lên 30 sản phẩm (15 sản phẩm chó, 15 sản phẩm mèo cho luồng chung) để AI có nguồn sản phẩm thực tế dồi dào hơn phục vụ việc lựa chọn chính xác.
+
+### Fixed
+- Sửa lỗi hiển thị các chỉ số thống kê của khách hàng (Tổng đơn, Tổng chi tiêu, Điểm 3F, Hoàn thiện hồ sơ) bằng 0 ở trang Chi tiết khách hàng Admin:
+  - Cập nhật hàm `adminGetCustomerDetail` trong [Customer.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Models/Customer.php) để truy vấn và tính toán động các giá trị `total_orders`, `total_spent`, `point_balance` (sử dụng `CustomerPointTransactionModel`), và `profile_completion` từ database.
+  - Trả về đồng thời cả khóa snake_case và camelCase để đảm bảo khả năng tương thích cao nhất với các component frontend.
+- Sửa lỗi hệ thống gián đoạn khi thực hiện tư vấn AI và hiển thị danh sách sản phẩm khuyên dùng:
+  - Di chuyển hoàn chỉnh logic gọi API Groq từ phía client (frontend) sang proxy an toàn phía backend (`/api/customer/pet-advisor/consult`) để bảo mật API key và phòng ngừa hoàn toàn lỗi 401/403/CORS khi gọi trực tiếp từ trình duyệt.
+  - Tự động cập nhật `GROQ_API_KEY` vào tệp cấu hình `.env` của máy chủ staging để loại bỏ hoàn toàn lỗi 401 Unauthorized từ cuộc gọi API của backend.
+  - Tối ưu hóa API tư vấn bằng cách gửi ID dạng số ngắn gọn của sản phẩm lên Groq thay vì slug dài dặc để tránh AI chép sai/hallucinate slug (dẫn đến khớp sản phẩm ra `null`). Khi trả về, hệ thống sẽ tự động đối chiếu ID số thành slug đầy đủ để đảm bảo khớp nối chính xác.
+  - Cải tiến system prompt để AI tư vấn chọn **tối đa 6 sản phẩm** (chia đều mỗi gói Tiết kiệm, Cân bằng, Cao cấp có 2 sản phẩm đề cử) giúp khách hàng có nhiều sự lựa chọn hơn.
+  - Tích hợp hàm `mapApiProduct` tại `AiResult.tsx` để đồng bộ cấu trúc dữ liệu của sản phẩm nhận từ backend, tự động ánh xạ `mainImageUrl` thành `image`, khắc phục triệt để lỗi hiển thị ảnh sản phẩm bị hỏng (broken image).
+  - Bổ sung cấu trúc dữ liệu đầy đủ cho các sản phẩm gợi ý mẫu trong `FALLBACK_RESULT` (gồm đầy đủ ảnh, tên, giá của Gói tiết kiệm và Gói cân bằng) giúp hiển thị danh sách sản phẩm đẹp mắt ngay cả khi hệ thống rơi vào trạng thái tư vấn mặc định do gián đoạn mạng.
+  - Khắc phục lỗi TPM (Tokens Per Minute) limit của tài khoản free khi gửi dữ liệu catalog quá dài (vượt quá 6,000 tokens của model `llama-3.1-8b-instant`).
+  - Nâng cấp model mặc định sang `llama-3.3-70b-versatile` có giới hạn TPM cao hơn (12,000 TPM) và chất lượng tư vấn tốt hơn.
+  - Tối ưu hóa kích thước prompt bằng cách giới hạn số lượng sản phẩm tải từ catalog xuống còn tối đa 20 sản phẩm (hoặc 10 sản phẩm mỗi loại cho luồng cả hai), giúp giảm hơn 40% dung lượng payload gửi đi và đảm bảo an toàn tuyệt đối trước giới hạn token.
+  - Khắc phục lỗi không hiển thị danh sách sản phẩm khuyên dùng ("Tổng 0 sản phẩm") sau khi nhận kết quả tư vấn AI do danh mục tĩnh trong `data/store.ts` bị làm rỗng sau khi chuyển sản phẩm sang MySQL backend.
+  - Cấu hình khớp nối sản phẩm đề cử với danh sách sản phẩm thật lấy từ API CSDL trong `groqApi.ts` và đính kèm trực tiếp thông tin đầy đủ vào thuộc tính `product`.
+  - Cập nhật `AiResult.tsx` để ưu tiên render từ trường `item.product` động này, hiển thị lại đầy đủ ảnh sản phẩm, tên, giá, nút chọn mua nhanh và tổng tiền chính xác.
+- Khôi phục và khóa tính năng sửa/xóa hạng Diamond tại Quản lý Hạng thành viên Admin (Restore and Read-Only Diamond Tier):
+  - Loại bỏ bộ lọc loại trừ "diamond" khỏi visibleTiers memo block để hiển thị chính xác vị trí của Diamond trong bảng Hạng thành viên.
+  - Vô hiệu hóa nút Sửa hạng (Pencil) và Tắt/Kích hoạt hạng (Trash2) cho dòng Diamond bằng thuộc tính disabled và style thiết kế grayed-out (`cursor-not-allowed`).
+  - Ánh xạ huy hiệu Diamond về tệp ảnh `badge_platinum.png` để hiển thị visual khiên đặc quyền premium giống giao diện trang chủ.
+  - Cập nhật bộ kiểm tra tên trùng lặp trong form tạo mới để báo lỗi chi tiết khi người dùng gõ tên "Diamond".
+- Sửa lỗi nút đối chiếu API bị lặp trong Modal Chi tiết yêu cầu Shopee (Duplicate Shopee API Reconciliation Buttons Fix):
+  - Loại bỏ hoàn toàn thuộc tính `action` ở tiêu đề `DetailCard` phần đối chiếu để xóa nút "Đối chiếu API" ở góc phải khi kết quả đối chiếu đã hiển thị.
+  - Tích hợp nút "Đối chiếu API" vào bên trong khung nét đứt khi trạng thái là chưa đối chiếu, và giữ nguyên nút "Đối chiếu lại API" dưới thông tin chi tiết khi đã đối chiếu, đảm bảo không bao giờ xuất hiện đồng thời hai nút.
+- Bổ sung phân trang cho danh sách Lịch sử giao dịch điểm Admin (Loyalty Transactions Pagination):
+  - Tích hợp bộ điều khiển phân trang (15 dòng mỗi trang) kèm hiển thị chỉ số dòng, số trang và các nút điều hướng (Trước/Sau) chuyên nghiệp trong [LoyaltyTransactionsSection.tsx](file:///c:/Users/Admin/Downloads/ccc/components/admin/loyalty/LoyaltyTransactionsSection.tsx), hỗ trợ hiển thị lịch sử điểm tối ưu và mượt mà hơn.
+- Vá lỗi hiển thị ảnh đại diện khách hàng (Customer Avatar Path Resolution Fix):
+  - Bổ sung hàm tiện ích `buildImageUrl` để giải mã và tự động ánh xạ các đường dẫn tương đối `/uploads/avatars/` của avatar thành URL tuyệt đối trỏ tới backend phục vụ hiển thị chính xác ở các trang client ([ProfilePage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/client/account/ProfilePage.tsx), [AccountShell.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/client/account/AccountShell.tsx) và [AccountLayout.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/client/account/AccountLayout.tsx)).
+  - Nâng cấp hàm `uploadAvatarImage` trong [UploadService.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Services/UploadService.php) của backend để tự động sinh URL tuyệt đối trỏ tới file ảnh dựa trên cấu hình `public_url`.
+- Sửa lỗi preflight CORS cho phương thức PATCH (PATCH Preflight CORS Issue):
+  - Bổ sung `PATCH` vào danh sách `Access-Control-Allow-Methods` trong file cấu hình CORS [cors.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Helpers/cors.php) ở backend, cho phép frontend thực hiện thành công các thao tác cập nhật hồ sơ cá nhân qua API.
+- Tích hợp huy hiệu hình khiên (Shield Badge Icons) từ trang chủ vào Quản lý Hạng thành viên Admin (Admin Loyalty Tiers Visual Upgrade):
+  - Thay thế biểu tượng Lucide `Award` mặc định bằng các hình ảnh huy hiệu hình khiên đặc quyền từ trang khách hàng (`badge_silver.png`, `badge_gold.png`, `badge_platinum.png`).
+  - Ánh xạ tự động tên hạng thành viên (không phân biệt chữ hoa thường) với tệp ảnh tương ứng và có cơ chế fallback về huy hiệu Silver cho các hạng khác.
+  - Cải tiến component `TierMedal` để hiển thị ảnh với hiệu ứng đổ bóng `shadow-[0_4px_12px_rgba(15,23,42,0.06)]` cao cấp, tối ưu kích thước để hiển thị đẹp mắt trong cả bảng danh sách và phần xem trước (modal preview).
+- Sửa lỗi định tuyến Trang soạn thảo Tin tức Admin (Admin News Editor Routing Registration Fix):
+  - Cấu hình và đăng ký đầy đủ các tuyến đường (routes) `/admin/news/new` và `/admin/news/:id/edit` liên kết tới trang soạn thảo [AdminNewsEditorPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/admin/AdminNewsEditorPage.tsx) bên trong [App.tsx](file:///c:/Users/Admin/Downloads/ccc/src/App.tsx), khắc phục triệt để lỗi hiển thị trang trắng (blank page) khi click nút "Viết bài mới" hoặc "Sửa bài" tại trang Quản lý Tin tức.
+
+### Removed
+- Loại bỏ 3 tab "Hạng thành viên", "Quà & Voucher" và "Cấu hình 3F Club" khỏi trang Admin 3F Club (Removed Tiers, Rewards, and Settings Tabs):
+  - Ẩn hoàn toàn các Tab điều hướng tương ứng và gỡ bỏ các panel JSX liên quan khỏi [ThreeFClubPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/admin/ThreeFClubPage.tsx) để phục vụ quá trình cấu trúc lại tính năng sau này.
+  - Dọn dẹp sạch các component con liên quan nhập khẩu (`MembershipTiersSection`, `LoyaltyRewardsSection`, `LoyaltyRedemptionsSection`, `ClubSettingsSection`).
+- Loại bỏ Tab "Cấu hình điểm" trong Admin 3F Club (Removed Points Config Tab):
+  - Loại bỏ hoàn toàn Tab "Cấu hình điểm" (Coins tab) và component cấu hình quy tắc đổi điểm khỏi trang [ThreeFClubPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/admin/ThreeFClubPage.tsx) theo yêu cầu tinh giản luồng quản trị.
+
+## [2026-06-21]
+### Added
+- Nâng cấp hệ thống Quản lý Quy trình & Trạng thái Đơn hàng đa chiều (CRM + Loyalty + Automation-ready):
+  - Tách biệt trạng thái đơn hàng thành 4 chiều độc lập: Trạng thái đơn hàng (Order status), Trạng thái thanh toán (Payment status), Trạng thái vận chuyển (Shipping status), và Trạng thái tích điểm (Loyalty status).
+  - Cấu trúc CSDL động hỗ trợ quản lý trạng thái qua các bảng `workflow_statuses`, `workflow_transitions`, `automation_rules`, `customer_activity_logs`, `notification_channels`, và `shipping_providers`.
+  - Tích hợp công cụ cập nhật trạng thái đa chiều và lọc luồng chuyển đổi được cấu hình động từ database phía Admin Drawer Chi tiết Đơn hàng.
+  - Xây dựng API và CSDL tích lũy điểm an toàn (Loyalty Safety Engine): Đảm bảo tự động cộng/hủy điểm chuẩn xác, chống cộng điểm trùng lặp bằng ràng buộc transaction lock và kiểm tra transaction lịch sử unique.
+  - Xây dựng Timeline nhật ký hoạt động khách hàng (CRM Timeline) ghi nhận chi tiết mọi hành vi liên quan đến đơn hàng, giao vận, tích điểm và thay đổi thông tin.
+  - Thiết kế và phát triển trang cấu hình hệ thống chuyên nghiệp phía Admin tại route `/admin/settings/workflows` (`AdminWorkflowSettingsPage.tsx`) cho phép quản lý trạng thái, bước chuyển giao, automation rules, nhà vận chuyển và cổng thông báo.
+  - Tích hợp liên kết menu "Cấu hình Quy trình" vào sidebar Admin và đăng ký Route bảo mật an toàn.
+- Hoàn tất kiểm thử QA tự động & thủ công (Manual & Automated QA Run):
+  - Xác nhận an toàn di trú cơ sở dữ liệu (idempotent database migrations) và cơ chế ánh xạ trạng thái cũ (old status mapping) an toàn không làm mất mát/ảnh hưởng đơn hàng hiện có.
+  - Kiểm thử 8 kịch bản nghiệp vụ (Case A - H) tích hợp liên quan đến trạng thái chuyển đổi hợp lệ/không hợp lệ, cập nhật độc lập các trục trạng thái, và ngăn chặn sửa đổi/xóa các khóa hệ thống trọng yếu.
+  - Kiểm thử tính bất biến điểm thưởng (Loyalty Points Idempotency): Xác thực cơ chế ngăn cộng điểm trùng lặp cho đơn hàng và xử lý hoàn tác điểm chuẩn xác khi hủy/trả đơn.
+- Tái cấu trúc API (API Naming Cleanup Refactor):
+  - Khởi tạo [ordersApi.ts](file:///c:/Users/Admin/Downloads/ccc/src/api/ordersApi.ts) chứa các API truy vấn/cập nhật đơn hàng.
+  - Khởi tạo [workflowApi.ts](file:///c:/Users/Admin/Downloads/ccc/src/api/workflowApi.ts) chứa các API cấu hình trạng thái, bước chuyển đổi, automation rules, nhà vận chuyển và cổng thông báo.
+  - Loại bỏ hoàn toàn các phương thức và types liên quan đến đơn hàng/workflows khỏi [productsApi.ts](file:///c:/Users/Admin/Downloads/ccc/src/api/productsApi.ts), nâng cao tính đóng gói (cohesion) và giảm kích thước file.
+  - Cập nhật tất cả các màn hình admin/client tiêu thụ API tương ứng.
+
+## [2026-06-20]
+### Added
+- Triển khai hệ thống Tin tức chuyên nghiệp đầy đủ nghiệp vụ SEO và trang tin tức làm đẹp:
+  - Thiết kế và tích hợp trang quản lý Tin tức phía Admin tại `/admin/news` (`AdminNewsPage.tsx`) hiển thị danh sách bài viết, lượt xem thực tế và huy hiệu Điểm SEO (SEO Score) tự động tính toán.
+  - Tích hợp các nút hành động CRUD (Thêm, Sửa, Xóa) bài viết và trigger cào tin tức tự động từ web nguồn `3fstore.vn` bằng Sonner toast loading state.
+  - Phát triển component SEO metadata [seo-metadata.tsx](file:///c:/Users/Admin/Downloads/ccc/src/components/blog/seo-metadata.tsx) quản lý động các thẻ tiêu đề, mô tả, từ khóa, Open Graph và cấu trúc dữ liệu JSON-LD (BlogPosting & BreadcrumbList) chuẩn SEO.
+  - Phát triển component Mục lục bài viết tự động [blog-toc.tsx](file:///c:/Users/Admin/Downloads/ccc/src/components/blog/blog-toc.tsx) thiết kế theo phong cách Paddy chuyên nghiệp (gồm phần Giới thiệu, các thẻ Heading H2/H3 đánh số thứ tự tuần tự dạng 1., 2. và kết thúc bằng phần Sản phẩm gợi ý; tự động highlight bằng màu xanh dương thương hiệu dựa trên IntersectionObserver khi cuộn trang, hỗ trợ cuộn mượt smooth scroll bù trừ khoảng cách header sticky).
+  - Tích hợp số thứ tự dạng huy hiệu hình tròn màu xanh dương đầy phong cách (blue circular number badges) tự động gắn vào các thẻ tiêu đề H2/H3 trong thân bài viết của [BlogDetail.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/BlogDetail.tsx) thông qua bộ phân tách DOMParser.
+  - Tái cấu trúc [BlogDetail.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/BlogDetail.tsx) thành bố cục 3 cột (3-column layout) chuẩn mực cao cấp: cột trái chứa Mục lục & Chia sẻ, cột giữa chứa Nội dung bài viết chính và Sản phẩm gợi ý, cột phải chứa cột bài viết Xu Hướng (Trending list).
+  - Triển khai thanh đo tiến trình đọc bài viết (Reading Progress Bar) 3px ở đỉnh trang cùng nút cuộn nhanh lên đầu trang (Scroll-To-Top) dạng vòng tròn tiến độ SVG trực quan.
+  - Tích hợp thanh chia sẻ bài viết [blog-share.tsx](file:///c:/Users/Admin/Downloads/ccc/src/components/blog/blog-share.tsx) dạng các icon tròn tối giản nằm gọn gàng bên dưới mục lục ở cột trái, hỗ trợ sao chép liên kết bài viết và liên kết chia sẻ trực tiếp qua Facebook, Twitter/X, Telegram.
+  - Triển khai khối sản phẩm gợi ý [blog-related-products.tsx](file:///c:/Users/Admin/Downloads/ccc/src/components/blog/blog-related-products.tsx) tự động truy vấn sản phẩm trong kho cửa hàng dựa theo từ khóa SEO của bài viết để tối ưu tỷ lệ chuyển đổi.
+- Triển khai hệ thống Quản lý Banner động chuyên nghiệp (Banner Management System):
+  - Thiết kế và di trú bảng CSDL `banners` với các chỉ số hoạt động, thứ tự sắp xếp và thống kê hiệu năng (bao gồm cơ chế tự động seed dữ liệu 3 ảnh banner chính của trang chủ khi khởi tạo bảng).
+  - Viết Model `Banner.php` và Controller `BannerController.php` để lấy danh sách banner đang chạy theo placement, tăng lượt click/impression không đồng bộ, và cung cấp đầy đủ các API CRUD cho Admin.
+  - Xây dựng API tải ảnh banner lên hệ thống `UploadService::uploadBannerImage` hỗ trợ chặn định dạng độc hại (chỉ cho phép JPG/JPEG/PNG/WEBP, dung lượng tối đa 5MB) lưu trữ an toàn trong `/public/uploads/banners/`.
+  - Thiết lập định nghĩa vị trí hiển thị hợp lệ (`home_hero_slider`) và kiểm tra tính hợp lệ trên cả frontend và backend.
+  - Thiết kế trang quản lý Banner phía Admin tại `/admin/banners` hiển thị các chỉ số KPI động (tổng số banner, số đang hoạt động, tổng số click), bộ lọc trạng thái hiển thị, cùng form Modal thêm/sửa tích hợp tải ảnh trực quan và liên kết điều hướng (đã lược bỏ thời gian chạy start/end và chữ nút CTA để tối ưu hoá giao diện).
+  - Tích hợp banner động vào trang chủ `HeroSection.tsx` tự động tải các placement tương ứng, chạy tracking click/impression trong nền, và tự động fallback về tài nguyên tĩnh mặc định nếu không có dữ liệu từ API hoặc API bị lỗi.
+- Triển khai hệ thống cào tin tức tự động và tích hợp Blog động:
+  - Thiết kế và di trú bảng CSDL `blog_posts` lưu trữ tin tức với cơ chế tự động chạy di trú trên backend.
+  - Phát triển bộ cào tin tức bằng PHP `BlogPostController::adminCrawl` chạy trực tiếp trên môi trường staging thông qua API, cho phép cào 100% dữ liệu bài viết (tiêu đề, slug, tóm tắt, ảnh đại diện, nội dung bài viết dạng rich-text HTML và tự động chuyển các liên kết ảnh/link tương đối thành tuyệt đối).
+  - Viết Model `BlogPost.php` và Controller `BlogPostController.php` cung cấp các API lấy danh sách bài viết phân trang (`/api/blog-posts`) và chi tiết bài viết theo slug (`/api/blog-posts/:slug`).
+  - Xây dựng các trang giao diện frontend: trang danh sách tin tức `/tin-tuc` (`BlogList.tsx`) hỗ trợ bộ lọc danh mục và tìm kiếm, cùng trang chi tiết tin tức `/tin-tuc/:slug` (`BlogDetail.tsx`) hiển thị nội dung rich HTML an toàn bằng `DOMPurify` kết hợp sidebar hiển thị các bài viết mới nhất.
+  - Đồng bộ hóa component bài viết trên trang chủ `BlogNewsletter.tsx` để hiển thị 4 bài viết mới nhất lấy trực tiếp từ API thay thế cho mảng dữ liệu tĩnh cũ.
+  - Thêm liên kết điều hướng "Tin tức" trên thanh Header (`Header.tsx`) cho cả giao diện desktop và mobile drawer.
+
+### Changed
+- Tái cấu trúc và đồng bộ hóa component Card sản phẩm (`ProductCard.tsx`):
+  - Đồng bộ thiết kế card sản phẩm giữa trang Sản phẩm yêu thích (`WishlistPage.tsx`), trang danh mục sản phẩm (`ProductListing.tsx`), và slider trang chủ (`ProductSlider.tsx`).
+  - Nâng cấp `ProductCard.tsx` sử dụng cấu trúc giao diện premium của `/products` (hiển thị thương hiệu, hiệu ứng gradient glow và sweeping light shimmer khi hover, bo tròn góc `rounded-[24px]` và shadow-glass).
+  - Tích hợp prop `showBuyNow?: boolean` cho phép tùy biến hiển thị 1 nút "Thêm vào giỏ" hoặc 2 nút "Thêm vào giỏ" & "Mua ngay". Cập nhật mặc định `showBuyNow` thành `true` để tất cả các trang (bao gồm cả trang yêu thích và danh sách danh mục) hiển thị giao diện 2 nút hành động chuyên nghiệp đồng bộ với trang chủ.
+  - Loại bỏ hoàn toàn khối mã HTML card sản phẩm viết lặp (inline) trong `ProductListing.tsx` và thay thế bằng component `<ProductCard>`.
+  - Thiết lập hiển thị đánh giá trung bình mặc định thành `5.0` sao nếu rating bằng `4.8` hoặc khi lượt review (`reviews`) bằng `0`.
+  - Định dạng hiển thị giá giảm/giá cũ (`product.oldPrice`) có dấu gạch ngang (`line-through`), kích thước font nhỏ hơn giá bán thực tế, và đổi thành màu xám rõ ràng (`text-gray-400`).
+  - Sửa lỗi API danh sách yêu thích của backend (`CustomerWishlist.php`): thay vì trả về `oldPrice` bằng `null`, backend hiện tại lấy `minOriginalPrice` và `maxOriginalPrice` từ các variant hoạt động và tự động định dạng `oldPrice` dạng khoảng giá hoặc giá đơn tương ứng (ví dụ: `133.900đ - 645.900đ`) đồng bộ với giao diện.
+  - Thay thế nhãn Brand text thô bằng thẻ Nhãn Danh mục dạng Pill bo góc (ví dụ: `Thức ăn khô`, `Thức ăn ướt`) với nền mờ nhạt và màu thương hiệu nổi bật, lấy thông tin tự động dựa trên tên và phân loại của sản phẩm.
+
+## [2026-06-19]
+### Added
+- Triển khai tính năng Sản phẩm yêu thích (Wishlist) chuẩn nghiệp vụ:
+  - Thiết kế bảng cơ sở dữ liệu `customer_wishlists` liên kết `customer_id` và `product_id` có index và unique constraint.
+  - Viết Model `CustomerWishlist.php` và Controller `CustomerWishlistController.php` để lấy danh sách, toggle trạng thái yêu thích, và đồng bộ mảng ID từ local storage.
+  - Tích hợp `WishlistContext.tsx` quản lý offline local storage cho Khách vãng lai (Guest) và tự động gọi API đồng bộ lên MySQL ngay khi đăng ký/đăng nhập thành công.
+  - Tạo trang danh sách yêu thích `/wishlist` (`WishlistPage.tsx`) dạng lưới sản phẩm responsive, hỗ trợ trạng thái trống (Empty State) và kêu gọi hành động mua sắm.
+  - Cập nhật huy hiệu đếm số lượng (Badge Count) trên icon Yêu thích của Header (`Header.tsx`).
+  - Thêm nút Trái tim Toggle yêu thích có hiệu ứng scale và màu sắc bằng Framer Motion nổi bật trên ảnh `ProductCard.tsx` (ẩn trên desktop cho đến khi hover, hiện mặc định trên mobile) và trang chi tiết `ProductDetail.tsx`.
+  - Tích hợp nút Trái tim và hiển thị trạng thái màu đỏ đồng bộ cho danh sách sản phẩm trên trang danh mục Tất cả sản phẩm (`ProductListing.tsx`).
+  - Viết kịch bản kiểm thử API tích hợp `scratch/test-wishlist-api.js` chạy thành công.
+- Kết nối dữ liệu thời gian thực cho Admin Dashboard từ database MySQL:
+  - Cập nhật backend `AdminDashboardController.getRevenueChart` để trả về doanh thu VND thô dạng số thực thay vì chia sẵn 1.000.000.
+  - Tích hợp biểu đồ doanh thu `admin-revenue-chart.tsx` gọi API và hỗ trợ bộ lọc động 7 ngày / 30 ngày.
+  - Triển khai thuật toán vẽ biểu đồ đường SVG tự động điều chỉnh tỷ lệ trục Y theo doanh thu lớn nhất của chu kỳ.
+  - Tự động tính toán các chỉ số hộp tổng kết dưới biểu đồ (Tổng doanh thu, Tổng đơn hàng, Giá trị đơn trung bình, Đơn hàng TB/ngày) và so sánh phần trăm xu hướng tăng/giảm với kỳ trước đó.
+- Tinh chỉnh trang quản lý và Dashboard của Admin:
+  - Loại bỏ nút "Xuất CSV" và toàn bộ logic gọi API xuất file CSV khỏi trang Quản lý khách hàng (`AdminCustomersPage.tsx`).
+  - Loại bỏ các chỉ số "Tỷ lệ chuyển đổi", "Giá trị đơn trung bình", "Đơn hoàn tất" và "Sản phẩm sắp hết hàng" khỏi Dashboard.
+  - Thiết kế Dashboard KPI section nhỏ gọn, tinh tế và đẹp mắt với đúng 6 chỉ số còn lại (*Doanh thu hôm nay, Số đơn hôm nay, Đơn chờ xác nhận, Đơn đang giao, Khách hàng mới, Điểm 3F Club đã cộng*) nằm gọn trên một hàng ngang duy nhất ở màn hình desktop (`lg:grid-cols-6`).
+  - Cải tiến component `AdminKpiCard.tsx` hỗ trợ co giãn linh hoạt và tối ưu kích thước text/padding để đảm bảo hiển thị hoàn hảo, không bị tràn hay lỗi dòng trên mọi kích cỡ màn hình.
+  - Loại bỏ hai panel biểu đồ/danh sách *"Nguồn đơn hàng"* (donut chart) và *"Lead tư vấn mới nhất"* (AI leads list) khỏi Dashboard để tinh giản giao diện.
+  - Sắp xếp lại hàng dưới của Dashboard thành 3 cột cân đối (`lg:grid-cols-3`): *"Yêu cầu Shopee mới nhất"*, *"Top sản phẩm bán chạy"* và *"Top nhu cầu thú cưng"*. Cả 3 panel đều có chiều cao đồng bộ `h-[360px]` giúp giao diện đạt trạng thái cân bằng tuyệt đối.
+  - Sửa lỗi chính tả không có dấu tiếng Việt tại component *"Top sản phẩm bán chạy"* (`AdminTopProducts.tsx`): cập nhật tiêu đề thành *"Top sản phẩm bán chạy"*, phụ đề thành *"Sản phẩm có doanh số cao nhất"*, nút action thành *"7 ngày qua"*, nhãn số lượng thành *"Đã bán"*, và sửa định dạng đơn vị tiền tệ từ `"d"` thành ký hiệu chuẩn `"đ"`.
+
 ## [2026-06-17]
 ### Added
 - Triển khai tính năng Tìm kiếm Sản phẩm Real-time trên Production:

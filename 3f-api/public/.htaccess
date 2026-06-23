@@ -1,3 +1,8 @@
+<FilesMatch "^(run_migration\.php|run_loyalty_qa\.php|temp_seed\.php|test_api\.php|test_care\.php|test_cat_count\.php|test_categories\.php|test_other\.php|test_sql\.php|fix_skus\.php|migrate_district\.php|migrate_shipping\.php|crawl_news\.php)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
 RewriteEngine On
 
 # Pass the Authorization header to PHP

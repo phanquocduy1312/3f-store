@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowRight, CheckCircle2, Copy, CreditCard, ShoppingBag, Truck } from "lucide-react";
-import { getOrderDetails, OrderDetail } from "@/src/api/productsApi";
+import { getOrderDetails, OrderDetail } from "@/src/api/ordersApi";
 import { Image } from "@/components/Image";
 
 export function OrderSuccess() {

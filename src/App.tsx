@@ -19,19 +19,34 @@ const AdminDashboard = lazyPage(() => import("./pages/admin/admin-dashboard"), "
 const ShopeeRequestsPage = lazy(() => import("./pages/admin/ShopeeRequestsPage"));
 const LoyaltySettingsPage = lazy(() => import("./pages/admin/LoyaltySettingsPage"));
 const ThreeFClubPage = lazy(() => import("./pages/admin/ThreeFClubPage"));
+const AdminWorkflowSettingsPage = lazyPage(() => import("./pages/admin/AdminWorkflowSettingsPage"), "AdminWorkflowSettingsPage");
 const CustomerLoyaltyPage = lazy(() => import("./pages/admin/CustomerLoyaltyPage"));
 const CustomerRewardsPage = lazy(() => import("./pages/client/CustomerRewardsPage"));
+const WishlistPage = lazyPage(() => import("./pages/client/WishlistPage"), "WishlistPage");
 const OrderSuccess = lazyPage(() => import("./pages/OrderSuccess"), "OrderSuccess");
 const OrderTracking = lazyPage(() => import("./pages/OrderTracking"), "OrderTracking");
 const AdminOrdersPage = lazyPage(() => import("./pages/admin/AdminOrdersPage"), "AdminOrdersPage");
 const AdminLogin = lazyPage(() => import("./pages/admin/AdminLogin"), "AdminLogin");
 const AdminCustomersPage = lazyPage(() => import("./pages/admin/AdminCustomersPage"), "AdminCustomersPage");
 const AdminCustomerDetailPage = lazyPage(() => import("./pages/admin/AdminCustomer360Page"), "AdminCustomerDetailPage");
+const AdminPetAdvisorPage = lazyPage(() => import("./pages/admin/AdminPetAdvisorPage"), "AdminPetAdvisorPage");
+const AdminPetAdvisorDetailPage = lazy(() => import("./pages/admin/AdminPetAdvisorDetailPage"));
 
 // Admin Product Pages
 const AdminProductsPage = lazyPage(() => import("./pages/admin/AdminProductsPage"), "AdminProductsPage");
 const AdminProductForm = lazyPage(() => import("./pages/admin/AdminProductForm"), "AdminProductForm");
 const AdminCategoriesPage = lazyPage(() => import("./pages/admin/AdminCategoriesPage"), "AdminCategoriesPage");
+const AdminBannersPage = lazyPage(() => import("./pages/admin/AdminBannersPage"), "AdminBannersPage");
+const AdminNewsPage = lazyPage(() => import("./pages/admin/AdminNewsPage"), "AdminNewsPage");
+const AdminNewsEditorPage = lazyPage(() => import("./pages/admin/AdminNewsEditorPage"), "AdminNewsEditorPage");
+const AdminProductReviewsPage = lazyPage(() => import("./pages/admin/AdminProductReviewsPage"), "AdminProductReviewsPage");
+const AdminVouchersPage = lazyPage(() => import("./pages/admin/AdminVouchersPage"), "AdminVouchersPage");
+const BlogList = lazyPage(() => import("./pages/BlogList"), "BlogList");
+const BlogDetail = lazyPage(() => import("./pages/BlogDetail"), "BlogDetail");
+const AboutPage = lazyPage(() => import("./pages/AboutPage"), "AboutPage");
+const ContactPage = lazyPage(() => import("./pages/ContactPage"), "ContactPage");
+
+
 
 // Client Account Pages
 import { AccountLayout } from "./pages/client/account/AccountShell";
@@ -40,6 +55,7 @@ const OrdersPage = lazyPage(() => import("./pages/client/account/OrdersPage"), "
 const AddressesPage = lazyPage(() => import("./pages/client/account/AddressBookPage"), "AddressesPage");
 const PetsPage = lazyPage(() => import("./pages/client/account/PetsPage"), "PetsPage");
 const SecurityPage = lazyPage(() => import("./pages/client/account/SecurityPage"), "SecurityPage");
+const ClubPage = lazyPage(() => import("./pages/client/account/ClubPage"), "ClubPage");
 
 function AdminRouteGuard() {
   const token = localStorage.getItem("admin_token");
@@ -89,8 +105,15 @@ export function App() {
           <Route path="/products" element={<Products />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<CartCheckout />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/tin-tuc" element={<BlogList />} />
+          <Route path="/tin-tuc/:slug" element={<BlogDetail />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/gioi-thieu" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/lien-he" element={<ContactPage />} />
           
           {/* Protected Client Routes */}
           <Route element={<CustomerRouteGuard />}>
@@ -101,6 +124,7 @@ export function App() {
               <Route path="addresses" element={<AddressesPage />} />
               <Route path="pets" element={<PetsPage />} />
               <Route path="security" element={<SecurityPage />} />
+              <Route path="club" element={<ClubPage />} />
             </Route>
           </Route>
           
@@ -111,9 +135,12 @@ export function App() {
           <Route element={<AdminRouteGuard />}>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/orders" element={<AdminOrdersPage />} />
+            <Route path="/admin/settings/workflows" element={<AdminWorkflowSettingsPage />} />
             <Route path="/admin/shopee-requests" element={<ShopeeRequestsPage />} />
             <Route path="/admin/loyalty-settings" element={<LoyaltySettingsPage />} />
             <Route path="/admin/3f-club" element={<ThreeFClubPage />} />
+            <Route path="/admin/pet-advisor" element={<AdminPetAdvisorPage />} />
+            <Route path="/admin/pet-advisor/consultation/:id" element={<AdminPetAdvisorDetailPage />} />
             <Route path="/admin/customers" element={<AdminCustomersPage />} />
             <Route path="/admin/customers/:id" element={<AdminCustomerDetailPage />} />
             <Route path="/admin/customers/:id/loyalty" element={<CustomerLoyaltyPage />} />
@@ -122,7 +149,13 @@ export function App() {
             <Route path="/admin/products" element={<AdminProductsPage />} />
             <Route path="/admin/products/create" element={<AdminProductForm />} />
             <Route path="/admin/products/:id" element={<AdminProductForm />} />
+            <Route path="/admin/reviews" element={<AdminProductReviewsPage />} />
+            <Route path="/admin/vouchers" element={<AdminVouchersPage />} />
             <Route path="/admin/categories" element={<AdminCategoriesPage />} />
+            <Route path="/admin/banners" element={<AdminBannersPage />} />
+            <Route path="/admin/news" element={<AdminNewsPage />} />
+            <Route path="/admin/news/new" element={<AdminNewsEditorPage />} />
+            <Route path="/admin/news/:id/edit" element={<AdminNewsEditorPage />} />
           </Route>
 
           <Route path="/3f-club/rewards" element={<CustomerRewardsPage />} />

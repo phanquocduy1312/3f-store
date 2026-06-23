@@ -1,165 +1,216 @@
 "use client";
 
 import { MotionItem, motionItemProps, MotionSection } from "@/components/MotionSection";
-import { Ticket, Copy, CheckCircle2, PawPrint, Bone, Gift, Truck, Coins, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useRef } from "react";
+import { getFeaturedVouchers, trackVoucherEvent, type PublicVoucher } from "@/src/api/vouchersApi";
+import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bone, CheckCircle2, ChevronLeft, ChevronRight, Coins, Copy, Gift, PawPrint, Sparkles, Ticket, Truck } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Autoplay } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
 import "swiper/css";
 import "swiper/css/navigation";
 
-const vouchers = [
+const fallbackVouchers: PublicVoucher[] = [
   {
-    id: "v1",
-    title: "GIẢM 15%",
-    desc: "Đơn tối thiểu 400K. Tối đa 50K.",
+    id: 0,
     code: "BOSS15",
-    exp: "Còn 2 ngày",
-    color: "from-sky-400 to-sky-600",
-    bgLight: "bg-sky-50",
-    textDark: "text-sky-700",
-    icon: PawPrint,
-    label: "HOT DEALS"
+    title: "GIẢM 15%",
+    name: "Giảm 15%",
+    description: "Đơn tối thiểu 400K. Tối đa 50K.",
+    label: "HOT DEALS",
+    badgeText: "Còn 2 ngày",
+    themeColor: "sky",
+    iconKey: "paw",
+    discountType: "percent",
+    discountValue: 15,
+    maxDiscountAmount: 50000,
+    minOrderAmount: 400000,
+    endsAt: null,
+    usageLimit: null,
+    usedCount: 0,
   },
   {
-    id: "v2",
-    title: "FREESHIP",
-    desc: "Giảm 30K phí ship. Đơn từ 200K.",
+    id: 0,
     code: "FREE30K",
-    exp: "HSD: 30/06",
-    color: "from-blue-400 to-indigo-500",
-    bgLight: "bg-blue-50",
-    textDark: "text-indigo-700",
-    icon: Truck,
-    label: "VẬN CHUYỂN"
+    title: "FREESHIP",
+    name: "Freeship",
+    description: "Giảm 30K phí ship. Đơn từ 200K.",
+    label: "VẬN CHUYỂN",
+    badgeText: "HSD: 30/06",
+    themeColor: "indigo",
+    iconKey: "truck",
+    discountType: "fixed",
+    discountValue: 30000,
+    maxDiscountAmount: null,
+    minOrderAmount: 200000,
+    endsAt: null,
+    usageLimit: null,
+    usedCount: 0,
   },
-  {
-    id: "v3",
-    title: "GIẢM 50K",
-    desc: "Dành cho Khách mới. Mọi đơn hàng.",
-    code: "NEWFRIEND",
-    exp: "Không thời hạn",
-    color: "from-amber-400 to-orange-500",
-    bgLight: "bg-amber-50",
-    textDark: "text-orange-700",
-    icon: Gift,
-    label: "KHÁCH MỚI"
-  },
-  {
-    id: "v4",
-    title: "TẶNG PATE",
-    desc: "Mua 2 tặng 1 Pate Mèo Cao Cấp.",
-    code: "MEOWPATE",
-    exp: "Số lượng có hạn",
-    color: "from-rose-400 to-pink-500",
-    bgLight: "bg-rose-50",
-    textDark: "text-rose-700",
-    icon: Bone, // Using Bone as a generic pet treat icon
-    label: "TẶNG QUÀ"
-  },
-  {
-    id: "v5",
-    title: "GIẢM 10%",
-    desc: "Áp dụng cho Phụ Kiện và Đồ Chơi.",
-    code: "PLAY10",
-    exp: "HSD: 15/07",
-    color: "from-violet-400 to-purple-600",
-    bgLight: "bg-violet-50",
-    textDark: "text-purple-700",
-    icon: Sparkles,
-    label: "PHỤ KIỆN"
-  },
-  {
-    id: "v6",
-    title: "HOÀN 10%",
-    desc: "Hoàn xu tối đa 100K cho đơn tiếp.",
-    code: "CASHBACK",
-    exp: "Chỉ cuối tuần",
-    color: "from-teal-400 to-cyan-600",
-    bgLight: "bg-teal-50",
-    textDark: "text-cyan-700",
-    icon: Coins,
-    label: "HOÀN TIỀN"
-  }
 ];
 
-const VoucherCard = ({ voucher, copiedId, handleCopy }: any) => (
-  <div className="group relative flex h-[115px] sm:h-[140px] w-full overflow-hidden rounded-xl sm:rounded-[1.25rem] bg-white shadow-[0_4px_12px_rgba(0,0,0,0.04)] sm:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 sm:hover:-translate-y-2 hover:shadow-[0_16px_32px_rgba(16,133,79,0.12)]">
-    
-    {/* Left Side: Themed Colored Block */}
-    <div className={`relative flex w-[48px] sm:w-[110px] shrink-0 flex-col items-center justify-center bg-gradient-to-br ${voucher.color} text-white`}>
-      {/* Faint paw prints on left block */}
-      <div className="absolute inset-0 overflow-hidden opacity-20 hidden sm:block">
-        <PawPrint size={24} className="absolute -left-1 -top-1 rotate-12 sm:w-10 sm:h-10 sm:-left-2 sm:-top-2" />
-        <PawPrint size={18} className="absolute -bottom-2 -right-1 -rotate-12 sm:w-[30px] sm:h-[30px] sm:-bottom-3 sm:-right-2" />
-      </div>
-      
-      <div className="relative z-10 flex h-7 w-7 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-md shadow-sm">
-        <voucher.icon className="w-3.5 h-3.5 sm:w-6 sm:h-6" strokeWidth={2.5} />
-      </div>
-      <div className="relative z-10 mt-1.5 sm:mt-3 hidden sm:block text-center text-[10px] font-black uppercase tracking-widest text-white/90">
-        {voucher.label}
-      </div>
-    </div>
+const themeClasses: Record<string, { color: string; bgLight: string; textDark: string }> = {
+  sky: { color: "from-sky-400 to-sky-600", bgLight: "bg-sky-50", textDark: "text-sky-700" },
+  indigo: { color: "from-blue-400 to-indigo-500", bgLight: "bg-blue-50", textDark: "text-indigo-700" },
+  amber: { color: "from-amber-400 to-orange-500", bgLight: "bg-amber-50", textDark: "text-orange-700" },
+  rose: { color: "from-rose-400 to-pink-500", bgLight: "bg-rose-50", textDark: "text-rose-700" },
+  violet: { color: "from-violet-400 to-purple-600", bgLight: "bg-violet-50", textDark: "text-purple-700" },
+  teal: { color: "from-teal-400 to-cyan-600", bgLight: "bg-teal-50", textDark: "text-cyan-700" },
+  red: { color: "from-red-400 to-rose-500", bgLight: "bg-red-50", textDark: "text-red-700" },
+};
 
-    {/* Cutout details on the border between left and right */}
-    <div className="absolute left-[42px] sm:left-[104px] -top-2 sm:-top-3 z-10 h-4 w-4 sm:h-6 sm:w-6 rounded-full bg-[#F5F9FF] shadow-inner" />
-    <div className="absolute left-[42px] sm:left-[104px] -bottom-2 sm:-bottom-3 z-10 h-4 w-4 sm:h-6 sm:w-6 rounded-full bg-[#F5F9FF] shadow-inner" />
-    <div className="absolute left-[47px] sm:left-[109px] top-0 bottom-0 border-l-[2px] sm:border-l-[3px] border-dashed border-white/40" />
+const icons = {
+  ticket: Ticket,
+  paw: PawPrint,
+  truck: Truck,
+  gift: Gift,
+  bone: Bone,
+  sparkles: Sparkles,
+  coins: Coins,
+};
 
-    {/* Right Side: Details & Action */}
-    <div className="flex flex-1 flex-col justify-between p-2.5 pl-3 sm:p-4 sm:pl-6 relative">
-      {/* Watermark in right side */}
-      <voucher.icon className={`absolute right-1 top-1 sm:right-4 sm:top-4 opacity-[0.03] w-10 h-10 sm:w-20 sm:h-20 ${voucher.textDark}`} />
-      
-      <div>
-        <h3 className={`text-[12px] sm:text-[1.35rem] font-black leading-none tracking-tight ${voucher.textDark}`}>
-          {voucher.title}
-        </h3>
-        <p className="mt-1 sm:mt-1.5 text-[9px] sm:text-[13px] font-medium leading-[1.3] sm:leading-snug text-ink/70 line-clamp-2 pr-1 sm:pr-2">
-          {voucher.desc}
-        </p>
-      </div>
+function VoucherCard({
+  voucher,
+  copiedId,
+  handleCopy,
+}: {
+  voucher: PublicVoucher;
+  copiedId: number | null;
+  handleCopy: (voucher: PublicVoucher) => void;
+}) {
+  const theme = themeClasses[voucher.themeColor] || themeClasses.sky;
+  const Icon = icons[voucher.iconKey as keyof typeof icons] || Ticket;
 
-      <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between mt-1 sm:mt-0 w-full">
-        <div className={`rounded-full px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-[8px] sm:text-[10px] font-bold ${voucher.bgLight} ${voucher.textDark} whitespace-nowrap`}>
-          {voucher.exp}
+  return (
+    <div className="group relative flex h-[115px] w-full overflow-hidden rounded-xl bg-white shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(16,133,79,0.12)] sm:h-[140px] sm:rounded-[1.25rem] sm:shadow-[0_8px_24px_rgba(0,0,0,0.06)] sm:hover:-translate-y-2">
+      <div className={`relative flex w-[48px] shrink-0 flex-col items-center justify-center bg-gradient-to-br ${theme.color} text-white sm:w-[110px]`}>
+        <div className="absolute inset-0 hidden overflow-hidden opacity-20 sm:block">
+          <PawPrint className="absolute -left-2 -top-2 h-10 w-10 rotate-12" />
+          <PawPrint className="absolute -bottom-3 -right-2 h-[30px] w-[30px] -rotate-12" />
         </div>
-        
-        <button
-          onClick={() => handleCopy(voucher.id, voucher.code)}
-          className={`relative z-20 flex w-full sm:w-auto h-5 sm:h-8 px-2 sm:px-4 items-center justify-center rounded-full text-[8px] sm:text-[11px] font-bold uppercase tracking-wider transition-all duration-300 hover:scale-105 active:scale-95 ${
-            copiedId === voucher.id 
-              ? "bg-sky-500 text-white" 
-              : `bg-ink text-white hover:${voucher.bgLight} hover:${voucher.textDark}`
-          }`}
-          title="Save voucher"
-        >
-          {copiedId === voucher.id ? "SAVED" : "SAVE"}
-        </button>
+        <div className="relative z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/20 shadow-sm backdrop-blur-md sm:h-12 sm:w-12">
+          <Icon className="h-3.5 w-3.5 sm:h-6 sm:w-6" strokeWidth={2.5} />
+        </div>
+        <div className="relative z-10 mt-3 hidden text-center text-[10px] font-black uppercase tracking-widest text-white/90 sm:block">
+          {voucher.label || "VOUCHER"}
+        </div>
+      </div>
+
+      <div className="absolute left-[42px] -top-2 z-10 h-4 w-4 rounded-full bg-[#F5F9FF] shadow-inner sm:left-[104px] sm:-top-3 sm:h-6 sm:w-6" />
+      <div className="absolute left-[42px] -bottom-2 z-10 h-4 w-4 rounded-full bg-[#F5F9FF] shadow-inner sm:left-[104px] sm:-bottom-3 sm:h-6 sm:w-6" />
+      <div className="absolute bottom-0 left-[47px] top-0 border-l-[2px] border-dashed border-white/40 sm:left-[109px] sm:border-l-[3px]" />
+
+      <div className="relative flex min-w-0 flex-1 flex-col justify-between p-2.5 pl-3 sm:p-4 sm:pl-6">
+        <Icon className={`absolute right-1 top-1 h-10 w-10 opacity-[0.03] sm:right-4 sm:top-4 sm:h-20 sm:w-20 ${theme.textDark}`} />
+        <div>
+          <h3 className={`text-[12px] font-black leading-none tracking-tight sm:text-[1.35rem] ${theme.textDark}`}>
+            {voucher.title}
+          </h3>
+          <p className="mt-1 line-clamp-2 pr-1 text-[9px] font-medium leading-[1.3] text-ink/70 sm:mt-1.5 sm:pr-2 sm:text-[13px] sm:leading-snug">
+            {voucher.description || voucher.name}
+          </p>
+        </div>
+
+        <div className="mt-1 flex w-full flex-col items-start gap-1.5 sm:mt-0 sm:flex-row sm:items-center sm:justify-between">
+          <div className={`whitespace-nowrap rounded-full px-1.5 py-0.5 text-[8px] font-bold sm:px-2.5 sm:py-1 sm:text-[10px] ${theme.bgLight} ${theme.textDark}`}>
+            {voucher.badgeText || (voucher.minOrderAmount > 0 ? `Đơn từ ${Math.round(voucher.minOrderAmount / 1000)}K` : "Đang áp dụng")}
+          </div>
+          <button
+            onClick={() => handleCopy(voucher)}
+            className={`relative z-20 flex h-5 w-full items-center justify-center rounded-full px-2 text-[8px] font-bold uppercase tracking-wider transition-all duration-300 hover:scale-105 active:scale-95 sm:h-8 sm:w-auto sm:px-4 sm:text-[11px] ${
+              copiedId === voucher.id ? "bg-sky-500 text-white" : "bg-ink text-white"
+            }`}
+            title="Copy voucher"
+          >
+            {copiedId === voucher.id ? <CheckCircle2 className="mr-1 h-3 w-3" /> : <Copy className="mr-1 h-3 w-3" />}
+            {copiedId === voucher.id ? "SAVED" : "SAVE"}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+}
 
 export function VoucherSection() {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { isLoggedIn } = useCustomerAuth();
+  const navigate = useNavigate();
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [showAuthWarning, setShowAuthWarning] = useState(false);
+  const [vouchers, setVouchers] = useState<PublicVoucher[]>([]);
   const swiperRef = useRef<SwiperType | null>(null);
 
-  const handleCopy = (id: string, code: string) => {
-    // For demo purposes: redirect to phone registration instead of copying
-    window.location.href = "/register?mode=phone";
+  useEffect(() => {
+    let alive = true;
+    getFeaturedVouchers()
+      .then((res) => {
+        if (alive) setVouchers(res.data || []);
+      })
+      .catch(() => {
+        if (alive) setVouchers(fallbackVouchers);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const desktopBreakpoints = useMemo(() => ({
+    640: { slidesPerView: 2.2 },
+    1024: { slidesPerView: 3.2 },
+    1280: { slidesPerView: 4 },
+  }), []);
+
+  const fallbackCopyText = (text: string) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+    } catch (err) {
+      console.error('Fallback copy failed', err);
+    }
+    document.body.removeChild(textArea);
   };
+
+  const copyToClipboard = async (text: string) => {
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (err) {
+        // Fallback
+      }
+    }
+    fallbackCopyText(text);
+    return true;
+  };
+
+  const handleCopy = async (voucher: PublicVoucher) => {
+    if (!isLoggedIn) {
+      setShowAuthWarning(true);
+      return;
+    }
+    await copyToClipboard(voucher.code);
+    setCopiedId(voucher.id);
+    trackVoucherEvent({ couponId: voucher.id || null, code: voucher.code, eventType: "copy", metadata: { source: "home_voucher_section" } }).catch(() => undefined);
+    window.setTimeout(() => setCopiedId(null), 1600);
+  };
+
+  if (!vouchers.length) return null;
 
   return (
     <section className="relative overflow-hidden bg-[#F5F9FF] py-0">
-      {/* Pet-themed playful background elements */}
-      <div className="pointer-events-none absolute left-0 top-0 h-full w-full opacity-40" 
-        style={{ backgroundImage: "radial-gradient(rgb(var(--color-primary)) 1.5px, transparent 1.5px)", backgroundSize: "32px 32px" }} 
+      <div
+        className="pointer-events-none absolute left-0 top-0 h-full w-full opacity-40"
+        style={{ backgroundImage: "radial-gradient(rgb(var(--color-primary)) 1.5px, transparent 1.5px)", backgroundSize: "32px 32px" }}
       />
-      
-      {/* Decorative large paws in background */}
       <div className="pointer-events-none absolute -left-10 top-10 rotate-12 text-forest/5">
         <PawPrint size={200} />
       </div>
@@ -167,56 +218,41 @@ export function VoucherSection() {
         <Bone size={250} />
       </div>
 
-      <MotionSection className="relative z-10 mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 mt-0">
+      <MotionSection className="relative z-10 mx-auto mt-0 max-w-[1400px] px-4 sm:px-6 lg:px-8">
         <div className="mb-4 flex flex-col items-center justify-between gap-3 sm:flex-row sm:items-end">
           <MotionItem {...motionItemProps} className="max-w-xl">
             <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-forest/20 bg-white/60 px-4 py-1.5 text-xs font-black uppercase tracking-[0.2em] text-forest backdrop-blur-md">
               <Ticket size={14} className="text-forest" />
               Đặc Quyền Hội Yêu Thú
             </div>
-            <h2 className="text-3xl font-black leading-tight text-ink sm:text-4xl tracking-tight">
+            <h2 className="text-3xl font-black leading-tight tracking-tight text-ink sm:text-4xl">
               Gôm Ngay Voucher
               <br />
               <span className="text-forest">Nuôi Boss Nhàn Tênh</span>
             </h2>
           </MotionItem>
 
-          <MotionItem {...motionItemProps} className="hidden sm:flex gap-3">
-            <button
-              onClick={() => swiperRef.current?.slidePrev()}
-              className="group flex h-14 w-14 items-center justify-center rounded-full bg-white text-ink shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all hover:bg-forest hover:text-white hover:shadow-[0_8px_20px_rgba(16,133,79,0.2)] active:scale-95"
-            >
+          <MotionItem {...motionItemProps} className="hidden gap-3 sm:flex">
+            <button onClick={() => swiperRef.current?.slidePrev()} className="group flex h-14 w-14 items-center justify-center rounded-full bg-white text-ink shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all hover:bg-forest hover:text-white active:scale-95">
               <ChevronLeft size={24} className="transition-transform group-hover:-translate-x-1" />
             </button>
-            <button
-              onClick={() => swiperRef.current?.slideNext()}
-              className="group flex h-14 w-14 items-center justify-center rounded-full bg-white text-ink shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all hover:bg-forest hover:text-white hover:shadow-[0_8px_20px_rgba(16,133,79,0.2)] active:scale-95"
-            >
+            <button onClick={() => swiperRef.current?.slideNext()} className="group flex h-14 w-14 items-center justify-center rounded-full bg-white text-ink shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all hover:bg-forest hover:text-white active:scale-95">
               <ChevronRight size={24} className="transition-transform group-hover:translate-x-1" />
             </button>
           </MotionItem>
         </div>
 
         <MotionItem {...motionItemProps} className="relative -mx-2 px-2 sm:mx-0 sm:px-0">
-          
-          {/* Mobile Static Grid */}
-          <div className="grid grid-cols-2 gap-2.5 sm:hidden pb-4 pt-1">
-            {vouchers.map((voucher) => (
-              <VoucherCard key={voucher.id} voucher={voucher} copiedId={copiedId} handleCopy={handleCopy} />
-            ))}
+          <div className="grid grid-cols-2 gap-2.5 pb-4 pt-1 sm:hidden">
+            {vouchers.map((voucher) => <VoucherCard key={`${voucher.id}-${voucher.code}`} voucher={voucher} copiedId={copiedId} handleCopy={handleCopy} />)}
           </div>
 
-          {/* Desktop Swiper Slider */}
           <div className="hidden sm:block">
             <Swiper
               modules={[Navigation, Autoplay]}
               spaceBetween={24}
               slidesPerView={1.1}
-              breakpoints={{
-                640: { slidesPerView: 2.2 },
-                1024: { slidesPerView: 3.2 },
-                1280: { slidesPerView: 4 },
-              }}
+              breakpoints={desktopBreakpoints}
               onBeforeInit={(swiper) => {
                 swiperRef.current = swiper;
               }}
@@ -224,7 +260,7 @@ export function VoucherSection() {
               className="!pb-4 !pt-1"
             >
               {vouchers.map((voucher) => (
-                <SwiperSlide key={voucher.id} className="py-2">
+                <SwiperSlide key={`${voucher.id}-${voucher.code}`} className="py-2">
                   <VoucherCard voucher={voucher} copiedId={copiedId} handleCopy={handleCopy} />
                 </SwiperSlide>
               ))}
@@ -232,6 +268,57 @@ export function VoucherSection() {
           </div>
         </MotionItem>
       </MotionSection>
+
+      <AnimatePresence>
+        {showAuthWarning && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAuthWarning(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            
+            {/* Modal Content */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", duration: 0.4 }}
+              className="relative w-full max-w-sm overflow-hidden rounded-[24px] bg-white p-6 text-center shadow-[0_24px_48px_rgba(0,0,0,0.16)] border border-slate-100"
+            >
+              {/* Warning/Lock Icon with animated gradient circle */}
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-amber-500">
+                <Ticket className="h-8 w-8 animate-pulse" />
+              </div>
+              
+              <h3 className="mb-2 text-lg font-black text-[#0B1F3A]">
+                Yêu cầu đăng nhập
+              </h3>
+              <p className="mb-6 text-sm font-semibold leading-relaxed text-[#64748B]">
+                Vui lòng đăng nhập tài khoản 3F Store để lưu mã giảm giá và nhận thêm nhiều ưu đãi đặc quyền hội yêu thú!
+              </p>
+              
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => navigate("/login")}
+                  className="w-full rounded-xl bg-[#0057E7] py-3 text-sm font-black text-white transition hover:bg-[#0047C4] shadow-md hover:shadow-lg active:scale-95"
+                >
+                  Đăng nhập ngay
+                </button>
+                <button
+                  onClick={() => setShowAuthWarning(false)}
+                  className="w-full rounded-xl border border-slate-200 bg-white py-3 text-sm font-bold text-ink/75 transition hover:bg-slate-50 active:scale-95"
+                >
+                  Đóng
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

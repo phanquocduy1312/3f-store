@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState } from "react";
 import { ChevronDown, ChevronRight, Clock, CreditCard, Eye, MapPin, ShoppingBag } from "lucide-react";
 import { Image } from "@/components/Image";
 import { adminCustomersApi } from "@/src/api/adminCustomersApi";
-import { getAdminOrders, type OrderDetail, type OrderItemDetail } from "@/src/api/productsApi";
+import { getAdminOrders, type OrderDetail, type OrderItemDetail, type AdminOrderListResponse } from "@/src/api/ordersApi";
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
   pending: { label: "Chờ xác nhận", className: "bg-yellow-100 text-yellow-700" },
@@ -210,8 +210,8 @@ export function CustomerOrdersTab({ customerId }: { customerId: number }) {
       q: order.order_code || String(order.id),
       page: 1,
       limit: 10,
-    }).then((res) => {
-      const detailedOrder = res.data.items.find(item => (
+    }).then((res: AdminOrderListResponse) => {
+      const detailedOrder = res.data.items.find((item: OrderDetail) => (
         item.id === order.id || item.order_code === order.order_code
       ));
 
@@ -222,7 +222,7 @@ export function CustomerOrdersTab({ customerId }: { customerId: number }) {
       } else {
         setDetailErrors(prev => ({ ...prev, [order.id]: "Không tìm thấy chi tiết sản phẩm cho đơn này." }));
       }
-    }).catch((err) => {
+    }).catch((err: any) => {
       setDetailErrors(prev => ({ ...prev, [order.id]: err.message || "Không tải được chi tiết sản phẩm." }));
     }).finally(() => {
       setLoadingDetailIds(prev => prev.filter(id => id !== order.id));

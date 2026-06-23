@@ -19,6 +19,15 @@ class ValidationService {
     }
 
     /**
+     * Validates local 0... and international 84... Vietnamese phone numbers.
+     */
+    public static function isValidPhone($phone) {
+        $normalized = self::normalizePhone($phone);
+        return preg_match('/^0\d{8,10}$/', $normalized) === 1
+            || preg_match('/^84\d{8,10}$/', $normalized) === 1;
+    }
+
+    /**
      * Normalizes money string representation to a clean integer.
      */
     public static function normalizeMoney($amount) {

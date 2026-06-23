@@ -1,24 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { ChevronDown, Star, PawPrint, Heart, ShoppingCart, Filter, X } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { ChevronDown, PawPrint, Filter, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductFilters } from "./product-filters";
 import { getProducts, getProductFilters, type ProductSort, type ProductFiltersData } from "@/src/api/productsApi";
-import { SaleBadge } from "@/components/SaleBadge";
-import { NewBadge } from "@/components/NewBadge";
+import { ProductCard } from "@/components/ProductCard";
 import type { Product } from "@/types/store";
-import { addToCart, parsePriceString } from "@/lib/cartHelper";
-import { toast } from "sonner";
-
-// Helper for image loading
-function Image({ src, alt, className }: { src: string, alt: string, className?: string }) {
-  return <img src={src} alt={alt} className={`absolute w-full h-full ${className}`} />;
-}
-
-// Data extraction helper
-function extractPrice(priceStr: string): number {
-  return parseInt(priceStr.replace(/\D/g, "")) || 0;
-}
 
 export function ProductListing() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -256,103 +243,9 @@ export function ProductListing() {
                 <div className="col-span-full rounded-2xl border border-red-100 bg-red-50 px-4 py-8 text-center text-sm font-bold text-red-700">
                   {productError}
                 </div>
-              ) : apiProducts.length > 0 ? apiProducts.map((product, idx) => {
-                const hasDiscount = !!product.oldPrice;
-                const isNew = product.sold < 50 && product.rating > 4.5;
-                const linkId = product.slug || product.id;
-
-                return (
-                  <article key={product.id || idx} className="group relative flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-[24px] border border-[rgb(var(--color-border))] bg-white p-3 sm:p-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(16,133,79,0.15)] hover:border-[rgb(var(--color-primary))]/30">
-
-                    {/* Animated Gradient Glow Behind Card Content */}
-                    <div className="pointer-events-none absolute -inset-10 -z-10 bg-gradient-to-br from-[rgb(var(--color-primary))]/0 via-[rgb(var(--color-primary))]/5 to-[#F59E0B]/5 opacity-0 transition-opacity duration-700 group-hover:opacity-100 blur-2xl" />
-
-                    {/* Sweeping Light Shimmer Effect */}
-                    <div className="pointer-events-none absolute inset-0 z-30 -translate-x-[150%] -skew-x-12 bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-0 transition-all duration-1000 ease-in-out group-hover:translate-x-[150%] group-hover:opacity-100" />
-
-                    {/* Top Badges */}
-                    <div className="absolute left-2 sm:left-3 top-2 sm:top-3 z-10 flex flex-col gap-2 origin-top-left scale-[0.25] sm:scale-[0.28] pointer-events-none">
-                      {hasDiscount && product.oldPrice && (
-                        <SaleBadge discount={Math.round((1 - extractPrice(product.price) / extractPrice(product.oldPrice)) * 100)} />
-                      )}
-                      {isNew && (
-                        <NewBadge />
-                      )}
-                    </div>
-
-                    {/* Heart Icon */}
-                    <button className="absolute right-2 sm:right-3 top-2 sm:top-3 z-10 grid h-7 w-7 sm:h-8 sm:w-8 place-items-center rounded-full bg-white shadow-sm border border-[#F5F5F5] transition-colors hover:text-[#EF4444]">
-                      <Heart size={14} className="sm:w-4 sm:h-4 text-[rgb(var(--color-ink))]/30 transition-colors hover:fill-[#EF4444] hover:text-[#EF4444]" />
-                    </button>
-
-                    <div className="flex flex-col h-full">
-                      {/* Image */}
-                      <Link to={`/product/${linkId}`} className="block relative mb-3 sm:mb-4 aspect-square w-full overflow-hidden rounded-xl sm:rounded-[16px] bg-[rgb(var(--color-surface-soft))] p-2 sm:p-3 transition-colors duration-300 group-hover:bg-[rgb(var(--color-surface-soft))]">
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          className="object-contain transition duration-500 group-hover:scale-[1.12] mix-blend-multiply"
-                        />
-                      </Link>
-
-                      {/* Info */}
-                      <div className="space-y-0.5 sm:space-y-1.5 flex flex-col justify-between flex-1 min-w-0 overflow-hidden">
-                        <div className="min-w-0">
-                          <p className="text-[9px] sm:text-[10px] font-black uppercase text-[rgb(var(--color-primary))] tracking-wider mb-0.5 sm:mb-1 truncate">{product.brand?.toUpperCase() || "KHÁC"}</p>
-                          <Link to={`/product/${linkId}`} className="block">
-                            <h3 className="text-[11px] sm:text-[13px] font-extrabold leading-tight sm:leading-[18px] text-[rgb(var(--color-ink))] line-clamp-2 min-h-[29px] sm:min-h-[36px] hover:text-[rgb(var(--color-primary))] transition-colors break-words" title={product.name}>
-                              {product.name}
-                            </h3>
-                          </Link>
-                        </div>
-
-                        <div className="mt-1.5 sm:mt-2 min-w-0">
-                          {/* Rating and Sold */}
-                          <div className="flex items-center gap-1 sm:gap-1.5 mb-2 sm:mb-2.5 min-w-0 overflow-hidden">
-                            <div className="flex items-center gap-0.5 text-[#F59E0B] shrink-0">
-                              <Star size={11} fill="currentColor" strokeWidth={2.5} className="sm:w-3 sm:h-3" />
-                            </div>
-                            <span className="text-[10px] sm:text-[11px] font-bold text-[rgb(var(--color-ink))]/60 truncate flex-1 min-w-0">
-                              {product.rating.toFixed(1)} <span className="mx-1 sm:mx-1.5 text-[rgb(var(--color-ink))]/20">•</span> Đã bán {product.sold > 0 ? (product.sold >= 1000 ? (Math.floor(product.sold / 100) / 10) + 'k' : product.sold) : 0}
-                            </span>
-                          </div>
-
-                          {/* Price & Cart row */}
-                          <div className="flex items-end justify-between border-t border-[#F2EFE9] pt-2 sm:pt-3 mt-1 min-w-0 gap-2">
-                            <div className="flex flex-col gap-0 sm:gap-0.5 min-w-0 flex-1 overflow-hidden">
-                              {product.oldPrice && (
-                                <div className="text-[10px] sm:text-[11px] font-bold text-[rgb(var(--color-ink))]/30 line-through truncate">
-                                  {product.oldPrice}
-                                </div>
-                              )}
-                              <div className="flex items-center gap-1 sm:gap-2 min-w-0 overflow-hidden">
-                                <span className="text-sm sm:text-[1.1rem] font-black text-[rgb(var(--color-primary))] truncate">{product.price}</span>
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                window.dispatchEvent(
-                                  new CustomEvent("open-quick-add", {
-                                    detail: { productId: product.id, intent: "add-to-cart" },
-                                  })
-                                );
-                              }}
-                              title="Thêm vào giỏ"
-                              className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-[rgb(var(--color-primary-soft))] text-[rgb(var(--color-primary))] shadow-sm transition-all hover:scale-105 hover:bg-[rgb(var(--color-primary))] hover:text-white active:scale-95"
-                            >
-                              <ShoppingCart size={14} strokeWidth={2.5} className="sm:w-4 sm:h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </article>
-                );
-              }) : (
+              ) : apiProducts.length > 0 ? apiProducts.map((product, idx) => (
+                <ProductCard key={product.id || idx} product={product} index={idx} />
+              )) : (
                 <div className="col-span-full py-12 text-center text-sm font-bold text-[rgb(var(--color-ink))]/50">
                   Không tìm thấy sản phẩm nào phù hợp với bộ lọc.
                 </div>

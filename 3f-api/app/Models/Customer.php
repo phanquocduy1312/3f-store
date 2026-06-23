@@ -228,6 +228,7 @@ class Customer {
         $page = isset($filters['page']) ? max(1, (int)$filters['page']) : 1;
         $limit = isset($filters['limit']) ? min(100, max(1, (int)$filters['limit'])) : 10;
         $offset = ($page - 1) * $limit;
+        $hasTierFilter = !empty($filters['tier']) && $filters['tier'] !== 'all';
         
         $where = ["1=1"];
         $params = [];
@@ -269,43 +270,47 @@ class Customer {
             ELSE 0 END
         )";
 
-        if (!empty($filters['tier']) && $filters['tier'] !== 'all') {
-            $tierMap = [
-                'Silver' => [0, 4999],
-                'Gold' => [5000, 14999],
-                'Platinum' => [15000, 999999999]
-            ];
-            if (isset($tierMap[$filters['tier']])) {
-                $min = $tierMap[$filters['tier']][0];
-                $max = $tierMap[$filters['tier']][1];
-                $baseSql .= " AND $pointsSql BETWEEN $min AND $max";
-            }
-        }
-
         // Count total
-        $countStmt = $this->db->prepare("SELECT COUNT(*) as total $baseSql");
+        $countStmt = $this->db->prepare("SELECT c.id $baseSql");
         $countStmt->execute($params);
-        $total = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+        $countRows = $countStmt->fetchAll(PDO::FETCH_ASSOC);
+        $loyaltyProd = new \App\Models\LoyaltyProductionModel();
+        if ($hasTierFilter) {
+            $countRows = array_values(array_filter($countRows, function ($row) use ($filters, $loyaltyProd) {
+                return strcasecmp($loyaltyProd->calculateCustomerTierName((int)$row['id']), (string)$filters['tier']) === 0;
+            }));
+        }
+        $total = count($countRows);
         
         // Get items
         $sql = "SELECT c.id, c.full_name, c.email, c.phone, c.status, c.created_at, c.phone_verified_at, c.email_verified_at, c.last_login_at,
                        (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.id AND o.order_status != 'cancelled') as total_orders,
-                       (SELECT COALESCE(SUM(total), 0) FROM orders o WHERE o.customer_id = c.id AND o.order_status = 'completed') as total_spent,
+                       (SELECT COALESCE(SUM(CASE WHEN total IS NOT NULL AND total > 0 THEN total ELSE GREATEST(COALESCE(subtotal, 0) - COALESCE(discount, 0), 0) END), 0) FROM orders o WHERE o.customer_id = c.id AND o.order_status = 'completed') as total_spent,
                        (SELECT MAX(created_at) FROM orders o WHERE o.customer_id = c.id AND o.order_status != 'cancelled') as last_order_date,
                        $pointsSql as total_points
                 $baseSql
-                ORDER BY c.created_at DESC 
-                LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
+                ORDER BY c.created_at DESC";
+        if (!$hasTierFilter) {
+            $sql .= " LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
+        }
                 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         foreach ($items as &$item) {
-            $pts = (int)$item['total_points'];
-            $item['tier'] = 'Silver';
-            if ($pts >= 15000) $item['tier'] = 'Platinum';
-            elseif ($pts >= 5000) $item['tier'] = 'Gold';
+            $tierStats = $loyaltyProd->getCompletedOrderStats((int)$item['id']);
+            $item['tier_order_count'] = (int)($tierStats['order_count'] ?? 0);
+            $item['tier_total_spent'] = (float)($tierStats['total_spend'] ?? 0);
+            $item['tier'] = $loyaltyProd->calculateCustomerTierName((int)$item['id']);
+        }
+        unset($item);
+
+        if ($hasTierFilter) {
+            $items = array_values(array_filter($items, function ($item) use ($filters) {
+                return strcasecmp((string)$item['tier'], (string)$filters['tier']) === 0;
+            }));
+            $items = array_slice($items, $offset, $limit);
         }
         
         return [
@@ -363,22 +368,9 @@ class Customer {
             ELSE 0 END
         )";
 
-        if (!empty($filters['tier']) && $filters['tier'] !== 'all') {
-            $tierMap = [
-                'Silver' => [0, 4999],
-                'Gold' => [5000, 14999],
-                'Platinum' => [15000, 999999999]
-            ];
-            if (isset($tierMap[$filters['tier']])) {
-                $min = $tierMap[$filters['tier']][0];
-                $max = $tierMap[$filters['tier']][1];
-                $baseSql .= " AND $pointsSql BETWEEN $min AND $max";
-            }
-        }
-
         $sql = "SELECT c.id, c.full_name, c.email, c.phone, c.status, c.created_at, c.last_login_at,
                        (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.id AND o.order_status != 'cancelled') as total_orders,
-                       (SELECT COALESCE(SUM(total), 0) FROM orders o WHERE o.customer_id = c.id AND o.order_status = 'completed') as total_spent,
+                       (SELECT COALESCE(SUM(CASE WHEN total IS NOT NULL AND total > 0 THEN total ELSE GREATEST(COALESCE(subtotal, 0) - COALESCE(discount, 0), 0) END), 0) FROM orders o WHERE o.customer_id = c.id AND o.order_status = 'completed') as total_spent,
                        $pointsSql as total_points
                 $baseSql
                 ORDER BY c.created_at DESC";
@@ -389,11 +381,13 @@ class Customer {
         $fp = fopen('php://output', 'w');
         fputcsv($fp, ['ID', 'Ho Ten', 'Email', 'So Dien Thoai', 'Trang Thai', 'Hang Thanh Vien', 'Tong Diem', 'Tong Don', 'Tong Chi Tieu', 'Ngay Tham Gia', 'Dang Nhap Lan Cuoi']);
         
+        $loyaltyProd = new \App\Models\LoyaltyProductionModel();
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $pts = (int)$row['total_points'];
-            $tier = 'Silver';
-            if ($pts >= 15000) $tier = 'Platinum';
-            elseif ($pts >= 5000) $tier = 'Gold';
+            $tier = $loyaltyProd->calculateCustomerTierName((int)$row['id']);
+            if (!empty($filters['tier']) && $filters['tier'] !== 'all' && strcasecmp($tier, (string)$filters['tier']) !== 0) {
+                continue;
+            }
+            $pts = (int)($row['total_points'] ?? 0);
             
             fputcsv($fp, [
                 $row['id'],
@@ -421,6 +415,53 @@ class Customer {
         $stmtSession = $this->db->prepare("SELECT id, created_at, expires_at, revoked_at FROM customer_sessions WHERE customer_id = :id ORDER BY id DESC LIMIT 10");
         $stmtSession->execute([':id' => $id]);
         $customer['sessions'] = $stmtSession->fetchAll(PDO::FETCH_ASSOC);
+
+        // Calculate stats
+        $stmtOrders = $this->db->prepare("SELECT COUNT(*) FROM orders WHERE customer_id = :id AND order_status != 'cancelled'");
+        $stmtOrders->execute([':id' => $id]);
+        $totalOrders = (int)$stmtOrders->fetchColumn();
+        
+        $stmtSpent = $this->db->prepare("SELECT COALESCE(SUM(CASE WHEN total IS NOT NULL AND total > 0 THEN total ELSE GREATEST(COALESCE(subtotal, 0) - COALESCE(discount, 0), 0) END), 0) FROM orders WHERE customer_id = :id AND order_status = 'completed'");
+        $stmtSpent->execute([':id' => $id]);
+        $totalSpent = (float)$stmtSpent->fetchColumn();
+
+        $points = 0;
+        if (!empty($customer['phone'])) {
+            $pointsModel = new CustomerPointTransactionModel();
+            $points = (int)$pointsModel->getBalance($customer['phone']);
+        }
+
+        $completion = 10; // Base completion
+        if (!empty($customer['full_name']) || !empty($customer['name'])) $completion += 20;
+        if (!empty($customer['email'])) $completion += 20;
+        if (!empty($customer['phone'])) $completion += 20;
+        if (!empty($customer['birthday'])) $completion += 15;
+        if (!empty($customer['gender'])) $completion += 15;
+
+        // Set snake_case and camelCase keys for maximum flexibility
+        $customer['total_orders'] = $totalOrders;
+        $customer['totalOrders'] = $totalOrders;
+        
+        $customer['total_spent'] = $totalSpent;
+        $customer['totalSpent'] = $totalSpent;
+        
+        $customer['point_balance'] = $points;
+        $customer['points'] = $points;
+        $customer['loyalty_points'] = $points;
+        $customer['total_points'] = $points;
+
+        $customer['profile_completion'] = $completion;
+        $customer['profileCompletion'] = $completion;
+
+        $loyaltyProd = new \App\Models\LoyaltyProductionModel();
+        $tierStats = $loyaltyProd->getCompletedOrderStats((int)$id);
+        $customer['tier_order_count'] = (int)($tierStats['order_count'] ?? 0);
+        $customer['tierOrderCount'] = $customer['tier_order_count'];
+        $customer['tier_total_spent'] = (float)($tierStats['total_spend'] ?? 0);
+        $customer['tierTotalSpent'] = $customer['tier_total_spent'];
+        $customer['tier'] = $loyaltyProd->calculateCustomerTierName((int)$id);
+        $customer['loyalty_tier'] = $customer['tier'];
+        $customer['loyaltyTier'] = $customer['tier'];
         
         // Ensure not to leak sensitive hashes
         unset($customer['password_hash']);
@@ -440,8 +481,18 @@ class Customer {
     }
 
     public function adminGetCustomerOrders($id) {
-        $stmt = $this->db->prepare("SELECT id FROM orders WHERE customer_id = :id ORDER BY id DESC LIMIT 50");
-        $stmt->execute([':id' => (int)$id]);
+        $stmtPhone = $this->db->prepare("SELECT phone FROM customers WHERE id = :id LIMIT 1");
+        $stmtPhone->execute([':id' => (int)$id]);
+        $phone = trim((string)($stmtPhone->fetchColumn() ?: ''));
+
+        $stmt = $this->db->prepare("
+            SELECT id
+            FROM orders
+            WHERE customer_id = :id OR (:phone <> '' AND phone = :phone_match)
+            ORDER BY id DESC
+            LIMIT 50
+        ");
+        $stmt->execute([':id' => (int)$id, ':phone' => $phone, ':phone_match' => $phone]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $orderModel = new Order();
         $orders = [];

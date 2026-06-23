@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, ShoppingBag, MapPin, Truck } from "lucide-react";
-import { getCart, updateQuantity, removeFromCart, clearCart, getCartTotal } from "@/lib/cartHelper";
+import { getCart, updateQuantity, removeFromCart, clearCart, getCartTotal, formatPrice } from "@/lib/cartHelper";
 import { CartItemsList } from "@/components/CartCheckout/CartItemsList";
 import { DeliveryForm } from "@/components/CartCheckout/DeliveryForm";
 import { OrderSummary } from "@/components/CartCheckout/OrderSummary";
@@ -12,6 +12,7 @@ import type { CreateOrderPayload } from "@/src/api/productsApi";
 import { toast } from "sonner";
 import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
 import { listAddressesApi, type AddressData } from "@/src/api/customerAddressesApi";
+import { listPublicOrderShippingMethods, type OrderShippingMethod } from "@/src/api/orderShippingMethodsApi";
 
 export function CartCheckout() {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ export function CartCheckout() {
   
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [deliveryMethod, setDeliveryMethod] = useState("express");
+  const [shippingMethods, setShippingMethods] = useState<OrderShippingMethod[]>([]);
   const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; discountAmount: number; description?: string } | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,7 +83,27 @@ export function CartCheckout() {
     return () => window.removeEventListener("cart-updated", handleUpdate);
   }, []);
 
+  useEffect(() => {
+    const loadShippingMethods = async () => {
+      try {
+        const res = await listPublicOrderShippingMethods();
+        if (res.success && res.data.length > 0) {
+          setShippingMethods(res.data);
+          if (!res.data.some((method) => method.methodKey === deliveryMethod)) {
+            setDeliveryMethod(res.data[0].methodKey);
+          }
+        }
+      } catch (err) {
+        console.error("Không tải được cấu hình phương thức giao hàng", err);
+      }
+    };
+
+    loadShippingMethods();
+  }, []);
+
   const subtotal = getCartTotal();
+  const selectedShippingMethod = shippingMethods.find((method) => method.methodKey === deliveryMethod);
+  const selectedShippingFee = selectedShippingMethod?.fee ?? 0;
 
   // Validate coupon via backend
   const handleApplyVoucher = async (code: string) => {
@@ -112,6 +134,11 @@ export function CartCheckout() {
     e.preventDefault();
     if (!fullName || !phone || !provinceName || !wardName || !detailedAddress) {
       toast.warning("Vui lòng điền đầy đủ các thông tin giao hàng có dấu (*)");
+      return;
+    }
+
+    if (!deliveryMethod) {
+      toast.warning("Vui lòng chọn phương thức giao hàng.");
       return;
     }
 
@@ -242,62 +269,35 @@ export function CartCheckout() {
                 <Truck size={16} className="sm:w-[18px] sm:h-[18px]" /> Phương thức giao hàng
               </h3>
               <div className="space-y-2.5 sm:space-y-3">
-                {/* Option 1: Hỏa tốc */}
-                <label className={`flex cursor-pointer items-start sm:items-center justify-between rounded-xl border-2 p-2.5 sm:p-3 transition active:scale-[0.98] ${deliveryMethod === "express" ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
-                  <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 mr-2">
-                    <input
-                      type="radio"
-                      name="deliveryMethod"
-                      value="express"
-                      checked={deliveryMethod === "express"}
-                      onChange={() => setDeliveryMethod("express")}
-                      className="accent-forest mt-0.5 sm:mt-0 shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs sm:text-sm font-bold text-ink">Giao hàng hỏa tốc</div>
-                      <div className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-2">Nhận hàng trong 2 giờ. Chỉ áp dụng khu vực TP.HCM</div>
-                    </div>
+                {shippingMethods.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-forest/20 bg-cream/20 p-3 text-xs font-bold text-gray-500">
+                    Đang tải phương thức giao hàng...
                   </div>
-                  <div className="text-xs sm:text-sm font-bold text-forest shrink-0">Miễn phí</div>
-                </label>
-
-                {/* Option 2: Trong ngày */}
-                <label className={`flex cursor-pointer items-start sm:items-center justify-between rounded-xl border-2 p-2.5 sm:p-3 transition active:scale-[0.98] ${deliveryMethod === "sameday" ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
-                  <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 mr-2">
-                    <input
-                      type="radio"
-                      name="deliveryMethod"
-                      value="sameday"
-                      checked={deliveryMethod === "sameday"}
-                      onChange={() => setDeliveryMethod("sameday")}
-                      className="accent-forest mt-0.5 sm:mt-0 shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs sm:text-sm font-bold text-ink">Giao hàng trong ngày</div>
-                      <div className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-2">Nhận hàng hôm nay. Chỉ áp dụng khu vực TP.HCM</div>
-                    </div>
-                  </div>
-                  <div className="text-xs sm:text-sm font-bold text-forest shrink-0">Miễn phí</div>
-                </label>
-
-                {/* Option 3: Nhanh */}
-                <label className={`flex cursor-pointer items-start sm:items-center justify-between rounded-xl border-2 p-2.5 sm:p-3 transition active:scale-[0.98] ${deliveryMethod === "fast" ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
-                  <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 mr-2">
-                    <input
-                      type="radio"
-                      name="deliveryMethod"
-                      value="fast"
-                      checked={deliveryMethod === "fast"}
-                      onChange={() => setDeliveryMethod("fast")}
-                      className="accent-forest mt-0.5 sm:mt-0 shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs sm:text-sm font-bold text-ink">Giao hàng nhanh</div>
-                      <div className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-2">Nhận hàng trong 2-5 ngày làm việc</div>
-                    </div>
-                  </div>
-                  <div className="text-xs sm:text-sm font-bold text-forest shrink-0">Miễn phí</div>
-                </label>
+                ) : (
+                  shippingMethods.map((method) => (
+                    <label key={method.id} className={`flex cursor-pointer items-start sm:items-center justify-between rounded-xl border-2 p-2.5 sm:p-3 transition active:scale-[0.98] ${deliveryMethod === method.methodKey ? "border-forest bg-forest/5" : "border-forest/10 bg-white hover:bg-cream/10"}`}>
+                      <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 mr-2">
+                        <input
+                          type="radio"
+                          name="deliveryMethod"
+                          value={method.methodKey}
+                          checked={deliveryMethod === method.methodKey}
+                          onChange={() => setDeliveryMethod(method.methodKey)}
+                          className="accent-forest mt-0.5 sm:mt-0 shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs sm:text-sm font-bold text-ink">{method.name}</div>
+                          {method.description && (
+                            <div className="text-[10px] sm:text-[11px] text-gray-500 line-clamp-2">{method.description}</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-xs sm:text-sm font-bold text-forest shrink-0">
+                        {method.fee > 0 ? formatPrice(method.fee) : "Miễn phí"}
+                      </div>
+                    </label>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -329,6 +329,7 @@ export function CartCheckout() {
                 isSubmitting={isSubmitting}
                 paymentMethod={paymentMethod}
                 setPaymentMethod={setPaymentMethod}
+                shippingFee={selectedShippingFee}
               />
             </div>
           </div>

@@ -467,18 +467,49 @@ class LoyaltyController {
      * POST /api/loyalty/rewards/redeem
      */
     public function redeem() {
+        $customer = null;
+        try {
+            $customer = AuthMiddleware::requireCustomer();
+        } catch (\Throwable $e) {}
+
+        if (!$customer) {
+            Response::json(["success" => false, "message" => "Vui lòng đăng nhập để thực hiện đổi quà."], 401);
+        }
+
         $input = Request::json();
-        
-        $phoneRaw = isset($input['phone']) ? trim($input['phone']) : '';
+        $phoneRaw = $customer['phone'] ?: (isset($input['phone']) ? trim($input['phone']) : '');
         $phone = \App\Services\ValidationService::normalizePhone($phoneRaw);
-        $customerName = isset($input['customerName']) ? trim($input['customerName']) : '';
+        $customerName = $customer['full_name'] ?: $customer['name'] ?: (isset($input['customerName']) ? trim($input['customerName']) : '');
         $rewardId = isset($input['rewardId']) ? (int)$input['rewardId'] : 0;
 
-        if (empty($phoneRaw) || !\App\Services\ValidationService::isValidVietnamPhone($phoneRaw)) {
+        if (empty($phone) || !\App\Services\ValidationService::isValidPhone($phone)) {
             Response::json(["success" => false, "message" => "Số điện thoại không hợp lệ."], 400);
         }
         if ($rewardId <= 0) {
             Response::json(["success" => false, "message" => "Quà tặng không hợp lệ."], 400);
+        }
+
+        // Check phone verified
+        $isPhoneVerified = (int)($customer['is_phone_verified'] ?? 0);
+        if ($isPhoneVerified !== 1 && empty($customer['phone_verified_at'])) {
+            Response::json(["success" => false, "message" => "Số điện thoại của bạn chưa được xác thực. Vui lòng xác thực số điện thoại."], 400);
+        }
+
+        // Check OTP verification if required
+        $settings = new \App\Models\LoyaltySettings();
+        $otpRequired = (int)($settings->get('otp_required_redemption') ?: 1);
+        if ($otpRequired === 1) {
+            $verificationToken = $input['verificationToken'] ?? $input['otpToken'] ?? '';
+            if (empty($verificationToken)) {
+                Response::json(["success" => false, "message" => "Mã xác thực OTP là bắt buộc."], 400);
+            }
+            $otpService = new \App\Services\OtpService();
+            $isValid = $otpService->validateVerificationToken($phone, $verificationToken, 'redeem_reward') ||
+                       $otpService->validateVerificationToken($phone, $verificationToken, 'use_points') ||
+                       $otpService->validateVerificationToken($phone, $verificationToken, 'sensitive_action');
+            if (!$isValid) {
+                Response::json(["success" => false, "message" => "Xác thực OTP không hợp lệ hoặc đã hết hạn."], 400);
+            }
         }
 
         $dbConnection = \App\Core\Database::getInstance()->getConnection();
@@ -522,9 +553,9 @@ class LoyaltyController {
                 }
             }
 
-            // Check point balance
-            $transModel = new \App\Models\CustomerPointTransactionModel();
-            $currentBalance = $transModel->getBalance($phone);
+            // Check point balance using the new ledger
+            $transModel = new \App\Models\LoyaltyPointTransaction();
+            $currentBalance = $transModel->getAvailableBalance($customer['id']);
             $pointsSpent = (int)$reward['points_required'];
 
             if ($currentBalance < $pointsSpent) {
@@ -575,15 +606,20 @@ class LoyaltyController {
             }
 
             // Deduct Points
-            $transModel->addTransaction(
-                $phone,
-                'spend_reward',
-                -$pointsSpent,
-                $currentBalance - $pointsSpent,
-                'loyalty_reward_redemption',
-                $redemptionId,
-                'Đổi quà: ' . $reward['name']
-            );
+            $transModel->addTransaction([
+                'customer_id' => $customer['id'],
+                'order_id' => null,
+                'source' => 'website',
+                'type' => 'redeem',
+                'status' => 'used',
+                'points' => -$pointsSpent,
+                'eligible_amount' => 0.00,
+                'multiplier' => 1.00,
+                'reference_type' => 'loyalty_reward_redemption',
+                'reference_id' => $redemptionId,
+                'reason' => 'Đổi quà: ' . $reward['name'],
+                'idempotency_key' => "redeem_reward_{$redemptionId}"
+            ]);
 
             $dbConnection->commit();
 
@@ -723,6 +759,30 @@ class LoyaltyController {
             }
 
             // Refund points
+            $stmtCust = $dbConnection->prepare("SELECT id FROM customers WHERE phone = ? LIMIT 1");
+            $stmtCust->execute([$redemption['customer_phone']]);
+            $custRow = $stmtCust->fetch();
+            $customerId = $custRow ? (int)$custRow['id'] : null;
+
+            if ($customerId) {
+                $newTransModel = new \App\Models\LoyaltyPointTransaction();
+                $pointsSpent = abs((int)$redemption['points_spent']);
+                $newTransModel->addTransaction([
+                    'customer_id' => $customerId,
+                    'order_id' => null,
+                    'source' => 'website',
+                    'type' => 'reverse',
+                    'status' => 'available',
+                    'points' => $pointsSpent,
+                    'eligible_amount' => 0.00,
+                    'multiplier' => 1.00,
+                    'reference_type' => 'loyalty_reward_redemption',
+                    'reference_id' => $id,
+                    'reason' => 'Từ chối đổi quà, hoàn điểm: ' . $redemption['reward_name'],
+                    'idempotency_key' => "refund_reward_{$id}"
+                ]);
+            }
+
             $transModel = new \App\Models\CustomerPointTransactionModel();
             
             $stmt = $dbConnection->prepare("
@@ -765,6 +825,9 @@ class LoyaltyController {
 
             $productionModel = new LoyaltyProductionModel();
             $productionModel->releaseVoucherForRedemption($id);
+            if ($customerId) {
+                $productionModel->ensureCustomerProfile($customerId);
+            }
 
             $model->updateStatus($id, 'rejected', $processedBy, $note);
 
@@ -1081,6 +1144,58 @@ class LoyaltyController {
         }
     }
 
+    public function getSettings() {
+        try {
+            $settings = (new \App\Models\LoyaltySettings())->getAll();
+            Response::json(["success" => true, "data" => $settings], 200);
+        } catch (Exception $e) {
+            Response::json(["success" => false, "message" => $e->getMessage()], 500);
+        }
+    }
+
+    public function saveSettings() {
+        $input = Request::json();
+        try {
+            $settingsModel = new \App\Models\LoyaltySettings();
+
+            if (isset($input['money_per_point'])) {
+                $val = (int)$input['money_per_point'];
+                if ($val <= 0) {
+                    Response::json(["success" => false, "message" => "Số tiền quy đổi mỗi điểm phải lớn hơn 0."], 400);
+                    return;
+                }
+            }
+            if (isset($input['point_redeem_value'])) {
+                $val = (int)$input['point_redeem_value'];
+                if ($val <= 0) {
+                    Response::json(["success" => false, "message" => "Giá trị quy đổi điểm phải lớn hơn 0."], 400);
+                    return;
+                }
+            }
+            if (isset($input['point_expiry_months'])) {
+                $val = (int)$input['point_expiry_months'];
+                if ($val <= 0) {
+                    Response::json(["success" => false, "message" => "Hạn sử dụng điểm phải lớn hơn 0."], 400);
+                    return;
+                }
+            }
+            if (isset($input['expiry_reminder_days'])) {
+                $val = (int)$input['expiry_reminder_days'];
+                if ($val < 0) {
+                    Response::json(["success" => false, "message" => "Số ngày nhắc trước khi hết hạn không được âm."], 400);
+                    return;
+                }
+            }
+
+            foreach ($input as $key => $val) {
+                $settingsModel->set($key, $val);
+            }
+            Response::json(["success" => true, "message" => "Lưu cấu hình thành công."], 200);
+        } catch (Exception $e) {
+            Response::json(["success" => false, "message" => $e->getMessage()], 500);
+        }
+    }
+
     public function customerTier() {
         $customerId = Request::query('customer_id', Request::query('customerId', Request::query('phone', '')));
         if (empty($customerId)) Response::json(["success" => false, "message" => "customer_id khong duoc trong."], 400);
@@ -1119,4 +1234,123 @@ class LoyaltyController {
             Response::json(["success" => false, "message" => $e->getMessage()], 500);
         }
     }
+
+    public function listLoyaltyTiers() {
+        try {
+            $tiers = (new \App\Models\LoyaltyTier())->getAll();
+            Response::json(["success" => true, "data" => $tiers], 200);
+        } catch (Exception $e) {
+            Response::json(["success" => false, "message" => "Lỗi: " . $e->getMessage()], 500);
+        }
+    }
+
+    public function updateLoyaltyTier() {
+        $id = (int)Request::query('id', 0);
+        if ($id <= 0) {
+            Response::json(["success" => false, "message" => "ID hạng không hợp lệ."], 400);
+            return;
+        }
+
+        $input = Request::json();
+        
+        $name = isset($input['name']) ? trim($input['name']) : '';
+        $color = isset($input['color']) ? trim($input['color']) : '';
+        
+        // Handle input fields (which can be either backend snake_case or frontend camelCase)
+        $multiplier = isset($input['multiplier']) ? (float)$input['multiplier'] : 1.00;
+        $isActive = isset($input['isActive']) ? (int)$input['isActive'] : (isset($input['is_active']) ? (int)$input['is_active'] : 1);
+        $minSpend = isset($input['min_spend']) ? (float)$input['min_spend'] : (isset($input['minSpend']) ? (float)$input['minSpend'] : 0.00);
+        $minOrders = isset($input['min_orders']) ? (int)$input['min_orders'] : (isset($input['minOrders']) ? (int)$input['minOrders'] : 0);
+        $redemptionCap = isset($input['redemption_cap_percent']) ? (int)$input['redemption_cap_percent'] : (isset($input['redemptionCapPercent']) ? (int)$input['redemptionCapPercent'] : 10);
+        $benefits = isset($input['benefits']) ? trim($input['benefits']) : '';
+
+        if (empty($name)) {
+            Response::json(["success" => false, "message" => "Tên hạng không được để trống."], 400);
+            return;
+        }
+        if (empty($color)) {
+            Response::json(["success" => false, "message" => "Màu sắc hạng không được để trống."], 400);
+            return;
+        }
+        if ($multiplier < 1.0) {
+            Response::json(["success" => false, "message" => "Hệ số nhân điểm phải từ 1.0 trở lên."], 400);
+            return;
+        }
+        if ($minSpend < 0) {
+            Response::json(["success" => false, "message" => "Số tiền chi tiêu không được âm."], 400);
+            return;
+        }
+        if ($minOrders < 0) {
+            Response::json(["success" => false, "message" => "Số đơn hoàn thành không được âm."], 400);
+            return;
+        }
+        if ($redemptionCap <= 0 || $redemptionCap > 100) {
+            Response::json(["success" => false, "message" => "Giới hạn dùng điểm phải lớn hơn 0% và không vượt quá 100%."], 400);
+            return;
+        }
+
+        try {
+            $tierModel = new \App\Models\LoyaltyTier();
+            $existing = $tierModel->getById($id);
+            if (!$existing) {
+                Response::json(["success" => false, "message" => "Không tìm thấy hạng thành viên."], 404);
+                return;
+            }
+
+            $success = $tierModel->update($id, [
+                'name' => $name,
+                'multiplier' => $multiplier,
+                'color' => $color,
+                'min_spend' => $minSpend,
+                'min_orders' => $minOrders,
+                'redemption_cap_percent' => $redemptionCap,
+                'benefits' => $benefits,
+                'is_active' => $isActive
+            ]);
+
+            Response::json(["success" => $success, "message" => "Cập nhật hạng thành công."], 200);
+        } catch (Exception $e) {
+            Response::json(["success" => false, "message" => "Lỗi: " . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * GET /api/loyalty/tiers
+     */
+    public function listLoyaltyTiersPublic() {
+        try {
+            $tiers = (new \App\Models\LoyaltyTier())->getAll();
+            $activeTiers = array_values(array_filter($tiers, function($tier) {
+                return (int)$tier['is_active'] === 1;
+            }));
+            Response::json(["success" => true, "data" => $activeTiers], 200);
+        } catch (Exception $e) {
+            Response::json(["success" => false, "message" => "Lỗi: " . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * GET /api/loyalty/point-rules/shopee
+     */
+    public function getShopeePointRulePublic() {
+        try {
+            $model = new \App\Models\LoyaltyPointRuleModel();
+            $rule = $model->getActiveRule('shopee');
+            if (!$rule) {
+                $settings = new \App\Models\LoyaltySettings();
+                $moneyPerPoint = (int)($settings->get('money_per_point') ?: 200);
+                $rule = [
+                    'money_per_point' => $moneyPerPoint,
+                    'multiplier' => 1.00
+                ];
+            }
+            Response::json(["success" => true, "data" => [
+                'moneyPerPoint' => (int)$rule['money_per_point'],
+                'multiplier' => (float)$rule['multiplier']
+            ]], 200);
+        } catch (Exception $e) {
+            Response::json(["success" => false, "message" => "Lỗi: " . $e->getMessage()], 500);
+        }
+    }
 }
+

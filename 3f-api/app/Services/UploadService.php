@@ -233,8 +233,119 @@ class UploadService {
         }
 
         $relativeUrl = "/uploads/avatars/" . $storedFilename;
+        $config = require dirname(__DIR__, 2) . '/config/config.php';
+        $publicBaseUrl = rtrim($config['app']['public_url'] ?? '', '/');
+        $publicUrl = $publicBaseUrl ? $publicBaseUrl . $relativeUrl : $relativeUrl;
+
         return [
-            "image_url" => $relativeUrl
+            "image_url" => $publicUrl
+        ];
+    }
+
+    /**
+     * Handles banner image upload and returns a public URL.
+     * Stores in storage/uploads/banners/ and exposes via public/uploads/banners/.
+     */
+    public static function uploadBannerImage($file) {
+        [$mimeType, $extension] = self::validateImageFile($file, 5); // 5MB max
+
+        $rootDir = dirname(__DIR__, 2);
+        $storageDir = $rootDir . '/storage/uploads/banners/';
+        $publicDir  = $rootDir . '/public/uploads/banners/';
+
+        foreach ([$storageDir, $publicDir] as $dir) {
+            if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+                throw new Exception("Khong the tao thu muc luu tru anh banner.");
+            }
+        }
+
+        $timestamp = time();
+        try {
+            $random = bin2hex(random_bytes(6));
+        } catch (Exception $e) {
+            $random = mt_rand(100000, 999999);
+        }
+
+        $storedFilename = "banner_{$timestamp}_{$random}.{$extension}";
+        $storagePath = $storageDir . $storedFilename;
+        $publicPath  = $publicDir  . $storedFilename;
+
+        if (!move_uploaded_file($file['tmp_name'], $storagePath)) {
+            throw new Exception("Khong the luu file anh banner da upload.");
+        }
+
+        if (!copy($storagePath, $publicPath)) {
+            @unlink($storagePath);
+            throw new Exception("Khong the tao file anh public cho banner.");
+        }
+
+        $config = require dirname(__DIR__, 2) . '/config/config.php';
+        $publicBaseUrl = rtrim($config['app']['public_url'] ?? '', '/');
+        $relativeUrl = "/uploads/banners/" . $storedFilename;
+        $publicUrl = $publicBaseUrl ? $publicBaseUrl . $relativeUrl : $relativeUrl;
+
+        return [
+            "original_filename" => $file['name'],
+            "stored_filename"   => $storedFilename,
+            "file_path"         => $storagePath,
+            "public_path"       => $publicPath,
+            "image_url"         => $publicUrl,
+            "mime_type"         => $mimeType,
+            "file_size"         => (int)$file['size']
+        ];
+    }
+
+    /**
+     * Handles blog image upload and returns a public URL.
+     * Stores in storage/uploads/blog/ and exposes via public/uploads/blog/.
+     */
+    public static function uploadBlogImage($file) {
+        [$mimeType, $extension] = self::validateImageFile($file, 5); // 5MB max
+
+        $rootDir = dirname(__DIR__, 2);
+        $storageDir = $rootDir . '/storage/uploads/blog/';
+        $publicDir  = $rootDir . '/public/uploads/blog/';
+
+        foreach ([$storageDir, $publicDir] as $dir) {
+            if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+                throw new Exception("Khong the tao thu muc luu tru anh blog.");
+            }
+        }
+
+        $timestamp = time();
+        try {
+            $random = bin2hex(random_bytes(6));
+        } catch (Exception $e) {
+            $random = mt_rand(100000, 999999);
+        }
+
+        $storedFilename = "blog_{$timestamp}_{$random}.{$extension}";
+        $storagePath = $storageDir . $storedFilename;
+        $publicPath  = $publicDir  . $storedFilename;
+
+        if (!move_uploaded_file($file['tmp_name'], $storagePath)) {
+            throw new Exception("Khong the luu file anh blog da upload.");
+        }
+
+        if (!copy($storagePath, $publicPath)) {
+            @unlink($storagePath);
+            throw new Exception("Khong the tao file anh public cho blog.");
+        }
+
+        $config = require dirname(__DIR__, 2) . '/config/config.php';
+        $publicBaseUrl = rtrim($config['app']['public_url'] ?? '', '/');
+        $relativeUrl = "/uploads/blog/" . $storedFilename;
+        $publicUrl = $publicBaseUrl ? $publicBaseUrl . $relativeUrl : $relativeUrl;
+
+        return [
+            "original_filename" => $file['name'],
+            "stored_filename"   => $storedFilename,
+            "file_path"         => $storagePath,
+            "public_path"       => $publicPath,
+            "image_url"         => $publicUrl,
+            "url"               => $publicUrl,
+            "mime_type"         => $mimeType,
+            "file_size"         => (int)$file['size']
         ];
     }
 }

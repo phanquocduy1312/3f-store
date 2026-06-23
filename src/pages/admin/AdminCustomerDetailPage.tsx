@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Activity,
@@ -61,6 +61,7 @@ const formatDate = (value?: string | null) => {
 
 const getCustomerName = (customer: any) => customer?.full_name || customer?.name || "Chưa cập nhật tên";
 const getPointBalance = (customer: any) => Number(customer?.point_balance ?? customer?.points ?? customer?.loyalty_points ?? 0);
+const getCustomerTier = (customer: any) => customer?.tier || customer?.loyalty_tier || customer?.loyaltyTier || "Member";
 
 function KpiCard({ icon, label, value, tone = "blue" }: { icon: React.ReactNode; label: string; value: string | number; tone?: "blue" | "green" | "amber" | "slate" }) {
   const toneClass = {
@@ -170,6 +171,7 @@ export function AdminCustomerDetailPage() {
 
   const isActive = customer.status === "active";
   const customerName = getCustomerName(customer);
+  const customerTier = getCustomerTier(customer);
 
   return (
     <div className="relative min-h-screen bg-[#F6FAFF] font-sans">
@@ -237,10 +239,11 @@ export function AdminCustomerDetailPage() {
             </div>
           </section>
 
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <KpiCard icon={<ShoppingBag className="h-5 w-5" />} label="Tổng đơn" value={summary.orders} />
             <KpiCard icon={<CircleDollarSign className="h-5 w-5" />} label="Tổng chi tiêu" value={formatCurrency(summary.spent)} tone="green" />
             <KpiCard icon={<Gift className="h-5 w-5" />} label="Điểm 3F" value={summary.points.toLocaleString("vi-VN")} tone="amber" />
+            <KpiCard icon={<BadgeCheck className="h-5 w-5" />} label="Hạng 3F" value={customerTier} tone="blue" />
             <KpiCard icon={<FileText className="h-5 w-5" />} label="Hoàn thiện hồ sơ" value={`${summary.completion || 0}%`} tone="slate" />
           </section>
 
@@ -273,7 +276,7 @@ export function AdminCustomerDetailPage() {
             <section className="min-w-0 flex-1 rounded-2xl border border-[#DCEBFF] bg-white p-4 shadow-sm md:p-6">
               {activeTab === "overview" && <CustomerOverviewTab customer={customer} />}
               {activeTab === "orders" && <CustomerOrdersTab customerId={customer.id} />}
-              {activeTab === "club" && <CustomerPointsTab customerId={customer.id} />}
+              {activeTab === "club" && <CustomerPointsTab customerId={customer.id} customerPhone={customer.phone} customerTier={customerTier} totalSpent={summary.spent} totalOrders={summary.orders} />}
               {activeTab === "notes" && <CustomerNotesTab customerId={Number(id)} />}
               {activeTab === "timeline" && <CustomerTimelineTab customerId={Number(id)} />}
               {activeTab === "addresses" && <CustomerAddressesTab customerId={customer.id} />}
