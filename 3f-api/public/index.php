@@ -3,6 +3,8 @@
  * Mini MVC PHP Pure Backend - Entry Point
  */
 
+date_default_timezone_set('Asia/Ho_Chi_Minh');
+
 // Prevent raw PHP HTML errors from leaking into JSON response
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
