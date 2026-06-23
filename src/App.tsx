@@ -44,6 +44,8 @@ const AdminVouchersPage = lazyPage(() => import("./pages/admin/AdminVouchersPage
 const BlogList = lazyPage(() => import("./pages/BlogList"), "BlogList");
 const BlogDetail = lazyPage(() => import("./pages/BlogDetail"), "BlogDetail");
 const AboutPage = lazyPage(() => import("./pages/AboutPage"), "AboutPage");
+const ContactPage = lazyPage(() => import("./pages/ContactPage"), "ContactPage");
+
 
 
 // Client Account Pages
@@ -110,6 +112,8 @@ export function App() {
           <Route path="/tin-tuc/:slug" element={<BlogDetail />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/gioi-thieu" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/lien-he" element={<ContactPage />} />
           
           {/* Protected Client Routes */}
           <Route element={<CustomerRouteGuard />}>

@@ -10,7 +10,7 @@ const socialIcons = [Facebook, Instagram, Music2];
 export function Footer() {
   const getLinkHref = (link: string) => {
     if (link === "Giới thiệu") return "/about";
-    if (link === "Liên hệ") return "/about#store-info";
+    if (link === "Liên hệ") return "/contact";
     return "#";
   };
 

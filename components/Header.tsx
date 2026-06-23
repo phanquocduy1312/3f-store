@@ -44,7 +44,7 @@ const navigationData: MenuItem[] = [
     href: "/about",
     subItems: [
       { label: "Về chúng tôi", href: "/about" },
-      { label: "Liên hệ", href: "/about#store-info" },
+      { label: "Liên hệ", href: "/contact" },
     ],
   },
   { label: "Kiểm tra đơn hàng", href: "/order-check" },

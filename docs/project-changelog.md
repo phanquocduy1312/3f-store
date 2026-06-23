@@ -2,6 +2,21 @@
 
 ## [2026-06-23]
 ### Added
+- Thiết kế và triển khai trang Liên hệ / Contact (/contact và /lien-he) mới và API Backend:
+  - Xây dựng trang đích [ContactPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/ContactPage.tsx) chính của khách hàng tích hợp SEO Metadata động và bố cục hai cột responsive.
+  - Tách giao diện ContactPage thành các component nhỏ dưới 200 dòng mã để bảo vệ giới hạn tệp:
+    - [ContactHero.tsx](file:///c:/Users/Admin/Downloads/ccc/components/contact/ContactHero.tsx): Tiêu đề liên hệ, ảnh hero, nút gọi điện, tư vấn và xem bản đồ.
+    - [ContactQuickCards.tsx](file:///c:/Users/Admin/Downloads/ccc/components/contact/ContactQuickCards.tsx): Lưới thẻ thông tin liên lạc nhanh (Hotline, Email, Địa chỉ, Shopee).
+    - [ContactForm.tsx](file:///c:/Users/Admin/Downloads/ccc/components/contact/ContactForm.tsx): Form thu thập thông tin tích hợp kiểm tra số điện thoại Việt Nam regex, chống double-submit và Honeypot ẩn `company_website` chống spam.
+    - [ContactLocation.tsx](file:///c:/Users/Admin/Downloads/ccc/components/contact/ContactLocation.tsx): Bản đồ Google Maps iframe responsive và nút mở Google Maps ngoài.
+    - [ContactSupportTopics.tsx](file:///c:/Users/Admin/Downloads/ccc/components/contact/ContactSupportTopics.tsx): Danh sách các lĩnh vực hỗ trợ (thức ăn, cát, đơn hàng, bảo hành).
+    - [ContactFaq.tsx](file:///c:/Users/Admin/Downloads/ccc/components/contact/ContactFaq.tsx): Accordion hỏi đáp nhanh với 5 câu hỏi thường gặp đúng nghiệp vụ pet store.
+    - [ContactCTA.tsx](file:///c:/Users/Admin/Downloads/ccc/components/contact/ContactCTA.tsx): Khung hành động cuối trang cuộn tới form hoặc xem sản phẩm.
+  - Xây dựng Model [ContactMessage.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Models/ContactMessage.php) tự động tạo bảng `contact_messages` trong MySQL.
+  - Xây dựng Controller [ContactController.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Controllers/ContactController.php) xử lý route `POST /api/contact`, kiểm tra Honeypot, validate dữ liệu đầu vào và lưu trữ tin nhắn.
+  - Đăng ký API route public trong [index.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/public/index.php).
+  - Kết nối và đồng bộ hóa điều hướng trong [Header.tsx](file:///c:/Users/Admin/Downloads/ccc/components/Header.tsx) ("Liên hệ" -> `/contact`) và [Footer.tsx](file:///c:/Users/Admin/Downloads/ccc/components/Footer.tsx) ("Liên hệ" -> `/contact`).
+  - Tự động tạo và lưu trữ 4 tệp ảnh minh họa pet store contact (`contact-hero.png`, `contact-store.png`, `contact-support.png`, `contact-location.png`) vào thư mục `public/images/contact/`.
 - Thiết kế và triển khai trang Giới thiệu / About (/about và /gioi-thieu) mới:
   - Xây dựng trang đích [AboutPage.tsx](file:///c:/Users/Admin/Downloads/ccc/src/pages/AboutPage.tsx) chính của khách hàng tích hợp SEO Metadata động (tiêu đề, thẻ mô tả) và thanh điều hướng Breadcrumb.
   - Mô đun hóa giao diện AboutPage thành các component nhỏ dưới 200 dòng mã để bảo vệ giới hạn tệp:

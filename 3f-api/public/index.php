@@ -81,6 +81,7 @@ use App\Controllers\WorkflowController;
 use App\Controllers\AdminNotificationController;
 use App\Controllers\ProductReviewController;
 use App\Controllers\OrderShippingMethodController;
+use App\Controllers\ContactController;
 
 
 try {
@@ -107,6 +108,7 @@ try {
     new \App\Models\AdminNotification();
     new \App\Models\ProductReview();
     new \App\Models\OrderShippingMethod();
+    new \App\Models\ContactMessage();
 
     // 3. Initialize Router
     $router = new Router();
@@ -386,6 +388,7 @@ try {
     $router->get("/api/admin/customers/loyalty", [LoyaltyController::class, "customerLoyaltyProfile"]);
     $router->get("/api/customer/tier", [LoyaltyController::class, "customerTier"]);
     $router->get("/api/customer/rewards/history", [LoyaltyController::class, "customerRewardHistory"]);
+    $router->post("/api/contact", [ContactController::class, "submit"]);
 
     // 5. Dispatch Request
     $router->dispatch();
