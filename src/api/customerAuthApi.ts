@@ -49,6 +49,7 @@ export interface CustomerData {
 interface AuthResponse {
   success: boolean;
   message?: string;
+  devVerifyUrl?: string;
   data?: { token: string; customer: CustomerData };
 }
 
@@ -69,6 +70,29 @@ export async function registerEmail(body: {
   acceptTerms: boolean;
 }): Promise<AuthResponse> {
   const res = await fetch(buildApiUrl("/api/customer/auth/register-email"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+export async function verifyRegistrationApi(body: {
+  email: string;
+  token: string;
+}): Promise<AuthResponse> {
+  const res = await fetch(buildApiUrl("/api/customer/auth/verify-registration"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+export async function resendRegistrationVerificationApi(body: {
+  email: string;
+}): Promise<{ success: boolean; message?: string; devVerifyUrl?: string }> {
+  const res = await fetch(buildApiUrl("/api/customer/auth/resend-registration-verification"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

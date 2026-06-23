@@ -155,6 +155,8 @@ try {
 
     // Customer Auth Routes
     $router->post("/api/customer/auth/register-email", [CustomerAuthController::class, "registerEmail"]);
+    $router->post("/api/customer/auth/verify-registration", [CustomerAuthController::class, "verifyRegistration"]);
+    $router->post("/api/customer/auth/resend-registration-verification", [CustomerAuthController::class, "resendRegistrationVerification"]);
     $router->post("/api/customer/auth/login-password", [CustomerAuthController::class, "loginPassword"]);
     $router->post("/api/customer/auth/request-otp", [CustomerAuthController::class, "requestOtp"]);
     $router->post("/api/customer/auth/verify-otp", [CustomerAuthController::class, "verifyOtp"]);
