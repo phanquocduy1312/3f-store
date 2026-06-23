@@ -80,7 +80,7 @@ export function AdminShopeeRequestList({ searchValue }: AdminShopeeRequestListPr
   };
 
   const headerAction = (
-    <Link to="/admin/shopee-requests" className="text-[#0057E7] hover:text-[#003B7A] text-[12px] font-bold flex items-center gap-1 transition-colors">
+    <Link to="/admin/3f-club" className="text-[#0057E7] hover:text-[#003B7A] text-[12px] font-bold flex items-center gap-1 transition-colors">
       <span>Xem tất cả</span>
       <ArrowRight size={14} />
     </Link>
