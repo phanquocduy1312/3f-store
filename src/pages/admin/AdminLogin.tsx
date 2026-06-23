@@ -70,15 +70,9 @@ export function AdminLogin() {
           0%, 100% { transform: translateY(0) rotate(15deg) scale(1); }
           50% { transform: translateY(-10px) rotate(8deg) scale(1.04); }
         }
-        @keyframes wiggle {
-          0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(-4deg); }
-          75% { transform: rotate(4deg); }
-        }
         .animate-float-1 { animation: float-paw-1 7s ease-in-out infinite; }
         .animate-float-2 { animation: float-paw-2 8s ease-in-out infinite; }
         .animate-float-3 { animation: float-paw-3 6.5s ease-in-out infinite; }
-        .hover-wiggle:hover .wiggle-target { animation: wiggle 0.4s ease-in-out infinite; }
       `}</style>
 
       {/* Warm organic ambient glow blobs */}
@@ -102,11 +96,11 @@ export function AdminLogin() {
 
       <div className="relative z-10 w-full max-w-md px-4">
         {/* Main Card */}
-        <div className="hover-wiggle relative overflow-hidden rounded-[32px] border border-[#F2EAE0] bg-white p-8 sm:p-10 shadow-[0_20px_50px_rgba(139,92,26,0.04)] transition-all duration-300 hover:shadow-[0_24px_60px_rgba(139,92,26,0.08)]">
+        <div className="relative overflow-hidden rounded-[32px] border border-[#F2EAE0] bg-white p-8 sm:p-10 shadow-[0_20px_50px_rgba(139,92,26,0.04)] transition-all duration-300 hover:shadow-[0_24px_60px_rgba(139,92,26,0.08)]">
           
           {/* Logo & Greeting Header */}
           <div className="mb-8 flex flex-col items-center">
-            <div className="wiggle-target relative flex h-20 w-20 items-center justify-center rounded-[24px] bg-[#FAF7F2] p-2.5 shadow-sm border border-[#EAE2D5] transition-all duration-500">
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-[24px] bg-[#FAF7F2] p-2.5 shadow-sm border border-[#EAE2D5] transition-all duration-500">
               <img
                 src="/assets/logo/logo.webp"
                 alt="3F Store Logo"
