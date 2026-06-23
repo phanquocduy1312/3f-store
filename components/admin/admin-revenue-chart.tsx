@@ -1,70 +1,118 @@
 import React, { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { AdminCard } from "./admin-card";
 import { adminDashboardApi } from "@/src/api/adminDashboardApi";
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
-interface RevenuePoint {
-  date: string;
-  revenue: number;
-  orders: number;
+interface ChartDataPoint {
+  name: string;
+  "Kỳ này": number;
+  "Kỳ trước": number;
+  "Đơn hàng": number;
 }
 
 interface AdminRevenueChartProps {
   filter?: string;
 }
 
+// ─── Custom Tooltip ─────────────────────────────────────────────────────────
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload || !payload.length) return null;
+
+  const formatVnd = (v: number) =>
+    new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" })
+      .format(v)
+      .replace("₫", "đ");
+
+  return (
+    <div className="bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-2xl shadow-blue-900/10 p-4 min-w-[180px]">
+      <p className="text-[11px] font-bold text-slate-400 mb-2.5 tracking-wider uppercase">{label}</p>
+      {payload.map((entry: any, idx: number) => (
+        <div key={idx} className="flex items-center justify-between gap-4 mb-1.5 last:mb-0">
+          <div className="flex items-center gap-1.5">
+            <span
+              className="w-2.5 h-2.5 rounded-full shrink-0"
+              style={{ background: entry.color }}
+            />
+            <span className="text-[12px] font-semibold text-slate-600">{entry.name}</span>
+          </div>
+          <span className="text-[13px] font-black text-slate-900">
+            {entry.name === "Đơn hàng"
+              ? `${Number(entry.value).toLocaleString("vi-VN")} đơn`
+              : formatVnd(Number(entry.value))}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ─── Custom Legend ───────────────────────────────────────────────────────────
+const CustomLegend = ({ payload }: any) => (
+  <div className="flex items-center justify-center gap-5 mt-2 flex-wrap">
+    {payload?.map((entry: any, idx: number) => (
+      <div key={idx} className="flex items-center gap-1.5">
+        <span
+          className="inline-block rounded-sm"
+          style={{
+            width: entry.type === "line" ? 18 : 12,
+            height: entry.type === "line" ? 3 : 12,
+            background: entry.color,
+            borderRadius: entry.type === "line" ? 2 : 4,
+            borderTop: entry.type === "line" && entry.payload?.strokeDasharray
+              ? "none"
+              : undefined,
+          }}
+        />
+        <span className="text-[11px] font-bold text-slate-500">{entry.value}</span>
+      </div>
+    ))}
+  </div>
+);
+
+// ─── Format helpers ──────────────────────────────────────────────────────────
+const formatM = (v: number) => {
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(0)}k`;
+  return `${v}`;
+};
+
+const formatVnd = (v: number) =>
+  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" })
+    .format(v)
+    .replace("₫", "đ");
+
+const getPctChange = (cur: number, prev: number, filter: string) => {
+  if (filter === "all_time") return { pct: "—", isUp: true, isNeutral: true };
+  if (prev === 0) return cur > 0 ? { pct: "+100%", isUp: true, isNeutral: false } : { pct: "0%", isUp: true, isNeutral: true };
+  const diff = ((cur - prev) / prev) * 100;
+  return {
+    pct: `${diff >= 0 ? "+" : ""}${Math.abs(diff).toFixed(1)}%`,
+    isUp: diff >= 0,
+    isNeutral: Math.abs(diff) < 0.1,
+  };
+};
+
+// ─── Main Component ──────────────────────────────────────────────────────────
 export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartProps) {
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<RevenuePoint[]>([]);
-
-  // Stats calculated dynamically
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [stats, setStats] = useState({
-    totalRevenue: 0,
-    totalRevenueChange: "0%",
-    totalRevenueIsUp: true,
-    totalOrders: 0,
-    totalOrdersChange: "0%",
-    totalOrdersIsUp: true,
-    aov: 0,
-    aovChange: "0%",
-    aovIsUp: true,
-    avgOrders: 0,
-    avgOrdersChange: "0%",
-    avgOrdersIsUp: true
+    curRev: 0, prevRev: 0,
+    curOrd: 0, prevOrd: 0,
+    curAov: 0, prevAov: 0,
+    curAvgOrd: 0, prevAvgOrd: 0,
   });
-
-  const getDivisorAndSuffix = (currentLen: number) => {
-    switch (filter) {
-      case "today":
-        return { divisor: 24, suffix: "đơn/giờ" };
-      case "this_week":
-        return { divisor: 7, suffix: "đơn/ngày" };
-      case "this_month": {
-        const now = new Date();
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        return { divisor: daysInMonth, suffix: "đơn/ngày" };
-      }
-      case "this_year":
-        return { divisor: 12, suffix: "đơn/tháng" };
-      case "all_time":
-      default:
-        return { divisor: currentLen || 30, suffix: "đơn/ngày" };
-    }
-  };
-
-  const getAvgOrdersLabel = () => {
-    switch (filter) {
-      case "today": return "Đơn hàng TB / giờ";
-      case "this_year":
-      case "all_time":
-        return "Đơn hàng TB / tháng";
-      case "this_week":
-      case "this_month":
-      default:
-        return "Đơn hàng TB / ngày";
-    }
-  };
 
   const getChartTitle = () => {
     switch (filter) {
@@ -72,9 +120,27 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
       case "this_week": return "Doanh thu tuần này";
       case "this_month": return "Doanh thu tháng này";
       case "this_year": return "Doanh thu năm nay";
-      case "all_time": return "Doanh thu tất cả thời gian";
-      default:
-        return "Doanh thu";
+      case "all_time": return "Doanh thu tổng thể";
+      default: return "Doanh thu";
+    }
+  };
+
+  const getAvgLabel = () => {
+    switch (filter) {
+      case "today": return "Đơn TB / giờ";
+      case "this_year":
+      case "all_time": return "Đơn TB / tháng";
+      default: return "Đơn TB / ngày";
+    }
+  };
+
+  const getDivisor = (len: number) => {
+    switch (filter) {
+      case "today": return 24;
+      case "this_week": return 7;
+      case "this_month": return new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+      case "this_year": return 12;
+      default: return len || 30;
     }
   };
 
@@ -85,67 +151,30 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
     adminDashboardApi.getRevenueChart(filter)
       .then((res: any) => {
         if (!isMounted) return;
+        const current: any[] = res.current || [];
+        const previous: any[] = res.previous || [];
 
-        const currentPeriod = res.current || [];
-        const previousPeriod = res.previous || [];
-
-        const currentPoints = currentPeriod.map((item: any) => ({
-          date: item.name,
-          revenue: item['Doanh thu'] || 0,
-          orders: item['Đơn hàng'] || 0
+        // Merge into single array for Recharts
+        const merged: ChartDataPoint[] = current.map((cur, i) => ({
+          name: cur.name,
+          "Kỳ này": cur["Doanh thu"] || 0,
+          "Kỳ trước": previous[i]?.["Doanh thu"] ?? 0,
+          "Đơn hàng": cur["Đơn hàng"] || 0,
         }));
 
-        setData(currentPoints);
+        setChartData(merged);
 
-        // Calculate current statistics
-        const curRev = currentPoints.reduce((sum: number, d: any) => sum + d.revenue, 0);
-        const curOrd = currentPoints.reduce((sum: number, d: any) => sum + d.orders, 0);
+        const curRev = current.reduce((s: number, d: any) => s + (d["Doanh thu"] || 0), 0);
+        const prevRev = previous.reduce((s: number, d: any) => s + (d["Doanh thu"] || 0), 0);
+        const curOrd = current.reduce((s: number, d: any) => s + (d["Đơn hàng"] || 0), 0);
+        const prevOrd = previous.reduce((s: number, d: any) => s + (d["Đơn hàng"] || 0), 0);
         const curAov = curOrd > 0 ? curRev / curOrd : 0;
-        
-        const { divisor } = getDivisorAndSuffix(currentPoints.length);
-        const curAvgOrd = curOrd / divisor;
-
-        // Calculate previous statistics
-        const prevRev = previousPeriod.reduce((sum: number, d: any) => sum + (d['Doanh thu'] || 0), 0);
-        const prevOrd = previousPeriod.reduce((sum: number, d: any) => sum + (d['Đơn hàng'] || 0), 0);
         const prevAov = prevOrd > 0 ? prevRev / prevOrd : 0;
+        const divisor = getDivisor(current.length);
+        const curAvgOrd = curOrd / divisor;
         const prevAvgOrd = prevOrd / divisor;
 
-        // Helper to calculate percentage change
-        const getPctChange = (cur: number, prev: number) => {
-          if (filter === 'all_time') {
-            return { pct: "0%", isUp: true };
-          }
-          if (prev === 0) {
-            return cur > 0 ? { pct: "+100%", isUp: true } : { pct: "0%", isUp: true };
-          }
-          const diff = ((cur - prev) / prev) * 100;
-          return {
-            pct: `${diff >= 0 ? "+" : ""}${Math.abs(diff).toFixed(1)}%`,
-            isUp: diff >= 0
-          };
-        };
-
-        const revPct = getPctChange(curRev, prevRev);
-        const ordPct = getPctChange(curOrd, prevOrd);
-        const aovPct = getPctChange(curAov, prevAov);
-        const avgOrdPct = getPctChange(curAvgOrd, prevAvgOrd);
-
-        setStats({
-          totalRevenue: curRev,
-          totalRevenueChange: revPct.pct,
-          totalRevenueIsUp: revPct.isUp,
-          totalOrders: curOrd,
-          totalOrdersChange: ordPct.pct,
-          totalOrdersIsUp: ordPct.isUp,
-          aov: curAov,
-          aovChange: aovPct.pct,
-          aovIsUp: aovPct.isUp,
-          avgOrders: curAvgOrd,
-          avgOrdersChange: avgOrdPct.pct,
-          avgOrdersIsUp: avgOrdPct.isUp
-        });
-
+        setStats({ curRev, prevRev, curOrd, prevOrd, curAov, prevAov, curAvgOrd, prevAvgOrd });
         setLoading(false);
       })
       .catch((err) => {
@@ -153,256 +182,175 @@ export function AdminRevenueChart({ filter = "this_week" }: AdminRevenueChartPro
         if (isMounted) setLoading(false);
       });
 
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [filter]);
 
-  const formatVnd = (num: number) => {
-    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(num).replace("₫", "đ");
-  };
+  const summaryItems = [
+    {
+      label: "Tổng doanh thu",
+      value: formatVnd(stats.curRev),
+      ...getPctChange(stats.curRev, stats.prevRev, filter),
+    },
+    {
+      label: "Tổng đơn hàng",
+      value: stats.curOrd.toLocaleString("vi-VN"),
+      ...getPctChange(stats.curOrd, stats.prevOrd, filter),
+    },
+    {
+      label: "Giá trị đơn TB",
+      value: formatVnd(stats.curAov),
+      ...getPctChange(stats.curAov, stats.prevAov, filter),
+    },
+    {
+      label: getAvgLabel(),
+      value: `${stats.curAvgOrd.toFixed(2)} đơn`,
+      ...getPctChange(stats.curAvgOrd, stats.prevAvgOrd, filter),
+    },
+  ];
 
-  const formatM = (num: number) => {
-    if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(1).replace(/\.0$/, "")}M`;
-    }
-    if (num >= 1000) {
-      return `${(num / 1000).toFixed(0)}k`;
-    }
-    return `${num}`;
-  };
-
-  // SVG Chart Dimension parameters
-  const svgWidth = 600;
-  const svgHeight = 200;
-  const padLeft = 40;
-  const padRight = 20;
-  const padTop = 20;
-  const padBottom = 25;
-
-  const chartWidth = svgWidth - padLeft - padRight;
-  const chartHeight = svgHeight - padTop - padBottom;
-
-  // Determine if there is any revenue or orders
-  const hasRevenue = data.some(d => d.revenue > 0);
-  const hasOrders = data.some(d => d.orders > 0);
-
-  let maxVal = 10000;
-  if (hasRevenue) {
-    maxVal = Math.max(...data.map(d => d.revenue), 10000);
-  } else if (hasOrders) {
-    const peakOrders = Math.max(...data.map(d => d.orders));
-    // Ceil to a multiple of 4 (min 4) to ensure grid lines show clean integer ticks
-    maxVal = Math.max(4, Math.ceil(peakOrders / 4) * 4);
-  } else {
-    maxVal = 10000;
-  }
-
-  // Compute coordinates for bars
-  const slotWidth = chartWidth / (data.length || 1);
-  const barWidth = Math.max(6, Math.min(24, slotWidth * 0.45));
-
-  const points = data.map((d, i) => {
-    const x = padLeft + (i + 0.5) * slotWidth;
-    let y = padTop + chartHeight;
-    if (hasRevenue) {
-      y = padTop + (1 - d.revenue / maxVal) * chartHeight;
-    } else if (hasOrders) {
-      y = padTop + (1 - d.orders / maxVal) * chartHeight;
-    }
-    return { x, y, ...d };
-  });
-
-  // Grid line Y coordinate helper
-  const gridY = (val: number) => padTop + (1 - val / maxVal) * chartHeight;
-
-  // Generate 5 grid steps dynamically
-  const gridSteps = [0, maxVal * 0.25, maxVal * 0.5, maxVal * 0.75, maxVal];
-
-  // Helper for divisor and suffix for average orders / day
-  const { suffix: avgOrdersSuffix } = getDivisorAndSuffix(data.length);
+  // Determine Y-axis domain for orders
+  const maxOrdVal = chartData.length > 0 ? Math.max(...chartData.map(d => d["Đơn hàng"]), 0) : 0;
 
   return (
-    <AdminCard 
-      title={getChartTitle()} 
-      subtitle="Doanh số bán hàng thực tế" 
+    <AdminCard
+      title={getChartTitle()}
+      subtitle="So sánh với kỳ trước"
       action={null}
       className="h-[430px] flex flex-col"
     >
-      <div className="relative flex-1 min-h-[160px] mt-2 flex flex-col justify-center">
+      <div className="flex-1 min-h-0 mt-2 flex flex-col">
         {loading ? (
-          <div className="flex h-full items-center justify-center">
+          <div className="flex flex-1 items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-[#0057E7]" />
           </div>
-        ) : data.length === 0 ? (
-          <div className="text-center py-8 text-slate-400 text-[13px] font-medium">
-            Không có dữ liệu trong thời gian này.
+        ) : chartData.length === 0 ? (
+          <div className="flex flex-1 items-center justify-center flex-col gap-2">
+            <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center">
+              <TrendingUp className="text-slate-300" size={22} />
+            </div>
+            <p className="text-slate-400 text-[13px] font-medium">Không có dữ liệu trong thời gian này.</p>
           </div>
         ) : (
-          <>
-            {/* Premium Glassmorphism Tooltip Overlay */}
-            {hoveredIdx !== null && points[hoveredIdx] && (
-              <div 
-                className="absolute bg-white/95 backdrop-blur-md text-slate-800 text-[11px] font-bold p-3 rounded-2xl shadow-xl border border-slate-100/80 pointer-events-none z-25 transition-all duration-150 flex flex-col gap-1.5 min-w-[125px]"
-                style={{ 
-                  left: `${(points[hoveredIdx].x / svgWidth) * 100}%`,
-                  top: `${(points[hoveredIdx].y / svgHeight) * 100 - 12}%`,
-                  transform: "translate(-50%, -100%)"
-                }}
+          <div className="flex-1 min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart
+                data={chartData}
+                margin={{ top: 8, right: 16, left: 0, bottom: 4 }}
               >
-                <span className="text-[10px] text-slate-400 font-semibold">{points[hoveredIdx].date}</span>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[13px] text-slate-900 font-black">{formatVnd(points[hoveredIdx].revenue)}</span>
-                  <span className="text-[10px] text-blue-600 font-extrabold mt-0.5">Đơn hàng: {points[hoveredIdx].orders}</span>
-                </div>
-              </div>
-            )}
+                <defs>
+                  <linearGradient id="gradCurrent" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={1} />
+                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.85} />
+                  </linearGradient>
+                </defs>
 
-            <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-full overflow-visible">
-              {/* Grid lines */}
-              {gridSteps.map((val, idx) => {
-                const y = gridY(val);
-                return (
-                  <g key={idx}>
-                    <line 
-                      x1={padLeft} 
-                      y1={y} 
-                      x2={svgWidth - padRight} 
-                      y2={y} 
-                      stroke="#F1F5F9" 
-                      strokeWidth={1}
-                    />
-                    <text 
-                      x={padLeft - 8} 
-                      y={y + 3} 
-                      textAnchor="end" 
-                      className="text-[9px] font-bold fill-[#94A3B8]"
-                    >
-                      {hasRevenue ? formatM(val) : Math.round(val)}
-                    </text>
-                  </g>
-                );
-              })}
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#F1F5F9"
+                  vertical={false}
+                />
 
-              {/* Bars */}
-              {points.map((p, i) => {
-                const yBottom = svgHeight - padBottom;
-                let barHeight = 0;
-                if (hasRevenue) {
-                  barHeight = p.revenue > 0 ? Math.max(6, yBottom - p.y) : (p.orders > 0 ? 6 : 0);
-                } else if (hasOrders) {
-                  barHeight = p.orders > 0 ? Math.max(6, yBottom - p.y) : 0;
-                }
-                const isHovered = hoveredIdx === i;
-                const trackWidth = Math.min(36, slotWidth - 4);
-                let showLabel = false;
-                if (filter === "today") {
-                  showLabel = i % 4 === 0; // Show every 4 hours
-                } else if (filter === "this_week") {
-                  showLabel = true; // Show all 7 days
-                } else if (filter === "this_month") {
-                  showLabel = i % 5 === 0; // Show every 5 days (e.g. 1st, 6th, 11th, 16th, 21st, 26th, 31st)
-                } else if (filter === "this_year") {
-                  showLabel = true; // Show all 12 months
-                } else {
-                  showLabel = data.length <= 10 ? true : (i % (Math.ceil(data.length / 8)) === 0 || i === data.length - 1);
-                }
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: "#94A3B8", fontSize: 10, fontWeight: 700 }}
+                  axisLine={false}
+                  tickLine={false}
+                  dy={6}
+                />
 
-                return (
-                  <g key={i}>
-                    {/* Hover column background guide track */}
-                    {isHovered && (
-                      <rect
-                        x={p.x - trackWidth / 2}
-                        y={padTop}
-                        width={trackWidth}
-                        height={chartHeight}
-                        fill="#F8FAFC"
-                        rx="6"
-                        className="pointer-events-none"
-                      />
-                    )}
+                {/* Left Y axis: Revenue */}
+                <YAxis
+                  yAxisId="rev"
+                  orientation="left"
+                  tickFormatter={formatM}
+                  tick={{ fill: "#94A3B8", fontSize: 10, fontWeight: 700 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={38}
+                />
 
-                    {/* Interactive background rect for easier hovering */}
-                    <rect
-                      x={p.x - slotWidth / 2}
-                      y={padTop}
-                      width={slotWidth}
-                      height={chartHeight}
-                      fill="transparent"
-                      className="cursor-pointer"
-                      onMouseEnter={() => setHoveredIdx(i)}
-                      onMouseLeave={() => setHoveredIdx(null)}
-                    />
+                {/* Right Y axis: Orders */}
+                <YAxis
+                  yAxisId="ord"
+                  orientation="right"
+                  tick={{ fill: "#F97316", fontSize: 10, fontWeight: 700 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={32}
+                  domain={[0, maxOrdVal > 0 ? Math.ceil(maxOrdVal * 1.3) : 10]}
+                />
 
-                    {/* Visual Bar */}
-                    {barHeight > 0 && (
-                      <rect
-                        x={p.x - barWidth / 2}
-                        y={yBottom - barHeight}
-                        width={barWidth}
-                        height={barHeight}
-                        rx={barWidth / 2}
-                        fill={isHovered ? "#2563EB" : "#3B82F6"}
-                        className="transition-all duration-150 cursor-pointer pointer-events-none"
-                      />
-                    )}
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: "#F8FAFC" }} />
 
-                    {/* Top value badge label for hovered bar or last bar */}
-                    {(isHovered || (hoveredIdx === null && i === points.length - 1)) && (hasRevenue ? p.revenue > 0 : p.orders > 0) && (
-                      <g transform={`translate(${p.x - 20}, ${p.y - 18})`} className="pointer-events-none">
-                        <rect width="40" height="14" rx="4" fill="#021B3A" />
-                        <text x="20" y="9.5" textAnchor="middle" className="text-[8px] font-black fill-white">
-                          {hasRevenue ? formatM(p.revenue) : `${p.orders} đơn`}
-                        </text>
-                      </g>
-                    )}
+                <Legend content={<CustomLegend />} />
 
-                    {/* X Axis Labels (conditional to prevent overlap) */}
-                    {showLabel && (
-                      <text 
-                        x={p.x} 
-                        y={svgHeight - 4} 
-                        textAnchor="middle" 
-                        className="text-[9px] font-bold fill-[#94A3B8]"
-                      >
-                        {p.date}
-                      </text>
-                    )}
-                  </g>
-                );
-              })}
-            </svg>
-          </>
+                {/* Bar: Kỳ này (current period revenue) */}
+                <Bar
+                  yAxisId="rev"
+                  dataKey="Kỳ này"
+                  fill="url(#gradCurrent)"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={40}
+                />
+
+                {/* Line: Kỳ trước (previous period revenue) */}
+                <Line
+                  yAxisId="rev"
+                  type="monotone"
+                  dataKey="Kỳ trước"
+                  stroke="#CBD5E1"
+                  strokeWidth={2}
+                  strokeDasharray="5 3"
+                  dot={false}
+                  activeDot={{ r: 4, fill: "#CBD5E1", strokeWidth: 0 }}
+                />
+
+                {/* Line: Đơn hàng (order count, right axis) */}
+                <Line
+                  yAxisId="ord"
+                  type="monotone"
+                  dataKey="Đơn hàng"
+                  stroke="#F97316"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: "#F97316", strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: "#F97316", strokeWidth: 2, stroke: "#fff" }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </div>
 
-      {/* Summary boxes (Grid 2 columns on mobile/tablet, 4 columns on desktop) */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 rounded-2xl border border-[#DCEBFF] bg-[#F8FBFF] overflow-hidden mt-4 shrink-0">
-        {[
-          { label: "Tổng doanh thu", val: formatVnd(stats.totalRevenue), pct: stats.totalRevenueChange, isUp: stats.totalRevenueIsUp },
-          { label: "Tổng đơn hàng", val: stats.totalOrders.toLocaleString("vi-VN"), pct: stats.totalOrdersChange, isUp: stats.totalOrdersIsUp },
-          { label: "Giá trị đơn TB", val: formatVnd(stats.aov), pct: stats.aovChange, isUp: stats.aovIsUp },
-          { label: getAvgOrdersLabel(), val: `${stats.avgOrders.toFixed(2)} ${avgOrdersSuffix}`, pct: stats.avgOrdersChange, isUp: stats.avgOrdersIsUp }
-        ].map((item, idx) => (
-          <div 
-            key={idx} 
-            className={`p-4 flex flex-col justify-center border-[#DCEBFF] ${
-              idx === 1 || idx === 3 ? "border-l" : ""
-            } ${
-              idx >= 2 ? "border-t" : ""
-            } xl:border-t-0 xl:border-l xl:first:border-l-0`}
-          >
-            <span className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider block">{item.label}</span>
-            <h5 className="text-[15px] font-extrabold text-[#0B1F3A] mt-1">{item.val}</h5>
-            <span className={`text-[12px] font-bold mt-1 flex items-center gap-0.5 ${
-              item.isUp ? "text-[#16A34A]" : "text-[#EF4444]"
-            }`}>
-              <span>{item.isUp ? "▲" : "▼"}</span>
-              <span>{item.pct.replace("-", "").replace("+", "")}</span>
-            </span>
-          </div>
-        ))}
+      {/* Summary boxes */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 rounded-2xl border border-[#DCEBFF] bg-[#F8FBFF] overflow-hidden mt-3 shrink-0">
+        {summaryItems.map((item, idx) => {
+          const TrendIcon = item.isNeutral ? Minus : item.isUp ? TrendingUp : TrendingDown;
+          const trendColor = item.isNeutral
+            ? "text-slate-400"
+            : item.isUp
+            ? "text-emerald-600"
+            : "text-red-500";
+
+          return (
+            <div
+              key={idx}
+              className={`p-3.5 flex flex-col justify-center border-[#DCEBFF] ${
+                idx === 1 || idx === 3 ? "border-l" : ""
+              } ${idx >= 2 ? "border-t" : ""} xl:border-t-0 xl:border-l xl:first:border-l-0`}
+            >
+              <span className="text-[10px] font-semibold text-[#64748B] uppercase tracking-wider block leading-tight">
+                {item.label}
+              </span>
+              <h5 className="text-[14px] font-extrabold text-[#0B1F3A] mt-1 leading-tight">
+                {item.value}
+              </h5>
+              <div className={`flex items-center gap-1 mt-1 ${trendColor}`}>
+                <TrendIcon size={11} strokeWidth={2.5} />
+                <span className="text-[11px] font-bold">{item.pct}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </AdminCard>
   );
