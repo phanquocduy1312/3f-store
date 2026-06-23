@@ -238,6 +238,7 @@ class CustomerAuthController {
             $stmtInsert->execute([
                 $pending['full_name'],
                 $pending['full_name'],
+                $pending['email'],
                 $pending['phone'] ?: null,
                 $pending['password_hash'],
             ]);
