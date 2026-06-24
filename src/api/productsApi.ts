@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "@/src/config/api";
+import { API_BASE_URL, handleAuthStatus } from "@/src/config/api";
 import type { Product, ProductVariant } from "@/types/store";
 
 export type ProductSort = "newest" | "price_asc" | "price_desc" | "popular";
@@ -184,11 +184,7 @@ export async function apiJson<T>(path: string, options?: RequestInit): Promise<T
   });
 
   if (response.status === 401) {
-    localStorage.removeItem("admin_token");
-    localStorage.removeItem("admin_user");
-    if (window.location.pathname.startsWith("/admin") && window.location.pathname !== "/admin/login") {
-      window.location.href = "/admin/login";
-    }
+    handleAuthStatus(response.status);
   }
 
   const responseText = await response.text();
@@ -224,11 +220,7 @@ async function apiFormData<T>(path: string, formData: FormData): Promise<T> {
   });
 
   if (response.status === 401) {
-    localStorage.removeItem("admin_token");
-    localStorage.removeItem("admin_user");
-    if (window.location.pathname.startsWith("/admin") && window.location.pathname !== "/admin/login") {
-      window.location.href = "/admin/login";
-    }
+    handleAuthStatus(response.status);
   }
 
   const responseText = await response.text();
@@ -692,11 +684,7 @@ export async function uploadAdminProductImage(
   });
 
   if (res.status === 401) {
-    localStorage.removeItem("admin_token");
-    localStorage.removeItem("admin_user");
-    if (window.location.pathname.startsWith("/admin") && window.location.pathname !== "/admin/login") {
-      window.location.href = "/admin/login";
-    }
+    handleAuthStatus(res.status);
   }
 
   const data = await res.json();

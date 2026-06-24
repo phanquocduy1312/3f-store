@@ -1,4 +1,4 @@
-import { buildApiUrl } from '../config/api';
+import { buildApiUrl, handleAuthStatus } from '../config/api';
 
 export interface DashboardKpiCardData {
   value: string;
@@ -45,6 +45,7 @@ async function fetchWithAuth(url: string, method = 'GET', body?: any) {
   });
 
   if (response.status === 401 || response.status === 403) {
+    handleAuthStatus(response.status);
     throw new Error('Unauthorized');
   }
 

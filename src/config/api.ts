@@ -20,3 +20,18 @@ export function buildImageUrl(path?: string) {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   return `${API_BASE_URL}${cleanPath}`;
 }
+
+/**
+ * Handles HTTP authentication status codes (such as 401 Unauthorized).
+ */
+export function handleAuthStatus(status: number) {
+  if (status === 401) {
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("admin_user");
+    localStorage.removeItem("admin_permissions");
+    if (window.location.pathname.startsWith("/admin") && window.location.pathname !== "/admin/login") {
+      window.location.href = "/admin/login";
+    }
+  }
+}
+

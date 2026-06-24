@@ -1,4 +1,4 @@
-import { buildApiUrl } from '../config/api';
+import { buildApiUrl, handleAuthStatus } from '../config/api';
 
 export interface AdminCustomerListParams {
   page?: number;
@@ -10,123 +10,80 @@ export interface AdminCustomerListParams {
   tier?: 'Member' | 'Silver' | 'Gold' | 'Diamond' | 'all';
 }
 
+async function fetchWithAuth(path: string, options?: RequestInit) {
+  const url = buildApiUrl(path);
+  const token = localStorage.getItem('admin_token');
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      ...(options?.body && !(options.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
+      ...(options?.headers || {})
+    }
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    handleAuthStatus(response.status);
+    throw new Error('Unauthorized');
+  }
+  return response;
+}
+
 export const adminCustomersApi = {
   async getList(params: AdminCustomerListParams) {
-    const url = buildApiUrl('/api/admin/customers');
     const searchParams = new URLSearchParams();
-    
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== '') {
         searchParams.append(key, String(value));
       }
     });
 
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(`${url}?${searchParams.toString()}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    if (response.status === 401 || response.status === 403) {
-      throw new Error('Unauthorized');
-    }
-    
+    const response = await fetchWithAuth(`/api/admin/customers?${searchParams.toString()}`);
     const data = await response.json();
     if (!data.success) throw new Error(data.message);
     return data.data;
   },
 
   async getDetail(id: number) {
-    const url = buildApiUrl(`/api/admin/customers/${id}`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    if (response.status === 401 || response.status === 403) {
-      throw new Error('Unauthorized');
-    }
-    
+    const response = await fetchWithAuth(`/api/admin/customers/${id}`);
     const data = await response.json();
     if (!data.success) throw new Error(data.message);
     return data.data;
   },
 
   async updateStatus(id: number, status: 'active' | 'blocked', reason: string) {
-    const url = buildApiUrl(`/api/admin/customers/${id}/status`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, {
+    const response = await fetchWithAuth(`/api/admin/customers/${id}/status`, {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({ status, reason })
     });
-    
-    if (response.status === 401 || response.status === 403) {
-      throw new Error('Unauthorized');
-    }
-    
     const data = await response.json();
     if (!data.success) throw new Error(data.message);
     return data;
   },
 
   async getOrders(id: number) {
-    const url = buildApiUrl(`/api/admin/customers/${id}/orders`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    if (response.status === 401 || response.status === 403) {
-      throw new Error('Unauthorized');
-    }
-    
+    const response = await fetchWithAuth(`/api/admin/customers/${id}/orders`);
     const data = await response.json();
     if (!data.success) throw new Error(data.message);
     return data.data;
   },
 
   async getPoints(id: number) {
-    const url = buildApiUrl(`/api/admin/customers/${id}/points`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    if (response.status === 401 || response.status === 403) {
-      throw new Error('Unauthorized');
-    }
-    
+    const response = await fetchWithAuth(`/api/admin/customers/${id}/points`);
     const data = await response.json();
     if (!data.success) throw new Error(data.message);
     return data.data;
   },
 
   async getAddresses(id: number) {
-    const url = buildApiUrl(`/api/admin/customers/${id}/addresses`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-    if (response.status === 401 || response.status === 403) throw new Error('Unauthorized');
+    const response = await fetchWithAuth(`/api/admin/customers/${id}/addresses`);
     const data = await response.json();
     if (!data.success) throw new Error(data.message);
     return data.data;
   },
 
   async getVouchers(id: number) {
-    const url = buildApiUrl(`/api/admin/customers/${id}/vouchers`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-    if (response.status === 401 || response.status === 403) throw new Error('Unauthorized');
+    const response = await fetchWithAuth(`/api/admin/customers/${id}/vouchers`);
     const data = await response.json();
     if (!data.success) throw new Error(data.message);
     return data.data;
@@ -134,10 +91,7 @@ export const adminCustomersApi = {
 
   async getPets(id: number) {
     try {
-      const url = buildApiUrl(`/api/admin/customers/${id}/pets`);
-      const token = localStorage.getItem('admin_token');
-      const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-      if (response.status === 401 || response.status === 403) throw new Error('Unauthorized');
+      const response = await fetchWithAuth(`/api/admin/customers/${id}/pets`);
       const data = await response.json();
       if (!data.success) throw new Error(data.message);
       return data.data;
@@ -149,11 +103,7 @@ export const adminCustomersApi = {
 
   async getSessions(id: number) {
     try {
-      const url = buildApiUrl(`/api/admin/customers/${id}/sessions`);
-      const token = localStorage.getItem('admin_token');
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await fetchWithAuth(`/api/admin/customers/${id}/sessions`);
       const data = await response.json();
       if (!data.success) throw new Error(data.message);
       return data.data;
@@ -163,10 +113,6 @@ export const adminCustomersApi = {
     }
   },
 
-  // ==========================================
-  // PHASE 1.2: CSKH ACTIONS & TOOLS
-  // ==========================================
-
   exportCsvUrl(params: AdminCustomerListParams): string {
     const url = buildApiUrl('/api/admin/customers/export-csv');
     const searchParams = new URLSearchParams();
@@ -175,42 +121,31 @@ export const adminCustomersApi = {
         searchParams.append(key, String(value));
       }
     });
-    // For direct link download, we pass token in query since browsers don't send auth headers on simple links
-    // Actually, passing token in URL is a security risk. A better way is fetching Blob and creating ObjectURL.
     return `${url}?${searchParams.toString()}`;
   },
 
   async exportCsvBlob(params: AdminCustomerListParams): Promise<Blob> {
-    const url = buildApiUrl('/api/admin/customers/export-csv');
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== '') {
         searchParams.append(key, String(value));
       }
     });
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(`${url}?${searchParams.toString()}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    const response = await fetchWithAuth(`/api/admin/customers/export-csv?${searchParams.toString()}`);
     if (!response.ok) throw new Error('Export failed');
     return response.blob();
   },
 
   async getNotes(id: number) {
-    const url = buildApiUrl(`/api/admin/customers/${id}/notes`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+    const response = await fetchWithAuth(`/api/admin/customers/${id}/notes`);
     const data = await response.json();
     if (!data.success) throw new Error(data.message);
     return data.data;
   },
 
   async createNote(id: number, note: string) {
-    const url = buildApiUrl(`/api/admin/customers/${id}/notes`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, {
+    const response = await fetchWithAuth(`/api/admin/customers/${id}/notes`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ note })
     });
     const data = await response.json();
@@ -219,11 +154,8 @@ export const adminCustomersApi = {
   },
 
   async deleteNote(id: number, noteId: number) {
-    const url = buildApiUrl(`/api/admin/customers/${id}/notes/${noteId}`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
+    const response = await fetchWithAuth(`/api/admin/customers/${id}/notes/${noteId}`, {
+      method: 'DELETE'
     });
     const data = await response.json();
     if (!data.success) throw new Error(data.message);
@@ -231,20 +163,15 @@ export const adminCustomersApi = {
   },
 
   async getTags(id: number) {
-    const url = buildApiUrl(`/api/admin/customers/${id}/tags`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+    const response = await fetchWithAuth(`/api/admin/customers/${id}/tags`);
     const data = await response.json();
     if (!data.success) throw new Error(data.message);
     return data;
   },
 
   async assignTag(id: number, tagData: { tag_id?: number, new_tag_name?: string, new_tag_color?: string }) {
-    const url = buildApiUrl(`/api/admin/customers/${id}/tags`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, {
+    const response = await fetchWithAuth(`/api/admin/customers/${id}/tags`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(tagData)
     });
     const data = await response.json();
@@ -253,11 +180,8 @@ export const adminCustomersApi = {
   },
 
   async removeTag(id: number, tagId: number) {
-    const url = buildApiUrl(`/api/admin/customers/${id}/tags/${tagId}`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
+    const response = await fetchWithAuth(`/api/admin/customers/${id}/tags/${tagId}`, {
+      method: 'DELETE'
     });
     const data = await response.json();
     if (!data.success) throw new Error(data.message);
@@ -265,11 +189,8 @@ export const adminCustomersApi = {
   },
 
   async adjustPoints(id: number, points: number, reason: string) {
-    const url = buildApiUrl(`/api/admin/customers/${id}/adjust-points`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, {
+    const response = await fetchWithAuth(`/api/admin/customers/${id}/adjust-points`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ points, reason })
     });
     const data = await response.json();
@@ -278,11 +199,8 @@ export const adminCustomersApi = {
   },
 
   async revokeAllSessions(id: number) {
-    const url = buildApiUrl(`/api/admin/customers/${id}/revoke-sessions`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
+    const response = await fetchWithAuth(`/api/admin/customers/${id}/revoke-sessions`, {
+      method: 'POST'
     });
     const data = await response.json();
     if (!data.success) throw new Error(data.message);
@@ -290,9 +208,7 @@ export const adminCustomersApi = {
   },
 
   async getTimeline(id: number) {
-    const url = buildApiUrl(`/api/admin/customers/${id}/timeline`);
-    const token = localStorage.getItem('admin_token');
-    const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+    const response = await fetchWithAuth(`/api/admin/customers/${id}/timeline`);
     const data = await response.json();
     if (!data.success) throw new Error(data.message);
     return data.data;

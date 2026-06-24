@@ -1,4 +1,4 @@
-import { buildApiUrl } from "@/src/config/api";
+import { buildApiUrl, handleAuthStatus } from "@/src/config/api";
 
 export type AdminPetAdvisorParams = {
   page?: number;
@@ -25,6 +25,7 @@ export async function getAdminPetAdvisorConsultations(params: AdminPetAdvisorPar
   });
 
   if (response.status === 401 || response.status === 403) {
+    handleAuthStatus(response.status);
     throw new Error("Unauthorized");
   }
 
@@ -43,6 +44,7 @@ export async function getAdminPetAdvisorConsultationDetail(id: number) {
   });
 
   if (response.status === 401 || response.status === 403) {
+    handleAuthStatus(response.status);
     throw new Error("Unauthorized");
   }
 

@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../config/api";
+import { API_BASE_URL, handleAuthStatus } from "../config/api";
 
 export type ShopeeOrderScanFields = {
   customerName?: string;
@@ -44,9 +44,24 @@ export type CreateShopeePointRequestResponse = {
   code?: string;
 };
 
-/**
- * Uploads order receipt image and performs real OCR parsing.
- */
+async function fetchWithAdminAuth(url: string, options?: RequestInit) {
+  const token = localStorage.getItem("admin_token");
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+      ...(options?.body && !(options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
+      ...(options?.headers || {})
+    }
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    handleAuthStatus(response.status);
+    throw new Error("Unauthorized");
+  }
+  return response;
+}
+
 export async function scanShopeeOrderImage(file: File): Promise<ShopeeOrderScanResponse> {
   const formData = new FormData();
   formData.append("image", file);
@@ -57,85 +72,50 @@ export async function scanShopeeOrderImage(file: File): Promise<ShopeeOrderScanR
   });
 
   const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data?.message || "Không quét được ảnh đơn hàng");
-  }
-
+  if (!res.ok) throw new Error(data?.message || "Không quét được ảnh đơn hàng");
   return data;
 }
 
-/**
- * Requests an OTP for a guest phone number to verify identity before creating a point request.
- */
 export async function requestGuestOtpApi(phone: string): Promise<{ success: boolean; message: string; devOtp?: string }> {
   const res = await fetch(`${API_BASE_URL}/api/shopee/guest/request-otp`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone }),
   });
 
   const data = await res.json();
-
-  if (!res.ok || !data.success) {
-    throw new Error(data?.message || "Không gửi được mã xác nhận");
-  }
-
+  if (!res.ok || !data.success) throw new Error(data?.message || "Không gửi được mã xác nhận");
   return data;
 }
 
-/**
- * Verifies the OTP for a guest phone number and returns a verification token.
- */
 export async function verifyGuestOtpApi(phone: string, otp: string): Promise<{ success: boolean; message?: string; data?: { verificationToken: string; expiresIn: number } }> {
   const res = await fetch(`${API_BASE_URL}/api/shopee/guest/verify-otp`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone, otp }),
   });
 
   const data = await res.json();
-
-  if (!res.ok || !data.success) {
-    throw new Error(data?.message || "Xác thực mã OTP thất bại");
-  }
-
+  if (!res.ok || !data.success) throw new Error(data?.message || "Xác thực mã OTP thất bại");
   return data;
 }
 
-/**
- * Sends a Shopee point request creation payload.
- */
-export async function createShopeePointRequest(
-  payload: CreateShopeePointRequestPayload
-): Promise<CreateShopeePointRequestResponse> {
+export async function createShopeePointRequest(payload: CreateShopeePointRequestPayload): Promise<CreateShopeePointRequestResponse> {
+  const customerToken = localStorage.getItem("customer_token");
   const res = await fetch(`${API_BASE_URL}/api/shopee/requests`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(localStorage.getItem("customer_token") 
-          ? { "Authorization": `Bearer ${localStorage.getItem("customer_token")}` } 
-          : {})
+      ...(customerToken ? { "Authorization": `Bearer ${customerToken}` } : {})
     },
     body: JSON.stringify(payload),
   });
 
   const data = await res.json();
-
-  if (!res.ok || !data.success) {
-    throw new Error(data?.message || "Không gửi được yêu cầu tích điểm");
-  }
-
+  if (!res.ok || !data.success) throw new Error(data?.message || "Không gửi được yêu cầu tích điểm");
   return data;
 }
 
-/**
- * Retrieves lists of Shopee requests for administrators.
- */
 export async function getShopeePointRequests(params?: {
   status?: string;
   verification?: string;
@@ -145,107 +125,55 @@ export async function getShopeePointRequests(params?: {
   limit?: number;
 }) {
   const search = new URLSearchParams();
-
   Object.entries(params || {}).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== "") {
       search.set(key, String(value));
     }
   });
 
-  const url = `${API_BASE_URL}/api/admin/shopee/requests${
-    search.toString() ? `?${search.toString()}` : ""
-  }`;
-
-  const res = await fetch(url);
+  const url = `${API_BASE_URL}/api/admin/shopee/requests${search.toString() ? `?${search.toString()}` : ""}`;
+  const res = await fetchWithAdminAuth(url);
   const data = await res.json();
-
-  if (!res.ok || !data.success) {
-    throw new Error(data?.message || "Không tải được danh sách yêu cầu Shopee");
-  }
-
+  if (!res.ok || !data.success) throw new Error(data?.message || "Không tải được danh sách yêu cầu Shopee");
   return data;
 }
 
-/**
- * Retrieves detailed request logs by id.
- */
 export async function getShopeePointRequestDetail(id: number) {
-  const res = await fetch(`${API_BASE_URL}/api/admin/shopee/requests/detail?id=${id}`);
+  const res = await fetchWithAdminAuth(`${API_BASE_URL}/api/admin/shopee/requests/detail?id=${id}`);
   const data = await res.json();
-
-  if (!res.ok || !data.success) {
-    throw new Error(data?.message || "Không tải được chi tiết yêu cầu");
-  }
-
+  if (!res.ok || !data.success) throw new Error(data?.message || "Không tải được chi tiết yêu cầu");
   return data;
 }
 
-/**
- * Performs admin request approval.
- */
 export async function approveShopeePointRequest(requestId: number, adminNote?: string) {
-  const res = await fetch(`${API_BASE_URL}/api/admin/shopee/requests/approve`, {
+  const res = await fetchWithAdminAuth(`${API_BASE_URL}/api/admin/shopee/requests/approve`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      requestId,
-      adminNote: adminNote || "",
-    }),
+    body: JSON.stringify({ requestId, adminNote: adminNote || "" }),
   });
 
   const data = await res.json();
-
-  if (!res.ok || !data.success) {
-    throw new Error(data?.message || "Không duyệt được yêu cầu");
-  }
-
+  if (!res.ok || !data.success) throw new Error(data?.message || "Không duyệt được yêu cầu");
   return data;
 }
 
-/**
- * Performs admin request rejection.
- */
 export async function rejectShopeePointRequest(requestId: number, reason: string) {
-  const res = await fetch(`${API_BASE_URL}/api/admin/shopee/requests/reject`, {
+  const res = await fetchWithAdminAuth(`${API_BASE_URL}/api/admin/shopee/requests/reject`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      requestId,
-      reason,
-    }),
+    body: JSON.stringify({ requestId, reason }),
   });
 
   const data = await res.json();
-
-  if (!res.ok || !data.success) {
-    throw new Error(data?.message || "Không từ chối được yêu cầu");
-  }
-
+  if (!res.ok || !data.success) throw new Error(data?.message || "Không từ chối được yêu cầu");
   return data;
 }
 
-/**
- * Verifies a single Shopee point request against Shopee API.
- */
 export async function verifyShopeePointRequest(id: number) {
-  const res = await fetch(`${API_BASE_URL}/api/admin/shopee/requests/verify`, {
+  const res = await fetchWithAdminAuth(`${API_BASE_URL}/api/admin/shopee/requests/verify`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify({ id }),
   });
 
   const data = await res.json();
-
-  if (res.status === 401 || res.status === 403) {
-    throw new Error("Bạn không có quyền thực hiện thao tác này");
-  }
-
   if (!res.ok || !data.success) {
     const msg = data?.message || "";
     if (msg.toLowerCase().includes("token") || msg.toLowerCase().includes("shopee")) {
@@ -253,28 +181,16 @@ export async function verifyShopeePointRequest(id: number) {
     }
     throw new Error(msg || "Không thể đối chiếu yêu cầu");
   }
-
   return data;
 }
 
-/**
- * Verifies multiple Shopee point requests against Shopee API.
- */
 export async function verifyBulkShopeePointRequests(ids: number[]) {
-  const res = await fetch(`${API_BASE_URL}/api/admin/shopee/requests/verify-bulk`, {
+  const res = await fetchWithAdminAuth(`${API_BASE_URL}/api/admin/shopee/requests/verify-bulk`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify({ ids }),
   });
 
   const data = await res.json();
-
-  if (res.status === 401 || res.status === 403) {
-    throw new Error("Bạn không có quyền thực hiện thao tác này");
-  }
-
   if (!res.ok || !data.success) {
     const msg = data?.message || "";
     if (msg.toLowerCase().includes("token") || msg.toLowerCase().includes("shopee")) {
@@ -282,20 +198,12 @@ export async function verifyBulkShopeePointRequests(ids: number[]) {
     }
     throw new Error(msg || "Không thể đối chiếu hàng loạt");
   }
-
   return data;
 }
 
-/**
- * Retrieves customer points by phone number.
- */
 export async function getCustomerPoints(phone: string) {
   const res = await fetch(`${API_BASE_URL}/api/customer/points?phone=${encodeURIComponent(phone)}`);
   const data = await res.json();
-
-  if (!res.ok || !data.success) {
-    throw new Error(data?.message || "Không lấy được điểm khách hàng");
-  }
-
+  if (!res.ok || !data.success) throw new Error(data?.message || "Không lấy được điểm khách hàng");
   return data;
 }
