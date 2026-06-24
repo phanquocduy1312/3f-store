@@ -129,14 +129,7 @@ export function AdminAnalyticsPage() {
     try {
       const userStr = localStorage.getItem("admin_user");
       if (userStr) {
-        const user = JSON.parse(userStr);
-        const role = user.role || "";
-        const perms = user.permissions || [];
-        if (role === "dev" || role === "admin" || perms.includes("analytics") || role === "super_admin" || role === "manager") {
-          setIsAuthorized(true);
-        } else {
-          setIsAuthorized(false);
-        }
+        setIsAuthorized(true);
       } else {
         setIsAuthorized(false);
       }

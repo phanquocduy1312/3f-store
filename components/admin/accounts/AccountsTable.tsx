@@ -8,9 +8,10 @@ interface AccountsTableProps {
   onDelete: (id: number) => void;
   currentAdminId: number;
   currentAdminRole?: string;
+  hasEditAccess?: boolean;
 }
 
-export function AccountsTable({ accounts, isLoading, onEdit, onDelete, currentAdminId, currentAdminRole = "" }: AccountsTableProps) {
+export function AccountsTable({ accounts, isLoading, onEdit, onDelete, currentAdminId, currentAdminRole = "", hasEditAccess = false }: AccountsTableProps) {
   const topTierRoles = ["dev", "admin", "super_admin"];
   const isCurrentAdminTopTier = topTierRoles.includes(currentAdminRole);
   const getRoleBadge = (role: string) => {
@@ -19,13 +20,16 @@ export function AccountsTable({ accounts, isLoading, onEdit, onDelete, currentAd
         return <span className="inline-flex rounded-full bg-violet-50 px-2.5 py-0.5 text-[10px] font-black text-violet-650 border border-violet-100 uppercase tracking-wider">dev</span>;
       case "super_admin":
         return <span className="inline-flex rounded-full bg-red-50 px-2.5 py-0.5 text-[10px] font-black text-red-600 border border-red-100 uppercase tracking-wider">super admin</span>;
+      case "admin":
+        return <span className="inline-flex rounded-full bg-red-50 px-2.5 py-0.5 text-[10px] font-black text-red-600 border border-red-100 uppercase tracking-wider">admin</span>;
       case "manager":
         return <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-black text-blue-600 border border-blue-100 uppercase tracking-wider">manager</span>;
       case "editor":
         return <span className="inline-flex rounded-full bg-green-50 px-2.5 py-0.5 text-[10px] font-black text-green-600 border border-green-100 uppercase tracking-wider">editor</span>;
       case "cskh":
-      default:
         return <span className="inline-flex rounded-full bg-slate-50 px-2.5 py-0.5 text-[10px] font-black text-slate-500 border border-slate-200 uppercase tracking-wider">cskh</span>;
+      default:
+        return <span className="inline-flex rounded-full bg-slate-50 px-2.5 py-0.5 text-[10px] font-black text-slate-500 border border-slate-200 uppercase tracking-wider">{role}</span>;
     }
   };
 
@@ -112,8 +116,9 @@ export function AccountsTable({ accounts, isLoading, onEdit, onDelete, currentAd
                       ) : (
                         <button
                           onClick={() => onEdit(acc)}
-                          className="p-1.5 rounded-lg bg-slate-50 text-[#64748B] hover:text-[#0057E7] hover:bg-[#EEF6FF] transition"
-                          title="Chỉnh sửa vai trò / mật khẩu"
+                          disabled={!hasEditAccess}
+                          className="p-1.5 rounded-lg bg-slate-50 text-[#64748B] hover:text-[#0057E7] hover:bg-[#EEF6FF] transition disabled:opacity-30 disabled:hover:bg-slate-50 disabled:hover:text-[#64748B]"
+                          title={hasEditAccess ? "Chỉnh sửa vai trò / mật khẩu" : "Không có quyền chỉnh sửa"}
                         >
                           <Edit2 size={13} />
                         </button>
@@ -130,8 +135,9 @@ export function AccountsTable({ accounts, isLoading, onEdit, onDelete, currentAd
                         ) : (
                           <button
                             onClick={() => onDelete(acc.id)}
-                            className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:text-red-800 hover:bg-red-100 transition"
-                            title="Xóa tài khoản"
+                            disabled={!hasEditAccess}
+                            className="p-1.5 rounded-lg bg-red-50 text-red-650 hover:text-red-850 hover:bg-red-100 transition disabled:opacity-30"
+                            title={hasEditAccess ? "Xóa tài khoản" : "Không có quyền xóa"}
                           >
                             <Trash2 size={13} />
                           </button>

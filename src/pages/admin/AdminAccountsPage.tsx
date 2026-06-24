@@ -28,6 +28,7 @@ export default function AdminAccountsPage() {
   const [currentAdminId, setCurrentAdminId] = useState(0);
   const [currentAdminRole, setCurrentAdminRole] = useState("");
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [hasEditAccess, setHasEditAccess] = useState(false);
 
   useEffect(() => {
     try {
@@ -38,7 +39,8 @@ export default function AdminAccountsPage() {
         const role = user.role || "";
         setCurrentAdminRole(role);
         const perms = user.permissions || [];
-        setIsAuthorized(role === "dev" || role === "admin" || perms.includes("accounts"));
+        setIsAuthorized(true);
+        setHasEditAccess(role === "dev" || role === "admin" || perms.includes("accounts"));
       } else {
         setIsAuthorized(false);
       }
@@ -142,7 +144,7 @@ export default function AdminAccountsPage() {
               <h1 className="text-[24px] font-black text-[#0B1F3A]">Quản trị nhân sự</h1>
               <p className="mt-1 text-xs text-[#64748B]">Cấu hình danh sách nhân viên và thiết lập phân quyền chức năng hệ thống</p>
             </div>
-            {activeTab === "accounts" && (
+            {activeTab === "accounts" && hasEditAccess && (
               <button
                 onClick={() => { setSelectedAccount(undefined); setIsModalOpen(true); }}
                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0057E7] px-4 text-xs font-bold text-white transition hover:bg-[#003B7A] self-start sm:self-auto shadow-sm"
@@ -189,6 +191,7 @@ export default function AdminAccountsPage() {
                 onDelete={handleDelete}
                 currentAdminId={currentAdminId}
                 currentAdminRole={currentAdminRole}
+                hasEditAccess={hasEditAccess}
               />
 
               {totalPages > 1 && (
@@ -206,7 +209,7 @@ export default function AdminAccountsPage() {
               )}
             </div>
           ) : (
-            <RolesTab />
+            <RolesTab hasEditAccess={hasEditAccess} />
           )}
         </main>
       </div>

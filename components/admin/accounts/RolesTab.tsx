@@ -4,7 +4,11 @@ import { toast } from "sonner";
 import { API_BASE_URL } from "@/src/config/api";
 import { RoleFormModal } from "./RoleFormModal";
 
-export function RolesTab() {
+interface RolesTabProps {
+  hasEditAccess?: boolean;
+}
+
+export function RolesTab({ hasEditAccess = false }: RolesTabProps) {
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -81,13 +85,15 @@ export function RolesTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cấu hình vai trò & Quyền truy cập</h3>
-        <button
-          onClick={handleCreateRole}
-          className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#0057E7] hover:bg-[#003B7A] px-3.5 text-xs font-bold text-white transition shadow-sm"
-        >
-          <Plus className="h-4 w-4" />
-          Thêm vai trò mới
-        </button>
+        {hasEditAccess && (
+          <button
+            onClick={handleCreateRole}
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#0057E7] hover:bg-[#003B7A] px-3.5 text-xs font-bold text-white transition shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            Thêm vai trò mới
+          </button>
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-[#DCEBFF] bg-white shadow-sm">
@@ -129,17 +135,17 @@ export function RolesTab() {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleEditRole(role)}
-                        disabled={role.name === 'dev' || role.name === 'admin'}
+                        disabled={role.name === 'dev' || role.name === 'admin' || !hasEditAccess}
                         className="h-8 w-8 rounded-lg border border-[#DCEBFF] text-[#64748B] hover:text-[#0057E7] hover:bg-slate-100 flex items-center justify-center transition disabled:opacity-30"
-                        title="Sửa quyền"
+                        title={hasEditAccess ? "Sửa quyền" : "Không có quyền sửa"}
                       >
                         <Edit2 className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteRole(role.id, role.name)}
-                        disabled={isSystem}
+                        disabled={isSystem || !hasEditAccess}
                         className="h-8 w-8 rounded-lg border border-[#DCEBFF] text-[#64748B] hover:text-[#EF3340] hover:bg-[#FFF2F3] flex items-center justify-center transition disabled:opacity-30"
-                        title="Xóa vai trò"
+                        title={hasEditAccess ? "Xóa vai trò" : "Không có quyền xóa"}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

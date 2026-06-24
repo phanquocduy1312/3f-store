@@ -252,11 +252,14 @@ class AuthMiddleware {
             $requiredPerm = 'accounts';
         }
         
-        if ($requiredPerm !== null && !self::hasPermission($admin, $requiredPerm)) {
-            Response::json([
-                "success" => false,
-                "message" => "Bạn không có quyền thực hiện hành động này (" . $requiredPerm . ")."
-            ], 403);
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if ($method !== 'GET') {
+            if ($requiredPerm !== null && !self::hasPermission($admin, $requiredPerm)) {
+                Response::json([
+                    "success" => false,
+                    "message" => "Bạn không có quyền thực hiện hành động này (" . $requiredPerm . ")."
+                ], 403);
+            }
         }
 
         return $admin;
@@ -400,11 +403,14 @@ class AuthMiddleware {
      */
     public static function requirePermission($permission) {
         $admin = self::requireAdmin();
-        if (!self::hasPermission($admin, $permission)) {
-            Response::json([
-                "success" => false,
-                "message" => "Bạn không có quyền thực hiện hành động này (" . $permission . ")."
-            ], 403);
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if ($method !== 'GET') {
+            if (!self::hasPermission($admin, $permission)) {
+                Response::json([
+                    "success" => false,
+                    "message" => "Bạn không có quyền thực hiện hành động này (" . $permission . ")."
+                ], 403);
+            }
         }
         return $admin;
     }

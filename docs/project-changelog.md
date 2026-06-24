@@ -2,6 +2,10 @@
 
 ## [2026-06-24]
 ### Added
+- Tái cấu trúc bộ phân quyền quản trị thành chế độ xem (Read-Only) thay vì ẩn hoàn toàn:
+  - Cho phép người dùng không có quyền vẫn xem được nội dung trang quản trị (Nhân sự, Báo cáo...) trên Sidebar và router.
+  - Vô hiệu hóa hoặc ẩn các thao tác thay đổi dữ liệu (Thêm mới, Chỉnh sửa, Xóa) trên giao diện qua prop `hasEditAccess` và chặn các phương thức ghi (POST, PUT, DELETE, PATCH) ở phía backend (AuthMiddleware).
+  - Sửa lỗi hiển thị vai trò quản trị viên hệ thống hiển thị nhãn `cskh` do thiếu switch case `admin` ở `AccountsTable.tsx`.
 - Triển khai hệ thống phân quyền quản trị Admin (RBAC System) động hoàn chỉnh:
   - Tích hợp bảng lưu trữ cấu hình vai trò `admin_roles` trong cơ sở dữ liệu giúp Admin tự tạo vai trò mới và phân quyền.
   - Cấu hình phân quyền động ở cấp độ chức năng đầy đủ (14 chức năng chính của sidebar) thay vì chia nhỏ lẻ gây phiền hà.

@@ -71,7 +71,7 @@
 - [x] Thiết kế và triển khai lại trang Giới thiệu / About (/about và /gioi-thieu) mang phong cách pet store ấm áp, tin cậy, gần gũi, tối ưu đa kênh và liên hệ, tích hợp điều hướng mượt mà ở Header và Footer.
 - [x] Thiết kế và triển khai lại trang Liên hệ / Contact (/contact và /lien-he) mang phong cách pet store ấm áp, tin cậy, gần gũi, tích hợp API lưu trữ tin nhắn contact_messages MySQL và chống spam Honeypot.
 - [x] Triển khai luồng đăng ký tài khoản khách hàng bằng email xác thực (email verification link) bảo mật với bảng tạm pending_registrations, SMTP socket client và trang xử lý xác thực tự động đăng nhập.
-- [x] Triển khai hệ thống phân quyền quản trị Admin (RBAC System) hoàn chỉnh (AuthMiddleware permission matrix, AdminUserController CRUD, AdminAccountsPage quản lý nhân sự, admin-sidebar navigation filtering, và action guards tắt/ẩn lưu/xóa/trạng thái/hình ảnh cho các vai trò CSKH và Editor).
+- [x] Triển khai hệ thống phân quyền quản trị Admin (RBAC System) hoàn chỉnh (AuthMiddleware permission matrix, AdminUserController CRUD, AdminAccountsPage quản lý nhân sự, admin-sidebar navigation filtering, action guards tắt/ẩn lưu/xóa/trạng thái/hình ảnh cho các vai trò CSKH và Editor, và tái cấu trúc sang chế độ chỉ xem Read-Only hiển thị sidebar đầy đủ).
 
 
 ## Phase 6: 3F Club Phased Implementation (CRM + Loyalty + Automation)

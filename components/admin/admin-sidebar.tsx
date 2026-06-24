@@ -50,30 +50,7 @@ const menuItems: MenuItem[] = [
 ];
 
 const isPathVisible = (path: string | undefined, role: string, permissions: string[]) => {
-  if (!path) return true;
-  if (role === "dev" || role === "admin") return true;
-  
-  const mapping: Record<string, string> = {
-    "/admin": "dashboard",
-    "/admin/orders": "orders",
-    "/admin/customers": "customers",
-    "/admin/pet-advisor": "pet_advisor",
-    "/admin/3f-club": "club_3f",
-    "/admin/products": "products",
-    "/admin/reviews": "reviews",
-    "/admin/categories": "categories",
-    "/admin/banners": "banners",
-    "/admin/news": "news",
-    "/admin/vouchers": "vouchers",
-    "/admin/analytics": "analytics",
-    "/admin/settings/workflows": "workflows",
-    "/admin/accounts": "accounts"
-  };
-
-  const key = mapping[path];
-  if (!key) return true;
-
-  return permissions.includes(key);
+  return true;
 };
 
 export function AdminSidebar({ activeMenu, setActiveMenu, collapsed }: AdminSidebarProps) {
