@@ -1,6 +1,12 @@
 # Project Changelog
 
 ## [2026-06-24]
+### Fixed
+- Sửa lỗi không chuyển hướng đăng nhập khi phiên làm việc Admin hết hạn (401 Unauthorized):
+  - Tích hợp hàm tiện ích `handleAuthStatus` ở [api.ts](file:///c:/Users/Admin/Downloads/ccc/src/config/api.ts) để tự động xóa `admin_token`, `admin_user`, `admin_permissions` trong LocalStorage và chuyển hướng về `/admin/login`.
+  - Áp dụng kiểm tra trạng thái lỗi 401 đồng bộ trên tất cả các tệp API Admin: `adminAnalyticsApi.ts`, `adminCustomersApi.ts`, `adminDashboardApi.ts`, `adminNotificationsApi.ts`, `adminPetAdvisorApi.ts`, `productsApi.ts`, và `shopeePointApi.ts`.
+  - Tái cấu trúc và rút gọn mã nguồn tệp `adminCustomersApi.ts` và `shopeePointApi.ts` bằng hàm dùng chung `fetchWithAuth` / `fetchWithAdminAuth` giúp giảm số lượng dòng mã dưới 200-220 dòng tuân thủ tiêu chuẩn chất lượng.
+
 ### Added
 - Tái cấu trúc bộ phân quyền quản trị thành chế độ xem (Read-Only) thay vì ẩn hoàn toàn:
   - Cho phép người dùng không có quyền vẫn xem được nội dung trang quản trị (Nhân sự, Báo cáo...) trên Sidebar và router.
