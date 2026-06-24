@@ -2,6 +2,9 @@
 
 ## [2026-06-24]
 ### Fixed
+- Sửa lỗi hình ảnh hóa đơn Shopee tải lên hiển thị lỗi (broken image 404):
+  - Cấu hình [UploadService.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Services/UploadService.php) lưu trữ một bản sao của ảnh hóa đơn vào thư mục public (`public/uploads/shopee-orders/`) tương tự như cách xử lý ảnh sản phẩm/rewards để có thể truy cập công khai từ trình duyệt.
+  - Cập nhật frontend [ShopeeRequestModal.tsx](file:///c:/Users/Admin/Downloads/ccc/src/components/Account/ShopeeRequestModal.tsx) bọc đường dẫn `imageUrl` trong hàm `buildImageUrl()` để tự động chuẩn hóa và ánh xạ URL đầy đủ trỏ đến máy chủ backend thay vì Vite dev server.
 - Sửa lỗi không chuyển hướng đăng nhập khi phiên làm việc Admin hết hạn (401 Unauthorized):
   - Tích hợp hàm tiện ích `handleAuthStatus` ở [api.ts](file:///c:/Users/Admin/Downloads/ccc/src/config/api.ts) để tự động xóa `admin_token`, `admin_user`, `admin_permissions` trong LocalStorage và chuyển hướng về `/admin/login`.
   - Áp dụng kiểm tra trạng thái lỗi 401 đồng bộ trên tất cả các tệp API Admin: `adminAnalyticsApi.ts`, `adminCustomersApi.ts`, `adminDashboardApi.ts`, `adminNotificationsApi.ts`, `adminPetAdvisorApi.ts`, `productsApi.ts`, và `shopeePointApi.ts`.
