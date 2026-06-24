@@ -382,7 +382,7 @@ export function ShopeeRequestDetailModal({
                     ) : null}
                     {request.source === "guest" && (
                       <div className="md:col-span-2 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 font-medium">
-                        Yêu cầu này được gửi từ khách vãng lai, số điện thoại đã được xác thực qua mã OTP.
+                        Yêu cầu này được gửi từ khách vãng lai và không yêu cầu xác thực OTP trước khi gửi.
                       </div>
                     )}
                   </div>

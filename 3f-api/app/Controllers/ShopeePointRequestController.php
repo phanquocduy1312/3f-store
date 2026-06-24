@@ -11,7 +11,6 @@ use App\Models\UploadedOrderImage;
 use App\Models\OrderImageScan;
 use App\Models\AuditLog;
 use App\Helpers\AuthMiddleware;
-use App\Services\OtpService;
 use Exception;
 
 class ShopeePointRequestController {
@@ -57,15 +56,6 @@ class ShopeePointRequestController {
             $customerId = null;
         }
         
-        $otpService = new OtpService();
-        $otpToken = isset($input['verificationToken']) ? $input['verificationToken'] : 
-                    (isset($input['otpToken']) ? $input['otpToken'] : 
-                    (isset($input['otp_token']) ? $input['otp_token'] : ''));
-
-        if (empty($otpToken) || !$otpService->validateVerificationToken($phone, $otpToken, 'shopee_point_request')) {
-            Response::json(["success" => false, "message" => "Vui lòng xác thực OTP trước khi gửi yêu cầu tích điểm Shopee."], 400);
-        }
-
         $email = ValidationService::sanitizeText(isset($input['email']) ? $input['email'] : '');
         $zalo = ValidationService::sanitizeText(isset($input['zalo']) ? $input['zalo'] : '');
         $shopeeOrderCode = ValidationService::sanitizeText(isset($input['shopeeOrderCode']) ? $input['shopeeOrderCode'] : '');
@@ -102,9 +92,6 @@ class ShopeePointRequestController {
                 ], 400);
             }
 
-            // Consume OTP token
-            $otpService->consumeVerificationToken($phone, $otpToken, 'shopee_point_request');
-
             // Create Request
             $requestId = $requestModel->create([
                 "customer_name"     => $customerName,
@@ -118,9 +105,9 @@ class ShopeePointRequestController {
                 "image_id"          => $imageId,
                 "scan_id"           => $scanId,
                 "source"            => $source,
-                "otp_verified"      => 1,
-                "otp_verified_at"   => date('Y-m-d H:i:s'),
-                "otp_provider"      => getenv('OTP_PROVIDER') ?: 'mock'
+                "otp_verified"      => 0,
+                "otp_verified_at"   => null,
+                "otp_provider"      => null
             ]);
 
             try {
