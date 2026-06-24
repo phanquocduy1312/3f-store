@@ -5,6 +5,8 @@
 - Tái cấu trúc bộ phân quyền quản trị thành chế độ xem (Read-Only) thay vì ẩn hoàn toàn:
   - Cho phép người dùng không có quyền vẫn xem được nội dung trang quản trị (Nhân sự, Báo cáo...) trên Sidebar và router.
   - Vô hiệu hóa hoặc ẩn các thao tác thay đổi dữ liệu (Thêm mới, Chỉnh sửa, Xóa) trên giao diện qua prop `hasEditAccess` và chặn các phương thức ghi (POST, PUT, DELETE, PATCH) ở phía backend (AuthMiddleware).
+  - Loại bỏ các giới hạn vai trò cứng (`['admin', 'superadmin', 'manager']`) trong [ProductController.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Controllers/ProductController.php) để cho phép bất kỳ vai trò quản trị nào có thể đọc danh sách và chi tiết thông qua các yêu cầu `GET` (trong khi các thay đổi dữ liệu vẫn được bảo vệ bởi middleware).
+  - Loại bỏ các tệp tin cấu hình và lockfile của `pnpm` (`pnpm-lock.yaml`, `pnpm-workspace.yaml`) để đảm bảo quy trình deploy trơn tru bằng `npm` và `package-lock.json` trên Vercel.
   - Sửa lỗi hiển thị vai trò quản trị viên hệ thống hiển thị nhãn `cskh` do thiếu switch case `admin` ở `AccountsTable.tsx`.
 - Triển khai hệ thống phân quyền quản trị Admin (RBAC System) động hoàn chỉnh:
   - Tích hợp bảng lưu trữ cấu hình vai trò `admin_roles` trong cơ sở dữ liệu giúp Admin tự tạo vai trò mới và phân quyền.
