@@ -98,13 +98,18 @@ class OcrService {
     private function callOcrSpace(string $imagePath): array {
         $config = require dirname(__DIR__, 2) . "/config/config.php";
         
-        if (empty($config["ocr"]) || empty($config["ocr"]["api_key"])) {
+        $settingsModel = new \App\Models\LoyaltySettings();
+        $dbApiKey = $settingsModel->get('ocr_space_api_key');
+        $dbEndpoint = $settingsModel->get('ocr_space_endpoint');
+
+        $apiKey = $dbApiKey ?: ($config["ocr"]["api_key"] ?? "");
+        $endpoint = $dbEndpoint ?: ($config["ocr"]["endpoint"] ?? "https://api.ocr.space/parse/image");
+
+        if (empty($apiKey)) {
             throw new Exception("Chưa cấu hình OCR.space API key.");
         }
-        
-        $ocrConfig = $config["ocr"];
 
-        $ch = curl_init($ocrConfig["endpoint"]);
+        $ch = curl_init($endpoint);
 
         $postFields = [
             "file"              => new CURLFile($imagePath),
@@ -120,7 +125,7 @@ class OcrService {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => 45,
             CURLOPT_HTTPHEADER     => [
-                "apikey: " . $ocrConfig["api_key"]
+                "apikey: " . $apiKey
             ],
             CURLOPT_POSTFIELDS     => $postFields
         ]);

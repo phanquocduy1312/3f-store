@@ -362,17 +362,71 @@ class CustomerPetController {
             ]
         ];
 
-        $groqApiKey = trim((string)(getenv('GROQ_API_KEY') ?: getenv('VITE_GROQ_API_KEY') ?: ''));
-        $groqModel = trim((string)(getenv('GROQ_MODEL') ?: getenv('VITE_GROQ_MODEL') ?: 'llama-3.3-70b-versatile'));
+        $settingsModel = new \App\Models\LoyaltySettings();
+        $groqApiKey = trim((string)($settingsModel->get('groq_api_key') ?: getenv('GROQ_API_KEY') ?: getenv('VITE_GROQ_API_KEY') ?: ''));
+        $groqModel = trim((string)($settingsModel->get('groq_model') ?: getenv('GROQ_MODEL') ?: getenv('VITE_GROQ_MODEL') ?: 'llama-3.3-70b-versatile'));
 
-        if (empty($groqApiKey)) {
-            Response::json([
-                'success' => false,
-                'message' => 'Chưa cấu hình Groq API Key ở server.'
-            ], 500);
-        }
+        $mockEnabled = $settingsModel->get('mock_ai_advisor') === '1';
 
-        $systemPrompt = "Bạn là chuyên gia tư vấn thú cưng của 3F Store.
+        if ($mockEnabled) {
+            $recProducts = [];
+            $groups = ['saving', 'balanced', 'premium'];
+            $i = 0;
+            foreach ($availableProducts as $p) {
+                if ($i >= 9) break;
+                $g = $groups[$i % 3];
+                $recProducts[] = [
+                    'id' => (string)$p['id'],
+                    'group' => $g,
+                    'reason' => "Sản phẩm tốt phù hợp nhóm nhu cầu và ngân sách của bé.",
+                    'matched_need' => [!empty($detectedNeeds) ? $detectedNeeds[0] : "Khác"],
+                    'budget_fit' => $g === 'saving' ? "Giá rẻ tiết kiệm" : ($g === 'balanced' ? "Đề xuất hợp lý" : "Cao cấp vượt trội")
+                ];
+                $i++;
+            }
+            if (empty($recProducts)) {
+                for ($k = 1; $k <= 9; $k++) {
+                    $g = $groups[($k-1) % 3];
+                    $recProducts[] = [
+                        'id' => (string)$k,
+                        'group' => $g,
+                        'reason' => "Đề xuất dinh dưỡng.",
+                        'matched_need' => ["Khác"],
+                        'budget_fit' => "Cân bằng"
+                    ];
+                }
+            }
+
+            $parsedJson = [
+                "summary" => "Tóm tắt tư vấn tự động (Chế độ giả lập hoạt động)",
+                "advice" => "Lời khuyên dinh dưỡng giả lập cho bé " . ($payload['pet_profile']['breed_other_text'] ?: $payload['customer']['pet_name']) . " để cải thiện sức khỏe.",
+                "detected_needs" => $detectedNeeds,
+                "budget_analysis" => [
+                    "purchase_amount_label" => $payload['pet_profile']['purchase_amount_range'],
+                    "usage_duration_label" => $payload['pet_profile']['usage_duration_range'],
+                    "monthly_budget" => $monthlyBudget,
+                    "budget_segment" => $budgetSegment,
+                    "explanation" => "Ngân sách tháng được tính dựa trên chu kỳ sử dụng sản phẩm."
+                ],
+                "recommended_products" => $recProducts,
+                "care_tips" => [
+                    "Cho bé ăn đúng giờ và chia nhỏ bữa ăn.",
+                    "Đảm bảo cung cấp đủ nước sạch mỗi ngày.",
+                    "Theo dõi cân nặng định kỳ."
+                ],
+                "warning" => $hasSeriousWarning ? "Cảnh báo: Bé có dấu hiệu sức khỏe nhạy cảm, nên tham khảo ý kiến bác sĩ thú y." : "",
+                "cta" => "Nhập mã voucher " . $aiVoucherCode . " để nhận ngay ưu đãi giảm " . $aiVoucherValue . " khi thanh toán.",
+                "voucher_code" => $aiVoucherCode
+            ];
+        } else {
+            if (empty($groqApiKey)) {
+                Response::json([
+                    'success' => false,
+                    'message' => 'Chưa cấu hình Groq API Key ở server.'
+                ], 500);
+            }
+
+            $systemPrompt = "Bạn là chuyên gia tư vấn thú cưng của 3F Store.
 Bạn trả lời bằng tiếng Việt, thân thiện, chuyên nghiệp, ngắn gọn. Gọi thú cưng là \"bé\".
 
 Nhiệm vụ chính:
@@ -436,57 +490,58 @@ Trả về duy nhất định dạng JSON sau:
   \"voucher_code\": \"" . $aiVoucherCode . "\"
 }";
 
-        $userPrompt = "Dưới đây là thông tin chi tiết về khách hàng và bé cưng:\n" . json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            $userPrompt = "Dưới đây là thông tin chi tiết về khách hàng và bé cưng:\n" . json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
-        $postData = [
-            'model' => $groqModel,
-            'messages' => [
-                ['role' => 'system', 'content' => $systemPrompt],
-                ['role' => 'user', 'content' => $userPrompt]
-            ],
-            'temperature' => 0.3,
-            'response_format' => ['type' => 'json_object']
-        ];
+            $postData = [
+                'model' => $groqModel,
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => $userPrompt]
+                ],
+                'temperature' => 0.3,
+                'response_format' => ['type' => 'json_object']
+            ];
 
-        $ch = curl_init("https://api.groq.com/openai/v1/chat/completions");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $groqApiKey
-        ]);
+            $ch = curl_init("https://api.groq.com/openai/v1/chat/completions");
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $groqApiKey
+            ]);
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
 
-        if ($response === false || $httpCode !== 200) {
-            Response::json([
-                'success' => false,
-                'message' => 'Lỗi kết nối Groq API từ backend (HTTP ' . $httpCode . '): ' . $error,
-                'details' => $response
-            ], 500);
-        }
+            if ($response === false || $httpCode !== 200) {
+                Response::json([
+                    'success' => false,
+                    'message' => 'Lỗi kết nối Groq API từ backend (HTTP ' . $httpCode . '): ' . $error,
+                    'details' => $response
+                ], 500);
+            }
 
-        $responseData = json_decode($response, true);
-        $assistantContent = $responseData['choices'][0]['message']['content'] ?? '';
-        
-        if (empty($assistantContent)) {
-            Response::json([
-                'success' => false,
-                'message' => 'Groq API trả về kết quả rỗng.'
-            ], 500);
-        }
+            $responseData = json_decode($response, true);
+            $assistantContent = $responseData['choices'][0]['message']['content'] ?? '';
+            
+            if (empty($assistantContent)) {
+                Response::json([
+                    'success' => false,
+                    'message' => 'Groq API trả về kết quả rỗng.'
+                ], 500);
+            }
 
-        $parsedJson = json_decode($assistantContent, true);
-        if (!$parsedJson) {
-            Response::json([
-                'success' => false,
-                'message' => 'Không thể phân tích định dạng JSON từ Groq.'
-            ], 500);
+            $parsedJson = json_decode($assistantContent, true);
+            if (!$parsedJson) {
+                Response::json([
+                    'success' => false,
+                    'message' => 'Không thể phân tích định dạng JSON từ Groq.'
+                ], 500);
+            }
         }
 
         // Map names and products detail dynamically to return full details to client

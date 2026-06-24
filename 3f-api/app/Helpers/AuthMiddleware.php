@@ -130,6 +130,47 @@ class AuthMiddleware {
         @file_put_contents($logFile, json_encode($logData) . "\n", FILE_APPEND);
 
         self::$currentAdmin = $admin;
+
+        // Dynamic path-to-permission mapping check
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        $path = parse_url($uri, PHP_URL_PATH);
+        
+        $requiredPerm = null;
+        if (strpos($path, '/api/admin/orders') === 0) {
+            $requiredPerm = 'orders';
+        } elseif (strpos($path, '/api/admin/customers') === 0) {
+            $requiredPerm = 'customers';
+        } elseif (strpos($path, '/api/admin/pet-advisor') === 0) {
+            $requiredPerm = 'pet_advisor';
+        } elseif (strpos($path, '/api/admin/3f-club') === 0 || strpos($path, '/api/admin/loyalty') === 0) {
+            $requiredPerm = 'club_3f';
+        } elseif (strpos($path, '/api/admin/products') === 0) {
+            $requiredPerm = 'products';
+        } elseif (strpos($path, '/api/admin/product-reviews') === 0) {
+            $requiredPerm = 'reviews';
+        } elseif (strpos($path, '/api/admin/categories') === 0) {
+            $requiredPerm = 'categories';
+        } elseif (strpos($path, '/api/admin/banners') === 0) {
+            $requiredPerm = 'banners';
+        } elseif (strpos($path, '/api/admin/blog-posts') === 0) {
+            $requiredPerm = 'news';
+        } elseif (strpos($path, '/api/admin/vouchers') === 0) {
+            $requiredPerm = 'vouchers';
+        } elseif (strpos($path, '/api/admin/analytics') === 0) {
+            $requiredPerm = 'analytics';
+        } elseif (strpos($path, '/api/admin/workflows') === 0 || strpos($path, '/api/admin/order-shipping-methods') === 0) {
+            $requiredPerm = 'workflows';
+        } elseif (strpos($path, '/api/admin/accounts') === 0 || strpos($path, '/api/admin/roles') === 0) {
+            $requiredPerm = 'accounts';
+        }
+        
+        if ($requiredPerm !== null && !self::hasPermission($admin, $requiredPerm)) {
+            Response::json([
+                "success" => false,
+                "message" => "Bạn không có quyền thực hiện hành động này (" . $requiredPerm . ")."
+            ], 403);
+        }
+
         return $admin;
     }
 
@@ -226,6 +267,58 @@ class AuthMiddleware {
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    /**
+     * Check if current admin user has a specific permission.
+     */
+    public static function hasPermission($admin, $permission) {
+        $role = $admin['role'] ?? 'staff';
+
+        // dev and admin get everything
+        if ($role === 'dev' || $role === 'admin') {
+            return true;
+        }
+
+        // Query permissions from database
+        try {
+            $db = \App\Core\Database::getInstance()->getConnection();
+            $stmt = $db->prepare("SELECT permissions FROM admin_roles WHERE name = :name LIMIT 1");
+            $stmt->execute([':name' => $role]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if ($row) {
+                $perms = json_decode($row['permissions'], true);
+                if (is_array($perms)) {
+                    return in_array($permission, $perms, true);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fallback to hardcoded defaults in case database query fails
+        }
+
+        $rolePermissions = [
+            'super_admin' => ["dashboard","orders","customers","pet_advisor","club_3f","products","reviews","categories","banners","news","vouchers","analytics","accounts"],
+            'manager' => ["dashboard","orders","customers","pet_advisor","club_3f","products","reviews","categories","banners","news","vouchers","analytics"],
+            'editor' => ["dashboard","products","reviews","categories","banners","news","vouchers"],
+            'cskh' => ["dashboard","orders","customers","pet_advisor","products","reviews"]
+        ];
+
+        $perms = $rolePermissions[$role] ?? [];
+        return in_array($permission, $perms, true);
+    }
+
+    /**
+     * Enforce permission check.
+     */
+    public static function requirePermission($permission) {
+        $admin = self::requireAdmin();
+        if (!self::hasPermission($admin, $permission)) {
+            Response::json([
+                "success" => false,
+                "message" => "Bạn không có quyền thực hiện hành động này (" . $permission . ")."
+            ], 403);
+        }
+        return $admin;
     }
 }
 

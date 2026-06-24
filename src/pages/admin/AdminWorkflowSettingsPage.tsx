@@ -85,6 +85,7 @@ export function AdminWorkflowSettingsPage() {
   const [notificationForm, setNotificationForm] = useState<Partial<NotificationChannelSetting>>({});
 
   const [adminRole, setAdminRole] = useState("admin");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
 
   useEffect(() => {
     try {
@@ -92,6 +93,7 @@ export function AdminWorkflowSettingsPage() {
       if (userStr) {
         const user = JSON.parse(userStr);
         setAdminRole(user.role || "admin");
+        setAdminPermissions(user.permissions || []);
       }
     } catch (e) {
       // Ignore
@@ -102,13 +104,15 @@ export function AdminWorkflowSettingsPage() {
     // Only fetch if role is allowed
     const userStr = localStorage.getItem("admin_user");
     let role = "admin";
+    let perms: string[] = [];
     try {
       if (userStr) {
         const u = JSON.parse(userStr);
         role = u.role || "admin";
+        perms = u.permissions || [];
       }
     } catch (e) {}
-    if (role !== "super_admin" && role !== "dev") {
+    if (role !== "super_admin" && role !== "dev" && role !== "admin" && !perms.includes("workflows")) {
       return;
     }
 
@@ -471,7 +475,8 @@ export function AdminWorkflowSettingsPage() {
     }
   };
 
-  if (adminRole !== "super_admin" && adminRole !== "dev") {
+  const hasWorkflowAccess = adminRole === "super_admin" || adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("workflows");
+  if (!hasWorkflowAccess) {
     return (
       <div className="min-h-screen bg-[#F6FAFF] font-sans relative">
         <AdminSidebar 

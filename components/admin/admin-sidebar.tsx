@@ -14,6 +14,7 @@ import {
   Users,
   LogOut,
   MessageSquareText,
+  Shield,
 } from "lucide-react";
 import { adminLogout } from "@/src/api/productsApi";
 
@@ -44,9 +45,37 @@ const menuItems: MenuItem[] = [
   { name: "Quản lý Banner", icon: FileText, path: "/admin/banners" },
   { name: "Quản lý Tin tức", icon: FileText, path: "/admin/news" },
   { name: "Voucher", icon: Tag, path: "/admin/vouchers" },
-  { name: "Báo cáo", icon: BarChart3, hasChevron: true },
+  { name: "Báo cáo", icon: BarChart3, path: "/admin/analytics" },
   { name: "Cấu hình Workflow", icon: CheckSquare, path: "/admin/settings/workflows" },
+  { name: "Nhân sự", icon: Shield, path: "/admin/accounts" },
 ];
+
+const isPathVisible = (path: string | undefined, role: string, permissions: string[]) => {
+  if (!path) return true;
+  if (role === "dev" || role === "admin") return true;
+  
+  const mapping: Record<string, string> = {
+    "/admin": "dashboard",
+    "/admin/orders": "orders",
+    "/admin/customers": "customers",
+    "/admin/pet-advisor": "pet_advisor",
+    "/admin/3f-club": "club_3f",
+    "/admin/products": "products",
+    "/admin/reviews": "reviews",
+    "/admin/categories": "categories",
+    "/admin/banners": "banners",
+    "/admin/news": "news",
+    "/admin/vouchers": "vouchers",
+    "/admin/analytics": "analytics",
+    "/admin/settings/workflows": "workflows",
+    "/admin/accounts": "accounts"
+  };
+
+  const key = mapping[path];
+  if (!key) return true;
+
+  return permissions.includes(key);
+};
 
 export function AdminSidebar({ activeMenu, setActiveMenu, collapsed }: AdminSidebarProps) {
   const navigate = useNavigate();
@@ -54,18 +83,26 @@ export function AdminSidebar({ activeMenu, setActiveMenu, collapsed }: AdminSide
 
   const [adminName, setAdminName] = React.useState("Quản trị viên");
   const [adminRole, setAdminRole] = React.useState("admin");
+  const [adminPermissions, setAdminPermissions] = React.useState<string[]>([]);
 
   React.useEffect(() => {
-    try {
-      const userStr = localStorage.getItem("admin_user");
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        setAdminName(user.name || "Quản trị viên");
-        setAdminRole(user.role || "admin");
+    const loadUser = () => {
+      try {
+        const userStr = localStorage.getItem("admin_user");
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          setAdminName(user.name || "Quản trị viên");
+          setAdminRole(user.role || "admin");
+          setAdminPermissions(user.permissions || []);
+        }
+      } catch (e) {
+        // Ignore
       }
-    } catch (e) {
-      // Ignore
-    }
+    };
+
+    loadUser();
+    window.addEventListener("admin_user_updated", loadUser);
+    return () => window.removeEventListener("admin_user_updated", loadUser);
   }, []);
 
   const handleLogout = async () => {
@@ -95,8 +132,7 @@ export function AdminSidebar({ activeMenu, setActiveMenu, collapsed }: AdminSide
 
       <nav className="no-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-4">
         {menuItems.map((item) => {
-          // Hide "Cấu hình Workflow" from normal admin (only allow role === "super_admin" or "dev")
-          if (item.path === "/admin/settings/workflows" && adminRole !== "super_admin" && adminRole !== "dev") {
+          if (!isPathVisible(item.path, adminRole, adminPermissions)) {
             return null;
           }
           const Icon = item.icon;
@@ -155,19 +191,45 @@ export function AdminSidebar({ activeMenu, setActiveMenu, collapsed }: AdminSide
       </nav>
 
       {/* Admin Profile & Logout Section */}
-      <div className={`shrink-0 border-t border-[#DCEBFF] p-4 bg-white flex ${collapsed ? "flex-col items-center gap-3" : "items-center justify-between"} transition-all duration-300`}>
-        {!collapsed && (
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs font-black text-[#0B1F3A] truncate">{adminName}</span>
-            <span className="text-[10px] text-slate-400 font-bold capitalize">{adminRole}</span>
+      <div className={`shrink-0 border-t border-[#EEF6FF] p-4 bg-white flex ${collapsed ? "flex-col items-center gap-4" : "items-center gap-3"} transition-all duration-300`}>
+        {collapsed ? (
+          <div 
+            onClick={() => navigate("/admin/profile")}
+            className="h-9 w-9 rounded-xl bg-gradient-to-tr from-[#0057E7] to-[#3B82F6] text-white flex items-center justify-center font-black text-xs cursor-pointer hover:shadow-md hover:scale-105 transition-all shadow-sm relative group shrink-0"
+            title="Hồ sơ cá nhân"
+          >
+            {adminName.charAt(0).toUpperCase()}
+            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white"></span>
+          </div>
+        ) : (
+          <div 
+            onClick={() => navigate("/admin/profile")}
+            className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer group/profile p-1.5 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-[#DCEBFF]"
+            title="Xem hồ sơ cá nhân"
+          >
+            {/* Avatar Circle with Status */}
+            <div className="relative shrink-0">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-[#0057E7] to-[#3B82F6] text-white flex items-center justify-center font-black text-xs shadow-sm group-hover/profile:scale-105 transition-transform">
+                {adminName.charAt(0).toUpperCase()}
+              </div>
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white"></span>
+            </div>
+            
+            {/* User Info */}
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-[11px] font-black text-[#0B1F3A] truncate leading-tight group-hover/profile:text-[#0057E7] transition-colors">{adminName}</span>
+              <span className="mt-0.5 self-start px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#EBF3FF] text-[#0057E7] border border-[#DCEBFF] uppercase tracking-wider scale-95 origin-left">
+                {adminRole}
+              </span>
+            </div>
           </div>
         )}
         <button
           onClick={handleLogout}
           title="Đăng xuất"
-          className={`flex items-center justify-center text-[#64748B] hover:text-[#EF3340] hover:bg-[#FFF2F3] rounded-xl transition-all duration-200 ${collapsed ? "h-10 w-10" : "h-9 w-9 bg-slate-50"}`}
+          className={`flex items-center justify-center text-[#64748B] hover:text-[#EF3340] hover:bg-[#FFF2F3] rounded-xl transition-all duration-200 ${collapsed ? "h-9 w-9 bg-slate-50" : "h-9 w-9 bg-slate-50 shrink-0"}`}
         >
-          <LogOut className="h-[18px] w-[18px]" />
+          <LogOut className="h-4 w-4" />
         </button>
       </div>
     </aside>

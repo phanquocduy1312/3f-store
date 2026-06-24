@@ -270,6 +270,20 @@ export function AdminProductForm() {
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
 
+  const [adminRole, setAdminRole] = useState("admin");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setAdminRole(user.role || "admin");
+        setAdminPermissions(user.permissions || []);
+      }
+    } catch (e) {}
+  }, []);
+  const hasProductWriteAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("products") || adminRole === "super_admin" || adminRole === "manager";
+
   // Layout state
   const [activeMenu] = useState("Sản phẩm");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
@@ -844,7 +858,7 @@ export function AdminProductForm() {
               </div>
 
               {/* Tab panel */}
-              <div className="bg-white border border-[#DCEBFF] p-6 rounded-3xl shadow-sm min-h-[400px]">
+              <fieldset disabled={!hasProductWriteAccess} className="bg-white border border-[#DCEBFF] p-6 rounded-3xl shadow-sm min-h-[400px]">
 
                 {/* ── Tab: Thông tin cơ bản ─────────────────────────────── */}
                 {activeTab === "basic" && (
@@ -895,6 +909,7 @@ export function AdminProductForm() {
                         }}
                         placeholder="Chi tiết công dụng, thành phần dinh dưỡng, cách dùng, bảo quản..."
                         minHeight={280}
+                        disabled={!hasProductWriteAccess}
                       />
                     </FormField>
 
@@ -910,6 +925,7 @@ export function AdminProductForm() {
                         }}
                         placeholder="Ví dụ: Thịt cá hồi, bột gạo, mỡ gà..."
                         minHeight={200}
+                        disabled={!hasProductWriteAccess}
                       />
                     </FormField>
 
@@ -925,6 +941,7 @@ export function AdminProductForm() {
                         }}
                         placeholder="Ví dụ: Mèo 1-2kg ăn 50g mỗi ngày..."
                         minHeight={200}
+                        disabled={!hasProductWriteAccess}
                       />
                     </FormField>
 
@@ -1326,107 +1343,111 @@ export function AdminProductForm() {
                 {/* ── Tab: Hình ảnh ────────────────────────────────────── */}
                 {activeTab === "images" && (
                   <div className="space-y-6">
-                    <div className="flex flex-col gap-3 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-start gap-2 text-xs font-semibold text-slate-500">
-                        <ImageIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#0057E7]" />
-                        <span>Hỗ trợ JPG, PNG, WEBP. Khuyến nghị ảnh vuông 800x800 hoặc 1000x1000.</span>
-                      </div>
-                      <div className="inline-flex w-full rounded-xl border border-blue-100 bg-white p-1 sm:w-auto">
-                        <button
-                          type="button"
-                          onClick={() => setImageAddMode("upload")}
-                          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black transition-all sm:flex-none ${
-                            imageAddMode === "upload" ? "bg-[#0057E7] text-white" : "text-slate-500 hover:bg-slate-50"
-                          }`}
-                        >
-                          <UploadCloud className="h-3.5 w-3.5" />
-                          Tải ảnh lên
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setImageAddMode("url")}
-                          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black transition-all sm:flex-none ${
-                            imageAddMode === "url" ? "bg-[#0057E7] text-white" : "text-slate-500 hover:bg-slate-50"
-                          }`}
-                        >
-                          <Link2 className="h-3.5 w-3.5" />
-                          Thêm bằng URL
-                        </button>
-                      </div>
-                    </div>
-
-                    {imageAddMode === "upload" ? (
-                      <div
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          setIsDraggingImages(true);
-                        }}
-                        onDragLeave={() => setIsDraggingImages(false)}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          setIsDraggingImages(false);
-                          handleUploadFiles(e.dataTransfer.files);
-                        }}
-                        className={`relative rounded-2xl border-2 border-dashed p-8 text-center transition-all ${
-                          isDraggingImages ? "border-[#0057E7] bg-[#EEF6FF]" : "border-slate-200 bg-white"
-                        }`}
-                      >
-                        <input
-                          id="product-image-upload"
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          multiple
-                          disabled={uploadingImages}
-                          onChange={(e) => {
-                            if (e.target.files) {
-                              handleUploadFiles(e.target.files);
-                              e.target.value = "";
-                            }
-                          }}
-                          className="sr-only"
-                        />
-                        <label
-                          htmlFor="product-image-upload"
-                          className="mx-auto flex max-w-md cursor-pointer flex-col items-center gap-3"
-                        >
-                          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EEF6FF] text-[#0057E7]">
-                            {uploadingImages ? <Loader2 className="h-7 w-7 animate-spin" /> : <UploadCloud className="h-7 w-7" />}
-                          </span>
-                          <span className="text-sm font-black text-[#0B1F3A]">
-                            {uploadingImages ? "Đang tải ảnh lên..." : "Kéo thả ảnh vào đây"}
-                          </span>
-                          <span className="text-xs font-semibold text-slate-400">hoặc bấm để chọn ảnh từ máy</span>
-                        </label>
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5">
-                        <div className="flex gap-2">
-                          <div className="relative flex-1">
-                            <Link2 className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                            <input
-                              type="url"
-                              placeholder="Dán link ảnh https://..."
-                              value={newImageUrl}
-                              onChange={(e) => {
-                                setNewImageUrl(e.target.value);
-                                setImageUrlError("");
-                              }}
-                              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddImageUrl())}
-                              className={`pl-9 pr-4 py-2.5 w-full text-sm font-semibold text-[#0B1F3A] border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0057E7] ${
-                                imageUrlError ? "border-red-300 bg-red-50" : "border-slate-200"
-                              }`}
-                            />
+                    {hasProductWriteAccess && (
+                      <>
+                        <div className="flex flex-col gap-3 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-start gap-2 text-xs font-semibold text-slate-500">
+                            <ImageIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#0057E7]" />
+                            <span>Hỗ trợ JPG, PNG, WEBP. Khuyến nghị ảnh vuông 800x800 hoặc 1000x1000.</span>
                           </div>
-                          <button
-                            type="button"
-                            onClick={handleAddImageUrl}
-                            className="px-5 py-2.5 bg-[#082B5F] hover:bg-[#062047] text-white font-bold text-sm rounded-xl transition-all shrink-0"
-                          >
-                            Thêm ảnh
-                          </button>
+                          <div className="inline-flex w-full rounded-xl border border-blue-100 bg-white p-1 sm:w-auto">
+                            <button
+                              type="button"
+                              onClick={() => setImageAddMode("upload")}
+                              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black transition-all sm:flex-none ${
+                                imageAddMode === "upload" ? "bg-[#0057E7] text-white" : "text-slate-500 hover:bg-slate-50"
+                              }`}
+                            >
+                              <UploadCloud className="h-3.5 w-3.5" />
+                              Tải ảnh lên
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setImageAddMode("url")}
+                              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black transition-all sm:flex-none ${
+                                imageAddMode === "url" ? "bg-[#0057E7] text-white" : "text-slate-500 hover:bg-slate-50"
+                              }`}
+                            >
+                              <Link2 className="h-3.5 w-3.5" />
+                              Thêm bằng URL
+                            </button>
+                          </div>
                         </div>
-                        {imageUrlError && <p className="text-[11px] font-bold text-red-500">{imageUrlError}</p>}
-                      </div>
+
+                        {imageAddMode === "upload" ? (
+                          <div
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              setIsDraggingImages(true);
+                            }}
+                            onDragLeave={() => setIsDraggingImages(false)}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              setIsDraggingImages(false);
+                              handleUploadFiles(e.dataTransfer.files);
+                            }}
+                            className={`relative rounded-2xl border-2 border-dashed p-8 text-center transition-all ${
+                              isDraggingImages ? "border-[#0057E7] bg-[#EEF6FF]" : "border-slate-200 bg-white"
+                            }`}
+                          >
+                            <input
+                              id="product-image-upload"
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              multiple
+                              disabled={uploadingImages || !hasProductWriteAccess}
+                              onChange={(e) => {
+                                if (e.target.files) {
+                                  handleUploadFiles(e.target.files);
+                                  e.target.value = "";
+                                }
+                              }}
+                              className="sr-only"
+                            />
+                            <label
+                              htmlFor="product-image-upload"
+                              className="mx-auto flex max-w-md cursor-pointer flex-col items-center gap-3"
+                            >
+                              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EEF6FF] text-[#0057E7]">
+                                {uploadingImages ? <Loader2 className="h-7 w-7 animate-spin" /> : <UploadCloud className="h-7 w-7" />}
+                              </span>
+                              <span className="text-sm font-black text-[#0B1F3A]">
+                                {uploadingImages ? "Đang tải ảnh lên..." : "Kéo thả ảnh vào đây"}
+                              </span>
+                              <span className="text-xs font-semibold text-slate-400">hoặc bấm để chọn ảnh từ máy</span>
+                            </label>
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5">
+                            <div className="flex gap-2">
+                              <div className="relative flex-1">
+                                <Link2 className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <input
+                                  type="url"
+                                  placeholder="Dán link ảnh https://..."
+                                  value={newImageUrl}
+                                  onChange={(e) => {
+                                    setNewImageUrl(e.target.value);
+                                    setImageUrlError("");
+                                  }}
+                                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddImageUrl())}
+                                  className={`pl-9 pr-4 py-2.5 w-full text-sm font-semibold text-[#0B1F3A] border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0057E7] ${
+                                    imageUrlError ? "border-red-300 bg-red-50" : "border-slate-200"
+                                  }`}
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleAddImageUrl}
+                                className="px-5 py-2.5 bg-[#082B5F] hover:bg-[#062047] text-white font-bold text-sm rounded-xl transition-all shrink-0"
+                              >
+                                Thêm ảnh
+                              </button>
+                            </div>
+                            {imageUrlError && <p className="text-[11px] font-bold text-red-500">{imageUrlError}</p>}
+                          </div>
+                        )}
+                      </>
                     )}
 
                     {/* Gallery */}
@@ -1480,7 +1501,7 @@ export function AdminProductForm() {
                     </div>
                   </div>
                 )}
-              </div>
+              </fieldset>
             </div>
 
             {/* ── Right col: Save panel ──────────────────────────────── */}
@@ -1526,33 +1547,35 @@ export function AdminProductForm() {
 
                 {/* Actions */}
                 <div className="pt-1 space-y-2">
-                  <button
-                    type="submit"
-                    disabled={saving || hasErrors}
-                    className="w-full flex items-center justify-center gap-2 px-5 py-3 text-sm font-black text-white bg-[#0057E7] hover:bg-[#0047C4] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_6px_20px_rgba(0,87,231,0.2)] hover:shadow-none rounded-xl transition-all"
-                  >
-                    {saving ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        Đang lưu...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4" />
-                        Lưu sản phẩm
-                      </>
-                    )}
-                  </button>
+                  {hasProductWriteAccess && (
+                    <button
+                      type="submit"
+                      disabled={saving || hasErrors}
+                      className="w-full flex items-center justify-center gap-2 px-5 py-3 text-sm font-black text-white bg-[#0057E7] hover:bg-[#0047C4] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_6px_20px_rgba(0,87,231,0.2)] hover:shadow-none rounded-xl transition-all"
+                    >
+                      {saving ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          Đang lưu...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4" />
+                          Lưu sản phẩm
+                        </>
+                      )}
+                    </button>
+                  )}
 
                   <button
                     type="button"
                     onClick={handleCancel}
                     className="w-full py-2.5 text-sm font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all"
                   >
-                    Hủy bỏ
+                    {hasProductWriteAccess ? "Hủy bỏ" : "Quay lại"}
                   </button>
 
-                  {isEditMode && (
+                  {isEditMode && hasProductWriteAccess && (
                     <button
                       type="button"
                       onClick={handleDeleteProduct}

@@ -35,3 +35,19 @@ CREATE TABLE IF NOT EXISTS admin_audit_logs (
     INDEX idx_admin_user_id (admin_user_id),
     INDEX idx_action (action)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS admin_roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    display_name VARCHAR(255) NOT NULL,
+    permissions TEXT NOT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO admin_roles (name, display_name, permissions) VALUES
+('dev', 'Developer', '["dashboard","orders","customers","pet_advisor","club_3f","products","reviews","categories","banners","news","vouchers","analytics","workflows","accounts"]'),
+('super_admin', 'Quản trị viên tối cao', '["dashboard","orders","customers","pet_advisor","club_3f","products","reviews","categories","banners","news","vouchers","analytics","accounts"]'),
+('manager', 'Quản lý cửa hàng', '["dashboard","orders","customers","pet_advisor","club_3f","products","reviews","categories","banners","news","vouchers","analytics"]'),
+('editor', 'Biên tập viên/Marketing', '["dashboard","products","reviews","categories","banners","news","vouchers"]'),
+('cskh', 'Chăm sóc khách hàng', '["dashboard","orders","customers","pet_advisor","products","reviews"]');

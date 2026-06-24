@@ -21,6 +21,8 @@ const LoyaltySettingsPage = lazy(() => import("./pages/admin/LoyaltySettingsPage
 const ThreeFClubPage = lazy(() => import("./pages/admin/ThreeFClubPage"));
 const AdminWorkflowSettingsPage = lazyPage(() => import("./pages/admin/AdminWorkflowSettingsPage"), "AdminWorkflowSettingsPage");
 const CustomerLoyaltyPage = lazy(() => import("./pages/admin/CustomerLoyaltyPage"));
+const AdminAccountsPage = lazy(() => import("./pages/admin/AdminAccountsPage"));
+const AdminAnalyticsPage = lazyPage(() => import("./pages/admin/AdminAnalyticsPage"), "AdminAnalyticsPage");
 const CustomerRewardsPage = lazy(() => import("./pages/client/CustomerRewardsPage"));
 const WishlistPage = lazyPage(() => import("./pages/client/WishlistPage"), "WishlistPage");
 const OrderSuccess = lazyPage(() => import("./pages/OrderSuccess"), "OrderSuccess");
@@ -31,6 +33,7 @@ const AdminCustomersPage = lazyPage(() => import("./pages/admin/AdminCustomersPa
 const AdminCustomerDetailPage = lazyPage(() => import("./pages/admin/AdminCustomer360Page"), "AdminCustomerDetailPage");
 const AdminPetAdvisorPage = lazyPage(() => import("./pages/admin/AdminPetAdvisorPage"), "AdminPetAdvisorPage");
 const AdminPetAdvisorDetailPage = lazy(() => import("./pages/admin/AdminPetAdvisorDetailPage"));
+const AdminProfilePage = lazy(() => import("./pages/admin/AdminProfilePage"));
 
 // Admin Product Pages
 const AdminProductsPage = lazyPage(() => import("./pages/admin/AdminProductsPage"), "AdminProductsPage");
@@ -135,10 +138,13 @@ export function App() {
           {/* Protected Admin Routes */}
           <Route element={<AdminRouteGuard />}>
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
             <Route path="/admin/orders" element={<AdminOrdersPage />} />
             <Route path="/admin/settings/workflows" element={<AdminWorkflowSettingsPage />} />
             <Route path="/admin/shopee-requests" element={<ShopeeRequestsPage />} />
             <Route path="/admin/loyalty-settings" element={<LoyaltySettingsPage />} />
+            <Route path="/admin/accounts" element={<AdminAccountsPage />} />
+            <Route path="/admin/profile" element={<AdminProfilePage />} />
             <Route path="/admin/3f-club" element={<ThreeFClubPage />} />
             <Route path="/admin/pet-advisor" element={<AdminPetAdvisorPage />} />
             <Route path="/admin/pet-advisor/consultation/:id" element={<AdminPetAdvisorDetailPage />} />

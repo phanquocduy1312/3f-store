@@ -9,10 +9,7 @@ use App\Models\AuditLog;
 
 class AdminUserController {
     public function list() {
-        $admin = AuthMiddleware::requireAdmin();
-        if ($admin['role'] !== 'admin') {
-            Response::json(["success" => false, "message" => "Bạn không có quyền truy cập quản lý nhân sự."], 403);
-        }
+        AuthMiddleware::requirePermission('accounts');
         
         $page = (int)Request::input('page', 1);
         $limit = (int)Request::input('limit', 10);
@@ -28,15 +25,12 @@ class AdminUserController {
     }
     
     public function create() {
-        $admin = AuthMiddleware::requireAdmin();
-        if ($admin['role'] !== 'admin') {
-            Response::json(["success" => false, "message" => "Bạn không có quyền tạo tài khoản."], 403);
-        }
+        $admin = AuthMiddleware::requirePermission('accounts');
         
         $name = Request::input('name');
         $email = Request::input('email');
         $password = Request::input('password');
-        $role = Request::input('role', 'staff');
+        $role = Request::input('role', 'manager');
         
         if (empty($name) || empty($email) || empty($password)) {
             Response::json(["success" => false, "message" => "Vui lòng điền đủ thông tin."], 400);
@@ -55,10 +49,7 @@ class AdminUserController {
     }
     
     public function update($id) {
-        $admin = AuthMiddleware::requireAdmin();
-        if ($admin['role'] !== 'admin') {
-            Response::json(["success" => false, "message" => "Bạn không có quyền cập nhật tài khoản."], 403);
-        }
+        $admin = AuthMiddleware::requirePermission('accounts');
         
         $role = Request::input('role');
         $isActive = Request::input('is_active');
@@ -92,5 +83,36 @@ class AdminUserController {
         ]);
         
         Response::json(["success" => true, "message" => "Cập nhật tài khoản thành công."]);
+    }
+
+    public function delete($id) {
+        $admin = AuthMiddleware::requirePermission('accounts');
+        
+        $userModel = new AdminUser();
+        $target = $userModel->findById($id);
+        if (!$target) {
+            Response::json(["success" => false, "message" => "Không tìm thấy người dùng."], 404);
+        }
+        
+        if ((int)$id === (int)$admin['id']) {
+            Response::json(["success" => false, "message" => "Không thể tự xóa tài khoản của chính mình."], 400);
+        }
+        
+        $db = \App\Core\Database::getInstance()->getConnection();
+        
+        // Delete user's active sessions first
+        $stmtSessions = $db->prepare("DELETE FROM admin_sessions WHERE admin_user_id = :id");
+        $stmtSessions->execute([':id' => (int)$id]);
+        
+        // Delete the admin user record
+        $stmtUser = $db->prepare("DELETE FROM admin_users WHERE id = :id");
+        $stmtUser->execute([':id' => (int)$id]);
+        
+        AuditLog::write($admin['id'], 'delete_admin_user', 'admin_users', $id, [
+            'email' => $target['email'],
+            'name' => $target['name']
+        ]);
+        
+        Response::json(["success" => true, "message" => "Xóa tài khoản nhân viên thành công."]);
     }
 }
