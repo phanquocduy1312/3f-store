@@ -53,10 +53,13 @@ class UploadService {
     public static function uploadOrderImage($file) {
         [$mimeType, $extension] = self::validateImageFile($file, 5);
 
-        $storageDir = dirname(__DIR__, 2) . '/storage/uploads/shopee-orders/';
-        if (!is_dir($storageDir)) {
-            if (!mkdir($storageDir, 0755, true)) {
-                throw new Exception("Khong the tao thu muc luu tru anh.");
+        $rootDir = dirname(__DIR__, 2);
+        $storageDir = $rootDir . '/storage/uploads/shopee-orders/';
+        $publicDir  = $rootDir . '/public/uploads/shopee-orders/';
+
+        foreach ([$storageDir, $publicDir] as $dir) {
+            if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+                throw new Exception("Khong the tao thu muc luu tru anh Shopee order.");
             }
         }
 
@@ -68,17 +71,28 @@ class UploadService {
         }
 
         $storedFilename = "order_{$timestamp}_{$random}.{$extension}";
-        $filePath = $storageDir . $storedFilename;
+        $storagePath = $storageDir . $storedFilename;
+        $publicPath  = $publicDir  . $storedFilename;
 
-        if (!move_uploaded_file($file['tmp_name'], $filePath)) {
+        if (!move_uploaded_file($file['tmp_name'], $storagePath)) {
             throw new Exception("Khong the luu file da upload.");
         }
+
+        if (!copy($storagePath, $publicPath)) {
+            @unlink($storagePath);
+            throw new Exception("Khong the tao file anh public cho Shopee order.");
+        }
+
+        $config = require $rootDir . '/config/config.php';
+        $publicBaseUrl = rtrim($config['app']['public_url'] ?? '', '/');
+        $relativeUrl = "/uploads/shopee-orders/" . $storedFilename;
+        $fileUrl = $publicBaseUrl ? $publicBaseUrl . $relativeUrl : $relativeUrl;
 
         return [
             "original_filename" => $file['name'],
             "stored_filename"   => $storedFilename,
-            "file_path"         => $filePath,
-            "file_url"          => "/storage/uploads/shopee-orders/" . $storedFilename,
+            "file_path"         => $storagePath,
+            "file_url"          => $fileUrl,
             "mime_type"         => $mimeType,
             "file_size"         => (int)$file['size']
         ];

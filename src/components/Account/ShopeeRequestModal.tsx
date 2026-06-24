@@ -3,6 +3,7 @@ import { X, Send, AlertTriangle, UploadCloud, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
 import { createShopeePointRequest, scanShopeeOrderImage } from "@/src/services/shopeePointApi";
+import { buildImageUrl } from "@/src/config/api";
 
 interface ShopeeRequestModalProps {
   onClose: () => void;
@@ -118,7 +119,7 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
               <label className="mb-1 block text-[10px] font-bold text-gray-400 uppercase">Ảnh hóa đơn / đơn hàng (Tùy chọn)</label>
               {imageUrl ? (
                 <div className="relative rounded-2xl border border-[#E0EBF7] overflow-hidden h-28 bg-slate-50 flex items-center justify-center group">
-                  <img src={imageUrl} alt="Hóa đơn" className="h-full object-contain" />
+                  <img src={buildImageUrl(imageUrl)} alt="Hóa đơn" className="h-full object-contain" />
                   <button
                     type="button"
                     onClick={() => {
