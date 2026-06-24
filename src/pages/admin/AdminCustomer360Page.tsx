@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Activity,
@@ -148,6 +148,23 @@ export function AdminCustomerDetailPage() {
   const [customer, setCustomer] = useState<any>(null);
   const [customerSummary, setCustomerSummary] = useState<CustomerSummary>(emptySummary);
   const [loading, setLoading] = useState(true);
+  const [adminRole, setAdminRole] = useState("");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setAdminRole(user.role || "");
+        setAdminPermissions(user.permissions || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const hasEditAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("customers");
   const [confirmBlockId, setConfirmBlockId] = useState<number | null>(null);
   const [blockReason, setBlockReason] = useState("");
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
@@ -198,6 +215,10 @@ export function AdminCustomerDetailPage() {
   }, [customer, customerSummary]);
 
   const handleToggleStatus = () => {
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
     if (!customer) return;
     if (customer.status === "active") {
       setConfirmBlockId(customer.id);
@@ -214,6 +235,10 @@ export function AdminCustomerDetailPage() {
   };
 
   const confirmBlock = async () => {
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
     if (!confirmBlockId) return;
     if (!blockReason.trim()) {
       toast.error("Vui lòng nhập lý do khóa");
@@ -291,23 +316,25 @@ export function AdminCustomerDetailPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 xl:justify-end">
-                <button
-                  onClick={handleToggleStatus}
-                  className={`inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold transition ${
-                    isActive ? "bg-red-50 text-red-600 hover:bg-red-100" : "bg-green-50 text-green-700 hover:bg-green-100"
-                  }`}
-                >
-                  {isActive ? <ShieldAlert size={16} /> : <CheckCircle2 size={16} />}
-                  {isActive ? "Khóa tài khoản" : "Mở khóa"}
-                </button>
-                <button
-                  onClick={() => setIsTagsModalOpen(true)}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-4 text-sm font-bold text-[#0057E7] transition hover:bg-[#EEF6FF]"
-                >
-                  <Tag size={16} /> Gắn nhãn
-                </button>
-              </div>
+              {hasEditAccess && (
+                <div className="flex flex-wrap items-center gap-3 xl:justify-end">
+                  <button
+                    onClick={handleToggleStatus}
+                    className={`inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold transition ${
+                      isActive ? "bg-red-50 text-red-600 hover:bg-red-100" : "bg-green-50 text-green-700 hover:bg-green-100"
+                    }`}
+                  >
+                    {isActive ? <ShieldAlert size={16} /> : <CheckCircle2 size={16} />}
+                    {isActive ? "Khóa tài khoản" : "Mở khóa"}
+                  </button>
+                  <button
+                    onClick={() => setIsTagsModalOpen(true)}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#DCEBFF] bg-[#F6FAFF] px-4 text-sm font-bold text-[#0057E7] transition hover:bg-[#EEF6FF]"
+                  >
+                    <Tag size={16} /> Gắn nhãn
+                  </button>
+                </div>
+              )}
             </div>
           </section>
 
@@ -348,8 +375,8 @@ export function AdminCustomerDetailPage() {
             <section className="min-w-0 flex-1 rounded-2xl border border-[#DCEBFF] bg-white p-4 shadow-sm md:p-6">
               {activeTab === "overview" && <CustomerOverviewTab customer={customer} />}
               {activeTab === "orders" && <CustomerOrdersTab customerId={customer.id} />}
-              {activeTab === "club" && <CustomerPointsTab customerId={customer.id} customerPhone={customer.phone} customerTier={customerTier} totalSpent={summary.tierSpent} totalOrders={summary.tierOrders} />}
-              {activeTab === "notes" && <CustomerNotesTab customerId={Number(id)} />}
+              {activeTab === "club" && <CustomerPointsTab customerId={customer.id} customerPhone={customer.phone} customerTier={customerTier} totalSpent={summary.tierSpent} totalOrders={summary.tierOrders} hasEditAccess={hasEditAccess} />}
+              {activeTab === "notes" && <CustomerNotesTab customerId={Number(id)} hasEditAccess={hasEditAccess} />}
               {activeTab === "timeline" && <CustomerTimelineTab customerId={Number(id)} />}
               {activeTab === "addresses" && <CustomerAddressesTab customerId={customer.id} />}
               {activeTab === "sessions" && <CustomerSessionsTab customerId={Number(id)} />}

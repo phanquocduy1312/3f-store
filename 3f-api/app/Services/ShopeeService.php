@@ -12,11 +12,22 @@ class ShopeeService {
         $config = require dirname(__DIR__, 2) . '/config/config.php';
         $shopeeConfig = $config['shopee'];
 
-        $this->env         = $shopeeConfig['env'];
-        $this->partnerId   = (int)$shopeeConfig['partner_id'];
-        $this->partnerKey  = $shopeeConfig['partner_key'];
-        $this->redirectUrl = $shopeeConfig['redirect_url'];
-        $this->baseUrl     = rtrim($shopeeConfig['base_url'], '/');
+        $settingsModel = new \App\Models\LoyaltySettings();
+        $this->env         = $settingsModel->get('shopee_env') ?: $shopeeConfig['env'];
+        $this->partnerId   = (int)($settingsModel->get('shopee_partner_id') ?: $shopeeConfig['partner_id']);
+        $this->partnerKey  = $settingsModel->get('shopee_partner_key') ?: $shopeeConfig['partner_key'];
+        $this->redirectUrl = $settingsModel->get('shopee_redirect_url') ?: $shopeeConfig['redirect_url'];
+
+        $dbBaseUrl = $settingsModel->get('shopee_base_url');
+        if ($dbBaseUrl) {
+            $this->baseUrl = rtrim($dbBaseUrl, '/');
+        } else {
+            if ($this->env === 'sandbox') {
+                $this->baseUrl = 'https://partner.test-stable.shopeemobile.com';
+            } else {
+                $this->baseUrl = rtrim($shopeeConfig['base_url'], '/');
+            }
+        }
     }
 
     /**

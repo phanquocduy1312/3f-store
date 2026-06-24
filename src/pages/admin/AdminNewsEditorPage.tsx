@@ -16,6 +16,22 @@ export function AdminNewsEditorPage() {
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<string>("");
 
+  const [adminRole, setAdminRole] = useState("");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setAdminRole(user.role || "");
+        setAdminPermissions(user.permissions || []);
+      }
+    } catch (e) {}
+  }, []);
+
+  const hasEditAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("news");
+
   // Editor states
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -73,14 +89,14 @@ export function AdminNewsEditorPage() {
 
   // Autosave to localStorage
   useEffect(() => {
-    if (loading) return;
+    if (loading || !hasEditAccess) return;
     const saveTimer = setTimeout(() => {
       const data = { title, content, summary, category, author };
       localStorage.setItem("3f_blog_autosave", JSON.stringify(data));
       setLastSaved(new Date().toLocaleTimeString("vi-VN"));
     }, 3000);
     return () => clearTimeout(saveTimer);
-  }, [title, content, summary, category, author, loading]);
+  }, [title, content, summary, category, author, loading, hasEditAccess]);
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
@@ -117,6 +133,10 @@ export function AdminNewsEditorPage() {
   };
 
   const handleSave = async (targetStatus: "draft" | "published" | "scheduled") => {
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện hành động này.");
+      return;
+    }
     if (!title.trim() || !slug.trim() || !content.trim()) {
       toast.error("Vui lòng điền đầy đủ Tiêu đề, Slug và Nội dung bài viết.");
       return;
@@ -182,19 +202,23 @@ export function AdminNewsEditorPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={() => handleSave("draft")} disabled={saving} className="px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg shadow-sm transition inline-flex items-center gap-1.5 disabled:opacity-50">
-            <Save size={13} /> Lưu nháp
-          </button>
-          <button onClick={() => handleSave(new Date(publishedAt).getTime() > Date.now() ? "scheduled" : "published")} disabled={saving} className="px-4 py-1.5 text-xs font-bold text-slate-900 bg-emerald-400 hover:bg-emerald-300 rounded-lg shadow-sm transition inline-flex items-center gap-1.5 disabled:opacity-50">
-            {saving ? <Loader2 size={13} className="animate-spin" /> : <Globe size={13} />} {isEdit ? "Cập nhật" : (new Date(publishedAt).getTime() > Date.now() ? "Lên lịch" : "Xuất bản")}
-          </button>
+          {hasEditAccess && (
+            <>
+              <button onClick={() => handleSave("draft")} disabled={saving} className="px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg shadow-sm transition inline-flex items-center gap-1.5 disabled:opacity-50">
+                <Save size={13} /> Lưu nháp
+              </button>
+              <button onClick={() => handleSave(new Date(publishedAt).getTime() > Date.now() ? "scheduled" : "published")} disabled={saving} className="px-4 py-1.5 text-xs font-bold text-slate-900 bg-emerald-400 hover:bg-emerald-300 rounded-lg shadow-sm transition inline-flex items-center gap-1.5 disabled:opacity-50">
+                {saving ? <Loader2 size={13} className="animate-spin" /> : <Globe size={13} />} {isEdit ? "Cập nhật" : (new Date(publishedAt).getTime() > Date.now() ? "Lên lịch" : "Xuất bản")}
+              </button>
+            </>
+          )}
         </div>
       </header>
 
       {/* Editor Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left main editor area */}
-        <section className="lg:col-span-2 space-y-6">
+        <fieldset disabled={!hasEditAccess} className="lg:col-span-2 space-y-6">
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
             <input type="text" placeholder="Nhập tiêu đề bài viết..." value={title} onChange={(e) => handleTitleChange(e.target.value)} className="w-full text-lg font-bold text-slate-800 border-b border-slate-200 pb-3 outline-none placeholder:text-slate-300 focus:border-slate-400 transition" />
             
@@ -204,7 +228,7 @@ export function AdminNewsEditorPage() {
               <input type="text" value={slug} onChange={(e) => handleSlugChange(e.target.value)} className="border-b border-transparent hover:border-slate-200 focus:border-slate-400 text-slate-700 font-bold outline-none bg-transparent transition px-1 py-0.5" />
             </div>
             
-            <TiptapEditor value={content} onChange={setContent} onImageUpload={handleImageUpload} />
+            <TiptapEditor value={content} onChange={setContent} onImageUpload={handleImageUpload} disabled={!hasEditAccess} />
           </div>
 
           {/* Excerpt, SEO settings and Analysis panel */}
@@ -223,10 +247,10 @@ export function AdminNewsEditorPage() {
             thumbnailAlt={thumbnailAlt}
             onScoreChange={setSeoScore}
           />
-        </section>
+        </fieldset>
 
         {/* Right settings sidebar */}
-        <aside className="space-y-6">
+        <fieldset disabled={!hasEditAccess} className="space-y-6">
           <NewsEditorSidebar
             category={category} onCategoryChange={setCategory}
             thumbnailUrl={thumbnailUrl} thumbnailAlt={thumbnailAlt}
@@ -238,7 +262,7 @@ export function AdminNewsEditorPage() {
             publishedAt={publishedAt} onPublishedAtChange={setPublishedAt}
             status={status} onStatusChange={setStatus}
           />
-        </aside>
+        </fieldset>
       </main>
     </div>
   );

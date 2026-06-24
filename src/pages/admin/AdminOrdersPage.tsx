@@ -239,6 +239,20 @@ export function AdminOrdersPage() {
   const [editingTransition, setEditingTransition] = useState<WorkflowTransitionSetting | null>(null);
   const [isSavingTransition, setIsSavingTransition] = useState(false);
 
+  const [adminRole, setAdminRole] = useState("admin");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setAdminRole(user.role || "admin");
+        setAdminPermissions(user.permissions || []);
+      }
+    } catch (e) {}
+  }, []);
+  const hasEditAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("orders");
+
   const fetchStatusConfig = async () => {
     setIsFetchingConfig(true);
     try {
@@ -298,6 +312,10 @@ export function AdminOrdersPage() {
   const handleSaveShippingMethod = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingShippingMethod) return;
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện hành động này.");
+      return;
+    }
 
     setIsSavingShippingMethod(true);
     try {
@@ -322,6 +340,10 @@ export function AdminOrdersPage() {
   };
 
   const handleToggleShippingMethod = async (method: OrderShippingMethod) => {
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện hành động này.");
+      return;
+    }
     try {
       const res = await toggleAdminOrderShippingMethod(method.id, !method.isActive);
       toast.success(res.message || "Đã cập nhật trạng thái phương thức giao hàng.");
@@ -332,6 +354,10 @@ export function AdminOrdersPage() {
   };
 
   const handleDeleteShippingMethod = async (method: OrderShippingMethod) => {
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện hành động này.");
+      return;
+    }
     const confirmed = window.confirm(`Xóa phương thức "${method.name}"? Chỉ xóa được khi chưa có đơn nào sử dụng.`);
     if (!confirmed) return;
 
@@ -510,6 +536,9 @@ export function AdminOrdersPage() {
   };
 
   const getTransitionsForGroup = (groupKey: "order" | "payment" | "shipping" | "loyalty", currentStatus: string): any[] => {
+    if (!hasEditAccess) {
+      return [];
+    }
     // 1. Check if backend transitions exist and have items for this group
     if (allowedTransitions && allowedTransitions[groupKey] && allowedTransitions[groupKey].length > 0) {
       return allowedTransitions[groupKey].map((t: any) => ({
@@ -630,6 +659,10 @@ export function AdminOrdersPage() {
   };
 
   const executeStatusTransition = async (orderId: number, orderCode: string, newStatus: string, note: string = "", groupKey = "order") => {
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện hành động này.");
+      return;
+    }
     setIsUpdatingStatus(true);
     try {
       const res = await updateAdminOrderStatus(orderId, newStatus, note, groupKey);

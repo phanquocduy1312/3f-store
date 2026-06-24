@@ -126,6 +126,15 @@ class AdminUser {
         return $stmt->execute([':role' => $role, ':id' => (int)$id]);
     }
     
+    public function updateProfile($id, $name, $email) {
+        $stmt = $this->db->prepare("UPDATE admin_users SET name = :name, email = :email, updated_at = NOW() WHERE id = :id");
+        return $stmt->execute([
+            ':name' => trim($name),
+            ':email' => trim(strtolower($email)),
+            ':id' => (int)$id
+        ]);
+    }
+    
     public function updatePassword($id, $password) {
         $passwordHash = password_hash($password, PASSWORD_BCRYPT);
         $stmt = $this->db->prepare("UPDATE admin_users SET password_hash = :hash, updated_at = NOW() WHERE id = :id");

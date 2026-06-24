@@ -1,5 +1,21 @@
 # Project Changelog
 
+## [2026-06-24]
+### Added
+- Tái cấu trúc bộ phân quyền quản trị thành chế độ xem (Read-Only) thay vì ẩn hoàn toàn:
+  - Cho phép người dùng không có quyền vẫn xem được nội dung trang quản trị (Nhân sự, Báo cáo...) trên Sidebar và router.
+  - Vô hiệu hóa hoặc ẩn các thao tác thay đổi dữ liệu (Thêm mới, Chỉnh sửa, Xóa) trên giao diện qua prop `hasEditAccess` và chặn các phương thức ghi (POST, PUT, DELETE, PATCH) ở phía backend (AuthMiddleware).
+  - Sửa lỗi hiển thị vai trò quản trị viên hệ thống hiển thị nhãn `cskh` do thiếu switch case `admin` ở `AccountsTable.tsx`.
+- Triển khai hệ thống phân quyền quản trị Admin (RBAC System) động hoàn chỉnh:
+  - Tích hợp bảng lưu trữ cấu hình vai trò `admin_roles` trong cơ sở dữ liệu giúp Admin tự tạo vai trò mới và phân quyền.
+  - Cấu hình phân quyền động ở cấp độ chức năng đầy đủ (14 chức năng chính của sidebar) thay vì chia nhỏ lẻ gây phiền hà.
+  - Đồng nhất mã kiểm tra quyền tại controllers (`AdminUserController.php`, `AdminRoleController.php`) sang khoá `accounts` để tránh lỗi 403 khi phân quyền cho quản trị viên phụ.
+  - Cập nhật `AdminUserController.php` hỗ trợ quản trị nhân sự (danh sách, tạo mới, chỉnh sửa mật khẩu/vai trò/trạng thái và xóa tài khoản) có cơ chế chặn tự xóa hoặc tự khóa tài khoản.
+  - Thiết kế trang Quản trị nhân sự `/admin/accounts` (`AdminAccountsPage.tsx`) với giao diện hai Tab quản lý danh sách Nhân sự và cấu hình Vai trò & Phân quyền kèm bảng checklist trực quan.
+  - Triển khai bộ lọc liên kết điều hướng trên thanh Sidebar (`admin-sidebar.tsx`) tự động ẩn các mục không có quyền truy cập dựa trên mảng permissions lưu ở LocalStorage.
+  - Tích hợp bộ bảo vệ hành động trên Danh sách sản phẩm (`AdminProductsPage.tsx`) tự động ẩn nút thêm/phân loại, khóa nút kích hoạt hiển thị và chuyển nút sửa thành xem chi tiết đối với role read-only.
+  - Tích hợp bộ bảo vệ biểu mẫu Sản phẩm (`AdminProductForm.tsx`) sử dụng thẻ `<fieldset disabled>` tự động vô hiệu hóa toàn bộ input khi vai trò là read-only, ẩn nút Lưu/Xóa và ẩn tính năng upload hình ảnh.
+
 ## [2026-06-23]
 ### Added
 - Triển khai luồng đăng ký tài khoản khách hàng bằng email verification link:

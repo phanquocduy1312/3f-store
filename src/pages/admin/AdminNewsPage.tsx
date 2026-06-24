@@ -31,6 +31,22 @@ export function AdminNewsPage() {
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSort, setSelectedSort] = useState("updated_at");
+  
+  const [adminRole, setAdminRole] = useState("");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setAdminRole(user.role || "");
+        setAdminPermissions(user.permissions || []);
+      }
+    } catch (e) {}
+  }, []);
+
+  const hasEditAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("news");
 
   useEffect(() => {
     setCurrentPage(1);
@@ -65,6 +81,7 @@ export function AdminNewsPage() {
   }, [search, selectedCategory, selectedSort]);
 
   const handleCrawl = async () => {
+    if (!hasEditAccess) return;
     if (crawling) return;
     setCrawling(true);
     const toastId = toast.loading("Đang đồng bộ dữ liệu từ 3fstore.vn...");
@@ -86,6 +103,7 @@ export function AdminNewsPage() {
   // handleSave is now handled in AdminNewsEditorPage
 
   const handleDelete = async (id: number) => {
+    if (!hasEditAccess) return;
     if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
     try {
       const res = await adminDeleteBlogPost(id);
@@ -100,9 +118,8 @@ export function AdminNewsPage() {
     }
   };
 
-
-
   const handleTogglePublish = async (post: BlogPost) => {
+    if (!hasEditAccess) return;
     try {
       const nextStatus = (post.status === "published" ? "draft" : "published") as "draft" | "published";
       const updated = {
@@ -224,22 +241,26 @@ export function AdminNewsPage() {
             </div>
             
             <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={handleCrawl}
-                disabled={crawling}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-[#082B5F] bg-[#EEF6FF] hover:bg-[#DCEBFF] rounded-xl transition-all duration-200 disabled:opacity-50"
-              >
-                <RefreshCw className={`h-4 w-4 ${crawling ? "animate-spin" : ""}`} />
-                Đồng bộ bài viết
-              </button>
-              
-              <button
-                onClick={() => navigate("/admin/news/new")}
-                className="flex items-center gap-2 px-5 py-2 text-sm font-black text-white bg-[#0057E7] hover:bg-[#0047C4] shadow-[0_6px_20px_rgba(0,87,231,0.25)] hover:shadow-none rounded-xl transition-all duration-200"
-              >
-                <Plus className="h-4 w-4" />
-                Viết bài mới
-              </button>
+              {hasEditAccess && (
+                <>
+                  <button
+                    onClick={handleCrawl}
+                    disabled={crawling}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-[#082B5F] bg-[#EEF6FF] hover:bg-[#DCEBFF] rounded-xl transition-all duration-200 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${crawling ? "animate-spin" : ""}`} />
+                    Đồng bộ bài viết
+                  </button>
+                  
+                  <button
+                    onClick={() => navigate("/admin/news/new")}
+                    className="flex items-center gap-2 px-5 py-2 text-sm font-black text-white bg-[#0057E7] hover:bg-[#0047C4] shadow-[0_6px_20px_rgba(0,87,231,0.25)] hover:shadow-none rounded-xl transition-all duration-200"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Viết bài mới
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -517,38 +538,42 @@ export function AdminNewsPage() {
                                     className="flex items-center gap-2 w-full px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition text-left"
                                   >
                                     <Edit2 size={12} />
-                                    Sửa bài
+                                    {hasEditAccess ? "Sửa bài" : "Xem chi tiết"}
                                   </button>
-                                  <button
-                                    onClick={() => {
-                                      handleTogglePublish(post);
-                                      setActiveDropdown(null);
-                                    }}
-                                    className="flex items-center gap-2 w-full px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition text-left"
-                                  >
-                                    {post.status === "published" ? (
-                                      <>
-                                        <EyeOff size={12} />
-                                        Ẩn bài viết
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Eye size={12} />
-                                        Xuất bản
-                                      </>
-                                    )}
-                                  </button>
-                                  <div className="border-t border-slate-100 my-1" />
-                                  <button
-                                    onClick={() => {
-                                      handleDelete(post.id);
-                                      setActiveDropdown(null);
-                                    }}
-                                    className="flex items-center gap-2 w-full px-3.5 py-2 text-xs font-bold text-red-650 hover:bg-red-50 transition text-left"
-                                  >
-                                    <Trash2 size={12} />
-                                    Xóa bài
-                                  </button>
+                                  {hasEditAccess && (
+                                    <>
+                                      <button
+                                        onClick={() => {
+                                          handleTogglePublish(post);
+                                          setActiveDropdown(null);
+                                        }}
+                                        className="flex items-center gap-2 w-full px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition text-left"
+                                      >
+                                        {post.status === "published" ? (
+                                          <>
+                                            <EyeOff size={12} />
+                                            Ẩn bài viết
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Eye size={12} />
+                                            Xuất bản
+                                          </>
+                                        )}
+                                      </button>
+                                      <div className="border-t border-slate-100 my-1" />
+                                      <button
+                                        onClick={() => {
+                                          handleDelete(post.id);
+                                          setActiveDropdown(null);
+                                        }}
+                                        className="flex items-center gap-2 w-full px-3.5 py-2 text-xs font-bold text-red-650 hover:bg-red-50 transition text-left"
+                                      >
+                                        <Trash2 size={12} />
+                                        Xóa bài
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </>
                             )}

@@ -26,12 +26,26 @@ import { toast } from "sonner";
 
 export function AdminProductsPage() {
   const navigate = useNavigate();
+  const [adminRole, setAdminRole] = useState("admin");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setAdminRole(user.role || "admin");
+        setAdminPermissions(user.permissions || []);
+      }
+    } catch (e) {}
+  }, []);
+  const hasProductWriteAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("products");
+
   const [activeMenu, setActiveMenu] = useState("Sản phẩm");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
       return window.innerWidth < 1024;
     }
-    return true;
+    return false;
   });
 
   // Filters & State
@@ -263,22 +277,26 @@ export function AdminProductsPage() {
             </div>
             
             <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={handleReclassify}
-                disabled={reclassifying}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-[#082B5F] bg-[#EEF6FF] hover:bg-[#DCEBFF] rounded-xl transition-all duration-200"
-              >
-                <RefreshCw className={`h-4 w-4 ${reclassifying ? "animate-spin" : ""}`} />
-                Tự động phân loại lại
-              </button>
+              {hasProductWriteAccess && (
+                <button
+                  onClick={handleReclassify}
+                  disabled={reclassifying}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-[#082B5F] bg-[#EEF6FF] hover:bg-[#DCEBFF] rounded-xl transition-all duration-200"
+                >
+                  <RefreshCw className={`h-4 w-4 ${reclassifying ? "animate-spin" : ""}`} />
+                  Tự động phân loại lại
+                </button>
+              )}
               
-              <button
-                onClick={() => navigate("/admin/products/create")}
-                className="flex items-center gap-2 px-5 py-2 text-sm font-black text-white bg-[#0057E7] hover:bg-[#0047C4] shadow-[0_6px_20px_rgba(0,87,231,0.25)] hover:shadow-none rounded-xl transition-all duration-200"
-              >
-                <Plus className="h-4 w-4" />
-                Thêm sản phẩm
-              </button>
+              {hasProductWriteAccess && (
+                <button
+                  onClick={() => navigate("/admin/products/create")}
+                  className="flex items-center gap-2 px-5 py-2 text-sm font-black text-white bg-[#0057E7] hover:bg-[#0047C4] shadow-[0_6px_20px_rgba(0,87,231,0.25)] hover:shadow-none rounded-xl transition-all duration-200"
+                >
+                  <Plus className="h-4 w-4" />
+                  Thêm sản phẩm
+                </button>
+              )}
             </div>
           </div>
 
@@ -591,27 +609,49 @@ export function AdminProductsPage() {
 
                           {/* Status */}
                           <td className="px-4 py-2.5 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleActive(p.id, !!p.isActive)}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black cursor-pointer transition-all duration-200 ${
-                                p.isActive 
-                                  ? "bg-emerald-50 text-emerald-600 border border-emerald-200/50" 
-                                  : "bg-slate-100 text-slate-400 border border-slate-200/50"
-                              }`}
-                            >
-                              {p.isActive ? (
-                                <>
-                                  <Eye className="h-3 w-3" />
-                                  Hiển thị
-                                </>
-                              ) : (
-                                <>
-                                  <EyeOff className="h-3 w-3" />
-                                  Đang ẩn
-                                </>
-                              )}
-                            </button>
+                            {!hasProductWriteAccess ? (
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black border ${
+                                  p.isActive 
+                                    ? "bg-[#E8F8F5] text-[#117A65] border-[#A3E4D7]/50" 
+                                    : "bg-slate-100 text-slate-400 border-slate-200/50"
+                                }`}
+                              >
+                                {p.isActive ? (
+                                  <>
+                                    <Eye className="h-3 w-3" />
+                                    Hiển thị
+                                  </>
+                                ) : (
+                                  <>
+                                    <EyeOff className="h-3 w-3" />
+                                    Đang ẩn
+                                  </>
+                                )}
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleActive(p.id, !!p.isActive)}
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black cursor-pointer transition-all duration-200 ${
+                                  p.isActive 
+                                    ? "bg-emerald-50 text-emerald-600 border border-emerald-200/50" 
+                                    : "bg-slate-100 text-slate-400 border border-slate-200/50"
+                                }`}
+                              >
+                                {p.isActive ? (
+                                  <>
+                                    <Eye className="h-3 w-3" />
+                                    Hiển thị
+                                  </>
+                                ) : (
+                                  <>
+                                    <EyeOff className="h-3 w-3" />
+                                    Đang ẩn
+                                  </>
+                                )}
+                              </button>
+                            )}
                           </td>
 
                           {/* Updated At */}
@@ -623,10 +663,14 @@ export function AdminProductsPage() {
                           <td className="px-4 py-2.5 text-center">
                             <button
                               onClick={() => navigate(`/admin/products/${p.id}`)}
-                              title="Chỉnh sửa sản phẩm"
+                              title={hasProductWriteAccess ? "Chỉnh sửa sản phẩm" : "Xem chi tiết sản phẩm"}
                               className="h-8 w-8 rounded-lg bg-slate-50 hover:bg-[#EEF6FF] text-slate-500 hover:text-[#0057E7] border border-slate-200 flex items-center justify-center transition-all duration-200"
                             >
-                              <Edit2 className="h-4 w-4" />
+                              {hasProductWriteAccess ? (
+                                <Edit2 className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
                             </button>
                           </td>
                         </tr>

@@ -70,5 +70,15 @@ export const adminDashboardApi = {
   async getTaskQueue(): Promise<TaskQueueData> {
     const url = buildApiUrl('/api/admin/dashboard/task-queue');
     return fetchWithAuth(url);
+  },
+
+  async getTopProducts(filter: string = '7_days'): Promise<any> {
+    const url = buildApiUrl(`/api/admin/dashboard/top-products?filter=${filter}`);
+    return fetchWithAuth(url);
+  },
+
+  async getPetNeeds(filter: string = '30_days'): Promise<any> {
+    const url = buildApiUrl(`/api/admin/dashboard/pet-needs?filter=${filter}`);
+    return fetchWithAuth(url);
   }
 };

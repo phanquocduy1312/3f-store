@@ -32,6 +32,7 @@ interface ShopeeRequestDetailModalProps {
   onReject: () => void;
   onApprove: () => void;
   onReconcile: () => void;
+  hasEditAccess?: boolean;
 }
 
 function DetailCard({
@@ -164,6 +165,7 @@ export function ShopeeRequestDetailModal({
   onReject,
   onApprove,
   onReconcile,
+  hasEditAccess = false,
 }: ShopeeRequestDetailModalProps) {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showOverrideConfirm, setShowOverrideConfirm] = useState(false);
@@ -382,7 +384,7 @@ export function ShopeeRequestDetailModal({
                     ) : null}
                     {request.source === "guest" && (
                       <div className="md:col-span-2 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 font-medium">
-                        Yêu cầu này được gửi từ khách vãng lai, số điện thoại đã được xác thực qua mã OTP.
+                        Yêu cầu này được gửi từ khách vãng lai và không yêu cầu xác thực OTP trước khi gửi.
                       </div>
                     )}
                   </div>
@@ -511,7 +513,7 @@ export function ShopeeRequestDetailModal({
                         )}
                       </div>
 
-                      {processingStatus === "pending" && (
+                      {processingStatus === "pending" && hasEditAccess && (
                         <div className="mt-4">
                           <button
                             type="button"
@@ -539,7 +541,7 @@ export function ShopeeRequestDetailModal({
                       <p className="mt-2 text-[14px] text-[#64748B] mb-4">
                         Bấm “Đối chiếu API” để kiểm tra đơn hàng với Shopee.
                       </p>
-                      {processingStatus === "pending" && (
+                      {processingStatus === "pending" && hasEditAccess && (
                         <button
                           type="button"
                           disabled={isVerifying}
@@ -664,7 +666,7 @@ export function ShopeeRequestDetailModal({
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-xs font-semibold text-[#64748B]">{footerMessage}</div>
 
-            {processingStatus === "pending" && (
+            {processingStatus === "pending" && hasEditAccess && (
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"

@@ -25,7 +25,6 @@ export type ShopeeOrderScanResponse = {
 
 export type CreateShopeePointRequestPayload = {
   phone?: string;
-  verificationToken?: string;
   email?: string;
   customerName?: string;
   zalo?: string;
@@ -33,6 +32,7 @@ export type CreateShopeePointRequestPayload = {
   orderAmount: number;
   imageId?: number | null;
   scanId?: number | null;
+  note?: string;
 };
 
 export type CreateShopeePointRequestResponse = {

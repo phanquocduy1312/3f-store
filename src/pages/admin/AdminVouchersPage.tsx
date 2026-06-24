@@ -207,6 +207,20 @@ export function AdminVouchersPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [noEndDate, setNoEndDate] = useState(false);
 
+  const [adminRole, setAdminRole] = useState("admin");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setAdminRole(user.role || "admin");
+        setAdminPermissions(user.permissions || []);
+      }
+    } catch (e) {}
+  }, []);
+  const hasEditAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("vouchers");
+
   const getError = (key: string) => {
     const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
     return errors[key] || errors[snakeKey] || "";
@@ -442,10 +456,12 @@ export function AdminVouchersPage() {
               <h1 className="text-2xl font-black tracking-tight">Quản trị voucher</h1>
               <p className="mt-1 text-sm font-medium text-slate-500">Đồng bộ mã giảm giá cho trang chủ, checkout và Tư vấn AI.</p>
             </div>
-            <button onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0057E7] px-4 py-2.5 text-sm font-black text-white shadow-sm hover:bg-[#0047C4]">
-              <Plus className="h-4 w-4" />
-              Thêm voucher
-            </button>
+            {hasEditAccess && (
+              <button onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0057E7] px-4 py-2.5 text-sm font-black text-white shadow-sm hover:bg-[#0047C4]">
+                <Plus className="h-4 w-4" />
+                Thêm voucher
+              </button>
+            )}
           </div>
 
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -524,9 +540,15 @@ export function AdminVouchersPage() {
                       </td>
                       <td className="px-5 py-4 text-right">
                         <div className="flex justify-end gap-1">
-                          <button onClick={() => handleToggle(voucher)} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-black text-slate-600 hover:bg-slate-50">{voucher.isActive === 1 ? "Tắt" : "Bật"}</button>
-                          <button onClick={() => openEdit(voucher)} className="rounded-lg p-2 text-[#0057E7] hover:bg-blue-50" title="Sửa"><Edit2 className="h-4 w-4" /></button>
-                          <button onClick={() => handleDelete(voucher)} className="rounded-lg p-2 text-red-600 hover:bg-red-50" title="Xóa"><Trash2 className="h-4 w-4" /></button>
+                          {hasEditAccess ? (
+                            <>
+                              <button onClick={() => handleToggle(voucher)} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-black text-slate-600 hover:bg-slate-50">{voucher.isActive === 1 ? "Tắt" : "Bật"}</button>
+                              <button onClick={() => openEdit(voucher)} className="rounded-lg p-2 text-[#0057E7] hover:bg-blue-50" title="Sửa"><Edit2 className="h-4 w-4" /></button>
+                              <button onClick={() => handleDelete(voucher)} className="rounded-lg p-2 text-red-600 hover:bg-red-50" title="Xóa"><Trash2 className="h-4 w-4" /></button>
+                            </>
+                          ) : (
+                            <button onClick={() => openEdit(voucher)} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-black text-slate-600 hover:bg-slate-50">Xem chi tiết</button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -615,7 +637,7 @@ export function AdminVouchersPage() {
               <button onClick={() => setModalOpen(false)} className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"><X className="h-5 w-5" /></button>
             </div>
             <div className="grid flex-1 gap-6 overflow-y-auto p-6 lg:grid-cols-[1fr_380px]">
-              <div className="space-y-6">
+              <fieldset disabled={!hasEditAccess} className="space-y-6">
                 {/* Section 1: Thông tin mã */}
                 <div className="space-y-3 rounded-2xl border border-slate-100 p-4 bg-[#F8FBFF]/50">
                   <h3 className="text-sm font-black text-[#0B1F3A] uppercase tracking-wider border-b border-slate-100 pb-2">1. Thông tin mã</h3>
@@ -785,7 +807,7 @@ export function AdminVouchersPage() {
                   )}
                   {getError("isActive") && <p className="mt-1 text-xs font-bold text-red-600">{getError("isActive")}</p>}
                 </div>
-              </div>
+              </fieldset>
               <div className="space-y-4 lg:sticky lg:top-0 lg:self-start">
                 <VoucherPreview form={form} noEndDate={noEndDate} />
                 <div className="rounded-2xl border border-slate-100 bg-[#F8FBFF] p-4 text-sm font-semibold text-slate-600 space-y-3.5">
@@ -857,9 +879,11 @@ export function AdminVouchersPage() {
             </div>
             <div className="flex justify-end gap-3 border-t border-slate-100 bg-[#F8FBFF] px-6 py-4">
               <button onClick={() => setModalOpen(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-600 hover:bg-slate-50">Hủy</button>
-              <button onClick={handleSave} disabled={saving} className="rounded-xl bg-[#0057E7] px-5 py-2.5 text-sm font-black text-white hover:bg-[#0047C4] disabled:opacity-50">
-                {saving ? "Đang lưu..." : "Lưu voucher"}
-              </button>
+              {hasEditAccess && (
+                <button onClick={handleSave} disabled={saving} className="rounded-xl bg-[#0057E7] px-5 py-2.5 text-sm font-black text-white hover:bg-[#0047C4] disabled:opacity-50">
+                  {saving ? "Đang lưu..." : "Lưu voucher"}
+                </button>
+              )}
             </div>
           </div>
         </div>

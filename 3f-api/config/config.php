@@ -5,11 +5,11 @@
 
 return [
     "database" => [
-        "host"     => getenv("DB_HOST") ?: "localhost",
-        "name"     => getenv("DB_NAME") ?: "3f",
-        "username" => getenv("DB_USER") ?: "3f_user",
-        "password" => getenv("DB_PASS") ?: "",
-        "charset"  => getenv("DB_CHARSET") ?: "utf8mb4"
+        "host"     => getenv("DB_HOST") ?: ($_ENV["DB_HOST"] ?? ($_SERVER["DB_HOST"] ?? "localhost")),
+        "name"     => getenv("DB_NAME") ?: ($_ENV["DB_NAME"] ?? ($_SERVER["DB_NAME"] ?? "3f")),
+        "username" => getenv("DB_USER") ?: ($_ENV["DB_USER"] ?? ($_SERVER["DB_USER"] ?? "3f_user")),
+        "password" => getenv("DB_PASS") ?: ($_ENV["DB_PASS"] ?? ($_SERVER["DB_PASS"] ?? "")),
+        "charset"  => getenv("DB_CHARSET") ?: ($_ENV["DB_CHARSET"] ?? ($_SERVER["DB_CHARSET"] ?? "utf8mb4"))
     ],
 
     "app" => [

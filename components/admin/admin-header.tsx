@@ -44,6 +44,26 @@ export function AdminHeader({
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  
+  const [adminUser, setAdminUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("admin_user") || "{}");
+    } catch {
+      return {};
+    }
+  });
+
+  React.useEffect(() => {
+    const handleUpdate = () => {
+      try {
+        setAdminUser(JSON.parse(localStorage.getItem("admin_user") || "{}"));
+      } catch (e) {
+        setAdminUser({});
+      }
+    };
+    window.addEventListener("admin_user_updated", handleUpdate);
+    return () => window.removeEventListener("admin_user_updated", handleUpdate);
+  }, []);
 
   const fetchNotificationsData = async () => {
     try {
@@ -282,16 +302,22 @@ export function AdminHeader({
         <div className="relative group flex items-center gap-2 sm:gap-3 cursor-pointer">
           <div className="hidden text-right min-[1800px]:block">
             <h5 className="text-[14px] font-bold text-[#0B1F3A] leading-tight">
-              {JSON.parse(localStorage.getItem("admin_user") || "{}")?.name || "Admin 3F"}
+              {adminUser?.name || "Admin 3F"}
             </h5>
             <p className="text-[12px] text-[#64748B]">Quản trị viên</p>
           </div>
           <div className="h-10 w-10 rounded-full bg-[#0057E7] text-white font-black flex items-center justify-center shadow-md shrink-0">
-            {JSON.parse(localStorage.getItem("admin_user") || "{}")?.name?.charAt(0).toUpperCase() || "AD"}
+            {adminUser?.name?.charAt(0).toUpperCase() || "AD"}
           </div>
 
           {/* Logout Dropdown on Hover */}
           <div className="absolute right-0 top-full mt-2 hidden w-48 rounded-xl border border-[#DCEBFF] bg-white p-2 shadow-xl group-hover:block">
+            <button
+              onClick={() => navigate("/admin/profile")}
+              className="w-full rounded-lg px-4 py-2 text-left text-sm font-semibold text-[#0B1F3A] transition-colors hover:bg-slate-50"
+            >
+              Hồ sơ cá nhân
+            </button>
             <button
               onClick={() => {
                 localStorage.removeItem("admin_token");

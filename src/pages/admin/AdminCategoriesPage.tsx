@@ -55,6 +55,20 @@ export function AdminCategoriesPage() {
   const [drawerParentId, setDrawerParentId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const [adminRole, setAdminRole] = useState("admin");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setAdminRole(user.role || "admin");
+        setAdminPermissions(user.permissions || []);
+      }
+    } catch (e) {}
+  }, []);
+  const hasEditAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("categories");
+
   // Form state
   const [formData, setFormData] = useState<AdminCategoryPayload>({
     name: "",
@@ -450,13 +464,15 @@ export function AdminCategoriesPage() {
               >
                 Thu gọn
               </button>
-              <button
-                onClick={() => openDrawer()}
-                className="flex items-center gap-2 px-4 py-2 bg-[#0057E7] text-white rounded-lg hover:bg-[#0047C4] transition-colors shadow-sm font-medium text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Thêm Danh Mục
-              </button>
+              {hasEditAccess && (
+                <button
+                  onClick={() => openDrawer()}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#0057E7] text-white rounded-lg hover:bg-[#0047C4] transition-colors shadow-sm font-medium text-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Thêm Danh Mục
+                </button>
+              )}
             </div>
           </div>
 
@@ -593,9 +609,10 @@ export function AdminCategoriesPage() {
                           <td className="px-6 py-3">
                             <button
                               onClick={() => handleToggleActive(cat)}
+                              disabled={!hasEditAccess}
                               className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#0057E7] focus:ring-offset-2 ${
                                 cat.isActive ? 'bg-[#10B981]' : 'bg-slate-300'
-                              }`}
+                              } ${!hasEditAccess ? "cursor-not-allowed opacity-60" : ""}`}
                             >
                               <span
                                 className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
@@ -607,7 +624,7 @@ export function AdminCategoriesPage() {
                           
                           <td className="px-6 py-3 text-right">
                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {isRoot && (
+                              {hasEditAccess && isRoot && (
                                 <button
                                   onClick={() => openDrawer(undefined, cat.id)}
                                   className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
@@ -616,30 +633,41 @@ export function AdminCategoriesPage() {
                                   <Plus className="w-4 h-4" />
                                 </button>
                               )}
-                              <button
-                                onClick={() => openDrawer(cat)}
-                                className="p-1.5 text-[#0057E7] hover:bg-[#EEF6FF] rounded-md transition-colors"
-                                title="Chỉnh sửa"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(cat)}
-                                disabled={cat.productCount > 0 || cat.children.length > 0 || cat.isSystem}
-                                className={`p-1.5 rounded-md transition-colors ${
-                                  cat.productCount > 0 || cat.children.length > 0 || cat.isSystem
-                                    ? "text-slate-300 cursor-not-allowed"
-                                    : "text-red-600 hover:bg-red-50"
-                                }`}
-                                title={
-                                  cat.isSystem ? "Danh mục hệ thống không thể xóa." :
-                                  cat.productCount > 0 ? "Không thể xóa danh mục đang có sản phẩm." :
-                                  cat.children.length > 0 ? "Không thể xóa danh mục đang có danh mục con." :
-                                  "Xóa danh mục"
-                                }
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              {hasEditAccess ? (
+                                <>
+                                  <button
+                                    onClick={() => openDrawer(cat)}
+                                    className="p-1.5 text-[#0057E7] hover:bg-[#EEF6FF] rounded-md transition-colors"
+                                    title="Chỉnh sửa"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(cat)}
+                                    disabled={cat.productCount > 0 || cat.children.length > 0 || cat.isSystem}
+                                    className={`p-1.5 rounded-md transition-colors ${
+                                      cat.productCount > 0 || cat.children.length > 0 || cat.isSystem
+                                        ? "text-slate-300 cursor-not-allowed"
+                                        : "text-red-600 hover:bg-red-50"
+                                    }`}
+                                    title={
+                                      cat.isSystem ? "Danh mục hệ thống không thể xóa." :
+                                      cat.productCount > 0 ? "Không thể xóa danh mục đang có sản phẩm." :
+                                      cat.children.length > 0 ? "Không thể xóa danh mục đang có danh mục con." :
+                                      "Xóa danh mục"
+                                    }
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() => openDrawer(cat)}
+                                  className="px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-200 text-slate-650 bg-white hover:bg-slate-50 transition-colors"
+                                >
+                                  Xem chi tiết
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -683,7 +711,7 @@ export function AdminCategoriesPage() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-slate-50/30">
+        <fieldset disabled={!hasEditAccess} className="flex-1 overflow-y-auto p-6 space-y-5 bg-slate-50/30">
           
           {/* Name */}
           <div>
@@ -807,7 +835,7 @@ export function AdminCategoriesPage() {
             />
           </div>
 
-        </div>
+        </fieldset>
 
         <div className="p-6 border-t border-slate-100 bg-white flex gap-3 justify-end shrink-0 shadow-[0_-4px_15px_rgba(0,0,0,0.02)]">
           <button
@@ -816,14 +844,16 @@ export function AdminCategoriesPage() {
           >
             Hủy
           </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 px-6 py-2.5 bg-[#0057E7] text-white rounded-xl font-semibold hover:bg-[#0047C4] transition-colors shadow-[0_4px_12px_rgba(0,87,231,0.25)] hover:shadow-[0_6px_16px_rgba(0,87,231,0.35)] disabled:opacity-70 disabled:cursor-not-allowed"
-          >
-            {saving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-5 h-5" />}
-            {editingCat ? "Lưu thay đổi" : "Lưu danh mục"}
-          </button>
+          {hasEditAccess && (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 px-6 py-2.5 bg-[#0057E7] text-white rounded-xl font-semibold hover:bg-[#0047C4] transition-colors shadow-[0_4px_12px_rgba(0,87,231,0.25)] hover:shadow-[0_6px_16px_rgba(0,87,231,0.35)] disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {saving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-5 h-5" />}
+              {editingCat ? "Lưu thay đổi" : "Lưu danh mục"}
+            </button>
+          )}
         </div>
       </div>
     </div>

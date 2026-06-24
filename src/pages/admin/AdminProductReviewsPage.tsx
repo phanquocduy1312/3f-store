@@ -73,6 +73,24 @@ function clampText(value?: string | null, fallback = "Chưa có nội dung") {
 export function AdminProductReviewsPage() {
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [adminRole, setAdminRole] = useState("");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setAdminRole(user.role || "");
+        setAdminPermissions(user.permissions || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const hasEditAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("reviews");
+
   const [searchValue, setSearchValue] = useState("");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<AdminProductReviewParams["status"]>("all");
@@ -139,6 +157,10 @@ export function AdminProductReviewsPage() {
   }, [page, limit, query, status, rating, verified, sort]);
 
   const updateStatus = async (review: AdminProductReview, nextStatus: AdminReviewStatus) => {
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
     if (review.status === nextStatus) return;
     try {
       setBusyId(review.id);
@@ -153,6 +175,10 @@ export function AdminProductReviewsPage() {
   };
 
   const deleteReview = async (review: AdminProductReview) => {
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
     const ok = window.confirm("Xóa vĩnh viễn đánh giá này? Rating sản phẩm sẽ được tính lại.");
     if (!ok) return;
     try {
@@ -326,26 +352,30 @@ export function AdminProductReviewsPage() {
                             className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#DCEBFF] bg-white px-3 text-xs font-black text-[#0057E7] transition hover:bg-[#EEF6FF]"
                           >
                             <Eye className="h-4 w-4" />
-                            Xem
+                            {hasEditAccess ? "Xem/Sửa" : "Xem"}
                           </button>
-                          <button
-                            type="button"
-                            disabled={busyId === review.id}
-                            onClick={() => updateStatus(review, isPublished ? "hidden" : "published")}
-                            className={`inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-black text-white transition disabled:opacity-45 ${isPublished ? "bg-slate-700 hover:bg-slate-800" : "bg-green-600 hover:bg-green-700"}`}
-                          >
-                            {isPublished ? <EyeOff className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                            {isPublished ? "Ẩn" : "Hiện"}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busyId === review.id}
-                            onClick={() => deleteReview(review)}
-                            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-red-100 bg-red-50 px-3 text-xs font-black text-red-600 transition hover:bg-red-100 disabled:opacity-45"
-                          >
-                            {busyId === review.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                            Xóa
-                          </button>
+                          {hasEditAccess && (
+                            <>
+                              <button
+                                type="button"
+                                disabled={busyId === review.id}
+                                onClick={() => updateStatus(review, isPublished ? "hidden" : "published")}
+                                className={`inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-black text-white transition disabled:opacity-45 ${isPublished ? "bg-slate-700 hover:bg-slate-800" : "bg-green-600 hover:bg-green-700"}`}
+                              >
+                                {isPublished ? <EyeOff className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                                {isPublished ? "Ẩn" : "Hiện"}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busyId === review.id}
+                                onClick={() => deleteReview(review)}
+                                className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-red-100 bg-red-50 px-3 text-xs font-black text-red-600 transition hover:bg-red-100 disabled:opacity-45"
+                              >
+                                {busyId === review.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                Xóa
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     );
@@ -409,6 +439,7 @@ export function AdminProductReviewsPage() {
               onDelete={() => deleteReview(selectedReview)}
               onCustomer={() => navigate(`/admin/customers/${selectedReview.customerId}`)}
               onClose={() => setSelectedId(null)}
+              hasEditAccess={hasEditAccess}
             />
           </div>
         </div>
@@ -457,6 +488,7 @@ function ReviewDetail({
   onDelete,
   onCustomer,
   onClose,
+  hasEditAccess,
 }: {
   review: AdminProductReview;
   busy: boolean;
@@ -464,6 +496,7 @@ function ReviewDetail({
   onDelete: () => void;
   onCustomer: () => void;
   onClose: () => void;
+  hasEditAccess: boolean;
 }) {
   const StatusIcon = statusMeta[review.status]?.icon || Eye;
   return (
@@ -537,32 +570,34 @@ function ReviewDetail({
           </div>
         </InfoBlock>
 
-        <div className="grid gap-2">
-          <button
-            disabled={busy || review.status === "published"}
-            onClick={() => onStatus("published")}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-green-600 px-4 text-sm font-black text-white transition hover:bg-green-700 disabled:opacity-45"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            Hiển thị review
-          </button>
-          <button
-            disabled={busy || review.status === "hidden"}
-            onClick={() => onStatus("hidden")}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-700 px-4 text-sm font-black text-white transition hover:bg-slate-800 disabled:opacity-45"
-          >
-            <EyeOff className="h-4 w-4" />
-            Ẩn khỏi sản phẩm
-          </button>
-          <button
-            disabled={busy}
-            onClick={onDelete}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 text-sm font-black text-red-600 transition hover:bg-red-100 disabled:opacity-45"
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-            Xóa review
-          </button>
-        </div>
+        {hasEditAccess && (
+          <div className="grid gap-2">
+            <button
+              disabled={busy || review.status === "published"}
+              onClick={() => onStatus("published")}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-green-600 px-4 text-sm font-black text-white transition hover:bg-green-700 disabled:opacity-45"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Hiển thị review
+            </button>
+            <button
+              disabled={busy || review.status === "hidden"}
+              onClick={() => onStatus("hidden")}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-700 px-4 text-sm font-black text-white transition hover:bg-slate-800 disabled:opacity-45"
+            >
+              <EyeOff className="h-4 w-4" />
+              Ẩn khỏi sản phẩm
+            </button>
+            <button
+              disabled={busy}
+              onClick={onDelete}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 text-sm font-black text-red-600 transition hover:bg-red-100 disabled:opacity-45"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              Xóa review
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

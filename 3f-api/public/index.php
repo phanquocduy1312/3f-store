@@ -3,11 +3,13 @@
  * Mini MVC PHP Pure Backend - Entry Point
  */
 
+date_default_timezone_set('Asia/Ho_Chi_Minh');
+
 // Prevent raw PHP HTML errors from leaking into JSON response
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
-set_error_handler(function($severity, $message, $file, $line) {
+set_error_handler(function ($severity, $message, $file, $line) {
     if (!(error_reporting() & $severity)) {
         return;
     }
@@ -75,6 +77,7 @@ use App\Controllers\CustomerSecurityController;
 use App\Controllers\CustomerPetController;
 use App\Controllers\CustomerWishlistController;
 use App\Controllers\AdminDashboardController;
+use App\Controllers\AdminAnalyticsController;
 use App\Controllers\BannerController;
 use App\Controllers\BlogPostController;
 use App\Controllers\WorkflowController;
@@ -82,6 +85,8 @@ use App\Controllers\AdminNotificationController;
 use App\Controllers\ProductReviewController;
 use App\Controllers\OrderShippingMethodController;
 use App\Controllers\ContactController;
+use App\Controllers\AdminUserController;
+use App\Controllers\AdminRoleController;
 
 
 try {
@@ -117,12 +122,21 @@ try {
     $router->post("/api/admin/auth/login", [AdminAuthController::class, "login"]);
     $router->post("/api/admin/auth/logout", [AdminAuthController::class, "logout"]);
     $router->get("/api/admin/auth/me", [AdminAuthController::class, "me"]);
+    $router->put("/api/admin/auth/profile", [AdminAuthController::class, "updateProfile"]);
     $router->post("/api/admin/auth/bootstrap", [AdminAuthController::class, "bootstrap"]);
 
     // Admin Dashboard Routes
     $router->get("/api/admin/dashboard/stats", [AdminDashboardController::class, "getStats"]);
     $router->get("/api/admin/dashboard/revenue-chart", [AdminDashboardController::class, "getRevenueChart"]);
     $router->get("/api/admin/dashboard/task-queue", [AdminDashboardController::class, "getTaskQueue"]);
+    $router->get("/api/admin/dashboard/top-products", [AdminDashboardController::class, "getTopProducts"]);
+    $router->get("/api/admin/dashboard/pet-needs", [AdminDashboardController::class, "getPetNeedsStats"]);
+
+    // Admin Analytics Routes
+    $router->get("/api/admin/analytics/overview", [AdminAnalyticsController::class, "getOverviewStats"]);
+    $router->get("/api/admin/analytics/products", [AdminAnalyticsController::class, "getProductStats"]);
+    $router->get("/api/admin/analytics/customers", [AdminAnalyticsController::class, "getCustomerStats"]);
+    $router->get("/api/admin/analytics/marketing", [AdminAnalyticsController::class, "getMarketingStats"]);
 
     // Admin Notifications Routes
     $router->get("/api/admin/notifications", [AdminNotificationController::class, "list"]);
@@ -141,7 +155,7 @@ try {
     $router->get("/api/admin/customers/:id/vouchers", [AdminCustomerController::class, "getVouchers"]);
     $router->get("/api/admin/customers/:id/pets", [AdminCustomerController::class, "getPets"]);
     $router->get("/api/admin/customers/:id/sessions", [AdminCustomerController::class, "getSessions"]);
-    
+
     // Admin Customer Care (Phase 1.2) Routes
     $router->get("/api/admin/customers/:id/notes", [AdminCustomerController::class, "getNotes"]);
     $router->post("/api/admin/customers/:id/notes", [AdminCustomerController::class, "createNote"]);
@@ -160,7 +174,7 @@ try {
     $router->post("/api/customer/auth/login-password", [CustomerAuthController::class, "loginPassword"]);
     $router->post("/api/customer/auth/request-otp", [CustomerAuthController::class, "requestOtp"]);
     $router->post("/api/customer/auth/verify-otp", [CustomerAuthController::class, "verifyOtp"]);
-    
+
     // Customer OTP Endpoints
     $router->post("/api/customer/otp/send", [\App\Controllers\OtpController::class, "send"]);
     $router->post("/api/customer/otp/verify", [\App\Controllers\OtpController::class, "verify"]);
@@ -333,6 +347,18 @@ try {
     $router->put("/api/admin/blog-posts/:id", [BlogPostController::class, "adminUpdate"]);
     $router->delete("/api/admin/blog-posts/:id", [BlogPostController::class, "adminDelete"]);
     $router->post("/api/admin/blog-posts/upload", [BlogPostController::class, "adminUploadImage"]);
+
+    // Admin Staff Accounts Routes
+    $router->get("/api/admin/accounts", [AdminUserController::class, "list"]);
+    $router->post("/api/admin/accounts", [AdminUserController::class, "create"]);
+    $router->put("/api/admin/accounts/:id", [AdminUserController::class, "update"]);
+    $router->delete("/api/admin/accounts/:id", [AdminUserController::class, "delete"]);
+
+    // Admin Role Configurations Routes
+    $router->get("/api/admin/roles", [AdminRoleController::class, "list"]);
+    $router->post("/api/admin/roles", [AdminRoleController::class, "create"]);
+    $router->put("/api/admin/roles/:id", [AdminRoleController::class, "update"]);
+    $router->delete("/api/admin/roles/:id", [AdminRoleController::class, "delete"]);
 
     // Shopee OAuth Sandbox Routes
     $router->get("/api/admin/shopee/auth-url", [ShopeeAuthController::class, "getAuthUrl"]);

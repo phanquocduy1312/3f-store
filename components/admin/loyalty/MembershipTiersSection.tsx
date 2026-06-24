@@ -116,7 +116,7 @@ const COLOR_SWATCHES = [
   "#64748B",
 ];
 
-export function MembershipTiersSection() {
+export function MembershipTiersSection({ hasEditAccess = false }: { hasEditAccess?: boolean }) {
   const [tiers, setTiers] = useState<MembershipTier[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -189,6 +189,7 @@ export function MembershipTiersSection() {
   };
 
   const openCreateModal = () => {
+    if (!hasEditAccess) return;
     setEditingTier(null);
     setForm(INITIAL_FORM);
     setErrors({});
@@ -196,6 +197,7 @@ export function MembershipTiersSection() {
   };
 
   const openEditModal = (tier: MembershipTier) => {
+    if (!hasEditAccess) return;
     setEditingTier(tier);
     setForm({
       name: tier.name || "",
@@ -471,11 +473,13 @@ export function MembershipTiersSection() {
                           </td>
                           <td className="px-3 py-3">
                             <div className="flex justify-end gap-2">
-                              <IconButton
-                                label="Sửa hạng"
-                                icon={<Pencil className="h-3.5 w-3.5" />}
-                                onClick={() => openEditModal(tier)}
-                              />
+                              {hasEditAccess && (
+                                <IconButton
+                                  label="Sửa hạng"
+                                  icon={<Pencil className="h-3.5 w-3.5" />}
+                                  onClick={() => openEditModal(tier)}
+                                />
+                              )}
                             </div>
                           </td>
                         </tr>

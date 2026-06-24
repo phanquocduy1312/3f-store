@@ -10,6 +10,24 @@ export function AdminCustomersPage() {
   const navigate = useNavigate();
   const [activeMenu, setActiveMenu] = useState("Khách hàng");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [adminRole, setAdminRole] = useState("");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setAdminRole(user.role || "");
+        setAdminPermissions(user.permissions || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const hasEditAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("customers");
+
   const [searchValue, setSearchValue] = useState("");
   
   const [customers, setCustomers] = useState<any[]>([]);
@@ -64,6 +82,10 @@ export function AdminCustomersPage() {
   }, [searchValue, statusFilter, tierFilter, phoneVerifiedFilter, hasOrdersFilter]);
 
   const handleToggleStatus = async (id: number, currentStatus: string) => {
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
     if (currentStatus === "active") {
       setConfirmBlockId(id);
       setBlockReason("");
@@ -81,6 +103,10 @@ export function AdminCustomersPage() {
   };
 
   const confirmBlock = async () => {
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
     if (!confirmBlockId) return;
     if (!blockReason.trim()) {
       toast.error("Vui lòng nhập lý do khóa");
@@ -261,7 +287,7 @@ export function AdminCustomersPage() {
                             >
                               <Eye size={18} />
                             </button>
-                            {c.status === "active" ? (
+                            {hasEditAccess && (c.status === "active" ? (
                               <button 
                                 onClick={() => handleToggleStatus(c.id, c.status)}
                                 className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Khóa tài khoản"
@@ -275,7 +301,7 @@ export function AdminCustomersPage() {
                               >
                                 <CheckCircle2 size={18} />
                               </button>
-                            )}
+                            ))}
                           </div>
                         </td>
                       </tr>

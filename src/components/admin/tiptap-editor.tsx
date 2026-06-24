@@ -17,9 +17,10 @@ interface TiptapEditorProps {
   value: string;
   onChange: (val: string) => void;
   onImageUpload: (file: File) => Promise<string>;
+  disabled?: boolean;
 }
 
-export function TiptapEditor({ value = "", onChange, onImageUpload }: TiptapEditorProps) {
+export function TiptapEditor({ value = "", onChange, onImageUpload, disabled = false }: TiptapEditorProps) {
   const [activeMode, setActiveMode] = useState<"edit" | "preview">("edit");
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -46,6 +47,7 @@ export function TiptapEditor({ value = "", onChange, onImageUpload }: TiptapEdit
       CharacterCount,
     ],
     content: value,
+    editable: !disabled,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       onChange(html);
@@ -60,6 +62,12 @@ export function TiptapEditor({ value = "", onChange, onImageUpload }: TiptapEdit
       editor.commands.setContent(value);
     }
   }, [value, editor]);
+
+  React.useEffect(() => {
+    if (editor) {
+      editor.setEditable(!disabled);
+    }
+  }, [disabled, editor]);
 
   if (!editor) return null;
 
@@ -112,7 +120,7 @@ export function TiptapEditor({ value = "", onChange, onImageUpload }: TiptapEdit
 
         {activeMode === "edit" ? (
           <>
-            <NewsEditorToolbar editor={editor} onImageUpload={onImageUpload} />
+            {!disabled && <NewsEditorToolbar editor={editor} onImageUpload={onImageUpload} />}
             <div className={`prose prose-sm max-w-none p-6 min-h-[420px] max-h-[600px] overflow-y-auto outline-none focus:outline-none bg-white blog-tiptap-content ${
               isFullscreen ? "flex-1 max-h-[calc(100vh-160px)]" : ""
             }`}>
