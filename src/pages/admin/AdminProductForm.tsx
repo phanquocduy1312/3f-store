@@ -282,7 +282,7 @@ export function AdminProductForm() {
       }
     } catch (e) {}
   }, []);
-  const hasProductWriteAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("products") || adminRole === "super_admin" || adminRole === "manager";
+  const hasProductWriteAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("products");
 
   // Layout state
   const [activeMenu] = useState("Sản phẩm");

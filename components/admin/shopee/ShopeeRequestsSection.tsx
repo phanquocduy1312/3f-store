@@ -151,6 +151,7 @@ interface ShopeeRequestsSectionProps {
   selectedDate?: string;
   hideTitle?: boolean;
   hideStats?: boolean;
+  hasEditAccess?: boolean;
 }
 
 export function ShopeeRequestsSection({
@@ -159,6 +160,7 @@ export function ShopeeRequestsSection({
   selectedDate = "today",
   hideTitle = false,
   hideStats = false,
+  hasEditAccess = false,
 }: ShopeeRequestsSectionProps) {
   const [requests, setRequests] = useState<ShopeePointRequest[]>([]);
   const [selectedRequestId, setSelectedRequestId] = useState<string | undefined>(undefined);
@@ -255,6 +257,10 @@ export function ShopeeRequestsSection({
   }, [selectedRequestId, isDetailModalOpen]);
 
   const handleVerifySingle = useCallback(async (requestId: string) => {
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
     const numId = Number(requestId);
     setVerifyingIds((prev) => new Set(prev).add(requestId));
     try {
@@ -388,6 +394,10 @@ export function ShopeeRequestsSection({
   const selectedRequest = requests.find((r) => r.id === selectedRequestId);
 
   const handleBulkVerify = useCallback(async () => {
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
     let idsToVerify: number[];
 
     if (selectedIds.size > 0) {
@@ -500,18 +510,20 @@ export function ShopeeRequestsSection({
           </div>
         )}
         <div className={`flex flex-wrap gap-3 ${hideTitle ? "w-full justify-end" : ""}`}>
-          <button
-            type="button"
-            disabled={isBulkVerifying}
-            onClick={handleBulkVerify}
-            className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#DCEBFF] bg-white px-5 text-[14px] font-bold text-[#0057E7] transition hover:bg-[#F6FAFF] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isBulkVerifying ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Đang đối chiếu...</>
-            ) : (
-              <><RefreshCcw className="h-4 w-4" /> Đối chiếu hàng loạt{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}</>
-            )}
-          </button>
+          {hasEditAccess && (
+            <button
+              type="button"
+              disabled={isBulkVerifying}
+              onClick={handleBulkVerify}
+              className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#DCEBFF] bg-white px-5 text-[14px] font-bold text-[#0057E7] transition hover:bg-[#F6FAFF] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isBulkVerifying ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Đang đối chiếu...</>
+              ) : (
+                <><RefreshCcw className="h-4 w-4" /> Đối chiếu hàng loạt{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}</>
+              )}
+            </button>
+          )}
         </div>
       </section>
 
@@ -552,6 +564,7 @@ export function ShopeeRequestsSection({
           onToggleSelect={handleToggleSelect}
           onToggleSelectAll={handleToggleSelectAll}
           onVerifySingle={(id) => handleVerifySingle(id)}
+          hasEditAccess={hasEditAccess}
         />
       )}
 
@@ -564,6 +577,7 @@ export function ShopeeRequestsSection({
         onReject={() => openModal("reject")}
         onApprove={() => openModal("approve")}
         onReconcile={handleReconcileRequest}
+        hasEditAccess={hasEditAccess}
       />
 
       <ShopeeActionModal

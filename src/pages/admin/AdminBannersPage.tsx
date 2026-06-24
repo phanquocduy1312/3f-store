@@ -47,6 +47,20 @@ export function AdminBannersPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
 
+  const [adminRole, setAdminRole] = useState("admin");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setAdminRole(user.role || "admin");
+        setAdminPermissions(user.permissions || []);
+      }
+    } catch (e) {}
+  }, []);
+  const hasEditAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("banners");
+
   // Form State
   const [formData, setFormData] = useState<AdminBannerPayload>({
     placement: "home_hero_slider",
@@ -309,13 +323,15 @@ export function AdminBannersPage() {
               <h1 className="text-2xl font-bold text-[#0B1F3A] tracking-tight">Quản lý Banner</h1>
               <p className="text-sm text-slate-500 mt-1">Cấu hình các chiến dịch banner chính (hero slider) trang chủ 3F Store.</p>
             </div>
-            <button
-              onClick={() => openModal()}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[#0057E7] text-white rounded-xl hover:bg-[#0047C4] transition-colors shadow-sm font-semibold text-sm"
-            >
-              <Plus className="w-4.5 h-4.5" />
-              Thêm Banner mới
-            </button>
+            {hasEditAccess && (
+              <button
+                onClick={() => openModal()}
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#0057E7] text-white rounded-xl hover:bg-[#0047C4] transition-colors shadow-sm font-semibold text-sm"
+              >
+                <Plus className="w-4.5 h-4.5" />
+                Thêm Banner mới
+              </button>
+            )}
           </div>
 
           {/* KPI Cards section */}
@@ -440,30 +456,41 @@ export function AdminBannersPage() {
                           </td>
                           <td className="px-6 py-4 text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <button
-                                onClick={() => handleToggleActive(banner)}
-                                className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition-colors ${
-                                  banner.is_active === 1
-                                    ? "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100"
-                                    : "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100"
-                                }`}
-                              >
-                                {banner.is_active === 1 ? "Ẩn đi" : "Hiện lại"}
-                              </button>
-                              <button
-                                onClick={() => openModal(banner)}
-                                className="p-2 text-[#0057E7] hover:bg-[#EEF6FF] rounded-lg transition-colors"
-                                title="Chỉnh sửa"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(banner)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Xóa"
-                              >
-                                <Trash2 size={16} />
-                              </button>
+                              {hasEditAccess ? (
+                                <>
+                                  <button
+                                    onClick={() => handleToggleActive(banner)}
+                                    className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition-colors ${
+                                      banner.is_active === 1
+                                        ? "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100"
+                                        : "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100"
+                                    }`}
+                                  >
+                                    {banner.is_active === 1 ? "Ẩn đi" : "Hiện lại"}
+                                  </button>
+                                  <button
+                                    onClick={() => openModal(banner)}
+                                    className="p-2 text-[#0057E7] hover:bg-[#EEF6FF] rounded-lg transition-colors"
+                                    title="Chỉnh sửa"
+                                  >
+                                    <Edit2 size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(banner)}
+                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Xóa"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() => openModal(banner)}
+                                  className="px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-200 text-slate-650 bg-white hover:bg-slate-50 transition-colors"
+                                >
+                                  Xem chi tiết
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -493,7 +520,7 @@ export function AdminBannersPage() {
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+            <fieldset disabled={!hasEditAccess} className="p-6 overflow-y-auto space-y-4 flex-1">
 
               {/* Title */}
               <div>
@@ -593,7 +620,7 @@ export function AdminBannersPage() {
                   </label>
                 </div>
               </div>
-            </div>
+            </fieldset>
 
             <div className="px-6 py-4 border-t border-slate-100 bg-[#F8FBFF] flex items-center justify-end gap-3">
               <button
@@ -603,14 +630,16 @@ export function AdminBannersPage() {
               >
                 Hủy bỏ
               </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex items-center gap-2 px-5 py-2.5 bg-[#0057E7] text-white rounded-xl hover:bg-[#0047C4] transition-colors shadow-sm font-bold text-sm"
-              >
-                <Save size={16} />
-                {saving ? "Đang lưu..." : "Lưu thay đổi"}
-              </button>
+              {hasEditAccess && (
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-[#0057E7] text-white rounded-xl hover:bg-[#0047C4] transition-colors shadow-sm font-bold text-sm"
+                >
+                  <Save size={16} />
+                  {saving ? "Đang lưu..." : "Lưu thay đổi"}
+                </button>
+              )}
             </div>
           </div>
         </div>

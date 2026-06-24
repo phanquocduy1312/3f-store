@@ -10,7 +10,7 @@ type SettingItem = {
 
 type SettingsMap = Record<string, SettingItem>;
 
-export function ClubSettingsSection() {
+export function ClubSettingsSection({ hasEditAccess = false }: { hasEditAccess?: boolean }) {
   const [settings, setSettings] = useState<SettingsMap>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -60,6 +60,10 @@ export function ClubSettingsSection() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
 
     const moneyPerPoint = Number(settings.money_per_point?.value);
     const pointRedeemValue = Number(settings.point_redeem_value?.value);
@@ -136,7 +140,7 @@ export function ClubSettingsSection() {
           <p className="text-[12px] text-[#64748B] mt-0.5">Thiết lập quy tắc tích lũy và quy đổi điểm 3F Club</p>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5 min-h-[300px]">
+        <fieldset disabled={!hasEditAccess} className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5 min-h-[300px]">
           <FormInput
             label="Số tiền để được 1 điểm (VND) *"
             keyName="money_per_point"
@@ -187,22 +191,24 @@ export function ClubSettingsSection() {
             desc={settings.expiry_reminder_days?.description || "Mặc định: 7 ngày"}
             onChange={updateValue}
           />
-        </div>
+        </fieldset>
 
-        <div className="mt-8 flex justify-end border-t pt-5">
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#0057E7] px-6 text-[14px] font-bold text-white shadow-lg shadow-[#0057E7]/25 transition hover:bg-[#0046b8] disabled:opacity-50"
-          >
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            Lưu cấu hình
-          </button>
-        </div>
+        {hasEditAccess && (
+          <div className="mt-8 flex justify-end border-t pt-5">
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#0057E7] px-6 text-[14px] font-bold text-white shadow-lg shadow-[#0057E7]/25 transition hover:bg-[#0046b8] disabled:opacity-50"
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              Lưu cấu hình
+            </button>
+          </div>
+        )}
       </div>
     </form>
   );

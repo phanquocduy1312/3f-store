@@ -38,7 +38,7 @@ export function AdminProductsPage() {
       }
     } catch (e) {}
   }, []);
-  const hasProductWriteAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("products") || adminRole === "super_admin" || adminRole === "manager";
+  const hasProductWriteAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("products");
 
   const [activeMenu, setActiveMenu] = useState("Sản phẩm");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {

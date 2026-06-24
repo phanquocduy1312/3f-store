@@ -13,12 +13,14 @@ export function CustomerPointsTab({
   customerTier = "Member",
   totalSpent = 0,
   totalOrders = 0,
+  hasEditAccess = false,
 }: {
   customerId: number;
   customerPhone?: string | null;
   customerTier?: string;
   totalSpent?: number;
   totalOrders?: number;
+  hasEditAccess?: boolean;
 }) {
   const [pointsList, setPointsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +48,10 @@ export function CustomerPointsTab({
 
   const handleAdjustSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
     const pts = parseInt(adjustPoints, 10);
     if (!pts || pts === 0) {
       toast.error("Vui lòng nhập số điểm hợp lệ");
@@ -111,18 +117,20 @@ export function CustomerPointsTab({
           <div className="text-sm font-bold bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg">
             Tổng điểm: {formatCurrency(totalPoints).replace('đ', '')}
           </div>
-          <button 
-            onClick={() => {
-              if (!customerPhone) {
-                toast.error("Khách hàng chưa có số điện thoại. Vui lòng cập nhật số điện thoại trước khi cộng điểm.");
-                return;
-              }
-              setIsModalOpen(true);
-            }}
-            className="flex items-center gap-2 px-4 py-1.5 bg-[#0B1F3A] text-white font-bold rounded-lg hover:bg-slate-800 transition-colors text-sm"
-          >
-            <PlusCircle size={16} /> Điều chỉnh
-          </button>
+          {hasEditAccess && (
+            <button 
+              onClick={() => {
+                if (!customerPhone) {
+                  toast.error("Khách hàng chưa có số điện thoại. Vui lòng cập nhật số điện thoại trước khi cộng điểm.");
+                  return;
+                }
+                setIsModalOpen(true);
+              }}
+              className="flex items-center gap-2 px-4 py-1.5 bg-[#0B1F3A] text-white font-bold rounded-lg hover:bg-slate-800 transition-colors text-sm"
+            >
+              <PlusCircle size={16} /> Điều chỉnh
+            </button>
+          )}
         </div>
       </div>
 

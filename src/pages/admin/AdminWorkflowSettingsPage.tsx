@@ -112,7 +112,7 @@ export function AdminWorkflowSettingsPage() {
         perms = u.permissions || [];
       }
     } catch (e) {}
-    if (role !== "super_admin" && role !== "dev" && role !== "admin" && !perms.includes("workflows")) {
+    if (role !== "dev" && role !== "admin" && !perms.includes("workflows")) {
       return;
     }
 
@@ -475,7 +475,7 @@ export function AdminWorkflowSettingsPage() {
     }
   };
 
-  const hasWorkflowAccess = adminRole === "super_admin" || adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("workflows");
+  const hasWorkflowAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("workflows");
   if (!hasWorkflowAccess) {
     return (
       <div className="min-h-screen bg-[#F6FAFF] font-sans relative">

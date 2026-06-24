@@ -44,6 +44,24 @@ export default function ThreeFClubPage() {
     if (typeof window !== "undefined") return window.innerWidth < 1024;
     return false;
   });
+  const [adminRole, setAdminRole] = useState("");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setAdminRole(user.role || "");
+        setAdminPermissions(user.permissions || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const hasEditAccess = adminRole === "dev" || adminRole === "admin" || adminPermissions.includes("club_3f");
+
   const [searchValue, setSearchValue] = useState("");
   const [selectedDate, setSelectedDate] = useState("all_time");
   const [activeTab, setActiveTab] = useState<MainTab>("shopee");
@@ -75,6 +93,10 @@ export default function ThreeFClubPage() {
   };
 
   const handleConnectShopee = async () => {
+    if (!hasEditAccess) {
+      toast.error("Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
     setConnectingShopee(true);
     try {
       const res = await fetchJsonWithTimeout(`${API_BASE_URL}/api/admin/shopee/connect`, {
@@ -270,9 +292,11 @@ export default function ThreeFClubPage() {
                 <button
                   type="button"
                   onClick={handleConnectShopee}
-                  disabled={connectingShopee}
+                  disabled={connectingShopee || !hasEditAccess}
                   className={`inline-flex h-10 items-center justify-center rounded-xl px-4 text-[13px] font-black transition ${
-                    shopeeConnection?.connected
+                    !hasEditAccess
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : shopeeConnection?.connected
                       ? "border border-[#DCEBFF] bg-white text-[#64748B] hover:bg-slate-50"
                       : "bg-[#0057E7] text-white hover:bg-[#0046b8]"
                   }`}
@@ -319,6 +343,7 @@ export default function ThreeFClubPage() {
               selectedDate={selectedDate}
               hideTitle={true}
               hideStats={true}
+              hasEditAccess={hasEditAccess}
             />
           )}
 
@@ -330,7 +355,7 @@ export default function ThreeFClubPage() {
               active="tiers"
               onChange={() => undefined}
             >
-              <MembershipTiersSection />
+              <MembershipTiersSection hasEditAccess={hasEditAccess} />
             </GroupedPanel>
           )}
 
@@ -341,7 +366,7 @@ export default function ThreeFClubPage() {
               active="clubSettings"
               onChange={() => undefined}
             >
-              <ClubSettingsSection />
+              <ClubSettingsSection hasEditAccess={hasEditAccess} />
             </GroupedPanel>
           )}
 

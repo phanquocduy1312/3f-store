@@ -23,6 +23,7 @@ interface ShopeeRequestTableProps {
   onToggleSelect: (id: string) => void;
   onToggleSelectAll: () => void;
   onVerifySingle: (id: string) => void;
+  hasEditAccess?: boolean;
 }
 
 export function ShopeeRequestTable({
@@ -39,6 +40,7 @@ export function ShopeeRequestTable({
   onToggleSelect,
   onToggleSelectAll,
   onVerifySingle,
+  hasEditAccess = false,
 }: ShopeeRequestTableProps) {
   const start = totalItems === 0 ? 0 : (page - 1) * 10 + 1;
   const end = Math.min(page * 10, totalItems);
@@ -58,14 +60,16 @@ export function ShopeeRequestTable({
             <table className="w-full min-w-[1080px] table-fixed">
               <thead className="bg-[#F8FBFF] text-left text-[11px] font-black uppercase tracking-[0.04em] text-[#64748B]">
                 <tr>
-                  <th className="w-10 px-3 py-3">
-                    <input
-                      type="checkbox"
-                      checked={allChecked}
-                      onChange={onToggleSelectAll}
-                      className="h-4 w-4 rounded border-[#DCEBFF]"
-                    />
-                  </th>
+                  {hasEditAccess && (
+                    <th className="w-10 px-3 py-3">
+                      <input
+                        type="checkbox"
+                        checked={allChecked}
+                        onChange={onToggleSelectAll}
+                        className="h-4 w-4 rounded border-[#DCEBFF]"
+                      />
+                    </th>
+                  )}
                   <th className="w-[170px] px-4 py-3">Mã đơn</th>
                   <th className="w-[180px] px-4 py-3">Khách hàng</th>
                   <th className="w-[130px] px-4 py-3">Khách nhập</th>
@@ -94,14 +98,16 @@ export function ShopeeRequestTable({
                         isSelected && "bg-[#F6FAFF] ring-1 ring-inset ring-[#BFD7FF]",
                       )}
                     >
-                      <td className="px-3 py-3 align-middle" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(request.id)}
-                          onChange={() => onToggleSelect(request.id)}
-                          className="h-4 w-4 rounded border-[#DCEBFF]"
-                        />
-                      </td>
+                      {hasEditAccess && (
+                        <td className="px-3 py-3 align-middle" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(request.id)}
+                            onChange={() => onToggleSelect(request.id)}
+                            className="h-4 w-4 rounded border-[#DCEBFF]"
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-3 align-middle">
                         <div className="flex items-center gap-2 font-black text-[#082B5F]">
                           <span className="line-clamp-1">#{request.shopeeOrderCode}</span>
@@ -156,7 +162,7 @@ export function ShopeeRequestTable({
                       </td>
                       <td className="px-3 py-3 align-middle" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-2">
-                          {canVerify && (
+                          {canVerify && hasEditAccess && (
                             <button
                               type="button"
                               disabled={isVerifying}
