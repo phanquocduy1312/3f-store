@@ -87,9 +87,6 @@ class ProductController {
     public function adminList() {
         try {
             $admin = AuthMiddleware::requireAdmin();
-            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
-                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
-            }
 
             $service = new ProductCatalogService();
             $data = $service->listProducts([
@@ -114,9 +111,6 @@ class ProductController {
     public function adminDetail() {
         try {
             $admin = AuthMiddleware::requireAdmin();
-            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
-                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
-            }
 
             $id = trim((string)Request::query('id', ''));
             $slug = trim((string)Request::query('slug', ''));
@@ -138,9 +132,6 @@ class ProductController {
     public function adminSave() {
         try {
             $admin = AuthMiddleware::requireAdmin();
-            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
-                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
-            }
 
             $input = Request::json();
             $adminId = $admin ? (int)$admin['id'] : null;
@@ -169,9 +160,6 @@ class ProductController {
     public function adminToggleActive() {
         try {
             $admin = AuthMiddleware::requireAdmin();
-            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
-                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
-            }
 
             $input = Request::json();
             $id = isset($input['id']) ? (int)$input['id'] : 0;
@@ -200,9 +188,6 @@ class ProductController {
     public function adminUploadImage() {
         try {
             $admin = AuthMiddleware::requireAdmin();
-            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
-                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
-            }
 
             if (!isset($_FILES['image'])) {
                 Response::json([
@@ -243,9 +228,6 @@ class ProductController {
     public function adminReclassify() {
         try {
             $admin = AuthMiddleware::requireAdmin();
-            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
-                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
-            }
 
             $db = \App\Core\Database::getInstance()->getConnection();
 
@@ -355,9 +337,6 @@ class ProductController {
     public function adminDelete() {
         try {
             $admin = AuthMiddleware::requireAdmin();
-            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
-                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
-            }
 
             $id = trim((string)\App\Core\Request::query('id', ''));
             if (!$id) {
@@ -395,9 +374,6 @@ class ProductController {
     public function adminCategorySave() {
         try {
             $admin = AuthMiddleware::requireAdmin();
-            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
-                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
-            }
 
             $payload = Request::json();
             $service = new ProductCatalogService();
@@ -415,9 +391,6 @@ class ProductController {
     public function adminCategoryToggleActive() {
         try {
             $admin = AuthMiddleware::requireAdmin();
-            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
-                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
-            }
 
             $payload = Request::json();
             $id = $payload['id'] ?? null;
@@ -441,9 +414,6 @@ class ProductController {
     public function adminCategoryDelete() {
         try {
             $admin = AuthMiddleware::requireAdmin();
-            if (isset($admin['role']) && !in_array($admin['role'], ['admin', 'superadmin', 'manager'])) {
-                Response::json(["success" => false, "message" => "Forbidden: Insufficient permissions"], 403);
-            }
 
             $id = trim((string)\App\Core\Request::query('id', ''));
             if (!$id) {
