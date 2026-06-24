@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS admin_roles (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT IGNORE INTO admin_roles (name, display_name, permissions) VALUES
-('dev', 'Developer', '["dashboard","orders","customers","pet_advisor","club_3f","products","reviews","categories","banners","news","vouchers","analytics","workflows","accounts"]'),
+('dev', 'Developer', '["dashboard","orders","customers","pet_advisor","club_3f","products","reviews","categories","banners","news","vouchers","analytics","accounts"]'),
 ('super_admin', 'Quản trị viên tối cao', '["dashboard","orders","customers","pet_advisor","club_3f","products","reviews","categories","banners","news","vouchers","analytics","accounts"]'),
 ('manager', 'Quản lý cửa hàng', '["dashboard","orders","customers","pet_advisor","club_3f","products","reviews","categories","banners","news","vouchers","analytics"]'),
 ('editor', 'Biên tập viên/Marketing', '["dashboard","products","reviews","categories","banners","news","vouchers"]'),

@@ -23,7 +23,6 @@ const AVAILABLE_PERMISSIONS = [
   { key: "news", label: "Quản lý Tin tức" },
   { key: "vouchers", label: "Voucher (Vouchers)" },
   { key: "analytics", label: "Báo cáo (Analytics)" },
-  { key: "workflows", label: "Cấu hình Workflow" },
   { key: "accounts", label: "Nhân sự & Phân quyền" }
 ];
 

@@ -46,7 +46,6 @@ const menuItems: MenuItem[] = [
   { name: "Quản lý Tin tức", icon: FileText, path: "/admin/news" },
   { name: "Voucher", icon: Tag, path: "/admin/vouchers" },
   { name: "Báo cáo", icon: BarChart3, path: "/admin/analytics" },
-  { name: "Cấu hình Workflow", icon: CheckSquare, path: "/admin/settings/workflows" },
   { name: "Nhân sự", icon: Shield, path: "/admin/accounts" },
 ];
 

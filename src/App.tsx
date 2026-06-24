@@ -19,7 +19,6 @@ const AdminDashboard = lazyPage(() => import("./pages/admin/admin-dashboard"), "
 const ShopeeRequestsPage = lazy(() => import("./pages/admin/ShopeeRequestsPage"));
 const LoyaltySettingsPage = lazy(() => import("./pages/admin/LoyaltySettingsPage"));
 const ThreeFClubPage = lazy(() => import("./pages/admin/ThreeFClubPage"));
-const AdminWorkflowSettingsPage = lazyPage(() => import("./pages/admin/AdminWorkflowSettingsPage"), "AdminWorkflowSettingsPage");
 const CustomerLoyaltyPage = lazy(() => import("./pages/admin/CustomerLoyaltyPage"));
 const AdminAccountsPage = lazy(() => import("./pages/admin/AdminAccountsPage"));
 const AdminAnalyticsPage = lazyPage(() => import("./pages/admin/AdminAnalyticsPage"), "AdminAnalyticsPage");
@@ -140,7 +139,6 @@ export function App() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
             <Route path="/admin/orders" element={<AdminOrdersPage />} />
-            <Route path="/admin/settings/workflows" element={<AdminWorkflowSettingsPage />} />
             <Route path="/admin/shopee-requests" element={<ShopeeRequestsPage />} />
             <Route path="/admin/loyalty-settings" element={<LoyaltySettingsPage />} />
             <Route path="/admin/accounts" element={<AdminAccountsPage />} />

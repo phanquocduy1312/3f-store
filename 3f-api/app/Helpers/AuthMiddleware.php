@@ -159,7 +159,7 @@ class AuthMiddleware {
         } elseif (strpos($path, '/api/admin/analytics') === 0) {
             $requiredPerm = 'analytics';
         } elseif (strpos($path, '/api/admin/workflows') === 0 || strpos($path, '/api/admin/order-shipping-methods') === 0) {
-            $requiredPerm = 'workflows';
+            $requiredPerm = 'orders';
         } elseif (strpos($path, '/api/admin/accounts') === 0 || strpos($path, '/api/admin/roles') === 0) {
             $requiredPerm = 'accounts';
         }

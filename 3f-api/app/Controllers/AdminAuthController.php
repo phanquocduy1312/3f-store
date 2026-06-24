@@ -43,7 +43,7 @@ class AdminAuthController {
         $permissions = [];
         $roleName = $admin['role'] ?? '';
         if ($roleName === 'dev' || $roleName === 'admin') {
-            $permissions = ["dashboard","orders","customers","pet_advisor","club_3f","products","reviews","categories","banners","news","vouchers","analytics","workflows","accounts"];
+            $permissions = ["dashboard","orders","customers","pet_advisor","club_3f","products","reviews","categories","banners","news","vouchers","analytics","accounts"];
         } else {
             try {
                 $db = \App\Core\Database::getInstance()->getConnection();
@@ -111,7 +111,7 @@ class AdminAuthController {
         $permissions = [];
         $roleName = $admin['role'] ?? '';
         if ($roleName === 'dev' || $roleName === 'admin') {
-            $permissions = ["dashboard","orders","customers","pet_advisor","club_3f","products","reviews","categories","banners","news","vouchers","analytics","workflows","accounts"];
+            $permissions = ["dashboard","orders","customers","pet_advisor","club_3f","products","reviews","categories","banners","news","vouchers","analytics","accounts"];
         } else {
             try {
                 $db = \App\Core\Database::getInstance()->getConnection();
