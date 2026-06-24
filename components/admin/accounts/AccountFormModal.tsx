@@ -25,6 +25,19 @@ export function AccountFormModal({ isOpen, onClose, onSaveSuccess, editingAccoun
     { id: 4, name: "editor", display_name: "Marketing Editor" },
     { id: 5, name: "cskh", display_name: "CSKH Agent" }
   ]);
+  const [currentAdminId, setCurrentAdminId] = useState<number | null>(null);
+  const [currentAdminRole, setCurrentAdminRole] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("admin_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setCurrentAdminId(Number(user.id) || null);
+        setCurrentAdminRole(user.role || null);
+      }
+    } catch (e) {}
+  }, []);
 
   React.useEffect(() => {
     const fetchRoles = async () => {
@@ -57,6 +70,16 @@ export function AccountFormModal({ isOpen, onClose, onSaveSuccess, editingAccoun
     if (!editingAccount && !password) {
       toast.warning("Vui lòng nhập mật khẩu cho tài khoản mới.");
       return;
+    }
+    if (editingAccount && currentAdminId && Number(editingAccount.id) === currentAdminId) {
+      if (role !== editingAccount.role) {
+        toast.error("Bạn không thể tự thay đổi vai trò của chính mình.");
+        return;
+      }
+      if (!isActive) {
+        toast.error("Bạn không thể tự khóa tài khoản của mình.");
+        return;
+      }
     }
 
     setIsSaving(true);
@@ -157,29 +180,47 @@ export function AccountFormModal({ isOpen, onClose, onSaveSuccess, editingAccoun
             <label className="block text-[11px] font-bold text-[#64748B] uppercase tracking-wide">Vai trò (Role)</label>
             <select
               value={role}
+              disabled={editingAccount && currentAdminId !== null && Number(editingAccount.id) === currentAdminId}
               onChange={(e) => setRole(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[#DCEBFF] bg-[#F8FBFF] px-4 py-2.5 text-xs font-bold text-[#0B1F3A] focus:border-[#0057E7] focus:bg-white focus:outline-none cursor-pointer capitalize"
+              className="mt-1 w-full rounded-xl border border-[#DCEBFF] bg-[#F8FBFF] px-4 py-2.5 text-xs font-bold text-[#0B1F3A] focus:border-[#0057E7] focus:bg-white focus:outline-none cursor-pointer capitalize disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {roles.map((r) => (
-                <option key={r.id} value={r.name}>
-                  {r.display_name} ({r.name})
-                </option>
-              ))}
+              {roles
+                .filter((r) => {
+                  const topTierRoles = ["dev", "admin", "super_admin"];
+                  const isCurrentAdminTopTier = currentAdminRole && topTierRoles.includes(currentAdminRole);
+                  if (topTierRoles.includes(r.name)) {
+                    return isCurrentAdminTopTier;
+                  }
+                  return true;
+                })
+                .map((r) => (
+                  <option key={r.id} value={r.name}>
+                    {r.display_name} ({r.name})
+                  </option>
+                ))}
             </select>
           </div>
 
           {editingAccount && (
-            <div className="flex items-center gap-2 py-1.5">
-              <input
-                type="checkbox"
-                id="modalIsActive"
-                checked={isActive}
-                onChange={(e) => setIsActive(e.target.checked)}
-                className="h-4 w-4 rounded border-[#DCEBFF] text-[#0057E7] focus:ring-[#0057E7] cursor-pointer"
-              />
-              <label htmlFor="modalIsActive" className="text-xs font-bold text-[#0B1F3A] cursor-pointer select-none">
-                Kích hoạt tài khoản hoạt động
-              </label>
+            <div className="space-y-2 py-1.5">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="modalIsActive"
+                  checked={isActive}
+                  disabled={currentAdminId !== null && Number(editingAccount.id) === currentAdminId}
+                  onChange={(e) => setIsActive(e.target.checked)}
+                  className="h-4 w-4 rounded border-[#DCEBFF] text-[#0057E7] focus:ring-[#0057E7] cursor-pointer disabled:cursor-not-allowed"
+                />
+                <label htmlFor="modalIsActive" className="text-xs font-bold text-[#0B1F3A] cursor-pointer select-none">
+                  Kích hoạt tài khoản hoạt động
+                </label>
+              </div>
+              {currentAdminId !== null && Number(editingAccount.id) === currentAdminId && (
+                <p className="text-[10px] text-amber-600 font-bold">
+                  * Bạn không thể tự thay đổi vai trò hoặc khóa tài khoản của chính mình.
+                </p>
+              )}
             </div>
           )}
 

@@ -26,6 +26,7 @@ export default function AdminAccountsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<any>(undefined);
   const [currentAdminId, setCurrentAdminId] = useState(0);
+  const [currentAdminRole, setCurrentAdminRole] = useState("");
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export default function AdminAccountsPage() {
         const user = JSON.parse(userStr);
         setCurrentAdminId(Number(user.id) || 0);
         const role = user.role || "";
+        setCurrentAdminRole(role);
         const perms = user.permissions || [];
         setIsAuthorized(role === "dev" || role === "admin" || perms.includes("accounts"));
       } else {
@@ -186,6 +188,7 @@ export default function AdminAccountsPage() {
                 onEdit={(acc) => { setSelectedAccount(acc); setIsModalOpen(true); }}
                 onDelete={handleDelete}
                 currentAdminId={currentAdminId}
+                currentAdminRole={currentAdminRole}
               />
 
               {totalPages > 1 && (

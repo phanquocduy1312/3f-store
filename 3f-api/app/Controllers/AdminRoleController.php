@@ -114,6 +114,11 @@ class AdminRoleController {
             Response::json(["success" => false, "message" => "Không thể sửa đổi vai trò hệ thống này."], 400);
         }
         
+        $topTierRoles = ['dev', 'admin', 'super_admin'];
+        if (in_array($role['name'], $topTierRoles, true) && !in_array($admin['role'], $topTierRoles, true)) {
+            Response::json(["success" => false, "message" => "Bạn không có quyền sửa đổi vai trò quản trị viên hệ thống (dev/admin/super_admin)."], 403);
+        }
+        
         $stmtUpdate = $db->prepare("
             UPDATE admin_roles
             SET display_name = :display_name, permissions = :permissions, updated_at = NOW()
@@ -178,3 +183,5 @@ class AdminRoleController {
         ]);
     }
 }
+// Force deploy: 2026-06-24 11:15
+

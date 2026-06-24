@@ -7,9 +7,12 @@ interface AccountsTableProps {
   onEdit: (account: any) => void;
   onDelete: (id: number) => void;
   currentAdminId: number;
+  currentAdminRole?: string;
 }
 
-export function AccountsTable({ accounts, isLoading, onEdit, onDelete, currentAdminId }: AccountsTableProps) {
+export function AccountsTable({ accounts, isLoading, onEdit, onDelete, currentAdminId, currentAdminRole = "" }: AccountsTableProps) {
+  const topTierRoles = ["dev", "admin", "super_admin"];
+  const isCurrentAdminTopTier = topTierRoles.includes(currentAdminRole);
   const getRoleBadge = (role: string) => {
     switch (role) {
       case "dev":
@@ -98,21 +101,41 @@ export function AccountsTable({ accounts, isLoading, onEdit, onDelete, currentAd
                   <td className="px-4 py-3 font-semibold text-[#64748B]">{formatDate(acc.last_login_at)}</td>
                   <td className="px-6 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => onEdit(acc)}
-                        className="p-1.5 rounded-lg bg-slate-50 text-[#64748B] hover:text-[#0057E7] hover:bg-[#EEF6FF] transition"
-                        title="Chỉnh sửa vai trò / mật khẩu"
-                      >
-                        <Edit2 size={13} />
-                      </button>
-                      {intVal(acc.id) !== intVal(currentAdminId) ? (
+                      {topTierRoles.includes(acc.role) && !isCurrentAdminTopTier ? (
                         <button
-                          onClick={() => onDelete(acc.id)}
-                          className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:text-red-800 hover:bg-red-100 transition"
-                          title="Xóa tài khoản"
+                          disabled
+                          className="p-1.5 rounded-lg bg-gray-50 text-gray-300 cursor-not-allowed"
+                          title="Không có quyền chỉnh sửa quản trị viên hệ thống"
                         >
-                          <Trash2 size={13} />
+                          <Shield size={13} />
                         </button>
+                      ) : (
+                        <button
+                          onClick={() => onEdit(acc)}
+                          className="p-1.5 rounded-lg bg-slate-50 text-[#64748B] hover:text-[#0057E7] hover:bg-[#EEF6FF] transition"
+                          title="Chỉnh sửa vai trò / mật khẩu"
+                        >
+                          <Edit2 size={13} />
+                        </button>
+                      )}
+                      {intVal(acc.id) !== intVal(currentAdminId) ? (
+                        topTierRoles.includes(acc.role) && !isCurrentAdminTopTier ? (
+                          <button
+                            disabled
+                            className="p-1.5 rounded-lg bg-gray-50 text-gray-300 cursor-not-allowed"
+                            title="Không có quyền xóa quản trị viên hệ thống"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => onDelete(acc.id)}
+                            className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:text-red-800 hover:bg-red-100 transition"
+                            title="Xóa tài khoản"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )
                       ) : (
                         <button
                           disabled

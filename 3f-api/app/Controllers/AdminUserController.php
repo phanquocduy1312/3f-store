@@ -32,6 +32,11 @@ class AdminUserController {
         $password = Request::input('password');
         $role = Request::input('role', 'manager');
         
+        $topTierRoles = ['dev', 'admin', 'super_admin'];
+        if (in_array($role, $topTierRoles, true) && !in_array($admin['role'], $topTierRoles, true)) {
+            Response::json(["success" => false, "message" => "Bạn không có quyền tạo tài khoản với vai trò quản trị viên hệ thống (dev/admin/super_admin)."], 403);
+        }
+        
         if (empty($name) || empty($email) || empty($password)) {
             Response::json(["success" => false, "message" => "Vui lòng điền đủ thông tin."], 400);
         }
@@ -62,16 +67,28 @@ class AdminUserController {
             Response::json(["success" => false, "message" => "Không tìm thấy người dùng."], 404);
         }
         
+        if ((int)$id === (int)$admin['id'] && $isActive !== null && (int)$isActive === 0) {
+            Response::json(["success" => false, "message" => "Không thể tự khóa tài khoản của mình."], 400);
+        }
+        
+        if ((int)$id === (int)$admin['id'] && $role !== null && $role !== $admin['role']) {
+            Response::json(["success" => false, "message" => "Bạn không thể tự thay đổi vai trò của chính mình."], 400);
+        }
+        
+        $topTierRoles = ['dev', 'admin', 'super_admin'];
+        if (in_array($target['role'], $topTierRoles, true) && !in_array($admin['role'], $topTierRoles, true)) {
+            Response::json(["success" => false, "message" => "Bạn không có quyền chỉnh sửa tài khoản của quản trị viên hệ thống (dev/admin/super_admin)."], 403);
+        }
+        
+        if ($role !== null && in_array($role, $topTierRoles, true) && !in_array($admin['role'], $topTierRoles, true)) {
+            Response::json(["success" => false, "message" => "Bạn không có quyền cấp vai trò quản trị viên hệ thống (dev/admin/super_admin)."], 403);
+        }
+        
         if ($role !== null) {
             $userModel->updateRole($id, $role);
         }
         if ($isActive !== null) {
-            // Prevent disabling oneself
-            if ((int)$id === (int)$admin['id'] && (int)$isActive === 0) {
-                Response::json(["success" => false, "message" => "Không thể tự khóa tài khoản của mình."], 400);
-            } else {
-                $userModel->updateStatus($id, $isActive);
-            }
+            $userModel->updateStatus($id, $isActive);
         }
         if ($password) {
             $userModel->updatePassword($id, $password);
@@ -100,6 +117,11 @@ class AdminUserController {
             Response::json(["success" => false, "message" => "Không thể tự xóa tài khoản của chính mình."], 400);
         }
         
+        $topTierRoles = ['dev', 'admin', 'super_admin'];
+        if (in_array($target['role'], $topTierRoles, true) && !in_array($admin['role'], $topTierRoles, true)) {
+            Response::json(["success" => false, "message" => "Bạn không có quyền xóa tài khoản của quản trị viên hệ thống (dev/admin/super_admin)."], 403);
+        }
+        
         $db = \App\Core\Database::getInstance()->getConnection();
         
         // Delete user's active sessions first
@@ -118,3 +140,5 @@ class AdminUserController {
         Response::json(["success" => true, "message" => "Xóa tài khoản nhân viên thành công."]);
     }
 }
+// Force deploy: 2026-06-24 11:15
+
