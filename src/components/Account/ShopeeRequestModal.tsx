@@ -14,6 +14,7 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
   const { customer } = useCustomerAuth();
 
   const [phone, setPhone] = useState(customer?.phone || "");
+  const [customerName, setCustomerName] = useState(customer?.fullName || "");
   const [email, setEmail] = useState(customer?.email || "");
   const [shopeeOrderCode, setShopeeOrderCode] = useState("");
   const [orderAmount, setOrderAmount] = useState("");
@@ -47,6 +48,7 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
         }
         if (res.fields.phone && !phone) setPhone(res.fields.phone);
         if (res.fields.email && !email) setEmail(res.fields.email);
+        if (res.fields.customerName && !customerName) setCustomerName(res.fields.customerName);
       } else {
         toast.info("Đã tải ảnh lên. Không tự động quét được thông tin, vui lòng điền thủ công.");
       }
@@ -59,6 +61,10 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!customerName) {
+      toast.warning("Vui lòng nhập họ và tên.");
+      return;
+    }
     if (!phone) {
       toast.warning("Vui lòng nhập số điện thoại.");
       return;
@@ -81,6 +87,7 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
         orderAmount: amountNum,
         phone,
         email,
+        customerName,
         imageId,
         scanId,
         note
@@ -155,6 +162,18 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
                   )}
                 </label>
               )}
+            </div>
+
+            <div>
+              <label className="mb-1 block text-[10px] font-bold text-gray-400 uppercase">Họ và tên *</label>
+              <input 
+                type="text" 
+                value={customerName} 
+                onChange={(e) => setCustomerName(e.target.value)} 
+                placeholder="VD: Nguyễn Văn A" 
+                className="w-full rounded-2xl border border-[#E0EBF7] px-4 py-3 text-xs outline-none focus:border-forest" 
+                required 
+              />
             </div>
 
             <div>
