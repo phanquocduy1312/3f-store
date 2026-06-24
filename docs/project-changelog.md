@@ -8,7 +8,11 @@
   - Tái cấu trúc và rút gọn mã nguồn tệp `adminCustomersApi.ts` và `shopeePointApi.ts` bằng hàm dùng chung `fetchWithAuth` / `fetchWithAdminAuth` giúp giảm số lượng dòng mã dưới 200-220 dòng tuân thủ tiêu chuẩn chất lượng.
 
 ### Added
-- Tái cấu trúc bộ phân quyền quản trị thành chế độ xem (Read-Only) thay vì ẩn hoàn toàn:
+- Tích hợp thêm trường nhập liệu Email và Tải ảnh hóa đơn vào biểu mẫu Yêu cầu tích điểm Shopee:
+  - Bổ sung ô nhập liệu `Email (Tùy chọn)` và ô tải ảnh `Ảnh hóa đơn / đơn hàng (Tùy chọn)` trên giao diện modal gửi yêu cầu `ShopeeRequestModal.tsx`.
+  - Tích hợp bộ quét hóa đơn tự động bằng cách gọi API `/api/shopee/order-scan` (OCR) sau khi người dùng tải ảnh lên. Hỗ trợ tự động điền các thông tin: số điện thoại, mã đơn hàng, số tiền đơn hàng, email giúp đơn giản hóa thao tác cho khách hàng.
+  - Hỗ trợ lưu trữ `image_id` và `scan_id` đi kèm trong payload yêu cầu tích điểm gửi lên backend.
+  - Tái cấu trúc bộ phân quyền quản trị thành chế độ xem (Read-Only) thay vì ẩn hoàn toàn:
   - Cho phép người dùng không có quyền vẫn xem được nội dung trang quản trị (Nhân sự, Báo cáo...) trên Sidebar và router.
   - Vô hiệu hóa hoặc ẩn các thao tác thay đổi dữ liệu (Thêm mới, Chỉnh sửa, Xóa) trên giao diện qua prop `hasEditAccess` và chặn các phương thức ghi (POST, PUT, DELETE, PATCH) ở phía backend (AuthMiddleware).
   - Loại bỏ các giới hạn vai trò cứng (`['admin', 'superadmin', 'manager']`) trong [ProductController.php](file:///c:/Users/Admin/Downloads/ccc/3f-api/app/Controllers/ProductController.php) để cho phép bất kỳ vai trò quản trị nào có thể đọc danh sách và chi tiết thông qua các yêu cầu `GET` (trong khi các thay đổi dữ liệu vẫn được bảo vệ bởi middleware).
