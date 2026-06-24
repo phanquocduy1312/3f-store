@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { X, Send, AlertTriangle } from "lucide-react";
+import { X, Send, AlertTriangle, UploadCloud, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCustomerAuth } from "@/src/context/CustomerAuthContext";
-import { createShopeePointRequest } from "@/src/services/shopeePointApi";
+import { createShopeePointRequest, scanShopeeOrderImage } from "@/src/services/shopeePointApi";
 
 interface ShopeeRequestModalProps {
   onClose: () => void;
@@ -13,11 +13,48 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
   const { customer } = useCustomerAuth();
 
   const [phone, setPhone] = useState(customer?.phone || "");
+  const [email, setEmail] = useState(customer?.email || "");
   const [shopeeOrderCode, setShopeeOrderCode] = useState("");
   const [orderAmount, setOrderAmount] = useState("");
   const [note, setNote] = useState("");
   
+  const [imageId, setImageId] = useState<number | null>(null);
+  const [scanId, setScanId] = useState<number | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    try {
+      const res = await scanShopeeOrderImage(file);
+      setImageId(res.imageId || null);
+      setScanId(res.scanId || null);
+      setImageUrl(res.imageUrl || null);
+
+      if (res.success && res.fields) {
+        toast.success("Tải ảnh và quét hóa đơn thành công!");
+        if (res.fields.shopeeOrderCode) setShopeeOrderCode(res.fields.shopeeOrderCode);
+        if (res.fields.orderAmount) {
+          const amt = Number(res.fields.orderAmount);
+          if (!isNaN(amt)) {
+            setOrderAmount(amt.toLocaleString("vi-VN"));
+          }
+        }
+        if (res.fields.phone && !phone) setPhone(res.fields.phone);
+        if (res.fields.email && !email) setEmail(res.fields.email);
+      } else {
+        toast.info("Đã tải ảnh lên. Không tự động quét được thông tin, vui lòng điền thủ công.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Tải ảnh thất bại.");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +79,9 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
         shopeeOrderCode,
         orderAmount: amountNum,
         phone,
+        email,
+        imageId,
+        scanId,
         note
       });
 
@@ -61,7 +101,7 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200 space-y-4">
+      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar space-y-4">
         
         <button onClick={onClose} className="absolute right-4 top-4 text-gray-400 hover:text-ink"><X size={18} /></button>
 
@@ -73,6 +113,49 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Image Upload Block */}
+            <div>
+              <label className="mb-1 block text-[10px] font-bold text-gray-400 uppercase">Ảnh hóa đơn / đơn hàng (Tùy chọn)</label>
+              {imageUrl ? (
+                <div className="relative rounded-2xl border border-[#E0EBF7] overflow-hidden h-28 bg-slate-50 flex items-center justify-center group">
+                  <img src={imageUrl} alt="Hóa đơn" className="h-full object-contain" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImageId(null);
+                      setScanId(null);
+                      setImageUrl(null);
+                    }}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition shadow-md"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <label className="border border-dashed border-[#E0EBF7] hover:border-forest/50 transition rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer h-28 bg-slate-50/50 hover:bg-slate-50 group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    disabled={isUploadingImage}
+                  />
+                  {isUploadingImage ? (
+                    <div className="flex flex-col items-center gap-1.5">
+                      <Loader2 size={18} className="text-forest animate-spin" />
+                      <span className="text-[10px] text-gray-400 font-bold">Đang tải và quét ảnh...</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 text-center">
+                      <UploadCloud size={24} className="text-gray-400 group-hover:text-forest transition" />
+                      <span className="text-[11px] font-bold text-gray-500">Tải ảnh hóa đơn / đơn hàng</span>
+                      <span className="text-[9px] text-gray-400">Hỗ trợ tự động điền thông tin</span>
+                    </div>
+                  )}
+                </label>
+              )}
+            </div>
+
             <div>
               <label className="mb-1 block text-[10px] font-bold text-gray-400 uppercase">Số điện thoại *</label>
               <input 
@@ -82,6 +165,17 @@ export function ShopeeRequestModal({ onClose, onSuccess }: ShopeeRequestModalPro
                 placeholder="VD: 0987654321" 
                 className="w-full rounded-2xl border border-[#E0EBF7] px-4 py-3 text-xs outline-none focus:border-forest" 
                 required 
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-[10px] font-bold text-gray-400 uppercase">Email (Tùy chọn)</label>
+              <input 
+                type="email" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                placeholder="VD: name@example.com" 
+                className="w-full rounded-2xl border border-[#E0EBF7] px-4 py-3 text-xs outline-none focus:border-forest" 
               />
             </div>
 
