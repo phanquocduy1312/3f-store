@@ -86,7 +86,8 @@ class AdminRoleController {
     /**
      * PUT /api/admin/roles/:id
      */
-    public function update($id) {
+    public function update() {
+        $id = (int)Request::query('id');
         $admin = AuthMiddleware::requirePermission('accounts');
         
         $displayName = trim(Request::input('display_name'));
@@ -139,7 +140,8 @@ class AdminRoleController {
     /**
      * DELETE /api/admin/roles/:id
      */
-    public function delete($id) {
+    public function delete() {
+        $id = (int)Request::query('id');
         $admin = AuthMiddleware::requirePermission('accounts');
         
         $db = \App\Core\Database::getInstance()->getConnection();

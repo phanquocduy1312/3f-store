@@ -48,7 +48,8 @@ class AdminUserController {
         Response::json(["success" => true, "message" => "Tạo tài khoản thành công."]);
     }
     
-    public function update($id) {
+    public function update() {
+        $id = (int)Request::query('id');
         $admin = AuthMiddleware::requirePermission('accounts');
         
         $role = Request::input('role');
@@ -85,7 +86,8 @@ class AdminUserController {
         Response::json(["success" => true, "message" => "Cập nhật tài khoản thành công."]);
     }
 
-    public function delete($id) {
+    public function delete() {
+        $id = (int)Request::query('id');
         $admin = AuthMiddleware::requirePermission('accounts');
         
         $userModel = new AdminUser();
